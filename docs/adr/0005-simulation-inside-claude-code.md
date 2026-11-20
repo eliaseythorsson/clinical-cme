@@ -1,0 +1,3 @@
+# Run simulations inside Claude Code sessions, not through the API
+
+The owner will not set up or pay for an API key. The LLM simulation therefore runs inside a Claude Code session on the owner's plan: one helper agent is the examiner running the installed skill against a folder store, another plays a learner persona, and the session relays messages and runs automatic checks (blinding leaks, save completeness, verbatim log, timings, clinical-quality score kept for the record). It is slower and less reproducible than an API script and counts against plan usage, so it runs on demand before merges, about 4 personas × 2 rounds, not on every push. Unit tests on `cme.py` run in GitHub Actions on every pull request.
