@@ -24,7 +24,7 @@ Session (fast path):
   present SEALED.. --block questions|case|stage2  print only the text to show the learner
 
 Other:
-  status  STATE | plan STATE --out PLAN | record | reflect | doc   (single steps; used by save/close)
+  status  STATE | plan STATE --out PLAN | record | reflect | doc   (the single steps of start, save and close)
   stats   STATE [--all]                           figures and coded analysis for a progress review
   review  STATE --review REVIEW.json --out NEXT   record a completed review; starts a new period
   review-doc --md REPORT.md [--headline H] [--state S --index IDX] --out-dir D
@@ -42,6 +42,7 @@ Add `--today YYYY-MM-DD` before the command to fix the date.
 """
 import argparse
 import base64
+import copy
 import datetime as dt
 import json
 import os
@@ -133,9 +134,18 @@ CLIP_EVIDENCE = 140
 
 # ---------------------------------------------------------------- utilities
 
+class CmeError(Exception):
+    """An error the learner or assistant can act on. Raised anywhere in the engine; only main()
+    turns it into the printed {"ok": false, "error": …} line and the exit code."""
+
+    def __init__(self, msg, code=2):
+        super().__init__(msg)
+        self.msg = msg
+        self.code = code
+
+
 def die(msg, code=2):
-    print(json.dumps({"ok": False, "error": msg}, ensure_ascii=False))
-    sys.exit(code)
+    raise CmeError(msg, code)
 
 
 def parse_date(s):
@@ -535,12 +545,10 @@ def all_sessions_for_novelty(state):
     return cases, stems
 
 
-def cmd_plan(args, st=None):
-    today = today_from(args)
-    if st is None:
-        st = load_json(args.state)
-        check_schema(st)
-        apply_prefs(st, load_json_arg(getattr(args, "prefs", None)))   # warnings: shown by start
+def plan_round(st, args, today):
+    """The plan for the next round of ledger `st` as of `today`, as a dict. `args` carries the
+    one-off options of plan/start (mcqs, focused, no_case, domain, no_new, allow_repeat, no_drill,
+    force_drill, seed). Reads only; writes and prints nothing."""
     cfg = st["config"]
     n_case = 0 if args.no_case else (1 if cfg.get("case", True) else 0)
     n_mcqs = args.mcqs if args.mcqs is not None else int(cfg.get("mcqs", 3) or 0)
@@ -830,12 +838,26 @@ def cmd_plan(args, st=None):
                 "questions are presented together and get their feedback before the case is shown; "
                 "neither they nor their feedback may cue the case.",
     }
-    with open(args.out, "w", encoding="utf-8") as fh:
-        json.dump(plan, fh, indent=1, ensure_ascii=False)
-    print(json.dumps({"ok": True, "out": args.out, "items": len(chosen),
-                      "mcqs": len(by_slot["mcq"]), "focused": len(by_slot["focused"]), "case": len(by_slot["case"]),
-                      "case_format": fmt if by_slot["case"] else None, "estimated_minutes": est,
-                      "item_order": order, "session_id": st.get("next_id")}))
+    return plan
+
+
+def plan_summary(plan, out):
+    """What plan, start and prepare print about a plan: counts only, never topics."""
+    counts = plan["counts"]
+    return {"ok": True, "out": out, "items": len(plan["items"]),
+            "mcqs": counts["mcqs"], "focused": counts["focused"], "case": counts["case"],
+            "case_format": plan["case_format"], "estimated_minutes": plan["estimated_minutes"],
+            "item_order": plan["item_order"], "session_id": plan["session_id"]}
+
+
+def cmd_plan(args):
+    today = today_from(args)
+    st = load_json(args.state)
+    check_schema(st)
+    apply_prefs(st, load_json_arg(getattr(args, "prefs", None)))   # warnings: shown by start
+    plan = plan_round(st, args, today)
+    save_json(plan, args.out)
+    print(json.dumps(plan_summary(plan, args.out)))
 
 
 # ---------------------------------------------------------------- record
@@ -1236,11 +1258,9 @@ def to_previous(sess):
     return out
 
 
-def cmd_record(args):
-    today = today_from(args)
-    st = load_json(args.state)
-    check_schema(st)
-    rnd = load_json_arg(args.round)
+def record_round(st, rnd, today):
+    """Apply the graded round `rnd` to ledger `st` (changed in place; `rnd` may be changed too).
+    Returns what record and save report about it."""
     if not rnd.get("date"):     # the round is dated when it is recorded; reflecting later keeps that date
         rnd["date"] = iso(today)
     # finalize a still-unreflected earlier session: it stays recorded with the reflection skipped
@@ -1262,21 +1282,32 @@ def cmd_record(args):
         st["unreflected"] = entry["id"]
     compact(st)
     st["gen"] = int(st.get("gen") or 0) + 1
-    size = save_json(st, args.out)
-    print(json.dumps({"ok": True, "out": args.out, "bytes": size, "gen": st["gen"], "session_id": entry["id"],
-                      "next_id": st["next_id"], "score": entry["score"], "topics": summary,
-                      "errata_ids": errata_ids,
-                      "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
-                      "open_gaps": len(st["gaps"]), "reflection_pending": rnd.get("reflection") is None,
-                      "warnings": warnings}, indent=1, ensure_ascii=False))
+    return {"gen": st["gen"], "session_id": entry["id"],
+            "next_id": st["next_id"], "score": entry["score"], "topics": summary,
+            "errata_ids": errata_ids,
+            "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
+            "open_gaps": len(st["gaps"]), "reflection_pending": rnd.get("reflection") is None,
+            "warnings": warnings}
 
 
-def cmd_reflect(args):
+def report(out, size, result):
+    """The printed result of a command that wrote the ledger: ok, out and bytes first."""
+    return dict({"ok": True, "out": out, "bytes": size}, **result)
+
+
+def cmd_record(args):
     today = today_from(args)
     st = load_json(args.state)
     check_schema(st)
-    refl = load_json_arg(args.reflection) or {}
-    sid = args.session or st.get("unreflected")
+    res = record_round(st, load_json_arg(args.round), today)
+    size = save_json(st, args.out)
+    print(json.dumps(report(args.out, size, res), indent=1, ensure_ascii=False))
+
+
+def reflect_round(st, refl, today, session=None):
+    """Apply the reflection `refl` to the unreflected session of ledger `st` (or to `session`),
+    changing `st` in place. Returns what reflect and close report about it."""
+    sid = session or st.get("unreflected")
     sess = next((s for s in st["sessions"] if s.get("id") == sid), None)
     if not sess or not sess.get("_snapshot"):
         die("no unreflected session to update (last: %s)" % (st["sessions"][-1].get("id") if st["sessions"] else None))
@@ -1298,11 +1329,19 @@ def cmd_reflect(args):
     st["unreflected"] = None
     compact(st)
     st["gen"] = int(st.get("gen") or 0) + 1
+    return {"gen": st["gen"], "session_id": entry["id"],
+            "topics": summary, "open_gaps": len(st["gaps"]), "errata_ids": errata_ids,
+            "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
+            "warnings": warnings}
+
+
+def cmd_reflect(args):
+    today = today_from(args)
+    st = load_json(args.state)
+    check_schema(st)
+    res = reflect_round(st, load_json_arg(args.reflection) or {}, today, args.session)
     size = save_json(st, args.out)
-    print(json.dumps({"ok": True, "out": args.out, "bytes": size, "gen": st["gen"], "session_id": entry["id"],
-                      "topics": summary, "open_gaps": len(st["gaps"]), "errata_ids": errata_ids,
-                      "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
-                      "warnings": warnings}, indent=1, ensure_ascii=False))
+    print(json.dumps(report(args.out, size, res), indent=1, ensure_ascii=False))
 
 
 # ---------------------------------------------------------------- session document
@@ -1815,7 +1854,7 @@ def cmd_validate(args):
     size = os.path.getsize(args.state)
     print(json.dumps({"ok": not problems, "bytes": size, "sessions": len(st["sessions"]),
                       "previous": len(st["previous"]), "topics": len(st["topics"]), "problems": problems}))
-    sys.exit(0 if not problems else 1)
+    return 0 if not problems else 1
 
 
 # ---------------------------------------------------------------- store layout, fast path
@@ -1961,8 +2000,6 @@ def status_dict(st, path, today):
 
 def cmd_start(args):
     """status + plan in one call. Prints neutral status and plan counts only (no topics)."""
-    import contextlib
-    import io
     today = today_from(args)
     st = load_json(args.state)
     check_schema(st)
@@ -1983,17 +2020,9 @@ def cmd_start(args):
             plan_out = prepared["summary"]
             status["present"] = prepared["present"]
     if not status["onboarding_needed"] and plan_out is None:
-        buf = io.StringIO()
-        try:
-            with contextlib.redirect_stdout(buf):
-                cmd_plan(args, st)
-        except SystemExit:
-            sys.stdout.write(buf.getvalue())
-            raise
-        try:
-            plan_out = json.loads(buf.getvalue().strip().splitlines()[-1])
-        except (ValueError, IndexError):
-            die("plan failed: %s" % buf.getvalue()[:300])
+        plan = plan_round(st, args, today)
+        save_json(plan, args.out)
+        plan_out = plan_summary(plan, args.out)
     status["plan"] = plan_out
     print(json.dumps(status, ensure_ascii=False))
 
@@ -2019,8 +2048,6 @@ def cmd_prepare(args):
     """After the close: plan the NEXT round as of tomorrow, so that the whole round (short
     questions, case, feedback notes) can be drafted now and the next session starts with
     nothing to write. Prints counts only."""
-    import contextlib
-    import io
     today = today_from(args)
     st = load_json(args.state)
     check_schema(st)
@@ -2035,18 +2062,10 @@ def cmd_prepare(args):
     if why:
         print(json.dumps({"ok": True, "prepare": False, "why": why}))
         return
-    ns = argparse.Namespace(state=args.state, out=args.out, today=iso(today + dt.timedelta(days=1)), prefs=None,
-                            focused=None, mcqs=None, no_case=False, domain=None, no_new=False,
+    ns = argparse.Namespace(focused=None, mcqs=None, no_case=False, domain=None, no_new=False,
                             allow_repeat=False, no_drill=False, force_drill=False, seed=None)
-    buf = io.StringIO()
-    try:
-        with contextlib.redirect_stdout(buf):
-            cmd_plan(ns, st)
-    except SystemExit:
-        sys.stdout.write(buf.getvalue())
-        raise
-    summary = json.loads(buf.getvalue().strip().splitlines()[-1])
-    plan = load_json(args.out)
+    plan = plan_round(st, ns, today + dt.timedelta(days=1))
+    summary = plan_summary(plan, args.out)
     plan["prepared"] = {"gen": st.get("gen"), "made": iso(today), "session_id": st.get("next_id")}
     save_json(plan, args.out)
     summary.update({"prepare": True, "gen": st.get("gen"),
@@ -2321,19 +2340,6 @@ def page_upgrade(out_dir, live_page, warnings):
             "page_upgrade": {"from": live, "to": PAGE_VERSION}}
 
 
-def run_quiet(fn, args):
-    import contextlib
-    import io
-    buf = io.StringIO()
-    try:
-        with contextlib.redirect_stdout(buf):
-            fn(args)
-    except SystemExit:
-        sys.stdout.write(buf.getvalue())
-        raise
-    return json.loads(buf.getvalue())
-
-
 def cmd_save(args):
     """First save after the feedback: record + session document (part A) + index, in one go."""
     rnd = load_json_arg(args.round) or {}
@@ -2345,11 +2351,8 @@ def cmd_save(args):
         rnd["date"] = iso(today_from(args))
     warnings = []
     os.makedirs(args.out_dir, exist_ok=True)
-    state_path = args.state
+    # the round mix set on the page is kept in the ledger from now on
     prefs_changes = apply_prefs(st_in, load_json_arg(args.prefs), warnings)
-    if prefs_changes:   # the round mix set on the page is kept in the ledger from now on
-        state_path = os.path.join(args.out_dir, ".prefs.json")
-        save_json(st_in, state_path)
     if args.md:
         with open(args.md, "r", encoding="utf-8") as fh:
             md = fh.read()
@@ -2359,14 +2362,10 @@ def cmd_save(args):
         md = assemble_part_a(args.sealed, args.answers, args.feedback,
                              rnd.get("item_order") or st_in["config"].get("item_order"), warnings,
                              args.feedback_questions)
-    tmp_state = os.path.join(args.out_dir, ".record.json")
-    rec = run_quiet(cmd_record, argparse.Namespace(state=state_path, round=json.dumps(rnd), out=tmp_state,
-                                                   today=args.today))
-    st = load_json(tmp_state)
-    os.remove(tmp_state)
-    if state_path != args.state:
-        os.remove(state_path)
+    st = copy.deepcopy(st_in)       # st_in stays the ledger as it was before this round
+    res = record_round(st, copy.deepcopy(rnd), today_from(args))
     files = [write_out(args.out_dir, STATE_PATH, st)]
+    rec = report(files[0]["path"], os.path.getsize(files[0]["path"]), res)
     doc = session_doc_a(rnd, sid, md)
     files.append(write_out(args.out_dir, session_path(sid), doc))
     idx = load_index(args.index, st_in)
@@ -2381,7 +2380,6 @@ def cmd_save(args):
         rec["page_upgraded"] = pf["page_upgrade"]
     if prefs_changes:
         rec["page_settings_applied"] = prefs_changes
-    rec["out"] = files[0]["path"]
     rec["files"] = files
     rec["warnings"] = list(rec.get("warnings") or []) + warnings
     rec["transcript_chars"] = len(md)
@@ -2391,12 +2389,11 @@ def cmd_save(args):
 def cmd_close(args):
     """Second save after the reflection: reflect + part B into the session document + index."""
     os.makedirs(args.out_dir, exist_ok=True)
-    tmp_state = os.path.join(args.out_dir, ".reflect.json")
-    ref = run_quiet(cmd_reflect, argparse.Namespace(state=args.state, reflection=args.reflection, out=tmp_state,
-                                                    session=args.session, today=args.today))
-    st = load_json(tmp_state)
-    os.remove(tmp_state)
-    sid = ref["session_id"]
+    today = today_from(args)
+    st = load_json(args.state)
+    check_schema(st)
+    res = reflect_round(st, load_json_arg(args.reflection) or {}, today, args.session)
+    sid = res["session_id"]
     with open(args.md, "r", encoding="utf-8") as fh:
         md_b = fh.read()
     doc = load_json(args.doc) if args.doc else {"id": sid}
@@ -2408,6 +2405,7 @@ def cmd_close(args):
     if sess and isinstance(sess.get("score"), (int, float)):
         doc["score"] = sess["score"]
     files = [write_out(args.out_dir, STATE_PATH, st), write_out(args.out_dir, session_path(sid), doc)]
+    ref = report(files[0]["path"], os.path.getsize(files[0]["path"]), res)
     idx = load_index(args.index, st)
     index_put_session(idx, doc)
     files.append(write_out(args.out_dir, INDEX_PATH, finish_index(idx, st)))
@@ -2421,7 +2419,6 @@ def cmd_close(args):
     # for database stores, which merge part B into the existing document
     save_json({"closing": md_b, "reflected": True, "score": doc.get("score")},
               os.path.join(args.out_dir, "B.json"))
-    ref["out"] = files[0]["path"]
     ref["files"] = files
     ref["db_update"] = os.path.abspath(os.path.join(args.out_dir, "B.json"))
     print(json.dumps(ref, indent=1, ensure_ascii=False))
@@ -2447,7 +2444,7 @@ def same_content(a, b):
     if a.endswith(".json"):
         try:
             return load_json(a) == load_json(b)
-        except SystemExit:
+        except CmeError:
             return False
     with open(a, "rb") as fa, open(b, "rb") as fb:
         return fa.read() == fb.read()
@@ -2678,8 +2675,12 @@ def main(argv=None):
     args = ap.parse_args(argv)
     if getattr(args, "today_sub", None):
         args.today = args.today_sub
-    args.fn(args)
+    try:
+        return args.fn(args) or 0
+    except CmeError as e:
+        print(json.dumps({"ok": False, "error": e.msg}, ensure_ascii=False))
+        return e.code
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
