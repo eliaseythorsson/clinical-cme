@@ -6,7 +6,7 @@ in the mix the learner chooses. Rounds are graded against current evidence, foll
 reflection that feeds spaced repetition, logged verbatim, and periodically analysed for
 reasoning patterns.
 
-Current version: **4.3**. Full skill documentation: [`skills/clinical-cme/README.md`](skills/clinical-cme/README.md).
+Current version: **4.3.1**. Full skill documentation: [`skills/clinical-cme/README.md`](skills/clinical-cme/README.md).
 
 ## Install
 

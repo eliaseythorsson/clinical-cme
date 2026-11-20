@@ -3,7 +3,7 @@ name: clinical-cme
 description: "Blinded clinical self-assessment rounds for physicians: MCQs, focused questions (a mini-case with one free-text decision) and a full case, in the mix the learner chooses, with evidence-based feedback, reflection-informed spaced repetition, a full session log and periodic deep analysis of reasoning. The learner's ledger lives in a store they own (their own private artifact page where the app supports it, otherwise a folder or files they keep), so rounds work across devices and assistants. Use for 'quiz me', a CME round, CME setup/review, or finding or exporting past CME cases."
 ---
 
-# Clinical CME — continuous clinical self-evaluation (version 4.3)
+# Clinical CME — continuous clinical self-evaluation (version 4.3.1)
 
 Each session is one short round, in the mix the learner chose (`config.mcqs`, `config.focused`,
 `config.case`), in this order:
@@ -207,7 +207,8 @@ Five learner turns with an unfolding case; fewer with a one-step case or none.
    - `page_settings_applied` → the learner changed the mix on their page; say it in the opening
      line ("Using the mix you set on your page: …"), unless it only reports `unchanged`.
      `warnings` about page settings → one line, and the round goes ahead with the ledger's mix.
-   - keep `next_id`, `pending_errata_count`, `helpers`, `speed_settings_new` and `prepared`.
+   - keep `next_id`, `pending_errata_count`, `helpers`, `speed_settings_new`, `prepared` and
+     `testing`.
    - "prepare only", or a scheduled task asking for it → "Prepare only" below, not a round.
 3. **Get the first part's text.**
    - **`prepared.used` is true**: it is `present` in the `start` output, and the files listed
@@ -360,8 +361,8 @@ with the items answered; the case's topic stays due.
   advance, by a separate author and checker, so it starts at once and feedback follows your
   answers directly. Say 'helpers off' or 'don't prepare ahead' to change that. I can also set
   up a nightly task that makes sure a round is always ready, even if you close the app early —
-  say 'prepare my rounds overnight'." End the session; do not
-  start another round unless asked.
+  say 'prepare my rounds overnight'." With `testing` true, end the close message with the
+  testing check ("Testing mode" below). End the session; do not start another round unless asked.
 - **Behind the scenes, after the close message**, first **save** the `files` that `close`
   printed (database stores: update the session document from the `db_update` file instead of
   replacing it). If that write fails, tell the learner at once (`store.md` §8); the close
@@ -383,10 +384,30 @@ with the items answered; the case's topic stays due.
      <work>/next --out-dir <work>/out3` → save its one file (`store.md` §4).
   Say nothing about it. If anything here fails, leave it: the next session writes or checks
   what is missing, as in turn 1.
+- With `testing` true, last of all run the store check ("Testing mode" below).
 - If the discussion continues afterwards, append it: write it to a file and run
   `cme.py addendum --doc <latest session file> --md <file> --out-dir <work>/out4`, then save.
 - If `config.mirror` is `"gdrive"` and a drive tool can create documents, also create the
   session's Google Doc now (`store.md` §9). It is a copy; the store is the record.
+
+### Testing mode
+
+On while the skill is being tested (`config.testing`; "testing mode on/off" under Other requests).
+
+- **Close message**: after everything else, a rule and four quick questions: "Testing check
+  (about 30 seconds): 1. Waiting: fine / noticeable / annoying, and at which step? 2. The
+  items, 1–5? 3. The feedback, 1–5? 4. Anything else, in a line?"
+- **Store check**, behind the scenes after every save and the stash of this turn: read the
+  store again as at the start, plus `data/sessions/<id>.json`, into `<work>/check/`; then
+  `python3 cme.py verify --written <work>/out1 <work>/out2 [<work>/out3] --store
+  <work>/check --out <work>/verify.json` (every output folder whose files were saved this
+  round). `"ok": false` → tell the learner at once in one line which files did not save, and
+  follow "If a save cannot be made".
+- **The learner's answers** (their next message, any form; "skip" is fine): `python3 cme.py
+  testing-note --session <id> --feedback '{"waiting": "…", "waiting_step": "…", "items": N,
+  "feedback": N, "note": "…"}' --verify <work>/verify.json --out-dir <work>/outT` → save its
+  one file. Reply "Noted, thanks." A dispute or comment on content in the same message is
+  handled as discussion, as usual.
 
 ### Prepare only (a scheduled task, or "prepare my next round")
 
@@ -438,6 +459,8 @@ folder as downloads so the next session can save them (`store.md` §8). Never re
   It covers the days when the end-of-session preparation did not finish — the app was closed
   early, or the reflection was skipped — and stops at once when a round is ready. If this
   session cannot schedule tasks, say so.
+- **Testing mode on or off** ("testing mode on"): `settings --config '{"testing": true}'` (or
+  false) as above; confirm in one line.
 - **Reminders on or off**: create or delete a scheduled task (onboarding §4) and set
   `config.reminders`. If this session cannot schedule tasks, say so.
 - **Progress review** ("how am I doing?", or when due): `references/progress_review.md`.

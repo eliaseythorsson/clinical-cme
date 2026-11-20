@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""clinical-cme v4.3 state engine (standard library only, Python 3.8+).
+"""clinical-cme v4.3.1 state engine (standard library only, Python 3.8+).
 
 The learner's scheduling memory is ONE JSON document, the state; each round also has a session
 document, and an index lists the sessions for the page. This script never talks to a store or
@@ -52,6 +52,7 @@ import tempfile
 import zlib
 
 SCHEMA = 4
+SKILL_VERSION = "4.3.1"
 PAGE_VERSION = "4.2.1"   # templates/page.html carries <meta name="cme-page-version" content="4.2.1">
 
 DEFAULT_CONFIG = {
@@ -73,7 +74,8 @@ DEFAULT_CONFIG = {
     "helpers": True,                     # helper agents where the app has them: an author drafts the items, a
                                          # checker verifies the evidence; the conversation grades
     "prepare_ahead": True,               # draft the whole next round after each close
-    "prepare_task": False,               # a scheduled task also prepares the round when none is ready
+    "prepare_task": False,
+    "testing": False,                    # testing mode: feedback check + store check at the end of each round               # a scheduled task also prepares the round when none is ready
     "show_coding": True,
     "reminders": False,
     "mirror": None,                      # null | "gdrive": also create a Google Doc per session
@@ -816,6 +818,7 @@ def cmd_plan(args, st=None):
         "guideline_region": cfg.get("guideline_region"), "session_minutes": cfg.get("session_minutes"),
         "feedback_depth": cfg.get("feedback_depth"), "show_coding": cfg.get("show_coding", True),
         "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
+        "testing": bool(cfg.get("testing", False)),
         "profile": {k: st["profile"].get(k) for k in ("role", "specialty", "subspecialty",
                                                         "practice_setting", "notes")},
         "recent_cases_any_topic": used_cases[-15:],
@@ -1946,6 +1949,7 @@ def status_dict(st, path, today):
         "round": {"mcqs": cfg.get("mcqs", 3), "focused": cfg.get("focused", 0), "case": bool(cfg.get("case", True)),
                   "minutes": cfg.get("session_minutes"), "item_order": cfg.get("item_order")},
         "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
+        "testing": bool(cfg.get("testing", False)),
         "prepare_task": bool(cfg.get("prepare_task", False)),
         "mirror": cfg.get("mirror"),
         "reminders": cfg.get("reminders"),
@@ -2423,6 +2427,62 @@ def cmd_close(args):
     print(json.dumps(ref, indent=1, ensure_ascii=False))
 
 
+TESTING_SKIP = {"A.md", "B.json"}
+
+
+def written_files(dirs):
+    """Every file a cme.py output folder holds for the store, by its store path; later folders win."""
+    out = {}
+    for d in dirs:
+        for root, _, names in os.walk(d):
+            for n in names:
+                if n.startswith(".") or n in TESTING_SKIP:
+                    continue
+                full = os.path.join(root, n)
+                out[os.path.relpath(full, d).replace(os.sep, "/")] = full
+    return out
+
+
+def same_content(a, b):
+    if a.endswith(".json"):
+        try:
+            return load_json(a) == load_json(b)
+        except SystemExit:
+            return False
+    with open(a, "rb") as fa, open(b, "rb") as fb:
+        return fa.read() == fb.read()
+
+
+def cmd_verify(args):
+    """Testing mode: compare what cme.py produced with what the store holds after the save."""
+    wanted = written_files(args.written)
+    missing, mismatched = [], []
+    for rel, src in sorted(wanted.items()):
+        cand = [os.path.join(args.store, rel), os.path.join(args.store, os.path.basename(rel))]
+        got = next((p for p in cand if os.path.isfile(p)), None)
+        if not got:
+            missing.append(rel)
+        elif not same_content(src, got):
+            mismatched.append(rel)
+    res = {"ok": not missing and not mismatched, "checked": len(wanted), "missing": missing,
+           "mismatched": mismatched}
+    if args.out:
+        save_json(res, args.out)
+    print(json.dumps(res, indent=1))
+
+
+def cmd_testing_note(args):
+    """Testing mode: the learner's quick feedback and the store check, as data/testing/<id>.json."""
+    today = today_from(args)
+    fb = load_json_arg(args.feedback) or {}
+    ver = load_json(args.verify) if args.verify and os.path.isfile(args.verify) else None
+    note = {"session": args.session, "date": iso(today), "skill_version": SKILL_VERSION,
+            "feedback": fb, "store_check": ver}
+    os.makedirs(args.out_dir, exist_ok=True)
+    files = [write_out(args.out_dir, "data/testing/%s.json" % args.session, note)]
+    print(json.dumps({"ok": True, "files": files}, indent=1))
+
+
 def cmd_addendum(args):
     doc = load_json(args.doc)
     with open(args.md, "r", encoding="utf-8") as fh:
@@ -2572,6 +2632,11 @@ def main(argv=None):
     s.add_argument("--dir", required=True); s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_stash)
     s = sub.add_parser("present"); s.add_argument("files", nargs="+"); s.add_argument("--block", required=True)
     s.set_defaults(fn=cmd_present)
+    s = sub.add_parser("verify"); s.add_argument("--written", nargs="+", required=True)
+    s.add_argument("--store", required=True); s.add_argument("--out"); s.set_defaults(fn=cmd_verify)
+    s = sub.add_parser("testing-note"); s.add_argument("--session", required=True)
+    s.add_argument("--feedback", required=True); s.add_argument("--verify")
+    s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_testing_note)
     s = sub.add_parser("reindex"); s.add_argument("root"); s.set_defaults(fn=cmd_reindex)
     s = sub.add_parser("import"); s.add_argument("export"); s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_import)
     s = sub.add_parser("review-doc"); s.add_argument("--md", required=True); s.add_argument("--date"); s.add_argument("--title")

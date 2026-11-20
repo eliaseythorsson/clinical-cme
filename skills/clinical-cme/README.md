@@ -1,10 +1,19 @@
-# clinical-cme (version 4.3)
+# clinical-cme (version 4.3.1)
 
 Blinded clinical self-assessment rounds for physicians: single-best-answer questions and
 focused questions on unrelated topics, with their feedback, then one clinical case and its
 feedback — in the mix each learner chooses — graded against current evidence, with a one-minute
 reflection that feeds spaced repetition. Every round is coded (reasoning steps, error types,
 biases, calibration) and periodically analysed in a candid progress review.
+
+## What is new in version 4.3.1
+
+- A round keeps the date it was played on when the reflection arrives on a later day (before,
+  its schedule shifted by the delay).
+- Stage 2 of a case is assembled from the results bank alone; the examiner no longer opens the
+  case's key before the final answers.
+- Testing mode ("testing mode on"): a 30-second check at the end of each round and an automatic
+  check that everything was saved, kept in `data/testing/`.
 
 ## What is new in version 4.3
 
