@@ -16,6 +16,13 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
 - `docs/agents/` — config read by the engineering skills (see below)
 - `docs/adr/` — architecture decision records (created lazily)
 
+## Distribution
+
+The repo root is both the plugin and a single-plugin marketplace (`.claude-plugin/plugin.json`,
+`.claude-plugin/marketplace.json`, `source: "./"`). `plugin.json` deliberately has **no
+`version`**, so every commit on `main` is a new plugin version and reaches installs on update —
+do not add one. Run `claude plugin validate .` after touching either manifest.
+
 ## Working rules
 
 - Version bumps touch `SKILL.md` (heading), `README.md` (skill), and `PAGE_VERSION` in

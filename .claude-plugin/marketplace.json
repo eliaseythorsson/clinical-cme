@@ -1,0 +1,12 @@
+{
+  "name": "clinical-cme",
+  "description": "Elias Eythorsson's clinical CME skill",
+  "owner": { "name": "Elias Eythorsson" },
+  "plugins": [
+    {
+      "name": "clinical-cme",
+      "source": "./",
+      "description": "Blinded clinical self-assessment rounds for physicians (CME)."
+    }
+  ]
+}

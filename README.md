@@ -10,13 +10,14 @@ Current version: **4.2.1**. Full skill documentation: [`skills/clinical-cme/READ
 
 ## Install
 
-Copy `skills/clinical-cme/` into your skills folder, or zip it and upload it as a skill:
+This repo is a Claude plugin marketplace with one plugin, `clinical-cme`.
 
-```sh
-cd skills && zip -r clinical-cme.zip clinical-cme
-```
+- **Claude app:** Customize → Plugins → Add marketplace → `eliaseythorsson/clinical-cme`, then install
+  **clinical-cme**. New commits on `main` arrive as plugin updates (click **Update** to pull at once).
+- **Claude Code:** `/plugin install clinical-cme --marketplace eliaseythorsson/clinical-cme`
+- **Without plugins:** copy `skills/clinical-cme/` into your skills folder, or zip and upload it.
 
-The folder holds no personal data; each learner's first run creates their own private store.
+The skill holds no personal data; each learner's first run creates their own private store.
 
 ## Repo layout
 

@@ -1,0 +1,7 @@
+{
+  "name": "clinical-cme",
+  "description": "Blinded clinical self-assessment rounds for physicians: MCQs, focused questions and a full case, with evidence-based feedback, reflection-informed spaced repetition and periodic reasoning review.",
+  "author": { "name": "Elias Eythorsson" },
+  "repository": "https://github.com/eliaseythorsson/clinical-cme",
+  "skills": "./skills/"
+}
