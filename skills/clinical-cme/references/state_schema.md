@@ -1,6 +1,6 @@
 # State, round JSON, reflection JSON and spacing rules
 
-The ledger (`data/state.json`; `cme/state` in a database store) is the learner's scheduling
+The ledger (`data/state.json`) is the learner's scheduling
 memory: one JSON document, read to a file and written from a file (`store.md` §4). Change it only through `scripts/cme.py`.
 
 ## 1. State layout (schema 4)
@@ -19,7 +19,7 @@ memory: one JSON document, read to a file and written from a file (`store.md` §
              "intervals_days": [1, 3, 7, 16, 35, 90], "new_topics_per_round": 1,
              "lab_units": "SI", "blood_gas_units": "mmHg", "guideline_region": "Iceland/Europe",
              "item_order": "mcqs_first", "helpers": true, "prepare_ahead": true,
-             "show_coding": true, "reminders": false, "mirror": null,
+             "show_coding": true, "reminders": false,
              "resource_preferences": {"free_only": false, "formats": ["guidelines"]}},
   "review": {"last": null, "next_due": "2026-11-19", "period_start": "2026-10-08"},
   "blueprint": {"CARD": {"name": "Cardiology", "weight": 1.0, "topics": {"CARD-01": "Acute coronary syndrome"}}},
@@ -56,8 +56,8 @@ the author chooses guidelines by them and the examiner grades by them.
 
 Round mix: `mcqs` (0–10), `focused` (0–6) and `case` (true/false); at least one item.
 `round_set_at` marks the last change of the mix (setup, a chat `settings` change, or a page
-setting applied). The learner can also change the mix on their page; the page stores it in its
-database as `cme/prefs` (§7), and the next round applies it.
+setting applied). The learner can also change the mix on their page; the page stores it as its
+own settings document, `cme/prefs` (§7), and the next round applies it.
 
 A session entry:
 
@@ -211,38 +211,36 @@ survive in `agg`. The verbatim detail is in the session documents, which are nev
 | `start STATE --out PLAN [--prefs J] [--prepared PREPARED.json [--work-dir D]] [plan options]` | Session start: `status` and `plan` in one call. Prints the neutral status with the plan's counts (MCQs, focused, case, `estimated_minutes`) under `plan`, plus `helpers`, `prepare_ahead` and `speed_settings_new`. No topic names. `--prefs` is the page's `cme/prefs` document (§7); `page_settings_applied` says when it changed the mix. `--prepared` is the store's `data/prepared.json` (§8): when it still fits, `prepared.used` is true, `present` holds the first part's text to send (`prepared.present_block` says which), the plan is written to `--out` and the drafted files (`prepared.ready`: `sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) beside it (or into `--work-dir`); otherwise `prepared.why` says why not and the round is planned as usual. |
 | `present SEALED… --block questions\|case\|stage2` | Print only the text the learner is to see from sealed files (one `present` block), so it can be sent without opening the keys. |
 | `save STATE --round R.json --sealed F… --answers A.md [--feedback-questions FQ.md] --feedback FB.md [--index IDX] [--prefs J] [--page INDEX.html] --out-dir D` | First save after the final feedback: `record` + session document (part A assembled in the order of the round from the sealed `present` blocks, the answers, the questions' feedback and the final feedback; or `--md A.md`) + index + an emptied `data/prepared.json`. Prints what `record` prints plus `files`. Pass the same `--prefs` as to `start` so the mix is kept in the ledger. `--page` is the learner's current `index.html`: if it is older than the skill's template, `files` also holds the new `index.html` (`page_upgraded`). |
-| `close STATE --reflection R.json --md B.md --doc SESSION.json [--index IDX] --out-dir D` | Second save: `reflect` + part B into the session document + index; also `B.json` for database stores (`db_update`). |
+| `close STATE --reflection R.json --md B.md --doc SESSION.json [--index IDX] --out-dir D` | Second save: `reflect` + part B into the session document + index. |
 | `addendum --doc SESSION.json --md ADD.md --out-dir D` | Append later discussion to a session document. |
 | `prepare STATE --out NEXT_PLAN [--if-needed PREPARED.json] [--allow-unreflected]` | After the close: plan the next round (as of tomorrow) from the closed ledger. Prints counts only, or `"prepare": false` with the reason (setting off, reflection pending, or — with `--if-needed` — a usable round is already prepared). `--allow-unreflected` plans although the last session has no reflection yet (the scheduled task uses it). |
 | `stash STATE --plan NEXT_PLAN --dir DRAFTS --out-dir D` | Pack that plan and the files drafted for it in `DRAFTS` (`sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) into `data/prepared.json` (§8). The first part's sealed file must be there; a missing case is a warning (it is then written at the next session). |
 | `place STATE [--index IDX] [--page INDEX.html] --out-dir D` | Put a ledger made by `init`, `settings`, `review` or `snooze` into the file layout, with the index (and the page if it is out of date, as for `save`). |
 | `review-doc --md REPORT.md [--headline H --state S --index IDX] --out-dir D` | A review report as `data/reviews/<date>.json`, added to the index. |
-| `import EXPORT.json\|FOLDER --out-dir D` | A page export, or a folder of database documents, into the file layout (`store.md` §6). |
+| `import EXPORT.json --out-dir D` | A page export into the file layout (`store.md` §6, a damaged ledger). |
 | `reindex ROOT` | Rebuild `ROOT/data/index.json` from the session and review files and the ledger. |
 | `status STATE` | Start of session: neutral JSON (next id, last session and whether its reflection is pending, due counts, review due, pending errata, round shape). No topic names. |
 | `plan STATE --out PLAN [--mcqs N --focused N --no-case --domain CODE --no-new --allow-repeat --no-drill --prefs J]` | Choose the round: topic IDs, labels, reasons, drill, `already_used`, recent cases, `aspect_hint` for focused items. Prints only counts. `--mcqs`, `--focused` and `--no-case` change this round only. |
 | `record STATE --round ROUND.json --out NEXT` | Apply a graded round (reflection pending if absent). Prints per-topic next due, warnings, `errata_to_log`. |
 | `reflect STATE --reflection R.json --out NEXT [--session ID]` | Re-apply the last unreflected session with its reflection. |
-| `doc --part A --md A.md --round ROUND [--id S0042] --out A.json` / `doc --part B --md B.md --out B.json` | Session-document JSON for `set` / `update`. |
+| `doc --part A --md A.md --round ROUND [--id S0042] --out A.json` / `doc --part B --md B.md --out B.json` | The session document, or its part B, as JSON (single steps of `save` and `close`). |
 | `stats STATE` | Review figures: period, previous period, all time; gaps, calibration, teaching points unchecked, blind spots. |
 | `review STATE --review REVIEW.json --out NEXT` | Record a review; closes the period. |
 | `snooze STATE --days 7 --out NEXT` | Postpone a due review. |
 | `settings STATE [--config J] [--profile J] [--blueprint FILE] --out NEXT` | Change settings. A change to `mcqs`, `focused` or `case` is checked (at least one item) and supersedes any older page setting. |
 | `init --profile J --config J --blueprint FILE --out STATE` | First-run creation. |
-| `migrate-v3 LEDGER --blueprint FILE --out STATE [--sessions-dir DIR]` | Convert a version-3 ledger. |
-| `unescape FILE --out FILE` | Undo the Markdown escaping some Google Drive tools add (accepts the saved tool-result JSON). |
 | `blueprint-md FILE --out BP.json` | Convert a Markdown blueprint. |
 | `validate STATE` | Structural check. |
 
 Add `--today YYYY-MM-DD` (before the command) to fix the date. Every command that writes for the
-store prints `files`: local `path`, file-store path `as`, database path `db_path`. Commands that write take `--out`; never write over the
+store prints `files`: local `path` and store path `as`. Commands that write take `--out`; never write over the
 file you read in the same step, so a failed write can be retried from it.
 
 ## 7. Page settings (`cme/prefs`)
 
 The page's Settings tab lets the learner switch MCQs, focused questions and the case on or off
-and set the counts. The page cannot rewrite the ledger, so it writes one small document to its
-own database:
+and set the counts. The page cannot rewrite the ledger, so it writes one small document of its
+own:
 
 ```json
 {"round": {"mcqs": 2, "focused": 1, "case": true}, "base": "2026-10-08T09:12:00Z", "updated": "2026-11-06T21:40:12.512Z"}

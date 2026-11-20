@@ -1,6 +1,6 @@
 # The session log: one document per round
 
-`data/sessions/S0042.json` in the store (`sessions/S0042` in a database store) is the full
+`data/sessions/S0042.json` in the store is the full
 record of a round. The artifact page lists these
 documents, searches them by title, tags and text, and renders the transcript. The ledger stays
 the compact memory that drives scheduling; the log is the record.

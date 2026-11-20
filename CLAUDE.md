@@ -12,7 +12,6 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
   - `scripts/cme.py` — the state engine (Python 3.8+, standard library only)
   - `references/` — store, schema, case design, feedback, analysis, logging, review, onboarding
   - `templates/` — learner page (`page.html`), default blueprint, resource library
-  - `legacy/` — version-3 scripts, used only for migration
 - `tests/` — pytest suite for `cme.py` (`conftest.py` runs it the way the assistant does)
 - `sim/` — simulation harness (`simulate.py`, personas, saved reports); run with `/simulate`,
   procedure in `sim/README.md`. Run folders (`sim/runs/`) are never committed

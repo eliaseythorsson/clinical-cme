@@ -1,17 +1,15 @@
-# First-run setup, migration from version 3, and FAQ
+# First-run setup and FAQ
 
 ## When this applies
 
 - **New learner**: no store found (`store.md` §3) and the learner confirms they have not
   used the skill before. Run the setup (about five minutes): welcome (§1) → settings (§2) →
   create the ledger and the page (§3) → reminders and first round (§4).
-- **Existing learner on version 3** (files in Google Drive or on a computer): migrate once
-  (`store.md` §7), then continue with the normal session. Say in three lines what changed (§6).
 - **On request**: "set up", "how does this work", "FAQ", "change my settings".
 
 Ask before assuming someone is new: "I can't find your Clinical CME data. Have you used this
 before? If you have, paste the link of your Clinical CME page, tell me the folder your CME files
-are in, attach your `state.json`, or tell me your files were in Google Drive (version 3)."
+are in, or attach your `state.json`."
 
 ## 1. Welcome (show this, lightly adapted)
 
@@ -128,10 +126,10 @@ alternate instead. The learner can always pick other numbers.
 ## 3. Create the ledger and the page
 
 `store.md` §5: `cme.py init` with the answers (the config holds `mcqs`, `focused`, `case`), `cme.py place`, then create the store: where the
-app can host a private page with files (store A), publish `templates/page.html` with the ledger
-files as the page "Clinical CME" and pin it; otherwise a folder the learner names (C) or files
-they keep (D). Ask which only if more than one is possible and the learner has a preference;
-default to A. Blueprint: `templates/blueprint.json` for internal/hospital medicine; for another
+app can host a private page with files, publish `templates/page.html` with the ledger
+files as the page "Clinical CME" and pin it; otherwise a folder the learner names or files
+they keep. Ask which only if more than one is possible and the learner has a preference;
+default to the page. Blueprint: `templates/blueprint.json` for internal/hospital medicine; for another
 specialty draft one in the same shape (domains with weights, topics with stable IDs such as
 `PEDS-01`) from that specialty's core-competency or board outline and show the domain list for a
 quick check before saving. Lower weights for domains that do not fit the practice setting.
@@ -142,7 +140,7 @@ Tell the learner (show this):
 > you are signed in; nothing to download or attach. Please keep the page's title as it is — that
 > is how the skill finds it. Everything in it can be exported at any time.
 
-(For a folder or files you keep, say where they are and, for D, to attach `state.json` and
+(For a folder or files you keep, say where they are and, for files they keep, to attach `state.json` and
 `index.json` at the start of each session.)
 
 ## 4. Finish setup
@@ -221,9 +219,6 @@ starts. With a folder or files you keep, use a device that can reach them.
 the ledger (scores, due dates, gaps, coded errors, settings) and one document per session, word
 for word. Nothing is shared unless you share the page. "Give me my data" exports it all.
 
-**Can I keep copies in Google Drive?** Yes: "mirror my sessions to Google Drive" creates a Google
-Doc per session as well. The page stays the record.
-
 **How do I find an old case?** Open the page and search, or ask: "find my cases on sepsis".
 
 **Can I use the cases for teaching?** Yes: "make S0042 into a teaching case" gives a student
@@ -255,17 +250,3 @@ recorded and the same topics come back next time.
 
 **Does this count as CME credit?** Not on its own; the review can summarise time and topics for
 a self-directed-learning record. Check your regulator's rules.
-
-## 6. What changed from version 3 (say this once to a migrated learner)
-
-- The ledger and log now live in your own private Clinical CME page (pinned), so rounds work
-  from any device and start in under a minute; no journal replay, no downloads.
-- Past sessions were imported with their scores, gaps and coding; links to your old session
-  documents in Drive are kept on the page. Transcripts can be imported too (offer it).
-- Everything else — blind rounds, MCQs first, coded feedback, reflection, reviews, drills,
-  errata — works as before.
-- Version 4.2 adds focused questions and a "What goes into a round" switch in the page's
-  Settings; existing rounds are unchanged until you turn them on.
-- Version 4.3 gives the short questions their feedback before the case, removes most of the
-  waiting (each round is written ahead, sources are checked while you answer), and separates
-  the author of the questions from the examiner who grades them.
