@@ -18,7 +18,8 @@ memory: one JSON document, read to a file and written from a file (`store.md` §
              "feedback_depth": "detailed", "target_sessions_per_week": 3, "review_interval_days": 42,
              "intervals_days": [1, 3, 7, 16, 35, 90], "new_topics_per_round": 1,
              "lab_units": "SI", "blood_gas_units": "mmHg", "guideline_region": "Europe",
-             "item_order": "mcqs_first", "show_coding": true, "reminders": false, "mirror": null,
+             "item_order": "mcqs_first", "helpers": true, "prepare_ahead": true,
+             "show_coding": true, "reminders": false, "mirror": null,
              "resource_preferences": {"free_only": false, "formats": ["guidelines"]}},
   "review": {"last": null, "next_due": "2026-11-19", "period_start": "2026-10-08"},
   "blueprint": {"CARD": {"name": "Cardiology", "weight": 1.0, "topics": {"CARD-01": "Acute coronary syndrome"}}},
@@ -37,6 +38,15 @@ memory: one JSON document, read to a file and written from a file (`store.md` §
   "errata": [], "pending_errata": [], "teaching_point_checks": {}, "unreflected": null
 }
 ```
+
+Order: `item_order` `mcqs_first` (the default) runs short questions → their feedback → case →
+its feedback; `case_first` puts the case first and all feedback at the end. Speed settings:
+`helpers` (where the app has helper agents: an author agent writes the items, a checker
+verifies the evidence while the learner answers, and the conversation grades; SKILL.md,
+"Roles") and `prepare_ahead` (the whole next round is written and source-checked after each close, §8);
+`prepare_task` (false by default: the learner has a scheduled task that does the same
+preparation whenever no round is ready). Both are on unless the learner turns them off; ledgers older than 4.3 get them
+at their next save, and `start` reports `speed_settings_new` until then.
 
 Round mix: `mcqs` (0–10), `focused` (0–6) and `case` (true/false); at least one item.
 `round_set_at` marks the last change of the mix (setup, a chat `settings` change, or a page
@@ -192,10 +202,13 @@ survive in `agg`. The verbatim detail is in the session documents, which are nev
 
 | Command | Use |
 |---|---|
-| `start STATE --out PLAN [--prefs J] [plan options]` | Session start: `status` and `plan` in one call. Prints the neutral status with the plan's counts (MCQs, focused, case, `estimated_minutes`) under `plan`. No topic names. `--prefs` is the page's `cme/prefs` document (§7); `page_settings_applied` says when it changed the mix. |
-| `save STATE --round R.json --sealed F… --answers A.md --feedback FB.md [--index IDX] [--prefs J] [--page INDEX.html] --out-dir D` | First save after the feedback: `record` + session document (part A assembled from the sealed `present` blocks, the answers and the feedback; or `--md A.md`) + index. Prints what `record` prints plus `files`. Pass the same `--prefs` as to `start` so the mix is kept in the ledger. `--page` is the learner's current `index.html`: if it is older than the skill's template, `files` also holds the new `index.html` (`page_upgraded`). |
+| `start STATE --out PLAN [--prefs J] [--prepared PREPARED.json [--work-dir D]] [plan options]` | Session start: `status` and `plan` in one call. Prints the neutral status with the plan's counts (MCQs, focused, case, `estimated_minutes`) under `plan`, plus `helpers`, `prepare_ahead` and `speed_settings_new`. No topic names. `--prefs` is the page's `cme/prefs` document (§7); `page_settings_applied` says when it changed the mix. `--prepared` is the store's `data/prepared.json` (§8): when it still fits, `prepared.used` is true, `present` holds the first part's text to send (`prepared.present_block` says which), the plan is written to `--out` and the drafted files (`prepared.ready`: `sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) beside it (or into `--work-dir`); otherwise `prepared.why` says why not and the round is planned as usual. |
+| `present SEALED… --block questions\|case\|stage2` | Print only the text the learner is to see from sealed files (one `present` block), so it can be sent without opening the keys. |
+| `save STATE --round R.json --sealed F… --answers A.md [--feedback-questions FQ.md] --feedback FB.md [--index IDX] [--prefs J] [--page INDEX.html] --out-dir D` | First save after the final feedback: `record` + session document (part A assembled in the order of the round from the sealed `present` blocks, the answers, the questions' feedback and the final feedback; or `--md A.md`) + index + an emptied `data/prepared.json`. Prints what `record` prints plus `files`. Pass the same `--prefs` as to `start` so the mix is kept in the ledger. `--page` is the learner's current `index.html`: if it is older than the skill's template, `files` also holds the new `index.html` (`page_upgraded`). |
 | `close STATE --reflection R.json --md B.md --doc SESSION.json [--index IDX] --out-dir D` | Second save: `reflect` + part B into the session document + index; also `B.json` for database stores (`db_update`). |
 | `addendum --doc SESSION.json --md ADD.md --out-dir D` | Append later discussion to a session document. |
+| `prepare STATE --out NEXT_PLAN [--if-needed PREPARED.json] [--allow-unreflected]` | After the close: plan the next round (as of tomorrow) from the closed ledger. Prints counts only, or `"prepare": false` with the reason (setting off, reflection pending, or — with `--if-needed` — a usable round is already prepared). `--allow-unreflected` plans although the last session has no reflection yet (the scheduled task uses it). |
+| `stash STATE --plan NEXT_PLAN --dir DRAFTS --out-dir D` | Pack that plan and the files drafted for it in `DRAFTS` (`sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) into `data/prepared.json` (§8). The first part's sealed file must be there; a missing case is a warning (it is then written at the next session). |
 | `place STATE [--index IDX] [--page INDEX.html] --out-dir D` | Put a ledger made by `init`, `settings`, `review` or `snooze` into the file layout, with the index (and the page if it is out of date, as for `save`). |
 | `review-doc --md REPORT.md [--headline H --state S --index IDX] --out-dir D` | A review report as `data/reviews/<date>.json`, added to the index. |
 | `import EXPORT.json\|FOLDER --out-dir D` | A page export, or a folder of database documents, into the file layout (`store.md` §6). |
@@ -235,3 +248,32 @@ it is applied once, and a later change made in a chat (which sets a new `round_s
 over an older page setting. No clocks are compared. An invalid document is ignored with a
 warning, never fatal. The page shows a saved setting as "applies from your next round" until a
 round has applied it.
+
+## 8. The prepared round (`data/prepared.json`)
+
+```json
+{"v": 2, "gen": 23, "made": "2026-11-20", "session_id": "S0023",
+ "counts": {"mcqs": 2, "focused": 1, "case": 1},
+ "has": ["questions", "case", "kit_questions", "kit_case"], "payload": "<compressed, base64>"}
+```
+
+Written by `stash` after a close; `payload` holds the next round's plan and everything
+written for it: the sealed short questions and the sealed case (keys, results bank,
+verification lists, `present` blocks), the two feedback kits and the two evidence files from
+the check, packed so that nobody reads
+them by accident: they are in the learner's own store. `{"v": 1, "empty": true}` means
+there is none; `save` and `place` write that, so the file always exists.
+
+`start --prepared` uses it only when all of this holds, and otherwise plans afresh:
+
+- the ledger is the one it was made from (`gen` and `next_id` unchanged: no round, review or
+  settings change since);
+- the round mix is the same, and no one-off option (`--mcqs`, `--focused`, `--no-case`,
+  `--domain`, `--no-new`, …) was given;
+- it is at most 30 days old;
+- none of its topics was tested today.
+
+The plan is made as of the day after the close, so everything in it is due by any later day.
+Whatever part a prepared round lacks (`prepared.ready` lists what it has) is written at the
+session, from the same plan, while the learner answers the part that is there.
+

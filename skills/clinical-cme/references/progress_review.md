@@ -115,3 +115,10 @@ context changes a finding.
   review date is set from the interval.
 
 3. **Close** with one line on what changes from now on.
+
+## After the review is saved
+
+Recording a review changes the ledger, which sets aside any round prepared ahead. If the
+review ran at the end of a session, prepare the next round now, from the ledger the review
+wrote (SKILL.md, turn 5, "prepare the next round"), after your last message of the review.
+

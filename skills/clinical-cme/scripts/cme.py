@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""clinical-cme v4.2 state engine (standard library only, Python 3.8+).
+"""clinical-cme v4.3 state engine (standard library only, Python 3.8+).
 
 The learner's scheduling memory is ONE JSON document, the state; each round also has a session
 document, and an index lists the sessions for the page. This script never talks to a store or
@@ -9,12 +9,19 @@ command that writes takes --out or --out-dir and prints, for each file, its stor
 e.g. data/state.json) and its database path ("db_path", e.g. cme/state).
 
 Session (fast path):
-  start   STATE --out PLAN [plan options] [--prefs J]   neutral status + plan in one call (no topics)
-  save    STATE --round R.json --sealed F.. --answers F.. --feedback FB.md [--index IDX] [--prefs J]
-          [--page LIVE_INDEX.html] --out-dir D    record the graded round + session doc (part A) + index
+  start   STATE --out PLAN [plan options] [--prefs J] [--prepared PREPARED.json]
+                                                  neutral status + plan in one call (no topics); with a
+                                                  valid prepared round, also the questions to present
+  save    STATE --round R.json --sealed F.. --answers F.. [--feedback-questions FQ.md] --feedback FB.md
+          [--index IDX] [--prefs J] [--page LIVE_INDEX.html] --out-dir D
+                                                  record the graded round + session doc (part A) + index
   close   STATE --reflection R.json --md B.md --doc SESSION.json [--index IDX] --out-dir D
                                                   apply the reflection + part B + index
   addendum --doc SESSION.json --md ADD.md --out-dir D
+  prepare STATE --out NEXT_PLAN [--if-needed PREPARED.json] [--allow-unreflected]
+                                                  after the close: plan the NEXT round (prints counts only)
+  stash   STATE --plan NEXT_PLAN --dir DRAFTS --out-dir D   keep the round drafted for it for the next start
+  present SEALED.. --block questions|case|stage2  print only the text to show the learner
 
 Other:
   status  STATE | plan STATE --out PLAN | record | reflect | doc   (single steps; used by save/close)
@@ -34,6 +41,7 @@ Other:
 Add `--today YYYY-MM-DD` before the command to fix the date.
 """
 import argparse
+import base64
 import datetime as dt
 import json
 import os
@@ -41,6 +49,7 @@ import random
 import re
 import sys
 import tempfile
+import zlib
 
 SCHEMA = 4
 PAGE_VERSION = "4.2.1"   # templates/page.html carries <meta name="cme-page-version" content="4.2.1">
@@ -60,7 +69,11 @@ DEFAULT_CONFIG = {
     "lab_units": "SI",
     "blood_gas_units": "mmHg",
     "guideline_region": "Europe",
-    "item_order": "mcqs_first",
+    "item_order": "mcqs_first",          # mcqs_first: questions -> their feedback -> case -> its feedback
+    "helpers": True,                     # helper agents where the app has them: an author drafts the items, a
+                                         # checker verifies the evidence; the conversation grades
+    "prepare_ahead": True,               # draft the whole next round after each close
+    "prepare_task": False,               # a scheduled task also prepares the round when none is ready
     "show_coding": True,
     "reminders": False,
     "mirror": None,                      # null | "gdrive": also create a Google Doc per session
@@ -104,6 +117,7 @@ GENERIC_WORDS = {"acute", "chronic", "disease", "disorder", "disorders", "manage
                  "hospital"}
 
 # Caps that keep the state small (it is read and written whole every session).
+PREPARED_MAX_AGE_DAYS = 30
 CAP_SESSIONS = 50        # current-period sessions kept in full
 CAP_PREVIOUS = 60        # older sessions kept in compact form
 CAP_HISTORY = 8          # per-topic history rows
@@ -801,6 +815,7 @@ def cmd_plan(args, st=None):
         "lab_units": cfg.get("lab_units"), "blood_gas_units": cfg.get("blood_gas_units"),
         "guideline_region": cfg.get("guideline_region"), "session_minutes": cfg.get("session_minutes"),
         "feedback_depth": cfg.get("feedback_depth"), "show_coding": cfg.get("show_coding", True),
+        "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
         "profile": {k: st["profile"].get(k) for k in ("role", "specialty", "subspecialty",
                                                         "practice_setting", "notes")},
         "recent_cases_any_topic": used_cases[-15:],
@@ -809,7 +824,8 @@ def cmd_plan(args, st=None):
         "note": "Blind: do not reveal topics, domains, reasons or the drill before all answers are "
                 "in. Make every vignette and stem clearly different from already_used and "
                 "recent_cases_any_topic (patient, setting, presentation, twist). MCQs and focused "
-                "questions are presented together, before the case.",
+                "questions are presented together and get their feedback before the case is shown; "
+                "neither they nor their feedback may cue the case.",
     }
     with open(args.out, "w", encoding="utf-8") as fh:
         json.dump(plan, fh, indent=1, ensure_ascii=False)
@@ -1231,6 +1247,8 @@ def cmd_record(args):
                     s["reflection"] = {"skipped": True}
                     st["agg"]["reflection_skipped"] += 1
         st["unreflected"] = None
+    for k in ("helpers", "prepare_ahead"):       # speed settings (4.3): on unless the learner turns them off
+        st["config"].setdefault(k, DEFAULT_CONFIG[k])
     snap = snapshot(st)
     entry, summary, warnings, errata_ids = apply_round(st, rnd, today)
     if rnd.get("reflection") is None:
@@ -1801,6 +1819,7 @@ def cmd_validate(args):
 # use the matching document paths (cme/state, sessions/<id>, reviews/<date>; no index needed).
 STATE_PATH = "data/state.json"
 INDEX_PATH = "data/index.json"
+PREPARED_PATH = "data/prepared.json"     # the next round's short questions, drafted ahead (see cmd_prepare)
 
 
 def session_path(sid):
@@ -1823,6 +1842,8 @@ def db_path_for(rel):
         return "cme/state"
     if rel == INDEX_PATH:
         return None
+    if rel == PREPARED_PATH:
+        return "cme/prepared"
     m = re.match(r"data/(sessions|reviews)/(.+)\.json$", rel)
     return "%s/%s" % (m.group(1), m.group(2)) if m else None
 
@@ -1922,9 +1943,13 @@ def status_dict(st, path, today):
         "drills_active": len(st.get("drills") or []),
         "round": {"mcqs": cfg.get("mcqs", 3), "focused": cfg.get("focused", 0), "case": bool(cfg.get("case", True)),
                   "minutes": cfg.get("session_minutes"), "item_order": cfg.get("item_order")},
+        "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
+        "prepare_task": bool(cfg.get("prepare_task", False)),
         "mirror": cfg.get("mirror"),
         "reminders": cfg.get("reminders"),
         "bytes": os.path.getsize(path),
+        # true until the first save with version 4.3: tell the learner once about the speed settings
+        "speed_settings_new": "helpers" not in cfg or "prepare_ahead" not in cfg,
     }
 
 
@@ -1943,7 +1968,15 @@ def cmd_start(args):
     if prefs_warn:
         status["warnings"] = prefs_warn
     plan_out = None
-    if not status["onboarding_needed"]:
+    prepared = None
+    if getattr(args, "prepared", None) and not status["onboarding_needed"]:
+        prepared = take_prepared(args, st, today)
+        status["prepared"] = {k: v for k, v in prepared.items()
+                              if k in ("used", "why", "made", "ready", "present_block", "work_dir")}
+        if prepared["used"]:
+            plan_out = prepared["summary"]
+            status["present"] = prepared["present"]
+    if not status["onboarding_needed"] and plan_out is None:
         buf = io.StringIO()
         try:
             with contextlib.redirect_stdout(buf):
@@ -1959,6 +1992,203 @@ def cmd_start(args):
     print(json.dumps(status, ensure_ascii=False))
 
 
+# ---------------------------------------------------------------- prepared round (drafted ahead)
+
+def pack(obj):
+    """Not readable at a glance: the prepared round sits in the learner's own store."""
+    return base64.b64encode(zlib.compress(json.dumps(obj, ensure_ascii=False).encode("utf-8"), 9)).decode("ascii")
+
+
+def unpack(text):
+    return json.loads(zlib.decompress(base64.b64decode(text)).decode("utf-8"))
+
+
+def plan_counts(st, args=None):
+    cfg = st["config"]
+    return {"mcqs": int(cfg.get("mcqs", 3) or 0), "focused": int(cfg.get("focused", 0) or 0),
+            "case": 1 if cfg.get("case", True) else 0}
+
+
+def cmd_prepare(args):
+    """After the close: plan the NEXT round as of tomorrow, so that the whole round (short
+    questions, case, feedback notes) can be drafted now and the next session starts with
+    nothing to write. Prints counts only."""
+    import contextlib
+    import io
+    today = today_from(args)
+    st = load_json(args.state)
+    check_schema(st)
+    cfg = st["config"]
+    why = None
+    if not cfg.get("prepare_ahead", True):
+        why = "prepare_ahead is off"
+    elif st.get("unreflected") and not args.allow_unreflected:
+        why = "the last session is still waiting for its reflection"
+    elif args.if_needed and prepared_fits(args.if_needed, st, today):
+        why = "a round is already prepared"
+    if why:
+        print(json.dumps({"ok": True, "prepare": False, "why": why}))
+        return
+    ns = argparse.Namespace(state=args.state, out=args.out, today=iso(today + dt.timedelta(days=1)), prefs=None,
+                            focused=None, mcqs=None, no_case=False, domain=None, no_new=False,
+                            allow_repeat=False, no_drill=False, force_drill=False, seed=None)
+    buf = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(buf):
+            cmd_plan(ns, st)
+    except SystemExit:
+        sys.stdout.write(buf.getvalue())
+        raise
+    summary = json.loads(buf.getvalue().strip().splitlines()[-1])
+    plan = load_json(args.out)
+    plan["prepared"] = {"gen": st.get("gen"), "made": iso(today), "session_id": st.get("next_id")}
+    save_json(plan, args.out)
+    summary.update({"prepare": True, "gen": st.get("gen"),
+                    "note": "Sealed: have the whole round drafted for this plan into one folder "
+                            "(sealed_questions.md, sealed_case.md, kit_questions.md, kit_case.md), "
+                            "then run stash --dir on it."})
+    print(json.dumps(summary, ensure_ascii=False))
+
+
+PREPARED_FILES = ("sealed_questions.md", "sealed_case.md", "kit_questions.md", "kit_case.md",
+                  "evidence_questions.md", "evidence_case.md")
+
+
+def present_blocks(text):
+    return {k: v.strip() for k, v in PRESENT_RE.findall(text or "") if v.strip()}
+
+
+def cmd_stash(args):
+    """Keep the round drafted for next time in the store (data/prepared.json): the plan, the
+    sealed short questions, the sealed case and the feedback notes, whichever were drafted."""
+    st = load_json(args.state)
+    check_schema(st)
+    plan = load_json(args.plan)
+    meta = plan.get("prepared") or {}
+    if meta.get("gen") != st.get("gen"):
+        die("this plan was not made by `prepare` from this ledger (gen %s, ledger %s)" % (meta.get("gen"), st.get("gen")))
+    files = {}
+    for name in PREPARED_FILES:
+        path = os.path.join(args.dir, name)
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as fh:
+                text = fh.read()
+            if text.strip():
+                files[name] = text
+    counts = plan.get("counts") or {}
+    short = (counts.get("mcqs") or 0) + (counts.get("focused") or 0)
+    has, warnings = [], []
+    if present_blocks(files.get("sealed_questions.md")).get("questions"):
+        has.append("questions")
+    if present_blocks(files.get("sealed_case.md")).get("case"):
+        has.append("case")
+    if short and "questions" not in has:
+        die("sealed_questions.md with a <!-- present: questions --> … <!-- /present --> block is missing in %s" % args.dir)
+    if not short and "case" not in has:
+        die("sealed_case.md with a <!-- present: case --> … <!-- /present --> block is missing in %s" % args.dir)
+    if counts.get("case") and "case" not in has:
+        files.pop("sealed_case.md", None); files.pop("kit_case.md", None); files.pop("evidence_case.md", None)
+        warnings.append("no usable sealed_case.md: the case will be drafted at the next session")
+    if not counts.get("case"):
+        files.pop("sealed_case.md", None); files.pop("kit_case.md", None); files.pop("evidence_case.md", None)
+    if "questions" not in has:
+        files.pop("kit_questions.md", None); files.pop("evidence_questions.md", None)
+    has += [n[:-3] for n in PREPARED_FILES[2:] if n in files]
+    os.makedirs(args.out_dir, exist_ok=True)
+    doc = {"v": 2, "gen": st.get("gen"), "made": meta.get("made"), "session_id": st.get("next_id"),
+           "counts": counts, "has": has, "payload": pack({"plan": plan, "files": files})}
+    f = write_out(args.out_dir, PREPARED_PATH, doc)
+    out = {"ok": True, "gen": st.get("gen"), "has": has, "files": [f]}
+    if warnings:
+        out["warnings"] = warnings
+    print(json.dumps(out, ensure_ascii=False))
+
+
+def cmd_present(args):
+    """Print only the text the learner is to see (one present block) from sealed files, so the
+    assistant can send it without opening the keys."""
+    pres = blocks(args.files, PRESENT_RE)
+    body = pres.get(args.block)
+    if not body:
+        die("no <!-- present: %s --> block in %s" % (args.block, ", ".join(args.files)))
+    sys.stdout.write(body.strip() + "\n")
+
+
+def prepared_fits(path, st, today):
+    """Is the prepared round in `path` still usable for this ledger with its normal mix?"""
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            doc = json.load(fh)
+    except (ValueError, OSError):
+        return False
+    made = parse_date(doc.get("made")) if isinstance(doc, dict) else None
+    return bool(isinstance(doc, dict) and doc.get("payload") and doc.get("gen") == st.get("gen")
+                and doc.get("session_id") == st.get("next_id") and doc.get("counts") == plan_counts(st)
+                and made and 0 <= (today - made).days <= PREPARED_MAX_AGE_DAYS)
+
+
+def take_prepared(args, st, today):
+    """Use the round prepared at the last close if it still fits: same ledger generation, same
+    mix, no one-off options, not too old, none of its topics tested today."""
+    def no(why):
+        return {"used": False, "why": why}
+    if not os.path.exists(args.prepared):
+        return no("no prepared round")
+    try:
+        with open(args.prepared, "r", encoding="utf-8") as fh:
+            doc = json.load(fh)
+    except (ValueError, OSError):
+        return no("unreadable")
+    if not isinstance(doc, dict) or not doc.get("payload"):
+        return no("no prepared round")
+    if any((getattr(args, "mcqs", None) is not None, getattr(args, "focused", None) is not None,
+            args.no_case, args.domain, args.no_new, args.allow_repeat, args.no_drill, args.force_drill,
+            args.seed is not None)):
+        return no("one-off options were given for this round")
+    if doc.get("gen") != st.get("gen") or doc.get("session_id") != st.get("next_id"):
+        return no("the ledger changed since it was prepared")
+    if doc.get("counts") != plan_counts(st):
+        return no("the round mix changed")
+    made = parse_date(doc.get("made"))
+    if not made or (today - made).days > PREPARED_MAX_AGE_DAYS or made > today:
+        return no("too old")
+    try:
+        inner = unpack(doc["payload"])
+        plan = inner["plan"]
+        files = inner.get("files") or {"sealed_questions.md": inner["sealed"]}
+    except Exception:
+        return no("unreadable")
+    q_text = present_blocks(files.get("sealed_questions.md")).get("questions")
+    c_text = present_blocks(files.get("sealed_case.md")).get("case")
+    first = q_text or c_text
+    if not first:
+        return no("unreadable")
+    for it in plan.get("items") or []:
+        t = st["topics"].get(it.get("topic") or "")
+        if t and parse_date(t.get("last")) == today:
+            return no("one of its topics was tested today")
+    plan["date"] = iso(today)
+    plan["prepared"] = dict(plan.get("prepared") or {}, used=True)
+    save_json(plan, args.out)
+    work = args.work_dir or os.path.dirname(os.path.abspath(args.out))
+    os.makedirs(work, exist_ok=True)
+    written = []
+    for name in PREPARED_FILES:
+        if files.get(name):
+            with open(os.path.join(work, name), "w", encoding="utf-8") as fh:
+                fh.write(files[name])
+            written.append(name)
+    items = plan.get("items") or []
+    counts = plan.get("counts") or {}
+    summary = {"ok": True, "out": args.out, "items": len(items), "mcqs": counts.get("mcqs"),
+               "focused": counts.get("focused"), "case": counts.get("case"),
+               "case_format": plan.get("case_format"), "estimated_minutes": plan.get("estimated_minutes"),
+               "item_order": plan.get("item_order"), "session_id": st.get("next_id"), "prepared": True}
+    return {"used": True, "made": doc.get("made"), "summary": summary, "ready": written,
+            "present": first, "present_block": "questions" if q_text else "case",
+            "work_dir": os.path.abspath(work)}
+
+
 PRESENT_RE = re.compile(r"<!--\s*present:\s*([a-z0-9_]+)\s*-->\s*\n(.*?)\n?\s*<!--\s*/present\s*-->", re.S)
 ANSWER_RE = re.compile(r"<!--\s*answers:\s*([a-z0-9_]+)\s*-->\s*\n(.*?)\n?\s*<!--\s*/answers\s*-->", re.S)
 PART_A_SECTIONS = {
@@ -1968,6 +2198,7 @@ PART_A_SECTIONS = {
     "a_case": "### Your answers — case (verbatim)",
     "stage2": "### Stage 2 — as presented",
     "a_final": "### Your final answers (verbatim)",
+    "fb_questions": "### Feedback — questions (as sent)",
 }
 
 
@@ -1980,12 +2211,26 @@ def blocks(paths, rx):
     return out
 
 
-def assemble_part_a(sealed, answers, feedback, item_order, warnings):
+def assemble_part_a(sealed, answers, feedback, item_order, warnings, feedback_questions=None):
+    """Part A in the order of the round. With mcqs_first the short questions are graded before
+    the case is shown, so their feedback (if sent on its own) follows their answers."""
     pres = blocks(sealed, PRESENT_RE)
     ans = blocks(answers, ANSWER_RE)
-    with open(feedback, "r", encoding="utf-8") as fh:
-        fb = fh.read().strip()
+    fb = fbq = None
+    if feedback:
+        with open(feedback, "r", encoding="utf-8") as fh:
+            fb = fh.read().strip()
+    if feedback_questions:
+        with open(feedback_questions, "r", encoding="utf-8") as fh:
+            fbq = fh.read().strip() or None
     mcq = [("questions", pres.get("questions")), ("a_questions", ans.get("questions"))]
+    if fbq:
+        if pres.get("questions"):
+            mcq.append(("fb_questions", fbq))
+        else:
+            warnings.append("part A: --feedback-questions given but no <!-- present: questions --> block; "
+                            "it was put before the final feedback")
+            fb = (fbq + "\n\n" + fb) if fb else fbq
     case = [("case", pres.get("case")), ("a_case", ans.get("case"))]
     stage2 = [("stage2", pres.get("stage2")), ("a_final", ans.get("final"))]
     order = (case + mcq + stage2) if item_order == "case_first" else (mcq + case + stage2)
@@ -2006,7 +2251,10 @@ def assemble_part_a(sealed, answers, feedback, item_order, warnings):
             warnings.append("part A: answers '%s' found but no <!-- present: %s --> block in the sealed draft" % (k, p))
     if ans.get("notes"):
         parts.append("### Notes\n\n%s" % ans["notes"])
-    parts.append("### Feedback (as sent)\n\n%s" % fb)
+    if fb:
+        parts.append("### Feedback (as sent)\n\n%s" % fb)
+    else:
+        warnings.append("part A: no final feedback file (--feedback)")
     if not pres:
         warnings.append("part A: the sealed draft has no <!-- present: … --> blocks")
     return "\n\n".join(parts) + "\n"
@@ -2096,10 +2344,11 @@ def cmd_save(args):
         with open(args.md, "r", encoding="utf-8") as fh:
             md = fh.read()
     else:
-        if not args.feedback:
+        if not args.feedback and not args.feedback_questions:
             die("save needs --md A.md, or --sealed … --answers … --feedback FEEDBACK.md")
         md = assemble_part_a(args.sealed, args.answers, args.feedback,
-                             rnd.get("item_order") or st_in["config"].get("item_order"), warnings)
+                             rnd.get("item_order") or st_in["config"].get("item_order"), warnings,
+                             args.feedback_questions)
     tmp_state = os.path.join(args.out_dir, ".record.json")
     rec = run_quiet(cmd_record, argparse.Namespace(state=state_path, round=json.dumps(rnd), out=tmp_state,
                                                    today=args.today))
@@ -2113,6 +2362,7 @@ def cmd_save(args):
     idx = load_index(args.index, st_in)
     index_put_session(idx, doc)
     files.append(write_out(args.out_dir, INDEX_PATH, finish_index(idx, st)))
+    files.append(write_out(args.out_dir, PREPARED_PATH, {"v": 1, "empty": True}))
     with open(os.path.join(args.out_dir, "A.md"), "w", encoding="utf-8") as fh:
         fh.write(md)
     pf = page_upgrade(args.out_dir, args.page, warnings)
@@ -2272,6 +2522,7 @@ def cmd_place(args):
     if not args.no_index:
         idx = load_index(args.index, st)
         files.append(write_out(args.out_dir, INDEX_PATH, finish_index(idx, st)))
+        files.append(write_out(args.out_dir, PREPARED_PATH, {"v": 1, "empty": True}))
     out = {"ok": True, "gen": st.get("gen"), "files": files}
     warnings = []
     pf = page_upgrade(args.out_dir, args.page, warnings)
@@ -2296,9 +2547,11 @@ def main(argv=None):
     s.add_argument("--mcqs", type=int); s.add_argument("--no-case", action="store_true")
     s.add_argument("--domain"); s.add_argument("--no-new", action="store_true")
     s.add_argument("--allow-repeat", action="store_true"); s.add_argument("--no-drill", action="store_true")
-    s.add_argument("--force-drill", action="store_true"); s.add_argument("--seed", type=int); s.set_defaults(fn=cmd_start)
+    s.add_argument("--force-drill", action="store_true"); s.add_argument("--seed", type=int)
+    s.add_argument("--prepared"); s.add_argument("--work-dir"); s.set_defaults(fn=cmd_start)
     s = sub.add_parser("save"); s.add_argument("state"); s.add_argument("--round", required=True)
     s.add_argument("--sealed", nargs="+"); s.add_argument("--answers", nargs="+"); s.add_argument("--feedback")
+    s.add_argument("--feedback-questions")
     s.add_argument("--md"); s.add_argument("--index"); s.add_argument("--prefs"); s.add_argument("--page")
     s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_save)
     s = sub.add_parser("close"); s.add_argument("state"); s.add_argument("--reflection", required=True)
@@ -2307,6 +2560,12 @@ def main(argv=None):
     s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_close)
     s = sub.add_parser("addendum"); s.add_argument("--doc", required=True); s.add_argument("--md", required=True)
     s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_addendum)
+    s = sub.add_parser("prepare"); s.add_argument("state"); s.add_argument("--out", required=True)
+    s.add_argument("--if-needed"); s.add_argument("--allow-unreflected", action="store_true"); s.set_defaults(fn=cmd_prepare)
+    s = sub.add_parser("stash"); s.add_argument("state"); s.add_argument("--plan", required=True)
+    s.add_argument("--dir", required=True); s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_stash)
+    s = sub.add_parser("present"); s.add_argument("files", nargs="+"); s.add_argument("--block", required=True)
+    s.set_defaults(fn=cmd_present)
     s = sub.add_parser("reindex"); s.add_argument("root"); s.set_defaults(fn=cmd_reindex)
     s = sub.add_parser("import"); s.add_argument("export"); s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_import)
     s = sub.add_parser("review-doc"); s.add_argument("--md", required=True); s.add_argument("--date"); s.add_argument("--title")

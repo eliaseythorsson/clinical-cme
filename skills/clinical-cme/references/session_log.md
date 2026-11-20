@@ -27,6 +27,7 @@ Markdown, headings exactly as below (a short qualifier after them is fine):
 ```markdown
 ### Questions — as presented
 ### Your answers — questions (verbatim)
+### Feedback — questions (as sent)        (when sent before the case)
 ### Case — as presented
 ### Your answers — case (verbatim)
 ### Stage 2 — as presented                (unfolding cases)
@@ -34,7 +35,10 @@ Markdown, headings exactly as below (a short qualifier after them is fine):
 ### Feedback (as sent)
 ```
 
-Sections follow the order of the round (with `case_first`, the case sections come first). The
+Sections follow the order of the round: the short questions, their answers and their feedback,
+then the case, its answers and the final feedback (with `case_first`, the case sections come
+first and there is one feedback section). `cme.py save` assembles it from the sealed `present`
+blocks, the answer blocks, `--feedback-questions` and `--feedback`. The
 "Questions" sections hold the MCQs and the focused questions together, as they were presented
 and answered; a round without a case has no case sections. Write "None." under a section with
 nothing to report. `cme.py doc --part A` adds the metadata from
