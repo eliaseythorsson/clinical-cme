@@ -53,7 +53,7 @@ import zlib
 
 SCHEMA = 4
 SKILL_VERSION = "4.3.1"
-PAGE_VERSION = "4.2.1"   # templates/page.html carries <meta name="cme-page-version" content="4.2.1">
+PAGE_VERSION = "5.0.0"   # templates/page.html carries <meta name="cme-page-version" content="5.0.0">
 
 DEFAULT_CONFIG = {
     "session_minutes": 20,

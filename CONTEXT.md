@@ -53,6 +53,10 @@ _Avoid_: state (in conversation with the learner)
 **Log**:
 The verbatim, append-only record of every round, one session document each.
 
+**Page**:
+The learner's own view of their store: past sessions, scores, progress reviews, topics already tested and settings. It never names what a coming round will test (no open gaps, no due topics).
+_Avoid_: dashboard
+
 **Gap**:
 A specific point the learner got wrong or flagged as shaky, linked to a blueprint topic, open until an item tests that point and it is answered well.
 

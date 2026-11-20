@@ -171,8 +171,9 @@ is older, add the new `index.html` to `files`. Before the publish that carries i
    If this app cannot declare capabilities, publish anyway: the page then shows the mix and
    says to change it in a chat.
 2. Publish `index.html` with the other files in the same call, as usual.
-3. Tell the learner in one line after the close: "Your Clinical CME page was updated: you can
-   now choose the round mix (MCQs, focused questions, full case) in its Settings tab."
+3. Tell the learner in one line after the close: "Your Clinical CME page was updated: it no
+   longer lists open gaps or upcoming topics, so rounds stay blind; your sessions, scores and
+   progress are all still there."
 
 Store C: copy `index.html` into the folder like the other files. Store D: no page; skip.
 
