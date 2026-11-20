@@ -1,0 +1,762 @@
+#!/usr/bin/env python3
+"""Simulation harness for the clinical-cme skill (ADR 0005). Standard library only.
+
+The LLM part of a simulation runs inside a Claude Code session (no API key): one helper agent is
+the examiner running the skill on a folder store, another plays a learner persona, and the
+session relays between them (see sim/README.md). This script is everything that is not an LLM:
+
+  init     make a run folder: a seeded folder store, a scratch folder, the two agents' briefs
+  send     an agent sends a message to the other side; the time is recorded
+  next     the session asks what to hand to the other agent, and whether to stop
+  check    the automatic checks: blinding, saved files, log complete and verbatim
+  report   checks + waiting time per step, written to sim/reports/ for comparison with later runs
+
+It talks to cme.py only through its command line, as the assistant does.
+"""
+import argparse
+import datetime as dt
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+DEFAULT_SKILL = os.path.join(ROOT, "skills", "clinical-cme")
+ROLES = ("examiner", "learner")
+MAX_LEARNER_MESSAGES = 12          # a round has at most ~6 learner turns; beyond this the run is stuck
+KEY_LINE_MIN = 30                  # shortest key/kit line (normalised characters) searched for verbatim
+OPENING = "Quiz me: today's CME round, please. My Clinical CME folder is {store}"
+
+# Settings every simulated ledger starts with. Helper agents cannot usually start helpers of their
+# own, so the examiner also writes the items; nothing is prepared ahead unless asked for.
+SIM_CONFIG = {"helpers": False, "prepare_ahead": False, "testing": False, "reminders": False}
+
+PRESENT_RE = re.compile(r"<!--\s*present:\s*([a-z0-9_]+)\s*-->\s*\n(.*?)\n?\s*<!--\s*/present\s*-->", re.S)
+BANK_RE = re.compile(r"<!--\s*bank\s*-->\s*\n(.*?)\n?\s*<!--\s*/bank\s*-->", re.S)
+ANSWER_RE = re.compile(r"<!--\s*answers:\s*([a-z0-9_]+)\s*-->\s*\n(.*?)\n?\s*<!--\s*/answers\s*-->", re.S)
+
+# Section headings of the session document (references/session_log.md §2–3).
+SECTIONS_A = [
+    ("questions", "### Questions — as presented", "examiner"),
+    ("a_questions", "### Your answers — questions", "learner"),
+    ("fb_questions", "### Feedback — questions", "examiner"),
+    ("case", "### Case — as presented", "examiner"),
+    ("a_case", "### Your answers — case", "learner"),
+    ("stage2", "### Stage 2 — as presented", "examiner"),
+    ("a_final", "### Your final answers", "learner"),
+    ("notes", "### Notes", None),
+    ("feedback", "### Feedback (as sent)", "examiner"),
+]
+SECTIONS_B = [
+    ("reflection", "### Reflection", "learner"),
+    ("discussion", "### Discussion", None),
+    ("grade_changes", "### Grade changes", None),
+    ("coded", "### Coded analysis", None),
+    ("errata", "### Errata", None),
+]
+GENERIC_WORDS = {"acute", "chronic", "disease", "disorder", "disorders", "management", "issues", "inpatient",
+                 "outpatient", "basics", "common", "general", "emergencies", "emergency", "workup",
+                 "assessment", "syndrome", "therapy", "treatment", "approach", "patient", "complications",
+                 "severe", "infection", "infections", "including", "related", "selection", "control",
+                 "medical", "hospital"}
+
+
+class SimError(Exception):
+    pass
+
+
+# ---------------------------------------------------------------- small helpers
+
+def read(path):
+    with open(path, "r", encoding="utf-8") as fh:
+        return fh.read()
+
+
+def write(path, text):
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text)
+
+
+def read_json(path, default=None):
+    try:
+        return json.loads(read(path))
+    except (OSError, ValueError):
+        return default
+
+
+def write_json(path, obj):
+    write(path, json.dumps(obj, indent=1, ensure_ascii=False) + "\n")
+
+
+def norm(text):
+    """Verbatim comparison ignores only runs of whitespace."""
+    return re.sub(r"\s+", " ", text or "").strip()
+
+
+def excerpt(text, pos, length, pad=50):
+    a, b = max(0, pos - pad), min(len(text), pos + length + pad)
+    return ("…" if a else "") + text[a:b] + ("…" if b < len(text) else "")
+
+
+def rp(run, *parts):
+    return os.path.join(run, *parts)
+
+
+def run_cme(skill, *args):
+    cme = os.path.join(skill, "scripts", "cme.py")
+    r = subprocess.run([sys.executable, cme, *args], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise SimError("cme.py %s failed: %s" % (args[0], (r.stderr or r.stdout).strip()[:500]))
+    return r.stdout
+
+
+def git_commit():
+    try:
+        r = subprocess.run(["git", "-C", ROOT, "rev-parse", "--short", "HEAD"], capture_output=True, text=True)
+        return r.stdout.strip() or None
+    except OSError:
+        return None
+
+
+def skill_version(skill):
+    try:
+        m = re.search(r"\(version ([0-9.]+)\)", read(os.path.join(skill, "SKILL.md")))
+        return m.group(1) if m else None
+    except OSError:
+        return None
+
+
+# ---------------------------------------------------------------- transcript
+
+def load_events(run):
+    path = rp(run, "transcript.jsonl")
+    if not os.path.exists(path):
+        raise SimError("%s is not a simulation run folder (no transcript.jsonl)" % run)
+    return [json.loads(line) for line in read(path).splitlines() if line.strip()]
+
+
+def append_event(run, ev):
+    with open(rp(run, "transcript.jsonl"), "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(ev, ensure_ascii=False) + "\n")
+
+
+def load_messages(run):
+    """The messages in order, each with its text."""
+    out = []
+    for ev in load_events(run):
+        if ev.get("role") in ROLES and "n" in ev:
+            ev = dict(ev)
+            ev["text"] = read(rp(run, ev["file"]))
+            out.append(ev)
+    return out
+
+
+def record_message(run, role, text, ts=None):
+    msgs = [e for e in load_events(run) if "n" in e]
+    n = len(msgs) + 1
+    rel = "messages/%03d-%s.md" % (n, role)
+    write(rp(run, rel), text)
+    ev = {"n": n, "role": role, "ts": time.time() if ts is None else ts, "file": rel, "chars": len(text)}
+    append_event(run, ev)
+    return ev
+
+
+# ---------------------------------------------------------------- init
+
+def persona_parts(name):
+    path = name if os.path.isfile(name) else os.path.join(HERE, "personas", name + ".md")
+    if not os.path.isfile(path):
+        raise SimError("no persona '%s' (looked for %s)" % (name, path))
+    text = read(path)
+    m = re.search(r"```json\s*\n(.*?)\n```", text, re.S)
+    try:
+        profile = json.loads(m.group(1)) if m else {}
+    except ValueError as e:
+        raise SimError("the ledger profile in %s is not valid JSON: %s" % (path, e))
+    return os.path.abspath(path), os.path.splitext(os.path.basename(path))[0], profile
+
+
+def fill(template, values):
+    for k, v in values.items():
+        template = template.replace("{" + k + "}", v)
+    return template
+
+
+def cmd_init(args):
+    persona_path, persona, profile = persona_parts(args.persona)
+    skill = os.path.abspath(args.skill or DEFAULT_SKILL)
+    if not os.path.isfile(os.path.join(skill, "scripts", "cme.py")):
+        raise SimError("no skill at %s" % skill)
+    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    run = os.path.abspath(args.run or os.path.join(HERE, "runs", "%s-%s" % (stamp, persona)))
+    if os.path.exists(run) and os.listdir(run):
+        raise SimError("%s already exists and is not empty" % run)
+    for d in ("store", "work", "messages", "learner"):
+        os.makedirs(rp(run, d))
+    config = dict(SIM_CONFIG)
+    if args.prepare_ahead:
+        config["prepare_ahead"] = True
+    if args.config:
+        config.update(json.loads(args.config))
+    if args.from_run:
+        src = rp(os.path.abspath(args.from_run), "store", "data")
+        if not os.path.isfile(os.path.join(src, "state.json")):
+            raise SimError("no store to continue from in %s" % args.from_run)
+        shutil.copytree(src, rp(run, "store", "data"))
+        config = (read_json(rp(run, "store", "data", "state.json")) or {}).get("config") or config
+    else:
+        today = ["--today", args.today] if args.today else []
+        tmp = rp(run, "work", ".seed.json")
+        run_cme(skill, *today, "init", "--blueprint", os.path.join(skill, "templates", "blueprint.json"),
+                "--profile", json.dumps(profile), "--config", json.dumps(config), "--out", tmp)
+        run_cme(skill, "place", tmp, "--out-dir", rp(run, "store"))
+        os.remove(tmp)
+    meta = {"run": run, "persona": persona, "persona_file": persona_path, "skill": skill,
+            "skill_version": skill_version(skill), "commit": git_commit(), "config": config,
+            "continued_from": os.path.abspath(args.from_run) if args.from_run else None,
+            "sessions_at_start": len((read_json(rp(run, "store", "data", "state.json")) or {}).get("sessions") or []),
+            "created": dt.datetime.now().astimezone().isoformat(timespec="seconds")}
+    write_json(rp(run, "run.json"), meta)
+    values = {"run": run, "store": rp(run, "store"), "work": rp(run, "work"), "skill": skill,
+              "simulate": os.path.abspath(__file__), "persona_file": persona_path,
+              "learner_dir": rp(run, "learner"), "messages": rp(run, "messages")}
+    for role in ROLES:
+        write(rp(run, "%s_prompt.md" % role), fill(read(os.path.join(HERE, "prompts", role + ".md")), values))
+    write(rp(run, "transcript.jsonl"), "")
+    first = record_message(run, "learner", (args.opening or OPENING).format(store=rp(run, "store")) + "\n")
+    print(json.dumps({"ok": True, "run": run, "persona": persona,
+                      "examiner_prompt": rp(run, "examiner_prompt.md"),
+                      "learner_prompt": rp(run, "learner_prompt.md"),
+                      "first_message": rp(run, first["file"]),
+                      "then": "start the examiner agent now with the examiner prompt; the clock is running"},
+                     indent=1))
+
+
+# ---------------------------------------------------------------- send, next
+
+def cmd_send(args):
+    text = read(args.file)
+    if not text.strip():
+        raise SimError("%s is empty; nothing sent" % args.file)
+    ev = record_message(args.run, args.role, text, args.ts)
+    print(json.dumps({"ok": True, "sent": ev["n"], "to": ROLES[1 - ROLES.index(args.role)], "chars": ev["chars"]}))
+
+
+def round_closed(run):
+    """True once the store holds a round with its reflection (the last step of a round)."""
+    st = read_json(rp(run, "store", "data", "state.json")) or {}
+    sessions = st.get("sessions") or []
+    started = (read_json(rp(run, "run.json")) or {}).get("sessions_at_start")
+    if not sessions or (started is not None and len(sessions) <= started):
+        return False
+    return st.get("unreflected") != sessions[-1].get("id")
+
+
+def cmd_next(args):
+    """After an agent's turn: record its end, and say what to hand to the other agent."""
+    events = load_events(args.run)
+    append_event(args.run, {"mark": "turn_end", "role": args.after, "ts": time.time() if args.ts is None else args.ts})
+    msgs = [e for e in events if "n" in e]
+    new = []
+    for e in reversed(msgs):
+        if e["role"] != args.after:
+            break
+        new.insert(0, rp(args.run, e["file"]))
+    other = ROLES[1 - ROLES.index(args.after)]
+    closed = round_closed(args.run)
+    learner_count = sum(1 for e in msgs if e["role"] == "learner")
+    stop, why = False, None
+    if not new:
+        stop = True
+        why = ("the round is closed and the learner has nothing to add" if closed and args.after == "learner"
+               else "the %s ended its turn without sending anything" % args.after)
+    elif learner_count > MAX_LEARNER_MESSAGES:
+        stop, why = True, "more than %d learner messages: the round is not converging" % MAX_LEARNER_MESSAGES
+    print(json.dumps({"ok": True, "deliver_to": other, "files": new, "round_closed": closed,
+                      "stop": stop, "why": why}, indent=1))
+
+
+# ---------------------------------------------------------------- what the round was
+
+def parse_sections(md, table):
+    """Split a part of the session document at its known headings."""
+    hits = []
+    for key, heading, _ in table:
+        m = re.search(r"^%s.*$" % re.escape(heading), md or "", re.M)
+        if m:
+            hits.append((m.start(), m.end(), key))
+    hits.sort()
+    out = {}
+    for i, (_, end, key) in enumerate(hits):
+        stop = hits[i + 1][0] if i + 1 < len(hits) else len(md)
+        out[key] = md[end:stop].strip()
+    return out
+
+
+def find_message(messages, role, text, after=0):
+    """The first message of a role (later than `after`) that holds `text` word for word, or that
+    is held by it (an answers block may gather one message among other notes)."""
+    want = norm(text)
+    if not want:
+        return None
+    for m in messages:
+        if m["role"] != role or m["n"] <= after:
+            continue
+        got = norm(m["text"])
+        if want in got or (len(got) >= 2 and got in want):
+            return m["n"]
+    return None
+
+
+class Round:
+    """Everything the checks need to know about a finished run."""
+
+    def __init__(self, run):
+        self.run = run
+        self.meta = read_json(rp(run, "run.json")) or {}
+        self.messages = load_messages(run)
+        self.work = rp(run, "work")
+        self.store = rp(run, "store")
+        self.state = read_json(rp(self.store, "data", "state.json")) or {}
+        self.round = read_json(rp(self.work, "round.json")) or {}
+        sessions = self.state.get("sessions") or []
+        self.sid = self.round.get("log_id") or (sessions[-1].get("id") if sessions else None)
+        self.doc = read_json(rp(self.store, "data", "sessions", "%s.json" % self.sid)) if self.sid else None
+        self.sealed = {}
+        for name in ("sealed_questions.md", "sealed_case.md", "kit_questions.md", "kit_case.md"):
+            if os.path.isfile(rp(self.work, name)):
+                self.sealed[name] = read(rp(self.work, name))
+        self.answers = {}
+        if os.path.isfile(rp(self.work, "answers.md")):
+            for name, body in ANSWER_RE.findall(read(rp(self.work, "answers.md"))):
+                self.answers[name] = (self.answers.get(name, "") + "\n\n" + body.strip()).strip()
+        self.items = self.round.get("items") or []
+        if not self.items and sessions and sessions[-1].get("id") == self.sid:
+            self.items = sessions[-1].get("items") or []
+        self.has_questions = any(it.get("type") in ("mcq", "focused") for it in self.items)
+        self.has_case = any(it.get("type") in ("case", "essay") for it in self.items)
+        self.a = parse_sections((self.doc or {}).get("transcript") or "", SECTIONS_A)
+        self.b = parse_sections((self.doc or {}).get("closing") or "", SECTIONS_B)
+        self.two_stage = "final" in self.answers or "stage2" in self.a
+        self._label_parts()
+
+    def _label_parts(self):
+        """Which learner message answered which part: found by matching the answers the examiner
+        filed (answers.md) against what the learner actually sent."""
+        self.answered = {}
+        for part in ("questions", "case", "final"):
+            if part in self.answers:
+                self.answered[part] = find_message(self.messages, "learner", self.answers[part])
+        if self.b.get("reflection"):
+            self.answered["reflection"] = find_message(self.messages, "learner", self.b["reflection"])
+        self.part_of = {n: part for part, n in self.answered.items() if n}
+        # the seal on a part lifts with the learner message that completes its answers
+        self.lift = {}
+        if self.has_questions:
+            self.lift["questions"] = self.answered.get("questions")
+        if self.has_case:
+            self.lift["case"] = self.answered.get("final" if self.two_stage else "case")
+
+
+# ---------------------------------------------------------------- check 1: blinding
+
+def topic_label(rnd, item):
+    tid = item.get("topic") or ""
+    bp = rnd.state.get("blueprint") or {}
+    dom = bp.get(item.get("domain") or tid.split("-")[0]) or {}
+    label = (item.get("label") or (dom.get("topics") or {}).get(tid)
+             or ((rnd.state.get("topics") or {}).get(tid) or {}).get("label"))
+    return label, dom.get("name")
+
+
+def significant_words(label):
+    label = re.sub(r"\([^)]*\)", " ", label or "")
+    return sorted({w for w in re.findall(r"[a-z]+", label.lower()) if len(w) >= 5 and w not in GENERIC_WORDS})
+
+
+def forbidden_terms(rnd):
+    """(part, kind, level, term, pattern). `fail` terms are leaks; `warn` terms are for a human to
+    judge (a topic word or the domain's name in the text shown)."""
+    terms = []
+
+    def phrase(part, kind, level, text):
+        text = norm(text)
+        if len(text) >= 4:
+            terms.append((part, kind, level, text, re.compile(re.escape(text).replace(r"\ ", r"\s+"), re.I)))
+
+    for it in rnd.items:
+        part = "case" if it.get("type") in ("case", "essay") else "questions"
+        tid = it.get("topic")
+        if tid:
+            terms.append((part, "blueprint ID", "fail", tid,
+                          re.compile(r"(?<![A-Za-z0-9])%s(?![A-Za-z0-9])" % re.escape(tid))))
+        label, domain = topic_label(rnd, it)
+        if label:
+            phrase(part, "topic label", "fail", label)
+            bare = re.sub(r"\([^)]*\)", " ", label)
+            if norm(bare) != norm(label):
+                phrase(part, "topic label", "fail", bare)
+            for w in significant_words(label):
+                # British and American spellings alike (anemia / anaemia, edema / oedema)
+                spelt = re.escape(w).replace("ae", "e").replace("oe", "e").replace("e", "(?:e|ae|oe)")
+                terms.append((part, "topic word", "warn", w, re.compile(r"\b%s(?:s|es)?\b" % spelt, re.I)))
+        if domain:
+            phrase(part, "domain name", "warn", domain)
+    last_part = "case" if rnd.has_case else "questions"
+    diagnosis = (rnd.round.get("case") or {}).get("diagnosis")
+    if diagnosis:
+        phrase("case", "diagnosis", "fail", diagnosis)
+        bare = re.sub(r"\([^)]*\)", " ", diagnosis)
+        if norm(bare) != norm(diagnosis):
+            phrase("case", "diagnosis", "fail", bare)
+    if rnd.round.get("title"):
+        phrase(last_part, "session title", "fail", rnd.round["title"])
+    # key and feedback-note lines: everything in the sealed files that is not text to present
+    for name, text in rnd.sealed.items():
+        part = "case" if name.endswith("case.md") else "questions"
+        shown = norm(" ".join(b for _, b in PRESENT_RE.findall(text)) + " " + " ".join(BANK_RE.findall(text)))
+        hidden = BANK_RE.sub("", PRESENT_RE.sub("", text))
+        kind = "key line" if name.startswith("sealed") else "feedback-notes line"
+        for line in hidden.splitlines():
+            line = norm(re.sub(r"^[\s#>*\-+\d.)]*", "", line).strip("*_` "))
+            # the whole line, and each sentence or clause of it long enough to be telling
+            for piece in [line] + re.split(r"[.;:]\s+", line):
+                piece = piece.strip(" .;:")
+                if len(piece) >= KEY_LINE_MIN and piece not in shown:
+                    phrase(part, kind, "fail", piece)
+    seen, out = set(), []
+    for t in terms:
+        if (t[0], t[1], t[3].lower()) not in seen:
+            seen.add((t[0], t[1], t[3].lower()))
+            out.append(t)
+    return out
+
+
+def check_blinding(rnd):
+    """Nothing the examiner sent before a part's answers may hold that part's topic, diagnosis or key."""
+    findings, problems = [], []
+    if not rnd.items:
+        problems.append("no round.json in the work folder and no saved round: nothing to check against")
+    last = rnd.messages[-1]["n"] if rnd.messages else 0
+    for part, lift in rnd.lift.items():
+        if not lift:
+            problems.append("cannot tell which learner message answered the %s (no matching block in answers.md); "
+                            "every examiner message was scanned for it" % part)
+    terms = forbidden_terms(rnd)
+    for m in rnd.messages:
+        if m["role"] != "examiner":
+            continue
+        for part, kind, level, term, rx in terms:
+            if part not in rnd.lift or m["n"] > (rnd.lift[part] or last + 1):
+                continue
+            hit = rx.search(m["text"])
+            if hit:
+                findings.append({"part": part, "kind": kind, "level": level, "term": term, "message": m["n"],
+                                 "excerpt": norm(excerpt(m["text"], hit.start(), hit.end() - hit.start()))})
+    leaks = [f for f in findings if f["level"] == "fail"]
+    undetermined = [p for p, lift in rnd.lift.items() if not lift]
+    if undetermined:      # with no seal point, later messages legitimately name the topic: report, do not count
+        leaks = [f for f in leaks if f["part"] not in undetermined]
+    return {"ok": not leaks and not problems, "leaks": len(leaks),
+            "to_review": len([f for f in findings if f["level"] == "warn"]),
+            "seal_lifted_at": rnd.lift, "terms_checked": len(terms), "findings": findings, "problems": problems}
+
+
+# ---------------------------------------------------------------- check 2: every file saved
+
+def output_folders(work):
+    """The cme.py output folders in the work folder (each holds a data/ tree), oldest first."""
+    out = []
+    for name in sorted(os.listdir(work)) if os.path.isdir(work) else []:
+        d = os.path.join(work, name)
+        if os.path.isdir(os.path.join(d, "data")):
+            newest = max((os.path.getmtime(os.path.join(r, f)) for r, _, fs in os.walk(d) for f in fs), default=0)
+            out.append((newest, d))
+    return [d for _, d in sorted(out)]
+
+
+def check_saved(rnd):
+    """The store holds what cme.py produced, and the round in it is whole."""
+    problems = []
+    verify = None
+    outs = output_folders(rnd.work)
+    if not outs:
+        problems.append("no cme.py output folders in the work folder: cannot compare them with the store")
+    else:
+        try:
+            verify = json.loads(run_cme(rnd.meta.get("skill") or DEFAULT_SKILL, "verify", "--written", *outs,
+                                        "--store", rnd.store))
+        except (SimError, ValueError) as e:
+            problems.append(str(e))
+        if verify and not verify.get("ok"):
+            for rel in verify.get("missing") or []:
+                problems.append("not in the store: %s" % rel)
+            for rel in verify.get("mismatched") or []:
+                problems.append("differs from what cme.py wrote: %s" % rel)
+    st = rnd.state
+    if not st:
+        problems.append("no readable ledger at store/data/state.json")
+    sessions = st.get("sessions") or []
+    if not rnd.sid or not any(s.get("id") == rnd.sid for s in sessions):
+        problems.append("the ledger holds no record of this round")
+    elif st.get("unreflected") == rnd.sid:
+        problems.append("the ledger still marks %s as waiting for its reflection" % rnd.sid)
+    if rnd.sid and rnd.doc is None:
+        problems.append("no session document data/sessions/%s.json in the store" % rnd.sid)
+    elif rnd.doc is not None and not rnd.doc.get("reflected"):
+        problems.append("session document %s was never closed (reflected is false)" % rnd.sid)
+    idx = read_json(rp(rnd.store, "data", "index.json"))
+    if idx is None:
+        problems.append("no readable index at store/data/index.json")
+    elif rnd.sid and not any(e.get("id") == rnd.sid for e in idx.get("sessions") or []):
+        problems.append("the index does not list %s" % rnd.sid)
+    elif idx.get("gen") != st.get("gen"):
+        problems.append("the index (gen %s) is older than the ledger (gen %s)" % (idx.get("gen"), st.get("gen")))
+    return {"ok": not problems, "session": rnd.sid, "output_folders": [os.path.basename(d) for d in outs],
+            "files_compared": (verify or {}).get("checked"), "problems": problems}
+
+
+# ---------------------------------------------------------------- check 3: log complete and verbatim
+
+def check_log(rnd):
+    """Complete: every section the round's shape calls for is there, and every learner message is in
+    the log. Verbatim: what the log says was presented, answered and sent is word for word what
+    went over the wire."""
+    problems, unlogged = [], []
+    if rnd.doc is None:
+        return {"ok": False, "sections": [], "problems": ["no session document to check"], "examiner_text_not_logged": []}
+    required = []
+    if rnd.has_questions:
+        required += ["questions", "a_questions"]
+    if rnd.has_case:
+        required += ["case", "a_case"]
+        if rnd.two_stage or rnd.round.get("case_format") == "unfolding":
+            required += ["stage2", "a_final"]
+    required.append("feedback")
+    headings = {k: h for k, h, _ in SECTIONS_A + SECTIONS_B}
+    who = {k: r for k, _, r in SECTIONS_A + SECTIONS_B}
+    for key in required:
+        if not rnd.a.get(key) or norm(rnd.a[key]) == "None.":
+            problems.append("part A has no '%s' section (or it is empty)" % headings[key])
+    for key in ("reflection", "discussion", "grade_changes", "coded"):
+        if not rnd.b.get(key):
+            problems.append("part B has no '%s' section (or it is empty)" % headings[key])
+    sections = dict(rnd.a)
+    sections.update(rnd.b)
+    for key, body in sections.items():
+        role = who.get(key)
+        if not role or norm(body) == "None.":
+            continue
+        if not find_message(rnd.messages, role, body):
+            problems.append("'%s' is not word for word what the %s sent" % (headings[key], role))
+    log_text = norm(" ".join(str((rnd.doc or {}).get(k) or "") for k in ("transcript", "closing", "addendum")))
+    for m in rnd.messages[1:]:           # message 1 is the harness's opening request
+        if m["role"] == "learner" and norm(m["text"]) not in log_text:
+            problems.append("learner message %d is not in the log word for word" % m["n"])
+    # for the record: examiner paragraphs that are not in the log (opening lines, the close message
+    # and short prompts are not meant to be; a feedback paragraph would be a finding)
+    for m in rnd.messages:
+        if m["role"] != "examiner":
+            continue
+        for para in re.split(r"\n\s*\n", m["text"]):
+            if len(norm(para)) >= 80 and norm(para) not in log_text:
+                unlogged.append({"message": m["n"], "starts": norm(para)[:90]})
+    return {"ok": not problems, "sections": sorted(sections), "problems": problems,
+            "examiner_text_not_logged": unlogged}
+
+
+# ---------------------------------------------------------------- waiting time per step
+
+def timings(rnd):
+    """One step per learner message: how long until the examiner's first message after it (what
+    the learner waits), and until the examiner's turn ended (behind-the-scenes work included)."""
+    events = load_events(rnd.run)
+    steps = []
+    msgs = rnd.messages
+    for i, m in enumerate(msgs):
+        if m["role"] != "learner":
+            continue
+        if i + 1 < len(msgs) and msgs[i + 1]["role"] == "learner":
+            continue                      # the learner sent two in a row: time the last one
+        replies = []
+        for nxt in msgs[i + 1:]:
+            if nxt["role"] != "examiner":
+                break
+            replies.append(nxt)
+        until = msgs[i + 1 + len(replies)]["ts"] if i + 1 + len(replies) < len(msgs) else float("inf")
+        ends = [e["ts"] for e in events if e.get("mark") == "turn_end" and e.get("role") == "examiner"
+                and m["ts"] <= e["ts"] <= until]
+        label = "start of round" if m["n"] == 1 else "after %s" % {
+            "questions": "the answers to the questions", "case": "the Stage 1 answer" if rnd.two_stage else "the case answer",
+            "final": "the final answers", "reflection": "the reflection"}.get(rnd.part_of.get(m["n"]), "learner message %d" % m["n"])
+        # the learner's own time runs from when the examiner's turn ended (it is only then handed on)
+        handed = [e["ts"] for e in events if e.get("role") == "examiner" and e["ts"] <= m["ts"]]
+        steps.append({
+            "step": len(steps) + 1, "label": label, "learner_message": m["n"],
+            "wait_s": round(replies[0]["ts"] - m["ts"], 1) if replies else None,
+            "turn_s": round(ends[0] - m["ts"], 1) if ends else None,
+            "examiner_messages": len(replies), "examiner_chars": sum(r["chars"] for r in replies),
+            "learner_s": round(m["ts"] - max(handed), 1) if handed else None,
+        })
+    waits = [s["wait_s"] for s in steps if s["wait_s"] is not None]
+    return {"steps": steps, "total_wait_s": round(sum(waits), 1) if waits else None,
+            "longest_wait_s": max(waits) if waits else None,
+            "elapsed_s": round(msgs[-1]["ts"] - msgs[0]["ts"], 1) if len(msgs) > 1 else None}
+
+
+# ---------------------------------------------------------------- check, report
+
+def run_checks(run):
+    rnd = Round(run)
+    checks = {"blinding": check_blinding(rnd), "saved": check_saved(rnd), "log": check_log(rnd)}
+    return rnd, {"ok": all(c["ok"] for c in checks.values()), "checks": checks}
+
+
+def cmd_check(args):
+    _, res = run_checks(args.run)
+    write_json(rp(args.run, "checks.json"), res)
+    print(json.dumps({"ok": res["ok"], "blinding": res["checks"]["blinding"]["ok"],
+                      "saved": res["checks"]["saved"]["ok"], "log": res["checks"]["log"]["ok"],
+                      "details": rp(args.run, "checks.json")}, indent=1))
+    return 0 if res["ok"] else 1
+
+
+def secs(v):
+    return "–" if v is None else ("%.1f" % v)
+
+
+def report_markdown(rep):
+    c = rep["checks"]
+    mark = lambda ok: "pass" if ok else "**FAIL**"
+    lines = [
+        "# Simulation report: %s, %s" % (rep["persona"], rep["date"]),
+        "",
+        "| | |", "|---|---|",
+        "| Result | %s |" % ("all automatic checks passed" if rep["ok"] else "**automatic checks failed**"),
+        "| Persona | %s |" % rep["persona"],
+        "| Skill version / commit | %s / %s |" % (rep.get("skill_version") or "?", rep.get("commit") or "?"),
+        "| Examiner / learner model | %s / %s |" % (rep.get("examiner_model") or "not recorded", rep.get("learner_model") or "not recorded"),
+        "| Round | %s: %s |" % (rep["round"].get("session") or "not saved", rep["round"].get("shape") or "unknown"),
+        "| Round score (examiner's grading) | %s |" % (rep["round"].get("score") if rep["round"].get("score") is not None else "–"),
+        "| Ledger settings | %s |" % ", ".join("%s=%s" % (k, json.dumps(v)) for k, v in sorted((rep.get("config") or {}).items())
+                                               if k in ("helpers", "prepare_ahead", "mcqs", "focused", "case", "case_format", "item_order")),
+        "| Messages | %d examiner, %d learner |" % (rep["messages"]["examiner"], rep["messages"]["learner"]),
+        "| Clinical quality (logged only) | %s |" % ("%s/5%s" % (rep["quality"]["score"], " — " + rep["quality"]["note"] if rep["quality"].get("note") else "")
+                                                     if rep.get("quality") else "not scored"),
+        "",
+        "## Automatic checks",
+        "",
+        "| Check | Result | Detail |", "|---|---|---|",
+        "| Blinding: no topic, diagnosis or key shown before the matching answer | %s | %d leak(s); %d topic word(s) or domain name(s) to review; %d terms searched |"
+        % (mark(c["blinding"]["ok"]), c["blinding"]["leaks"], c["blinding"]["to_review"], c["blinding"]["terms_checked"]),
+        "| Every file saved | %s | %s file(s) compared with the store (%s) |"
+        % (mark(c["saved"]["ok"]), c["saved"].get("files_compared") if c["saved"].get("files_compared") is not None else "no",
+           ", ".join(c["saved"]["output_folders"]) or "no output folders"),
+        "| Log complete and verbatim | %s | sections: %s |" % (mark(c["log"]["ok"]), ", ".join(c["log"]["sections"]) or "none"),
+        "",
+    ]
+    for name, title in (("blinding", "Blinding"), ("saved", "Saved files"), ("log", "Log")):
+        if c[name]["problems"]:
+            lines += ["### %s: problems" % title, ""] + ["- %s" % p for p in c[name]["problems"]] + [""]
+    if c["blinding"]["findings"]:
+        lines += ["### Blinding: findings", "",
+                  "| Level | Part | Kind | Term | Examiner message | Where |", "|---|---|---|---|---|---|"]
+        for f in c["blinding"]["findings"]:
+            lines.append("| %s | %s | %s | %s | %d | %s |" % ("leak" if f["level"] == "fail" else "review", f["part"], f["kind"],
+                                                             f["term"].replace("|", "/"), f["message"], f["excerpt"].replace("|", "/")))
+        lines.append("")
+    if c["log"]["examiner_text_not_logged"]:
+        lines += ["### Examiner text that is not in the log", "",
+                  "Opening lines, the close message and prompts are not logged by design; a feedback or case "
+                  "paragraph here would be a finding.", ""]
+        lines += ["- message %d: %s…" % (u["message"], u["starts"]) for u in c["log"]["examiner_text_not_logged"]] + [""]
+    t = rep["timings"]
+    lines += ["## Waiting time per step", "",
+              "Wait: from the learner's message to the examiner's first message after it (includes the relay). "
+              "Turn: until the examiner's turn ended, behind-the-scenes work included. Learner: the persona's own time.",
+              "",
+              "| Step | | Wait (s) | Turn (s) | Examiner messages | Characters | Learner (s) |", "|---|---|---|---|---|---|---|"]
+    for s in t["steps"]:
+        lines.append("| %d | %s | %s | %s | %d | %d | %s |" % (s["step"], s["label"], secs(s["wait_s"]), secs(s["turn_s"]),
+                                                             s["examiner_messages"], s["examiner_chars"], secs(s["learner_s"])))
+    lines += ["", "Total wait %s s; longest wait %s s; whole run %s s." % (secs(t["total_wait_s"]), secs(t["longest_wait_s"]), secs(t["elapsed_s"])), ""]
+    if rep.get("note"):
+        lines += ["## Notes", "", rep["note"], ""]
+    return "\n".join(lines)
+
+
+def cmd_report(args):
+    rnd, res = run_checks(args.run)
+    write_json(rp(args.run, "checks.json"), res)
+    kinds = [it.get("type") for it in rnd.items]
+    shape = ", ".join(x for x in (
+        "%d MCQ" % kinds.count("mcq") if kinds.count("mcq") else "",
+        "%d focused" % kinds.count("focused") if kinds.count("focused") else "",
+        ("case (%s)" % ("two stages" if rnd.two_stage else "one step")) if rnd.has_case else "") if x)
+    date = (rnd.meta.get("created") or dt.date.today().isoformat())[:10]
+    rep = {
+        "schema": 1, "ok": res["ok"], "date": date, "persona": rnd.meta.get("persona"),
+        "skill_version": rnd.meta.get("skill_version"), "commit": rnd.meta.get("commit"),
+        "examiner_model": args.examiner_model, "learner_model": args.learner_model,
+        "config": rnd.state.get("config") or rnd.meta.get("config"),
+        "round": {"session": rnd.sid if rnd.doc else None, "shape": shape or None,
+                  "score": (rnd.doc or {}).get("score"), "continued_from_earlier_run": bool(rnd.meta.get("continued_from"))},
+        "messages": {r: sum(1 for m in rnd.messages if m["role"] == r) for r in ROLES},
+        "checks": res["checks"], "timings": timings(rnd),
+        "quality": {"score": args.quality, "note": args.quality_note} if args.quality is not None else None,
+        "note": args.note,
+    }
+    out_dir = os.path.abspath(args.out_dir or os.path.join(HERE, "reports"))
+    base = "%s-%s" % (date, rep["persona"])
+    name, k = base, 1
+    while os.path.exists(os.path.join(out_dir, name + ".md")) or os.path.exists(os.path.join(out_dir, name + ".json")):
+        k += 1
+        name = "%s-%d" % (base, k)
+    write_json(os.path.join(out_dir, name + ".json"), rep)
+    write(os.path.join(out_dir, name + ".md"), report_markdown(rep))
+    print(json.dumps({"ok": rep["ok"], "report": os.path.join(out_dir, name + ".md"),
+                      "data": os.path.join(out_dir, name + ".json"),
+                      "checks": {k2: v["ok"] for k2, v in res["checks"].items()},
+                      "longest_wait_s": rep["timings"]["longest_wait_s"]}, indent=1))
+    return 0
+
+
+# ---------------------------------------------------------------- main
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("init", help="make a run folder with a seeded folder store and the two briefs")
+    s.add_argument("--persona", default="strong"); s.add_argument("--run"); s.add_argument("--skill")
+    s.add_argument("--today"); s.add_argument("--config"); s.add_argument("--prepare-ahead", action="store_true")
+    s.add_argument("--from-run", help="continue on the store of an earlier run (a second round)")
+    s.add_argument("--opening"); s.set_defaults(fn=cmd_init)
+    s = sub.add_parser("send", help="send a message file to the other side")
+    s.add_argument("--run", required=True); s.add_argument("--role", choices=ROLES, required=True)
+    s.add_argument("--file", required=True); s.add_argument("--ts", type=float, help=argparse.SUPPRESS)
+    s.set_defaults(fn=cmd_send)
+    s = sub.add_parser("next", help="after an agent's turn: what to hand to the other agent")
+    s.add_argument("--run", required=True); s.add_argument("--after", choices=ROLES, required=True)
+    s.add_argument("--ts", type=float, help=argparse.SUPPRESS); s.set_defaults(fn=cmd_next)
+    s = sub.add_parser("check", help="run the automatic checks (exit 1 if any fails)")
+    s.add_argument("--run", required=True); s.set_defaults(fn=cmd_check)
+    s = sub.add_parser("report", help="checks + timings, written to sim/reports/")
+    s.add_argument("--run", required=True); s.add_argument("--out-dir")
+    s.add_argument("--examiner-model"); s.add_argument("--learner-model")
+    s.add_argument("--quality", type=int, choices=range(1, 6), help="clinical quality 1-5, logged only (ADR 0004)")
+    s.add_argument("--quality-note"); s.add_argument("--note"); s.set_defaults(fn=cmd_report)
+    args = ap.parse_args(argv)
+    try:
+        return args.fn(args) or 0
+    except SimError as e:
+        sys.stderr.write("error: %s\n" % e)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

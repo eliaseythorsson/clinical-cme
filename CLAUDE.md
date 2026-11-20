@@ -14,6 +14,8 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
   - `templates/` — learner page (`page.html`), default blueprint, resource library
   - `legacy/` — version-3 scripts, used only for migration
 - `tests/` — pytest suite for `cme.py` (`conftest.py` runs it the way the assistant does)
+- `sim/` — simulation harness (`simulate.py`, personas, saved reports); run with `/simulate`,
+  procedure in `sim/README.md`. Run folders (`sim/runs/`) are never committed
 - `docs/agents/` — config read by the engineering skills (see below)
 - `docs/adr/` — architecture decision records (created lazily)
 
