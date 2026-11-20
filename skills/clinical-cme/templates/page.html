@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Clinical CME</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="cme-page-version" content="4.2.1">
+<meta name="cme-page-version" content="5.0.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
@@ -150,18 +150,9 @@ h1{font-weight:600;font-size:1.75rem;letter-spacing:-.025em;line-height:1.1;marg
 .md a{color:var(--accent);text-underline-offset:2px}
 .md hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 
-/* gaps */
-.gap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;padding:14px 18px;border-top:1px solid var(--line)}
-.gap:first-child{border-top:0}
-.gap .h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;min-width:0}
-.gap .h strong{font-weight:500}
-.gap .g{grid-column:1 / -1;color:var(--muted);font-size:.88rem;line-height:1.55;overflow-wrap:anywhere}
-.gap .g.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.more{grid-column:1 / -1;justify-self:start;border:0;background:none;color:var(--accent);font-size:.82rem;font-weight:500;padding:0;cursor:pointer}
-.due{font-size:.74rem;font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted);background:var(--bg)}
-.due.over{color:var(--crit);background:var(--crit-bg)} .due.today{color:var(--warn);background:var(--warn-bg)}
-.src{font-size:.76rem;color:var(--faint)}
-.right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+/* progress: topics already tested. Nothing here may name what a coming round will test:
+   no open gaps, no due dates, no ordering by next review. */
+.note{color:var(--muted);font-size:.88rem;line-height:1.55;margin:0}
 
 /* topics table */
 .tbl-wrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow-x:auto}
@@ -227,7 +218,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   </header>
 
   <section class="band" aria-label="Summary">
-    <div class="cell"><span class="k">Due now</span><span class="v" id="t-due">–</span><span class="n" id="t-due-n">topics ready for review</span></div>
+    <div class="cell"><span class="k">Topics tested</span><span class="v" id="t-topics">–</span><span class="n" id="t-topics-n"></span></div>
     <div class="cell"><span class="k">Sessions this period</span><span class="v" id="t-sess">–</span><span class="n" id="t-sess-n"></span></div>
     <div class="cell"><span class="k">Mean score</span><span class="v"><span id="t-score">–</span><svg class="spark" id="t-spark" viewBox="0 0 84 28" aria-hidden="true"></svg></span><span class="n" id="t-score-n">out of 5, this period</span></div>
     <div class="cell"><span class="k">Progress review</span><span class="v" id="t-review">–</span><span class="n" id="t-review-n"></span></div>
@@ -236,7 +227,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   <div class="tabs-bar">
     <div class="tabs" role="tablist" aria-label="Views">
       <button class="tab" role="tab" id="tab-sessions" data-view="sessions" aria-controls="v-sessions" aria-selected="true">Sessions <span class="c" id="c-sessions"></span></button>
-      <button class="tab" role="tab" id="tab-gaps" data-view="gaps" aria-controls="v-gaps" aria-selected="false" tabindex="-1">Gaps &amp; topics <span class="c" id="c-gaps"></span></button>
+      <button class="tab" role="tab" id="tab-progress" data-view="progress" aria-controls="v-progress" aria-selected="false" tabindex="-1">Progress <span class="c" id="c-progress"></span></button>
       <button class="tab" role="tab" id="tab-reviews" data-view="reviews" aria-controls="v-reviews" aria-selected="false" tabindex="-1">Reviews <span class="c" id="c-reviews"></span></button>
       <button class="tab" role="tab" id="tab-settings" data-view="settings" aria-controls="v-settings" aria-selected="false" tabindex="-1">Settings</button>
     </div>
@@ -252,10 +243,9 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     <article id="s-detail" class="reader" hidden></article>
   </section>
 
-  <section class="panel" id="v-gaps" role="tabpanel" aria-labelledby="tab-gaps" hidden>
-    <div class="section-h"><h2>Open gaps</h2><span class="aside" id="gaps-aside"></span></div>
-    <div id="gaps" class="list"><div class="empty">Loading…</div></div>
-    <div class="section-h"><h2>All topics tested</h2><span class="aside">Sorted by next review</span></div>
+  <section class="panel" id="v-progress" role="tabpanel" aria-labelledby="tab-progress" hidden>
+    <div class="section-h"><h2>Topics tested so far</h2><span class="aside">Most recently tested first</span></div>
+    <p class="note">What comes next stays hidden, so each round tests what you know rather than what you just looked up. Points you missed are in the feedback of past sessions and come back unannounced.</p>
     <div class="tbl-wrap"><table class="plain" id="topics"></table></div>
   </section>
 
@@ -325,13 +315,6 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     const pct = typeof v === "number" ? Math.max(0, Math.min(100, v / 5 * 100)) : 0;
     return `<span class="score ${scoreClass(v)}"><b>${fmtScore(v, dp)}</b><span class="meter"><i style="width:${pct}%"></i></span></span>`;
   }
-  function dueHTML(d){
-    if (!d) return "";
-    const n = daysUntil(d);
-    if (n < 0) return `<span class="due over">Overdue ${-n} d</span>`;
-    if (n === 0) return `<span class="due today">Due today</span>`;
-    return `<span class="due">${n <= 14 ? "In " + n + " d" : shortDate(d)}</span>`;
-  }
 
   let state = null, sessions = [], reviews = [];
   let prefs = null;           // cme/prefs in the page database: the round mix set on this page
@@ -353,7 +336,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   }
 
   // ---- views -----------------------------------------------------------------------------
-  const views = ["sessions", "gaps", "reviews", "settings"];
+  const views = ["sessions", "progress", "reviews", "settings"];
   const tabs = () => Array.from(document.querySelectorAll(".tabs [role=tab]"));
   function show(view, focus){
     views.forEach(v => { $("v-" + v).hidden = v !== view; });
@@ -390,9 +373,10 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   function renderTiles(){
     if (!state) return;
     const topics = state.topics || {};
-    const due = Object.values(topics).filter(t => t.due && t.due <= today).length;
-    $("t-due").textContent = due;
-    $("t-due-n").textContent = due === 1 ? "topic ready for review" : "topics ready for review";
+    // Counts only, and only of what has been tested: no due count, no open-gap count by name.
+    const mast = Object.values(topics).map(t => t.mastery).filter(x => typeof x === "number");
+    $("t-topics").textContent = Object.keys(topics).length;
+    $("t-topics-n").textContent = mast.length ? "mean mastery " + (mast.reduce((a, b) => a + b, 0) / mast.length).toFixed(1) + " of 5" : "none yet";
     const sess = state.sessions || [];
     const per = state.config && state.config.target_sessions_per_week;
     $("t-sess").textContent = sess.length;
@@ -409,7 +393,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     const p = state.profile || {};
     const who = [p.display_name || p.role, [p.specialty, p.subspecialty].filter(Boolean).join(" · ")].filter(Boolean).join(" · ");
     if (who) $("who").textContent = who;
-    $("c-gaps").textContent = (state.gaps || []).length || "";
+    $("c-progress").textContent = Object.keys(topics).length || "";
   }
 
   // ---- sessions ----------------------------------------------------------------------------
@@ -462,42 +446,22 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   $("back").addEventListener("click", () => { listMode(true); });
   $("q").addEventListener("input", renderList);
 
-  // ---- gaps and topics -----------------------------------------------------------------------
-  function renderGaps(){
-    const box = $("gaps"); box.innerHTML = "";
+  // ---- progress ----------------------------------------------------------------------------
+  // Blinding: this view lists only topics already tested, ordered by when they were last tested.
+  // It must not render state.gaps, a topic's due date, or any order derived from due dates.
+  function renderProgress(){
     if (!state) return;
-    const gaps = state.gaps || [];
     const topics = state.topics || {};
-    $("gaps-aside").textContent = gaps.length ? gaps.length + " open · most urgent first" : "";
-    if (!gaps.length) box.innerHTML = `<div class="empty">No open gaps.</div>`;
-    const key = (g) => (topics[g.topic] && topics[g.topic].due) || "9999";
-    gaps.slice().sort((a, b) => key(a) === key(b) ? (a.topic > b.topic ? 1 : -1) : key(a) > key(b) ? 1 : -1).forEach(g => {
-      const t = topics[g.topic] || {};
-      const d = document.createElement("div"); d.className = "gap";
-      const text = String(g.gap || "");
-      d.innerHTML = `<div class="h"><span class="code">${esc(g.topic)}</span><strong>${esc(t.label || g.topic)}</strong></div>
-        <div class="right">${dueHTML(t.due)}</div>
-        <div class="g clamp">${esc(text)}</div>
-        <div class="h src">${esc((g.source || []).join(", "))}${g.opened || g.date ? " · open since " + esc(fmtDate(g.opened || g.date)) : ""}${t.mastery != null ? " · mastery " + esc(t.mastery) + "/5" : ""}</div>`;
-      box.appendChild(d);
-      const g2 = d.querySelector(".g");
-      requestAnimationFrame(() => {
-        if (g2.scrollHeight > g2.clientHeight + 2) {
-          const m = document.createElement("button"); m.type = "button"; m.className = "more"; m.textContent = "Show full note";
-          m.addEventListener("click", () => { const c = g2.classList.toggle("clamp"); m.textContent = c ? "Show full note" : "Show less"; });
-          d.insertBefore(m, d.lastElementChild);
-        }
-      });
-    });
     const tb = $("topics");
-    const rows = Object.entries(topics).sort((a, b) => (a[1].due || "9") < (b[1].due || "9") ? -1 : (a[1].due || "9") > (b[1].due || "9") ? 1 : 0);
+    const lastKey = (t) => t.last || "";
+    const rows = Object.entries(topics).sort((a, b) => lastKey(a[1]) === lastKey(b[1]) ? (a[0] > b[0] ? 1 : -1) : lastKey(a[1]) < lastKey(b[1]) ? 1 : -1);
     if (!rows.length) { tb.innerHTML = `<tbody><tr><td class="empty">No topics tested yet.</td></tr></tbody>`; return; }
-    tb.innerHTML = `<thead><tr><th>Topic</th><th>Mastery</th><th>Last tested</th><th>Next review</th><th>Calibration</th></tr></thead><tbody>` + rows.map(([id, t]) => {
+    tb.innerHTML = `<thead><tr><th>Topic</th><th>Mastery</th><th>Last tested</th><th>Calibration</th></tr></thead><tbody>` + rows.map(([id, t]) => {
       const m = typeof t.mastery === "number" ? t.mastery : null;
       const cal = t.calibration && t.calibration !== "not_rated" ? t.calibration.replace(/_/g, " ") : "–";
       return `<tr><td><span class="code">${esc(id)}</span>${esc(t.label || "")}</td>
         <td><span class="mcell"><span class="meter ${scoreClass(m)}"><i style="width:${m != null ? m / 5 * 100 : 0}%"></i></span>${m != null ? esc(m) : "–"}</span></td>
-        <td class="num">${t.last ? shortDate(t.last) : "–"}</td><td class="num">${dueHTML(t.due) || "–"}</td>
+        <td class="num">${t.last ? shortDate(t.last) : "–"}</td>
         <td><span class="cal ${/over/.test(cal) ? "over" : ""}">${esc(cal)}</span></td></tr>`;
     }).join("") + `</tbody>`;
   }
@@ -680,7 +644,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     let ok = false;
     try { ok = (await loadFiles()) || (await loadDb()); } catch (e) { ok = false; }
     if (!ok) { state = null; $("s-list").innerHTML = `<div class="empty">No ledger yet. Say “set up clinical CME” in a chat with your assistant to create it.</div>`; }
-    renderTiles(); renderGaps(); renderSettings();
+    renderTiles(); renderProgress(); renderSettings();
     if (ok) renderList();
     renderReviews();
     loadPrefs();

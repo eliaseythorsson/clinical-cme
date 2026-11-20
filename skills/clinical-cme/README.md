@@ -45,13 +45,22 @@ waiting for something to be generated.
 - Leaner sealed drafts (one-line pre-flight record, keys before stems), so a round that could
   not be prepared still starts quickly.
 
+## Page update 5.0.0
+
+- The learner's page no longer previews the next round. The "Gaps & topics" view (open gaps by
+  name, most urgent first, and every topic's next review date) and the "Due now" tile are gone.
+  In their place a "Progress" view lists the topics already tested, most recently tested first,
+  with mastery, last-tested date and calibration, and the summary band counts topics tested.
+  Past sessions, scores, the score trend and progress reviews are unchanged. `cme.py`
+  (`PAGE_VERSION = "5.0.0"`) upgrades older pages once, at the next save.
+
 ## Page update 4.2.1
 
 - The learner's page was redesigned: a summary band with a score trend, a segmented view switch
   that actually switches views (the 4.2 page's panels used `display:flex`, which overrode the
   `hidden` attribute, so every tab stayed visible), readable session transcripts, gaps sorted by
   urgency with long notes folded, a topics table with mastery bars, and steppers for the round
-  mix. `cme.py` (`PAGE_VERSION = "4.2.1"`) upgrades older pages at the next save.
+  mix. `cme.py` upgraded older pages at the next save.
 
 ## What is new in version 4.2
 
