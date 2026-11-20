@@ -226,7 +226,9 @@ depth of feedback and the spacing of the topic.
   `blood_gas_units` (mmHg by default for pCO₂ and pO₂; kPa if set).
 - Drug names: international non-proprietary names; add the regional name where it
   differs if the learner's region uses it.
-- Guidelines: use the learner's `guideline_region` first; where regional guidance
+- Guidelines: use the plan's `guideline_region` first (set at setup; default
+  "Iceland/Europe": Icelandic national guidance where it exists, otherwise the European
+  societies), in the edition relevant to the plan's `specialty`; where regional guidance
   differs materially, the feedback says so.
 - Cases are fictional. Never request or include identifiable patient information.
 

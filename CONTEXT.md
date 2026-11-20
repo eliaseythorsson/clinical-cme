@@ -77,6 +77,13 @@ The domain of the current block. It is visible to the learner; topics stay blind
 **Drill-down**:
 Successive rounds probing deeper into one sub-topic after wrong answers; capped, and only within the theme.
 
+**Guideline region**:
+The learner's choice of whose guidelines items are written and graded against; asked at setup, default Iceland/Europe.
+_Avoid_: country, locale
+
+**Specialty**:
+The learner's field of practice, which sets the pitch of items and which guideline applies; asked at setup, default internal/hospital medicine.
+
 ## Development
 
 **Testing mode**:

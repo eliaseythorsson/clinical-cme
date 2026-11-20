@@ -17,7 +17,7 @@ memory: one JSON document, read to a file and written from a file (`store.md` §
              "round_set_at": "2026-10-08T09:12:00Z",
              "feedback_depth": "detailed", "target_sessions_per_week": 3, "review_interval_days": 42,
              "intervals_days": [1, 3, 7, 16, 35, 90], "new_topics_per_round": 1,
-             "lab_units": "SI", "blood_gas_units": "mmHg", "guideline_region": "Europe",
+             "lab_units": "SI", "blood_gas_units": "mmHg", "guideline_region": "Iceland/Europe",
              "item_order": "mcqs_first", "helpers": true, "prepare_ahead": true,
              "show_coding": true, "reminders": false, "mirror": null,
              "resource_preferences": {"free_only": false, "formats": ["guidelines"]}},
@@ -47,6 +47,12 @@ verifies the evidence while the learner answers, and the conversation grades; SK
 `prepare_task` (false by default: the learner has a scheduled task that does the same
 preparation whenever no round is ready). Both are on unless the learner turns them off; ledgers older than 4.3 get them
 at their next save, and `start` reports `speed_settings_new` until then.
+
+Region and specialty: `config.guideline_region` (default "Iceland/Europe") and
+`profile.specialty` (default "Internal/hospital medicine") are free text, asked at setup
+(`onboarding.md` §2) and changed with `settings`. `start`, the plan and `settings` print both
+as `guideline_region` and `specialty`, with the default standing in where a ledger has none;
+the author chooses guidelines by them and the examiner grades by them.
 
 Round mix: `mcqs` (0–10), `focused` (0–6) and `case` (true/false); at least one item.
 `round_set_at` marks the last change of the mix (setup, a chat `settings` change, or a page

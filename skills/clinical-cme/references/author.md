@@ -31,14 +31,19 @@ the conversation, and the keys must be good enough for another clinician to grad
 3. The plan (JSON). It gives, per item: slot (`mcq`, `focused`, `case`), topic and blueprint
    ID, the reason it was chosen, any open gap to re-test, `aspect_hint` for focused items, a
    `drill` if one applies, `separation` notes, and `already_used` stems and cases; and for the
-   round: `case_format`, units, `guideline_region`, `feedback_depth`, the learner's profile,
+   round: `case_format`, units, `guideline_region`, `specialty`, `feedback_depth`, the learner's profile,
    `recent_cases_any_topic`.
 
 Planning notes:
 
 - An item without a specific topic (`new_in_domain`) gets an untested topic from that
   blueprint domain; record the ID and label you chose in the key.
-- Pitch at the learner's role and specialty; use the plan's units and guideline region.
+- Pitch at the learner's role and the plan's `specialty`; use the plan's units. Choose
+  guidelines by the plan's `guideline_region`: keys, model answers and verification searches
+  name that region's guideline (body and year) first, and for "Iceland/Europe" that is
+  Icelandic national guidance where it exists, otherwise the European society's. State the
+  region and specialty in one line above each verification list, so the checker and the
+  examiner work to the same ones.
 - A re-tested gap gets the same decision point in a new clinical context (transfer).
 - A `drill` is built into its item (`case_design.md` §9, §11.5).
 - Every vignette and stem is clearly different from `already_used` and

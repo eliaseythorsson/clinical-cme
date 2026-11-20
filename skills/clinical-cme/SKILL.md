@@ -207,8 +207,9 @@ Five learner turns with an unfolding case; fewer with a one-step case or none.
    - `page_settings_applied` → the learner changed the mix on their page; say it in the opening
      line ("Using the mix you set on your page: …"), unless it only reports `unchanged`.
      `warnings` about page settings → one line, and the round goes ahead with the ledger's mix.
-   - keep `next_id`, `pending_errata_count`, `helpers`, `speed_settings_new`, `prepared` and
-     `testing`.
+   - keep `next_id`, `pending_errata_count`, `helpers`, `speed_settings_new`, `prepared`,
+     `testing`, and `guideline_region` and `specialty`: every grade and every piece of feedback
+     in the round uses that region's guidelines, pitched at that specialty.
    - "prepare only", or a scheduled task asking for it → "Prepare only" below, not a round.
 3. **Get the first part's text.**
    - **`prepared.used` is true**: it is `present` in the `start` output, and the files listed
@@ -307,7 +308,8 @@ with the items answered; the case's topic stays due.
 1. **Evidence**: in one batch read `sealed_case.md`, `kit_case.md` and `evidence_case.md` now; no file → run the case's verification list now. Add
    only what the answers raise. The round is no longer sealed: read `plan.json` too if you
    need anything from it.
-2. Grade against current guidance for the learner's region; watch for transfer gaps and
+2. Grade against current guidance for the learner's `guideline_region` and `specialty` (from
+   `start`); watch for transfer gaps and
    calibration across the whole round; code the case (ART steps and Revised-IDEA; an error
    record for every missed or partial element).
 3. **Send the final feedback** (`feedback_guide.md` §2 part 2: case reveal → case → gap summary
@@ -443,6 +445,12 @@ folder as downloads so the next session can save them (`store.md` §8). Never re
   confirm in one line. Emphasis is `profile.domain_emphasis`; a changed blueprint is
   `--blueprint <file>`. Any settings change sets aside the prepared round; offer nothing, the
   next round is simply written at its start.
+- **Region or specialty** ("use UK guidelines", "my specialty is geriatrics"): one `settings`
+  call as above, `--config '{"guideline_region": "UK"}'` or `--profile '{"specialty":
+  "Geriatrics"}'` (the learner's own words are fine; add `lab_units` or `blood_gas_units` only
+  if they ask); confirm in one line from the `guideline_region` and `specialty` it prints.
+  Both apply from the next round. A specialty outside the current blueprint also needs a
+  blueprint for it: offer to draft one (`onboarding.md` §3) and pass it with `--blueprint`.
 - **Round mix** ("add a focused question to my rounds", "no more MCQs", "drop the case"):
   `settings --config '{"focused": 1}'` (or `mcqs`, `case`; at least one item stays) as above;
   confirm in one line with the new mix and a time estimate (3 min per MCQ, 5 per focused
