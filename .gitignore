@@ -9,3 +9,5 @@ state.json
 learner_ledger.json
 __pycache__/
 .pytest_cache/
+# simulation run folders (transcripts, scratch stores); only sim/reports/ is kept
+sim/runs/

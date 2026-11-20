@@ -95,3 +95,6 @@ A learner setting that adds a short feedback check and a store-integrity check a
 
 **Simulation**:
 A scripted run of the skill in which one agent is the examiner and another plays a learner persona.
+
+**Persona**:
+The kind of learner an agent plays in a simulation (strong; weak and overconfident; disputes a grade; stops halfway).
