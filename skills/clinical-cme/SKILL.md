@@ -116,8 +116,8 @@ With `helpers` true in the `start` output and a session that can start helper ag
 - If the helper tool gives no choice of model, helpers use yours. If it offers only a smaller
   model than a role calls for, take that role yourself.
 - You never read `case_design.md` or `author.md` while an author exists, and you open a sealed
-  file only when its part's answers are in (the case's when Stage 1 is answered: you need its
-  results bank). Until then you send text with `cme.py present`, which prints only what the
+  file only when its part's answers are in (the case's only when its final answers are in; for
+  Stage 2 you print just its results bank with `present --block bank`). Until then you send text with `cme.py present`, which prints only what the
   learner is to see. What you have not read, you cannot leak.
 - You are the second opinion on the author's keys. Grade what the learner wrote against the
   checked evidence; where a key is wrong, dated or too narrow, correct it in the feedback and
@@ -165,7 +165,7 @@ your reasoning; check the evidence yourself, after each part's answers are in.
 |---|---|---|
 | answering the short questions | the questions, the case, both sets of notes, the checked evidence | nothing (checkers, only if the evidence is not there yet) |
 | reading the questions' feedback, then working on the case | the case, its notes | you file what was sent |
-| answering Stage 2 | the results bank it came from | — |
+| answering Stage 2 | the results bank it came from (the only part of the case you have read) | — |
 | reading the case feedback | — | you save the round |
 | reading the close | — | you save; the author writes the next round; checkers verify it; you stash it |
 
@@ -287,20 +287,23 @@ with the items answered; the case's topic stays due.
 
 ### Turn 3. Stage 1 answer in → Stage 2 (unfolding cases)
 
-1. **In one batch** read `<work>/sealed_case.md`, `<work>/kit_case.md` and
-   `<work>/evidence_case.md` (whatever exists).
-2. **Send Stage 2** without grading or comment: the results of what the learner ordered, taken
-   from the results bank; the decisive test if they did not order it, among one or two other
-   reasonable ones; the course; the Stage 2 questions (`case_design.md` §5). A test that is not
-   in the bank gets a realistic result written on the spot. No hints, no reactions.
+1. Run `python3 cme.py present <work>/sealed_case.md --block bank`. It prints only the results
+   bank: no key, no diagnosis. Do not open `sealed_case.md`, `kit_case.md` or
+   `evidence_case.md` until the final answers are in. (A case written before version 4.3.1 has
+   no bank block: then, and only then, read `sealed_case.md`.)
+2. **Send Stage 2** without grading or comment, assembled from the bank: the results of every
+   test the learner ordered (realistic normal, non-specific and abnormal results alike); if they
+   did not order the line "Add if not ordered" names, add those tests as "Results also
+   available (ordered by the admitting team)"; the course; the Stage 2 questions. A test that
+   is not in the bank gets a realistic result written on the spot, consistent with what the
+   bank shows. No hints, no reactions.
 3. **Behind the scenes, in one batch**: add the text as sent to `sealed_case.md` as a
    `<!-- present: stage2 -->` block (description "Update today's round") and append the
    `<!-- answers: case -->` block to `answers.md`.
 
 ### Turn 4. Final answers in → case feedback, first save
 
-1. **Evidence**: from `evidence_case.md` (for a one-step case, read it now with
-   `sealed_case.md` and `kit_case.md`); no file → run the case's verification list now. Add
+1. **Evidence**: in one batch read `sealed_case.md`, `kit_case.md` and `evidence_case.md` now; no file → run the case's verification list now. Add
    only what the answers raise. The round is no longer sealed: read `plan.json` too if you
    need anything from it.
 2. Grade against current guidance for the learner's region; watch for transfer gaps and

@@ -2108,8 +2108,9 @@ def cmd_stash(args):
 
 def cmd_present(args):
     """Print only the text the learner is to see (one present block) from sealed files, so the
-    assistant can send it without opening the keys."""
-    pres = blocks(args.files, PRESENT_RE)
+    assistant can send it without opening the keys. `--block bank` prints the case's results bank
+    (results, course, Stage 2 questions), which is all that is needed to send Stage 2."""
+    pres = blocks(args.files, BANK_RE if args.block == "bank" else PRESENT_RE)
     body = pres.get(args.block)
     if not body:
         die("no <!-- present: %s --> block in %s" % (args.block, ", ".join(args.files)))
@@ -2192,6 +2193,7 @@ def take_prepared(args, st, today):
 
 
 PRESENT_RE = re.compile(r"<!--\s*present:\s*([a-z0-9_]+)\s*-->\s*\n(.*?)\n?\s*<!--\s*/present\s*-->", re.S)
+BANK_RE = re.compile(r"<!--\s*(bank)\s*-->\s*\n(.*?)\n?\s*<!--\s*/bank\s*-->", re.S)
 ANSWER_RE = re.compile(r"<!--\s*answers:\s*([a-z0-9_]+)\s*-->\s*\n(.*?)\n?\s*<!--\s*/answers\s*-->", re.S)
 PART_A_SECTIONS = {
     "questions": "### Questions — as presented",

@@ -169,8 +169,9 @@ the final diagnosis and shows the actual results of the decisive tests.
 case holds a **results bank**, written with the case: the result of every investigation a
 competent clinician might reasonably order here (typically ten to fifteen: the decisive ones,
 the tempting low-yield ones and the specialised ones), each as it would be reported, plus the
-clinical course and the Stage 2 questions. Stage 2 is assembled from it by the assistant
-running the round, once the learner has answered Stage 1:
+clinical course and the Stage 2 questions. The bank sits between `<!-- bank -->` and
+`<!-- /bank -->` and holds no diagnosis or key: it is all the assistant running the round reads
+before the final answers. Stage 2 is assembled from it once the learner has answered Stage 1:
 
 - Give the results of every test the learner ordered, written realistically (normal,
   non-specific and abnormal results alike). A test that is not in the bank gets a realistic

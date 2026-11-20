@@ -88,9 +88,12 @@ In this order:
 1. **Key**: topic ID and label; the diagnosis; the decisive tests; the two or three leading
    alternatives; the expected elements of each stage (the rubric); the compact description for
    the log (`patient`, `setting`, `presentation`, `diagnosis`, `twist`); the drill, if any.
-2. **Results bank** (unfolding cases): the result of every investigation a competent clinician
-   might reasonably order here, each as it would be reported, typically ten to fifteen; the
-   clinical course to Stage 2; the Stage 2 questions (`case_design.md` §5).
+2. **Results bank** (unfolding cases), between `<!-- bank -->` and `<!-- /bank -->`: the result
+   of every investigation a competent clinician might reasonably order here, each as it would
+   be reported, typically ten to fifteen; one line "Add if not ordered: <decisive test>; with:
+   <one or two other reasonable tests>"; the clinical course to Stage 2; the Stage 2 questions
+   (`case_design.md` §5). The examiner reads only this block before the final answers, so it
+   holds no diagnosis, no key, no alternatives and no rubric.
 3. **Novelty and pre-flight**: one line each (`case_design.md` §8, lines 1–5 and 7–9; §10).
 4. **Verification list**: three to six precise searches.
 5. **The text to present**: Stage 1 (or the whole one-step case), exactly as the learner will
@@ -108,4 +111,5 @@ the verification list is to confirm with `(verify)`.
 
 Fix anything the pre-flight found by editing the file, without restating content anywhere
 else. Check that each `present` block is complete and closed, and that no present block
-contains a key, a topic word or a title. Then reply `done`.
+contains a key, a topic word or a title, and that the bank block (if any) is closed and
+holds no diagnosis or key. Then reply `done`.
