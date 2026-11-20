@@ -1238,6 +1238,8 @@ def cmd_record(args):
     st = load_json(args.state)
     check_schema(st)
     rnd = load_json_arg(args.round)
+    if not rnd.get("date"):     # the round is dated when it is recorded; reflecting later keeps that date
+        rnd["date"] = iso(today)
     # finalize a still-unreflected earlier session: it stays recorded with the reflection skipped
     if st.get("unreflected"):
         for s in st["sessions"]:
@@ -1311,7 +1313,7 @@ def cmd_doc(args):
         sid = args.id or rnd.get("log_id") or rnd.get("id") or (st or {}).get("next_id")
         if not sid:
             die("part A needs --id, or --round with log_id, or --state")
-        doc = {"id": sid, "date": rnd.get("date") or iso(dt.date.today()),
+        doc = {"id": sid, "date": rnd.get("date") or iso(today_from(args)),
                "title": rnd.get("title"), "summary": rnd.get("summary"), "tags": rnd.get("tags") or [],
                "topics": sorted({it.get("topic") for it in rnd.get("items") or [] if it.get("topic")}),
                "score": None, "format": round_format(rnd), "drill": (rnd.get("drill") or {}).get("code"),
@@ -2333,6 +2335,8 @@ def cmd_save(args):
     check_schema(st_in)
     sid = rnd.get("log_id") or st_in.get("next_id")
     rnd["log_id"] = sid
+    if not rnd.get("date"):
+        rnd["date"] = iso(today_from(args))
     warnings = []
     os.makedirs(args.out_dir, exist_ok=True)
     state_path = args.state
