@@ -7,3 +7,5 @@ __pycache__/
 data/
 state.json
 learner_ledger.json
+__pycache__/
+.pytest_cache/

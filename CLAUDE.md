@@ -1,6 +1,6 @@
 # clinical-cme
 
-Source repo for the `clinical-cme` skill (currently version 4.3): blinded clinical
+Source repo for the `clinical-cme` skill (currently version 4.3.1): blinded clinical
 self-assessment rounds for physicians — MCQs, focused questions and a full case, with
 evidence-based feedback, reflection-informed spaced repetition and periodic reasoning review.
 
@@ -13,6 +13,7 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
   - `references/` — store, schema, case design, feedback, analysis, logging, review, onboarding
   - `templates/` — learner page (`page.html`), default blueprint, resource library
   - `legacy/` — version-3 scripts, used only for migration
+- `tests/` — pytest suite for `cme.py` (`conftest.py` runs it the way the assistant does)
 - `docs/agents/` — config read by the engineering skills (see below)
 - `docs/adr/` — architecture decision records (created lazily)
 
@@ -27,7 +28,9 @@ do not add one. Run `claude plugin validate .` after touching either manifest.
 
 - Version bumps touch `SKILL.md` (heading), `README.md` (skill), and `PAGE_VERSION` in
   `scripts/cme.py` when the page changes.
-- `python3 -m py_compile skills/clinical-cme/scripts/cme.py` must pass before committing.
+- `python3 -m py_compile skills/clinical-cme/scripts/cme.py` and `python3 -m pytest -q tests` must
+  pass before committing (GitHub Actions runs both on every pull request).
+- Domain vocabulary: `CONTEXT.md`. Decisions: `docs/adr/`. Current plan: `docs/plan-v5.md`.
 - Never commit learner data (`data/`, `state.json`, session logs).
 
 ## Agent skills
