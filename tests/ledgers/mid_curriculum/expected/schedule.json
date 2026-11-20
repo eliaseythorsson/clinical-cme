@@ -1,0 +1,359 @@
+{
+ "after_record": {
+  "EMRG-02": {
+   "attempts": 2,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "EMRG",
+   "due": "2026-11-04",
+   "history": [
+    [
+     "2026-10-19",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-28",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Acute agitation, behavioral emergency",
+   "last": "2026-10-28",
+   "mastery": 5.0,
+   "step": 2
+  },
+  "ENDO-06": {
+   "attempts": 6,
+   "calibration": "confident_error",
+   "comfort": null,
+   "domain": "ENDO",
+   "due": "2026-10-29",
+   "history": [
+    [
+     "2026-10-05",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-10-09",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-12",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-16",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-23",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-28",
+     1.0,
+     null,
+     "confident_error"
+    ]
+   ],
+   "label": "Pheochromocytoma, hypercalcemia of malignancy",
+   "last": "2026-10-28",
+   "mastery": 1.0,
+   "step": 0
+  },
+  "GEN-12": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "GEN",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Fluid & electrolyte therapy, maintenance fluids",
+   "last": "2026-10-28",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "RENAL-03": {
+   "attempts": 3,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "RENAL",
+   "due": "2026-11-13",
+   "history": [
+    [
+     "2026-10-07",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-14",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-10-28",
+     4.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Potassium disorders",
+   "last": "2026-10-28",
+   "mastery": 4.0,
+   "step": 3
+  },
+  "TOX-03": {
+   "attempts": 2,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "TOX",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-23",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-10-28",
+     4.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Environmental (hypothermia, hyperthermia)",
+   "last": "2026-10-28",
+   "mastery": 4.0,
+   "step": 1
+  }
+ },
+ "after_reflect": {
+  "EMRG-02": {
+   "attempts": 2,
+   "calibration": "aligned",
+   "comfort": 4,
+   "domain": "EMRG",
+   "due": "2026-11-04",
+   "history": [
+    [
+     "2026-10-19",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-28",
+     5.0,
+     4,
+     "aligned"
+    ]
+   ],
+   "label": "Acute agitation, behavioral emergency",
+   "last": "2026-10-28",
+   "mastery": 5.0,
+   "step": 2
+  },
+  "ENDO-06": {
+   "attempts": 6,
+   "calibration": "confident_error",
+   "comfort": 4,
+   "domain": "ENDO",
+   "due": "2026-10-29",
+   "history": [
+    [
+     "2026-10-05",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-10-09",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-12",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-16",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-23",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-28",
+     1.0,
+     4,
+     "confident_error"
+    ]
+   ],
+   "label": "Pheochromocytoma, hypercalcemia of malignancy",
+   "last": "2026-10-28",
+   "mastery": 1.0,
+   "step": 0
+  },
+  "GEN-12": {
+   "attempts": 1,
+   "calibration": "underconfident",
+   "comfort": 2,
+   "domain": "GEN",
+   "due": "2026-10-30",
+   "history": [
+    [
+     "2026-10-28",
+     5.0,
+     2,
+     "underconfident"
+    ]
+   ],
+   "label": "Fluid & electrolyte therapy, maintenance fluids",
+   "last": "2026-10-28",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "RENAL-03": {
+   "attempts": 3,
+   "calibration": "aligned",
+   "comfort": 4,
+   "domain": "RENAL",
+   "due": "2026-11-13",
+   "history": [
+    [
+     "2026-10-07",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-14",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-10-28",
+     4.0,
+     4,
+     "aligned"
+    ]
+   ],
+   "label": "Potassium disorders",
+   "last": "2026-10-28",
+   "mastery": 4.0,
+   "step": 3
+  },
+  "TOX-03": {
+   "attempts": 2,
+   "calibration": "aligned",
+   "comfort": 5,
+   "domain": "TOX",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-23",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-10-28",
+     4.0,
+     5,
+     "aligned"
+    ]
+   ],
+   "label": "Environmental (hypothermia, hyperthermia)",
+   "last": "2026-10-28",
+   "mastery": 4.0,
+   "step": 1
+  }
+ },
+ "date": "2026-10-28",
+ "due_before": [
+  {
+   "due": "2026-10-21",
+   "topic": "RENAL-03"
+  },
+  {
+   "due": "2026-10-22",
+   "topic": "EMRG-02"
+  },
+  {
+   "due": "2026-10-22",
+   "topic": "GEN-10"
+  },
+  {
+   "due": "2026-10-23",
+   "topic": "CARD-04"
+  },
+  {
+   "due": "2026-10-24",
+   "topic": "CARD-05"
+  },
+  {
+   "due": "2026-10-24",
+   "topic": "ENDO-06"
+  },
+  {
+   "due": "2026-10-24",
+   "topic": "GI-02"
+  },
+  {
+   "due": "2026-10-24",
+   "topic": "TOX-03"
+  },
+  {
+   "due": "2026-10-25",
+   "topic": "ID-07"
+  },
+  {
+   "due": "2026-10-25",
+   "topic": "PULM-04"
+  },
+  {
+   "due": "2026-10-25",
+   "topic": "TOX-02"
+  },
+  {
+   "due": "2026-10-26",
+   "topic": "NEURO-03"
+  },
+  {
+   "due": "2026-10-28",
+   "topic": "HEME-04"
+  }
+ ]
+}

@@ -1,0 +1,174 @@
+{
+ "blood_gas_units": "mmHg",
+ "case_format": "unfolding",
+ "counts": {
+  "case": 1,
+  "focused": 0,
+  "mcqs": 3
+ },
+ "date": "2026-10-19",
+ "estimated_minutes": 24,
+ "feedback_depth": "detailed",
+ "guideline_region": "Iceland/Europe",
+ "helpers": true,
+ "item_order": "mcqs_first",
+ "items": [
+  {
+   "already_used": [
+    {
+     "date": "2026-10-16",
+     "diagnosis": "Example diagnosis: Pain management & opioid stewardship",
+     "id": "S0006",
+     "patient": "Example patient 6",
+     "presentation": "Example presentation 6",
+     "setting": "ward",
+     "topic": "GEN-04"
+    },
+    {
+     "date": "2026-10-14",
+     "id": "S0005",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 5.3",
+     "topic": "GEN-04"
+    }
+   ],
+   "domain": "GEN",
+   "label": "Pain management & opioid stewardship",
+   "reason": "spaced review due 2026-10-17; last 1.0/5 on 2026-10-16; flagged confident error last time; open gap: Confident but incorrect answer on 2026-10-16; re-test the same decision point.",
+   "reason_code": "due",
+   "slot": "case",
+   "topic": "GEN-04"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-10-07",
+     "id": "S0002",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 2.1",
+     "topic": "HEME-02"
+    },
+    {
+     "date": "2026-10-09",
+     "id": "S0003",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 3.1",
+     "topic": "HEME-02"
+    }
+   ],
+   "domain": "HEME",
+   "label": "Thrombocytopenia, HIT, TTP/HUS",
+   "reason": "spaced review due 2026-10-11; last 5.0/5 on 2026-10-09",
+   "reason_code": "due",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "HEME-02"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-10-12",
+     "id": "S0004",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 4.3",
+     "topic": "ID-02"
+    }
+   ],
+   "domain": "ID",
+   "label": "Skin & soft tissue infections, necrotizing fasciitis",
+   "reason": "spaced review due 2026-10-15; last 5.0/5 on 2026-10-12",
+   "reason_code": "due",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "ID-02"
+  },
+  {
+   "domain": "EMRG",
+   "label": "Anaphylaxis (see RHEUM-04)",
+   "reason": "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)",
+   "reason_code": "new",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "EMRG-01"
+  }
+ ],
+ "lab_units": "SI",
+ "note": "Blind: do not reveal topics, domains, reasons or the drill before all answers are in. Make every vignette and stem clearly different from already_used and recent_cases_any_topic (patient, setting, presentation, twist). MCQs and focused questions are presented together and get their feedback before the case is shown; neither they nor their feedback may cue the case.",
+ "ok": true,
+ "pending_errata": [],
+ "prepare_ahead": true,
+ "presentation_order": [
+  "mcq HEME-02",
+  "mcq ID-02",
+  "mcq EMRG-01",
+  "case GEN-04"
+ ],
+ "profile": {
+  "notes": "",
+  "practice_setting": [],
+  "role": null,
+  "specialty": "Internal/hospital medicine",
+  "subspecialty": null
+ },
+ "recent_cases_any_topic": [
+  {
+   "date": "2026-10-05",
+   "diagnosis": "Example diagnosis: Valvular disease & infective endocarditis",
+   "id": "S0001",
+   "patient": "Example patient 1",
+   "presentation": "Example presentation 1",
+   "setting": "ward",
+   "topic": "CARD-05"
+  },
+  {
+   "date": "2026-10-07",
+   "diagnosis": "Example diagnosis: Perioperative risk assessment & medical consultation",
+   "id": "S0002",
+   "patient": "Example patient 2",
+   "presentation": "Example presentation 2",
+   "setting": "ward",
+   "topic": "GEN-01"
+  },
+  {
+   "date": "2026-10-09",
+   "diagnosis": "Example diagnosis: CKD inpatient management, indications for dialysis",
+   "id": "S0003",
+   "patient": "Example patient 3",
+   "presentation": "Example presentation 3",
+   "setting": "ward",
+   "topic": "RENAL-06"
+  },
+  {
+   "date": "2026-10-12",
+   "diagnosis": "Example diagnosis: CKD inpatient management, indications for dialysis",
+   "id": "S0004",
+   "patient": "Example patient 4",
+   "presentation": "Example presentation 4",
+   "setting": "ward",
+   "topic": "RENAL-06"
+  },
+  {
+   "date": "2026-10-14",
+   "diagnosis": "Example diagnosis: COPD exacerbation",
+   "id": "S0005",
+   "patient": "Example patient 5",
+   "presentation": "Example presentation 5",
+   "setting": "ward",
+   "topic": "PULM-02"
+  },
+  {
+   "date": "2026-10-16",
+   "diagnosis": "Example diagnosis: Pain management & opioid stewardship",
+   "id": "S0006",
+   "patient": "Example patient 6",
+   "presentation": "Example presentation 6",
+   "setting": "ward",
+   "topic": "GEN-04"
+  }
+ ],
+ "session_id": "S0007",
+ "session_minutes": 20,
+ "show_coding": true,
+ "specialty": "Internal/hospital medicine",
+ "testing": false
+}
