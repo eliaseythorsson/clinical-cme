@@ -25,8 +25,8 @@ may reach the conversation they see.
 Open the list file and find its **verification list**: three to six lines, each a precise
 search for one claim the feedback will rest on (a guideline recommendation and its year, a
 threshold or dose, a trial result, a test's accuracy, an approval status). The keys and model
-answers in the same file tell you exactly what each claim is and which region's guidance the
-learner follows. Check those claims, and any other specific number, dose or recommendation in
+answers in the same file tell you exactly what each claim is, and the line above the list
+gives the learner's guideline region and specialty: look for that region's guidance first. Check those claims, and any other specific number, dose or recommendation in
 the keys that could have changed or that you are not certain of. Nothing else.
 
 ## 2. How

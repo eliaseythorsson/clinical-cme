@@ -70,7 +70,7 @@ DEFAULT_CONFIG = {
     "new_topics_per_round": 1,
     "lab_units": "SI",
     "blood_gas_units": "mmHg",
-    "guideline_region": "Europe",
+    "guideline_region": "Iceland/Europe",   # free text; asked at setup: whose guidelines items are written and graded against
     "item_order": "mcqs_first",          # mcqs_first: questions -> their feedback -> case -> its feedback
     "helpers": True,                     # helper agents where the app has them: an author drafts the items, a
                                          # checker verifies the evidence; the conversation grades
@@ -83,7 +83,7 @@ DEFAULT_CONFIG = {
     "resource_preferences": {"free_only": False, "formats": ["guidelines", "review articles"]},
 }
 DEFAULT_PROFILE = {
-    "display_name": None, "role": None, "specialty": None, "subspecialty": None,
+    "display_name": None, "role": None, "specialty": "Internal/hospital medicine", "subspecialty": None,
     "practice_setting": [], "goals": [], "strengths": [], "weaknesses": [],
     "domain_self_ratings": {}, "domain_emphasis": {}, "notes": "", "onboarded_at": None,
 }
@@ -290,6 +290,16 @@ def deep_merge(target, changes):
             deep_merge(target[k], v)
         else:
             target[k] = v
+
+
+def guideline_context(st):
+    """Region and specialty the author and the examiner work to; the defaults stand in for a
+    ledger that has none (older ledgers, or a blank value)."""
+    def text(v, default):
+        return v.strip() if isinstance(v, str) and v.strip() else default
+    return {"guideline_region": text((st.get("config") or {}).get("guideline_region"),
+                                     DEFAULT_CONFIG["guideline_region"]),
+            "specialty": text((st.get("profile") or {}).get("specialty"), DEFAULT_PROFILE["specialty"])}
 
 
 def new_state(today):
@@ -823,12 +833,12 @@ def plan_round(st, args, today):
         "counts": {"mcqs": len(by_slot["mcq"]), "focused": len(by_slot["focused"]), "case": len(by_slot["case"])},
         "estimated_minutes": est,
         "lab_units": cfg.get("lab_units"), "blood_gas_units": cfg.get("blood_gas_units"),
-        "guideline_region": cfg.get("guideline_region"), "session_minutes": cfg.get("session_minutes"),
+        "session_minutes": cfg.get("session_minutes"), **guideline_context(st),
         "feedback_depth": cfg.get("feedback_depth"), "show_coding": cfg.get("show_coding", True),
         "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
         "testing": bool(cfg.get("testing", False)),
-        "profile": {k: st["profile"].get(k) for k in ("role", "specialty", "subspecialty",
-                                                        "practice_setting", "notes")},
+        "profile": dict({k: st["profile"].get(k) for k in ("role", "subspecialty", "practice_setting", "notes")},
+                        specialty=guideline_context(st)["specialty"]),
         "recent_cases_any_topic": used_cases[-15:],
         "items": chosen,
         "pending_errata": st.get("pending_errata") or [],
@@ -1660,7 +1670,7 @@ def cmd_settings(args):
     st["updated"] = iso(today)
     save_json(st, args.out)
     print(json.dumps({"ok": True, "out": args.out, "gen": st["gen"], "config": st["config"],
-                      "review": st["review"]}, ensure_ascii=False))
+                      "review": st["review"], **guideline_context(st)}, ensure_ascii=False))
 
 
 # ---------------------------------------------------------------- init, blueprint, migrate
@@ -1989,6 +1999,7 @@ def status_dict(st, path, today):
                   "minutes": cfg.get("session_minutes"), "item_order": cfg.get("item_order")},
         "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
         "testing": bool(cfg.get("testing", False)),
+        **guideline_context(st),             # what the examiner grades against
         "prepare_task": bool(cfg.get("prepare_task", False)),
         "mirror": cfg.get("mirror"),
         "reminders": cfg.get("reminders"),

@@ -53,10 +53,21 @@ Ask in at most two or three batches. Use structured multiple-choice questions wh
 offers them; otherwise one compact message. Offer defaults so the learner can accept
 and move on.
 
-**Batch 1 — who you are**: role (resident · fellow · attending/consultant · other); specialty
-and subspecialty; main setting (inpatient · outpatient · ED/ICU · mixed); region and units
-(Europe, SI, European guidelines · North America, conventional units, US guidelines · UK, SI,
-NICE etc. · other). Ask separately about blood gases in mmHg or kPa if the region varies.
+**Batch 1 — who you are**: role (resident · fellow · attending/consultant · other); main setting
+(inpatient · outpatient · ED/ICU · mixed); and, always, these two questions, each with its
+default offered so the learner can simply accept it:
+
+- **Whose guidelines should the questions and the grading follow?** Iceland/Europe (default:
+  Icelandic national guidance where it exists, otherwise the European societies; SI units) ·
+  UK (NICE etc., SI) · North America (US guidelines, conventional units) · other (free text).
+  → `config.guideline_region`, with `lab_units` to match. Ask separately about blood gases in
+  mmHg or kPa if the region varies.
+- **Which specialty?** Internal/hospital medicine (default) · other (free text), plus a
+  subspecialty if any. → `profile.specialty`, `profile.subspecialty`.
+
+Say in one line that both can be changed later just by asking ("use UK guidelines", "my
+specialty is geriatrics"). An answer of "defaults" or no answer keeps the defaults; `cme.py
+init` fills them in when they are left out.
 
 **Batch 2 — how you want to work**: what a round should contain (several may be chosen; default
 MCQs + full case):
@@ -107,6 +118,8 @@ for a one-step case and 15 for an unfolding one, feedback included):
 \* Three formats do not fit in ten minutes; say so in one line ("in 10 minutes there is room for
 a focused question and the case; MCQs come back if you lengthen the session") and offer to
 alternate instead. The learner can always pick other numbers.
+| Guidelines: Iceland/Europe / UK / North America / other | `guideline_region` "Iceland/Europe" / "UK" / "North America" / the learner's words |
+| Specialty | `profile.specialty` (default "Internal/hospital medicine") |
 | Frequency | `target_sessions_per_week` 5 / 3 / 2 / 1 |
 | Self-ratings | `profile.domain_self_ratings` {CODE: n} |
 | Weakest areas named without ratings | 2 for those domains; strongest → 4 |
@@ -193,6 +206,10 @@ all three.
 **Why did my round start with a pause this time?** The prepared round is used only if nothing
 changed since it was written (your settings, the round mix, a review) and you did not ask for
 a special round; otherwise it is written at the start.
+
+**Whose guidelines does it use, and for which specialty?** The ones you chose at setup
+(Iceland/Europe and internal/hospital medicine unless you said otherwise). Change either any
+time: "use UK guidelines", "my specialty is geriatrics".
 
 **Can I choose the area?** Yes: "a cardiology round". The domain is then known, the question is not.
 
