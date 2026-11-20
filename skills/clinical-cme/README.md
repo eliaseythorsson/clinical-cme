@@ -1,10 +1,40 @@
-# clinical-cme (version 4.2)
+# clinical-cme (version 4.3)
 
 Blinded clinical self-assessment rounds for physicians: single-best-answer questions and
-focused questions on unrelated topics, then one clinical case — in the mix each learner
-chooses — graded against current evidence, with a one-minute
+focused questions on unrelated topics, with their feedback, then one clinical case and its
+feedback — in the mix each learner chooses — graded against current evidence, with a one-minute
 reflection that feeds spaced repetition. Every round is coded (reasoning steps, error types,
 biases, calibration) and periodically analysed in a candid progress review.
+
+## What is new in version 4.3
+
+The aim of this version: the learner is always reading, answering or reading feedback, never
+waiting for something to be generated.
+
+- **New order.** Short questions → their feedback → the full case → its feedback, with the gap
+  summary for the whole round and one reflection at the end. The round is blind part by part,
+  and the log keeps both feedback messages in place (`cme.py save --feedback-questions`).
+- **The whole round is prepared ahead.** After each close the next round is planned and
+  written in full — short questions, the case's Stage 1 with a results bank (so Stage 2 goes
+  out the moment Stage 1 is answered), and the notes for both feedbacks — and kept, packed, in
+  the store (`data/prepared.json`; `cme.py prepare`, `stash`), together with the checked
+  evidence for it, so a key that current guidance contradicts is corrected before the round
+  is ever played. The next session reads the store and presents (`start --prepared`,
+  `present`); nothing is written or looked up before the learner starts, before the case
+  appears, or before either feedback. An optional nightly scheduled task (`prepare_task`;
+  `SKILL.md`, "Prepare only") prepares a round whenever none is ready. A prepared round is used only if the ledger and the mix are
+  unchanged (`state_schema.md` §8).
+- **Three roles, three models (the `helpers` setting, on by default).** Where the app has
+  helper agents: an **author** on the most capable model writes the round
+  (`references/author.md`); the conversation is the **examiner**, which grades against the
+  evidence and never marks items it wrote, or even reads their keys before the answers are in;
+  a **checker** on a mid-tier model verifies the sources when the round is prepared
+  (`references/evidence_check.md`). Mechanical steps stay with the conversation. `helpers:
+  false` makes one assistant do all three (`SKILL.md`, "Roles").
+- **Behind the scenes at every step** the remaining work (filing for the log, the save, the
+  next round) happens while the learner reads (`SKILL.md`, "Speed"; `feedback_guide.md` §9).
+- Leaner sealed drafts (one-line pre-flight record, keys before stems), so a round that could
+  not be prepared still starts quickly.
 
 ## Page update 4.2.1
 
@@ -63,7 +93,7 @@ it. What to know:
 - **Capabilities.** If a capability in `SKILL.md` ("Tools") is missing, follow its "If missing"
   column; the round still runs. Without the ability to run Python on files, it cannot.
 - **Blinding.** The assistant must be able to keep its visible reasoning free of the content
-  ("Sealed drafting"). If an assistant shows its full reasoning to the user, tell learners not
+  ("Sealed"). If an assistant shows its full reasoning to the user, tell learners not
   to open it before answering.
 - **The page.** `templates/page.html` uses the Claude page interface for the database and the
   Export button; it reads the files with plain `fetch`, so it also works when the `data` folder
@@ -73,12 +103,14 @@ it. What to know:
 
 ```
 SKILL.md                      the protocol the assistant follows in a round
-scripts/cme.py                the state engine (start, save, close, stats, review, import …)
+scripts/cme.py                the state engine (start, present, save, close, prepare, stash, stats …)
 references/store.md           the store: capabilities, kinds of store, reading/writing, setup,
                               migration, recovery, mirror, export
 references/state_schema.md    ledger layout, round and reflection JSON, spacing rules, commands
 references/case_design.md     how cases and MCQs are written (blinding, realism, pre-flight)
-references/feedback_guide.md  grading, evidence briefings, reflection prompt, disputes
+references/feedback_guide.md  grading, evidence briefings, reflection prompt, disputes, feedback kits
+references/author.md          the author's brief: how a round's items and notes are written
+references/evidence_check.md  the checker's brief: how the evidence is verified
 references/analysis_framework.md  coding vocabulary and the deep review
 references/session_log.md     the per-session document, errata, search, teaching export
 references/progress_review.md the periodic review

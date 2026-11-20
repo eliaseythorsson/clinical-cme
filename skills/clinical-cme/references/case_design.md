@@ -1,13 +1,15 @@
 # Case and question design
 
-Read this before writing any item. The goal is that the learner reasons from the same
+Read this before writing any item: it is the standard for whoever writes them — the author
+agent (`author.md`), or the assistant running the round when there is none. The goal is that the learner reasons from the same
 information a clinician would actually have at that point in the encounter, and that
 nothing in the format, the order of presentation or the choice of tests reveals the
 answer before they commit.
 
 ## 1. Topic blinding
 
-Until every answer in the round is in:
+The round is blind part by part: the short questions until all of them are answered (their
+feedback then reveals them), the case until its last answer. Until a part's answers are in:
 
 - Do not name the topic, domain, diagnosis, organ system or blueprint ID.
 - Do not say why the item was chosen (due for review, scored poorly last time, open gap,
@@ -17,11 +19,15 @@ Until every answer in the round is in:
 - Keep tool activity neutral. Before answers are in, run no web searches, open no
   resource files and create no task-list items that name the topic, and keep
   command descriptions generic ("Read the ledger", "Plan today's items"). Do evidence
-  checks after the answers are committed.
+  checks after that part's answers are committed, or hand them to a background checker
+  whose prompt carries no content (SKILL.md, "Roles").
+- The questions' feedback is sent while the case is still sealed. It names the questions'
+  topics and why they were chosen, and nothing about the case: not its topic or domain, not
+  that it is "something different", not why it was chosen.
 - Keep your reasoning neutral too. The learner may see a summary of your thinking, so all
   drafting happens in the sealed files `sealed_questions.md` and `sealed_case.md` (SKILL.md,
-  "Sealed drafting"). In thinking, items are "the case" and "Q1–Q4"; no diagnosis, topic,
-  finding, test, drug or answer letter appears there until every answer is in.
+  "Sealed"). In thinking, items are "the case" and "Q1–Q4"; no diagnosis, topic,
+  finding, test, drug or answer letter appears there until that part's answers are in.
 - If the learner asks for a domain ("give me a cardiology round"), you may acknowledge
   the domain they chose, but the specific topic stays hidden.
 - Do not preview upcoming topics at the end of a session ("next up: hyponatraemia").
@@ -30,10 +36,10 @@ Until every answer in the round is in:
 ## 2. Short questions first, and on other topics
 
 The short questions — the MCQs and any focused questions (§11), in that order, in one message —
-are presented and answered **before** the case is shown (`config.item_order` `mcqs_first`). The
-case therefore cannot help with them. To stop them from cueing the case, they must be about
-something else entirely. Everything below about MCQs applies to focused questions too. `plan`
-enforces this:
+are presented, answered **and given their feedback before** the case is shown
+(`config.item_order` `mcqs_first`). The case therefore cannot help with them. To stop them, and
+the teaching in their feedback, from cueing the case, they must be about something else
+entirely. Everything below about MCQs applies to focused questions too. `plan` enforces this:
 
 - **Outside a domain round**, no MCQ comes from the case's domain.
 - **No MCQ is related to the case topic.** Related means a blueprint cross-reference in either
@@ -49,7 +55,11 @@ labels; you must also check the content:
 - No MCQ or focused stem, option or explanation may name, test or hint at the case's diagnosis, its
   leading alternatives, its key investigation or its management, even through a shared
   mechanism. For example, with a hyponatraemia case, avoid an MCQ on thiazide adverse effects
-  or on osmolality.
+  or on osmolality. The explanation counts double now: the learner reads it minutes before the
+  case, so an evidence briefing must not teach anything the case tests.
+- The short questions are written before the case. The case is then written to stay clear of
+  them and of what their feedback will teach: if the planned case topic cannot be kept apart from a question already
+  drafted, change the case's angle or decision point, not the question.
 - If a selected MCQ topic cannot be written without touching the case, pick another untested
   topic from a different domain and record it as `new` with the reason.
 - MCQs on related themes stay apart in a later round, not in this one.
@@ -154,11 +164,17 @@ Grade the quality of the reasoning and the discriminating strategy. The feedback
 the final diagnosis and shows the actual results of the decisive tests.
 
 ### Unfolding (two steps)
-**Stage 1** is the Discriminate prompt above. After the learner answers Stage 1 and the
-MCQs, present **Stage 2** without any grading or comment yet:
+**Stage 1** is the Discriminate prompt above. After the learner answers Stage 1, present
+**Stage 2** without any grading or comment yet. So that Stage 2 can go out at once, the sealed
+case holds a **results bank**, written with the case: the result of every investigation a
+competent clinician might reasonably order here (typically ten to fifteen: the decisive ones,
+the tempting low-yield ones and the specialised ones), each as it would be reported, plus the
+clinical course and the Stage 2 questions. Stage 2 is assembled from it by the assistant
+running the round, once the learner has answered Stage 1:
 
 - Give the results of every test the learner ordered, written realistically (normal,
-  non-specific and abnormal results alike).
+  non-specific and abnormal results alike). A test that is not in the bank gets a realistic
+  result consistent with the case, written on the spot.
 - If they did not order the decisive test, add it as "Results also available (ordered by
   the admitting team / consultant)", together with one or two other reasonable tests,
   so that the decisive one is not singled out.
@@ -166,7 +182,9 @@ MCQs, present **Stage 2** without any grading or comment yet:
 - Ask for the final diagnosis, the specific management plan (drugs, doses where they
   matter, targets, monitoring) and disposition or follow-up.
 
-Do not let Stage 2 grade or hint at Stage 1. Keep both stages in the final feedback.
+Do not let Stage 2 grade or hint at Stage 1. Keep both stages in the final feedback. After
+sending Stage 2, add its text exactly as sent to `sealed_case.md` as a
+`<!-- present: stage2 -->` block: the log copies it from there.
 
 ### Answer format prompt
 Close the presentation with a short instruction such as:
@@ -195,6 +213,9 @@ depth of feedback and the spacing of the topic.
   the aim is to test transfer, not recall of the earlier vignette.
 - MCQs are presented first, on their own. Each stem must stand alone: no "the patient above",
   and no reference to the case.
+- Write the key before the stem (in the sealed file: the correct answer and its one-line
+  reason, then a few words per distractor on the scenario in which it would be right). A
+  distractor without such a scenario is not plausible; replace it.
 
 ## 7. Difficulty and conventions
 
@@ -210,12 +231,13 @@ depth of feedback and the spacing of the topic.
 
 ## 8. Pre-flight check (in the sealed draft, before sending)
 
-Answer each line as a row of the pre-flight table at the end of the sealed file
-(`sealed_questions.md` for lines 6 and 10–13, `sealed_case.md` for the rest; yes/no, and the fix
-when needed; with no case in the round, only the lines that apply). The text the learner will
-see goes between `<!-- present: questions|case|stage2 -->` and `<!-- /present -->` exactly as it
-will be sent: `cme.py save` copies it into the log. Do not work through it in your thinking:
-there it would expose the content it checks.
+Check every line that applies and record the outcome in the sealed file as one line: the
+numbers that pass, and for each that fails the fix you made ("pre-flight 6, 10–13 pass" or
+"pre-flight 1–5, 7–9 pass; 4: added the family history"). `sealed_questions.md` carries lines 6
+and 10–13, `sealed_case.md` the rest; with no case in the round, only the lines that apply. The
+text the learner will see goes between `<!-- present: questions|case|stage2 -->` and
+`<!-- /present -->` exactly as it will be sent: `cme.py save` copies it into the log. Do not
+work through the list in your thinking: there it would expose the content it checks.
 
 1. Could a clinician guess the diagnosis from the list of tests alone?
 2. Is any detail present only because it is the answer?
@@ -224,9 +246,10 @@ there it would expose the content it checks.
 4. Are all standard sections present (history incl. family and social history, vitals,
    FBC, basic panel, ECG and chest X-ray for hospital cases)?
 5. At most one non-routine result in the opening, justified by the complaint?
-6. Are the MCQs unrelated to the case in content as well as by topic ID (not its diagnosis,
-   differential, key test or treatment), with homogeneous options and varied answer
-   positions? Would reading the MCQs first make the case easier? If so, change the MCQ.
+6. Are the short questions unrelated to the case in content as well as by topic ID (not its
+   diagnosis, differential, key test or treatment), with homogeneous options and varied answer
+   positions? Would reading them **and their feedback** first make the case easier? If so,
+   change the question — or, when the questions were drafted first, the case (§2).
 7. Have any tool calls, searches or task items named the topic? If so, change the plan.
 8. Is the vignette clearly different from every `already_used` and `recent_cases_any_topic`
    entry: patient, setting, presentation and twist (§10)?
@@ -333,7 +356,7 @@ End with a single question that asks the learner to commit and to justify. Patte
 In `sealed_questions.md`, for each focused question:
 
 - **Best answer** in two to four sentences, with the guideline or evidence it rests on (to be
-  verified at grading; put the searches on the verification list).
+  verified before grading; put the searches on the verification list).
 - **Rubric**: two to four elements, each one line — usually (1) the decision; (2) the decisive
   reason or discriminating finding; (3) the safety element, threshold or dose that matters;
   (4) optionally, what should change the decision.
@@ -349,10 +372,10 @@ End the message with one answer prompt covering both kinds, for example:
 
 > For Questions 1–3 reply with a letter; for Question 4 answer in a few lines — your decision and
 > why. For each you may add sure / unsure / guess and anything specific you are unsure about.
-> The case follows once these are answered.
+> Feedback on these comes as soon as you answer, then the case.
 
-Without a case in the round, drop the last sentence; without MCQs, ask only for the free-text
-answers.
+Without a case in the round, end with "Feedback comes as soon as you answer."; without MCQs,
+ask only for the free-text answers.
 
 ### 11.5 Drills
 

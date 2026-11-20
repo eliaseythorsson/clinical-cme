@@ -7,7 +7,13 @@ guideline. External reading is a supplement, pointed at the exact section that m
 
 ## 1. Before writing feedback: verify
 
-All answers are now committed, so evidence checks are allowed.
+Feedback comes in two parts — the short questions' as soon as they are answered, the case's
+after its last answer — and each rests on evidence checked for that part
+(`references/evidence_check.md`). Where a checker has done the check — when the round was
+prepared, or while the learner was answering — its file (`evidence_questions.md`,
+`evidence_case.md`) is ready: read it and grade. Its `Checked:` line gives the date; a
+prepared round can be up to 30 days old, so if you know or suspect that guidance on a point
+has changed since then, search that point once the answers are in. Otherwise that part's answers are now committed, so you may check for yourself.
 
 - Check every specific claim you are about to make that could have changed or that you
   are not certain of: guideline recommendations and their class/level, thresholds,
@@ -21,20 +27,32 @@ All answers are now committed, so evidence checks are allowed.
   the pivotal trial") or omit it. A precise-looking wrong number is worse than none.
 - Paraphrase guidelines and papers; quote at most a short phrase where exact wording
   matters.
-- Keep searches efficient: typically 2–6 for the round, focused on the learner's gaps and
-  stated uncertainties. They are listed in advance in the sealed files ("verification
-  list", in `sealed_case.md`, or in `sealed_questions.md` for a round without a case): run them
-  all in one parallel batch, then fetch the primary sources you will cite,
-  also in one batch. Never run them before the answers are in.
+- Keep searches efficient: typically 2–6 per part. They are listed in advance in the sealed
+  files ("verification list": the questions' in `sealed_questions.md`, the case's in
+  `sealed_case.md`): run a part's list in one parallel batch, then fetch the primary sources
+  you will cite, also in one batch. Never run them yourself before that part's answers are in.
+- After a helper's check, search again only for what the learner's answers raise that the file
+  does not cover (a stated uncertainty, an unexpected but defensible answer). A claim the file
+  marks "not verified" is stated qualitatively or left out. If the file says a key is
+  contradicted by current guidance, correct the key before grading and grade against the
+  guidance.
 
-## 2. Structure of the feedback message
+## 2. Structure of the feedback
 
-Send the feedback as one message, in this order: A reveal, B MCQs, B2 focused questions,
-C case, D gap summary, E reading, F reflection. The short questions come first because they were
-answered first (with `case_first`, put C first). Leave out any section the round did not have.
+Two messages, each sent the moment its part is graded:
 
-### A. Round reveal
-For each item: the topic (blueprint ID and label), and why it was chosen in plain words,
+- **Part 1, after the short questions are answered**: A (for these items only), B, B2. It
+  closes with one line on the score so far and "The case follows." No gap summary, no reading
+  list, no reflection prompt, and nothing about the case (`case_design.md` §1). The case is
+  sent straight after it.
+- **Part 2, after the case's last answer**: A (for the case), C, D for the **whole round**
+  (short questions included), E, F.
+
+A round without a case has one message: A, B, B2, D, E, F. With `case_first`, one message at
+the end: A, C, B, B2, D, E, F. Leave out any section the round did not have.
+
+### A. Reveal
+For each item of the part: the topic (blueprint ID and label), and why it was chosen in plain words,
 e.g. "Due for spaced review — last tested 23 Sep, 3/5, gap on chronicity of
 hyponatraemia" or "New topic; perioperative medicine is weighted up because you rated
 it 2/5". Name the prior open gaps this round re-tested. If the case was a drill
@@ -111,9 +129,9 @@ for surgery) and its surgery table — about 8 minutes". Use verified sources (t
 `resource_preferences`, e.g. free only, apply; flag paid sources). `templates/resource_library.md`
 lists dependable starting points by domain.
 
-### F. Reflection prompt (ends the message)
+### F. Reflection prompt (ends the final message)
 See §6. The round is recorded right after this message (reflection pending) and updated when
-the learner replies.
+the learner replies. One reflection covers the whole round.
 
 ## 3. The evidence briefing
 
@@ -159,8 +177,8 @@ default) allows up to about 300 per point.
 ## 5. Length and time budget
 
 Aim for feedback the learner can read in roughly a third of their session time
-(`session_minutes`): about 1,200–2,000 words for a 20–30 minute session, less for shorter
-sessions. Each focused question takes about 150–300 words of it. Spend the words where the gaps are. Use headings, short paragraphs and the
+(`session_minutes`): about 1,200–2,000 words for a 20–30 minute session over both parts, less
+for shorter sessions. Each focused question takes about 150–300 words of it. Spend the words where the gaps are. Use headings, short paragraphs and the
 tables above so it scans quickly. Do not pad correct answers to look thorough.
 
 ## 6. Reflection prompt (append to the feedback)
@@ -210,6 +228,47 @@ right is telling you something about the grading.
 
 ## 8. The log needs the feedback verbatim
 
-Part A of the log is written right after this message, and it copies the feedback exactly
-as sent (`session_log.md` §2). Keep tables and headings in plain Markdown so the copy renders
-well on the page.
+Part A of the log copies both feedback messages exactly as sent (`session_log.md` §2): write
+part 1 to `feedback_questions.md` and part 2 to `feedback.md` right after sending each, while
+the learner reads. Keep tables and headings in plain Markdown so the copy renders well on the
+page.
+
+## 9. Feedback kits: notes made while the learner answers
+
+Feedback is written when the answers are in, but most of its substance does not depend on
+them. That substance is put into a kit when the items are written, by whoever writes them
+(`author.md`), so that grading is quick and the feedback can be written straight away. A kit
+is notes for the grader, not prose to paste: terse, sealed with the items, never shown.
+
+`kit_questions.md`, per item:
+
+- the reveal line (topic, blueprint ID, why it was chosen, any prior gap it re-tests);
+- MCQ: the decisive datum in the stem; one line per distractor (wrong here because …, right
+  when …); focused: the decisive point and the tempting wrong turn;
+- the briefing in outline: the rule, the why in a sentence, the evidence to cite (as on the
+  verification list; figures to be confirmed), how it applies to this patient;
+- the two-line version for a correct, sure answer (§4).
+
+`kit_case.md`:
+
+- the reveal line, and the drill if there is one;
+- the model answer in one paragraph;
+- the rubric for each stage, as a checklist to mark ✓ ◐ ✗;
+- the differential table (§2 C.3), complete, with the incidental findings and why they are noise;
+- a briefing outline for each rubric element a learner could plausibly miss;
+- one to three pearls or pitfalls; up to two reading pointers (§2 E).
+
+At grading, correct the kit's figures and sources from the evidence check before using them,
+mark the rubric against what the learner wrote, scale each briefing to the answer (§4) and
+lead with the learner's own words (§3). The kit never replaces reading the answer: credit
+what is defensible though unforeseen, and write the parts only the answer can prompt
+(transfer gaps, calibration, the errors' coding) fresh.
+
+**The grader is not the author.** Where an author agent wrote the items, the key and the kit
+are one clinician's view, and you are the second. Before using a key, ask whether you would
+have answered the same from the vignette alone, and whether the checked evidence supports it.
+If the key is wrong, dated, or narrower than current guidance, grade against the guidance,
+say so in the feedback in one line ("the intended answer was X; current guidance also
+supports Y"), and credit the learner. If an item turns out to be flawed (two defensible best
+answers, a stem that gives the answer away, a missing datum), say so, score it generously,
+and do not record a gap from it. Never defend a key because it is the key.

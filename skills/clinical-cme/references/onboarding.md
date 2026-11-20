@@ -20,8 +20,12 @@ are in, attach your `state.json`, or tell me your files were in Google Drive (ve
 > - **Short rounds, in the mix you choose.** Single-best-answer questions; **focused questions**
 >   (a short case ending in one free-text question on a single decision — a diagnosis, the next
 >   test, the management — graded on your reasoning); and a full clinical case. Short questions
->   come first, on unrelated topics, then the case; sized to the time you set (typically 15–30
->   minutes including feedback). You can change the mix at any time.
+>   come first, on unrelated topics, with their feedback as soon as you answer; then the case
+>   and its feedback. Sized to the time you set (typically 15–30 minutes including feedback).
+>   You can change the mix at any time.
+> - **No waiting.** Each round is written at the end of the one before, so it starts at once;
+>   the sources are checked while you answer; and your answers are graded by a different
+>   assistant than the one that wrote the questions.
 > - **Blind topics.** You are not told what is being tested, or why, until you have answered.
 > - **Realistic work-up.** Cases come with the history and the routine tests a ward team would
 >   have. Anything more specialised, you ask for, and you say what result you expect.
@@ -66,6 +70,16 @@ twice · weekly); case style (unfolding · one step · alternate; only if the fu
 feedback depth (detailed · standard); review with deep analysis every 1 · 2 · 3 months.
 Where the app offers structured questions, ask the mix as one multiple-choice question
 allowing several answers; if nothing is chosen, use the default.
+
+Helpers, one question (only where this session can start helper agents; otherwise keep the
+default and do not ask): **With helpers (default)** — a separate author writes each round on
+the most capable model, a lighter helper checks the sources while you answer, and this
+conversation only grades, so the grader never marks its own questions and feedback follows
+your answers at once · **Single assistant** — one assistant writes, checks and grades; less
+usage, a short wait before each feedback. With helpers → `helpers` true; Single → `helpers`
+false. `prepare_ahead` stays true unless the learner asks otherwise. Add in one line that the
+grading is only as good as the model the round is run with, so rounds are best run on the
+most capable model they have.
 
 **Batch 3 — where you stand** (free text is fine): the domain list with a 1–5 self-rating per
 domain, or the two or three strongest and weakest areas; goals; resource preferences (free
@@ -120,6 +134,9 @@ Tell the learner (show this):
 
 ## 4. Finish setup
 
+- **Always-ready rounds; ask once**, where this session can create scheduled tasks: "Shall I
+  add a nightly task that makes sure your next round is prepared, so it always starts at once
+  even if you close the app early?" Yes → SKILL.md, "Always-ready rounds". No is the default.
 - **Reminders are optional; ask once.** "Would you like reminders for your sessions?" No (the
   default) · Yes, matching my frequency. Save with `settings --config '{"reminders": …}'`.
   Yes: if this session can create scheduled tasks, create one matching `target_sessions_per_week`
@@ -145,11 +162,37 @@ or ask in a chat ("add a focused question to my rounds"). A change on the page a
 next round; whichever change you made last wins.
 
 **Why won't it tell me the topic?** Knowing the topic changes how you think. The topic and the
-reason it was chosen are revealed with the feedback.
+reason it was chosen are revealed with the feedback: the short questions' when you have
+answered them, the case's at the end.
 
-**Can I see the answer in the assistant's working steps?** The round is drafted in a step
-called "Prepare today's round"; the assistant keeps its visible thinking free of the content
-until you have answered. Do not expand that step before answering.
+**Can I see the answer in the assistant's working steps?** Helpers' work appears as steps
+called "Prepare the round" and "Check sources", and the assistant's own as "Update today's
+round"; with helpers on, the assistant you talk to has not even read the answers until you
+have given yours. Do not expand those steps before answering.
+
+**How is it this fast?** Each round — the short questions, the case and the notes for your
+feedback — is written, and its sources checked, at the end of the round before and kept,
+packed, in your page. So a session starts at once, the case appears the moment the questions
+are graded, and nothing has to be looked up after you reply. Say "helpers off" or "don't
+prepare ahead" to turn either off.
+
+**Does the preparation finish if I close the app?** It runs right after the closing message.
+Where your sessions run in the cloud it carries on; where they do not, or if you leave before
+the reflection, it may not finish — nothing is lost, the next round is then written at its
+start. To be sure a round is always ready, say "prepare my rounds overnight": a small
+scheduled task checks each night and prepares one only if none is ready.
+
+**Who writes the questions and who grades them?** With helpers on, three different assistants.
+An *author* on the most capable model writes the round. The assistant you talk to *examines*:
+it grades your answers against the checked evidence, and treats the author's answer key as a
+colleague's opinion, not as the truth — if the key is wrong or too narrow, it says so and
+credits you. A lighter *checker* looks up and reports the sources; that needs care rather than
+depth, so it runs on a cheaper model to keep usage down. With helpers off, one assistant does
+all three.
+
+**Why did my round start with a pause this time?** The prepared round is used only if nothing
+changed since it was written (your settings, the round mix, a review) and you did not ask for
+a special round; otherwise it is written at the start.
 
 **Can I choose the area?** Yes: "a cardiology round". The domain is then known, the question is not.
 
@@ -184,8 +227,10 @@ cases are built to tempt it, and the feedback says whether you avoided it.
 **How is the next date decided?** Spaced repetition: strong answers come back later, weak ones
 sooner; feeling confident while scoring low brings a topic back quickly.
 
-**What if I skip the reflection or walk away?** The round is still saved. Reply "skip" to save
-without a reflection.
+**What if I skip the reflection or walk away?** After the final feedback the round is saved;
+reply "skip" to save without a reflection. If you stop after the short questions, say so ("no
+time for the case") and they are saved on their own; if you simply leave mid-round, nothing is
+recorded and the same topics come back next time.
 
 **What if I fall behind?** Nothing breaks: overdue topics come first at your normal round size.
 
@@ -204,3 +249,6 @@ a self-directed-learning record. Check your regulator's rules.
   errata — works as before.
 - Version 4.2 adds focused questions and a "What goes into a round" switch in the page's
   Settings; existing rounds are unchanged until you turn them on.
+- Version 4.3 gives the short questions their feedback before the case, removes most of the
+  waiting (each round is written ahead, sources are checked while you answer), and separates
+  the author of the questions from the examiner who grades them.
