@@ -283,8 +283,9 @@ survive in `agg`. The verbatim detail is in the session documents, which are nev
 | `close --work W [--reflection J]` | Second save: `reflect` + part B into the session document + index, written into `W/out2`. It continues from `W/out1`; the reflection JSON is `W/reflection.json` unless given. With no save in `W` (a reflection given at a later session) it starts from the ledger `start` read and the session file beside it (`sessions/<id>.json`), and stops if that file is not there. |
 | `addendum --doc SESSION.json --md ADD.md --out-dir D` | Append later discussion to a session document. |
 | `prepare STATE --out NEXT_PLAN [--if-needed PREPARED.json] [--allow-unreflected]` | After the close: plan the next round (as of tomorrow) from the closed ledger. Prints counts only, or `"prepare": false` with the reason (setting off, reflection pending, or — with `--if-needed` — a usable round is already prepared). `--allow-unreflected` plans although the last session has no reflection yet (the scheduled task uses it). |
-| `stash STATE --plan NEXT_PLAN --dir DRAFTS --out-dir D` | Pack that plan and the files drafted for it in `DRAFTS` (`sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) into `data/prepared.json` (§8). The first part's sealed file must be there; a missing case is a warning (it is then written at the next session). |
-| `place STATE [--index IDX] [--page INDEX.html] --out-dir D` | Put a ledger made by `init`, `settings`, `review` or `snooze` into the file layout, with the index (and the page if it is out of date, as for `save`). |
+| `finish-prepare STATE --work W [--revised] [--no-evidence]` | After the checkers: finish preparing the round planned in `W/next/plan.json` and drafted in `W/next`. Reads the last line of each evidence file (`Keys contradicted: <n>`, `evidence_check.md` §3) for every sealed part the round has, and prints counts and file names only: `evidence` (per file), `contradicted` (the total), `revise` and `stashed`. Nothing contradicted → the round is stashed into `W/out3` in the same command (`files`, as for `stash`). Something contradicted → `"revise": true`, `"stashed": false`: the author revises, and the command is run again with `--revised`, which stashes. An evidence file that is missing, empty or without its count line is an error (exit 2, nothing stashed), never a count of zero. `--no-evidence` is for a session that runs no checker: the round is stashed without evidence files, so the sources are checked at the session. (`--plan`, `--dir` and `--out-dir` name the files when they are not in a work folder.) |
+| `stash STATE --plan NEXT_PLAN --dir DRAFTS --out-dir D` | The stashing step of `finish-prepare` alone, without reading the evidence: pack that plan and the files drafted for it in `DRAFTS` (`sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) into `data/prepared.json` (§8). The first part's sealed file must be there; a missing case is a warning (it is then written at the next session). |
+| `place STATE [--index IDX] [--page INDEX.html] --out-dir D` | Put a ledger made by `init`, `review` or `snooze` into the file layout, with the index (and the page if it is out of date, as for `save`). |
 | `review-doc --md REPORT.md [--headline H --state S --index IDX] --out-dir D` | A review report as `data/reviews/<date>.json`, added to the index. |
 | `import EXPORT.json --out-dir D` | A page export into the file layout (`store.md` §6, a damaged ledger). |
 | `reindex ROOT` | Rebuild `ROOT/data/index.json` from the session and review files and the ledger. |
@@ -293,11 +294,11 @@ survive in `agg`. The verbatim detail is in the session documents, which are nev
 | `record STATE --round ROUND.json --out NEXT` | Apply a graded round (reflection pending if absent). Prints per-topic next due, warnings, `errata_to_log`. |
 | `reflect STATE --reflection R.json --out NEXT [--session ID]` | Re-apply the last unreflected session with its reflection. |
 | `doc --part A --md A.md --round ROUND [--id S0042] --out A.json` / `doc --part B --md B.md --out B.json` | The session document, or its part B, as JSON (single steps of `save` and `close`). |
-| `verify [--work W \| --written OUT…] --store CHECK [--out V.json]` | Testing mode: compare what `save`, `close` and `stash` wrote (`W/out1`–`out3`) with the store read again into `CHECK`; with `--work` the result is also written to `W/verify.json`. |
+| `verify [--work W \| --written OUT…] --store CHECK [--out V.json]` | Testing mode: compare what `save`, `close` and `finish-prepare` wrote (`W/out1`–`out3`) with the store read again into `CHECK`; with `--work` the result is also written to `W/verify.json`. |
 | `stats STATE` | Review figures: period, previous period, all time; gaps, calibration, teaching points unchecked, blind spots. |
 | `review STATE --review REVIEW.json --out NEXT` | Record a review; closes the period. |
 | `snooze STATE --days 7 --out NEXT` | Postpone a due review. |
-| `settings STATE [--config J] [--profile J] [--blueprint FILE] --out NEXT` | Change settings. A change to `mcqs`, `focused` or `case` is checked (at least one item) and supersedes any older page setting. |
+| `settings STATE [--config J] [--profile J] [--blueprint FILE] --out-dir D` | Change settings and put the changed ledger into the file layout in `D`, ready to save: the ledger, the index, an emptied `data/prepared.json` and the page if it is out of date (`files`, as `place` prints them). The index and the page are the ones read beside `STATE` unless `--index` or `--page` names them. A change to `mcqs`, `focused` or `case` is checked (at least one item) and supersedes any older page setting; a refused change writes nothing. (`--out NEXT` writes the changed ledger alone as one file.) |
 | `init --profile J --config J --blueprint FILE --out STATE` | First-run creation. |
 | `blueprint-md FILE --out BP.json` | Convert a Markdown blueprint. |
 | `validate STATE` | Structural check. |
@@ -356,12 +357,12 @@ round has applied it.
  "has": ["questions", "case", "kit_questions", "kit_case"], "payload": "<compressed, base64>"}
 ```
 
-Written by `stash` after a close; `payload` holds the next round's plan and everything
+Written by `finish-prepare` after a close; `payload` holds the next round's plan and everything
 written for it: the sealed short questions and the sealed case (keys, results bank,
 verification lists, `present` blocks), the two feedback kits and the two evidence files from
 the check, packed so that nobody reads
 them by accident: they are in the learner's own store. `{"v": 1, "empty": true}` means
-there is none; `save` and `place` write that, so the file always exists.
+there is none; `save`, `settings` and `place` write that, so the file always exists.
 
 `start --prepared` uses it only when all of this holds, and otherwise plans afresh:
 

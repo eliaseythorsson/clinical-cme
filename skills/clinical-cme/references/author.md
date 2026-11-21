@@ -65,12 +65,14 @@ Planning notes:
   for it.
 - `Parts: case`: `sealed_case.md` and `kit_case.md`, and `kit_questions.md` if it is not in
   the output folder yet.
-- `Parts: revise`: the round is written and its evidence has been checked. Read
+- `Parts: revise`: the round is written, its evidence has been checked, and the count of
+  contradicted keys was above zero (`cme.py finish-prepare` printed `"revise": true`). Read
   `evidence_questions.md` and `evidence_case.md` in the output folder. Wherever a **Note**
   says a key is contradicted by current guidance, correct the item so that it has one best
   answer under that guidance: the key, the kit, and the stem or options if they no longer
   work, keeping the `present` block complete. Replace every `(verify)` in the kits that the
-  check confirmed with the confirmed figure and source. Change nothing else.
+  check confirmed with the confirmed figure and source. Change nothing else, and leave the
+  evidence files as they are: the round is stashed after your "done".
 
 Write the short questions first, then the case, so the case can be kept clear of them and of
 what their feedback will teach (`case_design.md` §2). With `Parts: case`, read the
