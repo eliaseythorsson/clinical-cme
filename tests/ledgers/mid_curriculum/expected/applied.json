@@ -129,6 +129,7 @@
    {
     "date": "2026-10-28",
     "gap": "Example gap 10.3: missed the decision point | Confident but incorrect answer on 2026-10-28; re-test the same decision point.",
+    "id": "G0001",
     "opened": "2026-10-23",
     "self": null,
     "source": [
@@ -268,6 +269,7 @@
      },
      "confidence": "sure",
      "mastery": 1,
+     "retests": "ENDO-06",
      "stem": "Example focused stem 11.1",
      "topic": "ENDO-06",
      "type": "focused"
@@ -482,6 +484,7 @@
    {
     "date": "2026-10-28",
     "gap": "Example gap 10.3: missed the decision point | Confident but incorrect answer on 2026-10-28; re-test the same decision point.",
+    "id": "G0001",
     "opened": "2026-10-23",
     "self": null,
     "source": [
@@ -621,6 +624,7 @@
      },
      "confidence": "sure",
      "mastery": 1,
+     "retests": "ENDO-06",
      "stem": "Example focused stem 11.1",
      "topic": "ENDO-06",
      "type": "focused"
@@ -737,8 +741,8 @@
    "ENDO-06": {
     "calibration": "confident_error",
     "comfort": null,
-    "due": "2026-10-29",
-    "interval_days": 1,
+    "due": "2026-10-31",
+    "interval_days": 3,
     "mastery": 1.0,
     "misconception": true,
     "step": 0
@@ -792,8 +796,8 @@
    "ENDO-06": {
     "calibration": "confident_error",
     "comfort": 4,
-    "due": "2026-10-29",
-    "interval_days": 1,
+    "due": "2026-10-31",
+    "interval_days": 3,
     "mastery": 1.0,
     "misconception": true,
     "step": 0
@@ -801,8 +805,8 @@
    "GEN-12": {
     "calibration": "underconfident",
     "comfort": 2,
-    "due": "2026-10-30",
-    "interval_days": 2,
+    "due": "2026-10-31",
+    "interval_days": 3,
     "mastery": 5.0,
     "misconception": false,
     "step": 1
@@ -889,6 +893,7 @@
     },
     "confidence": "sure",
     "mastery": 1,
+    "retests": "ENDO-06",
     "stem_summary": "Example focused stem 11.1",
     "topic": "ENDO-06",
     "type": "focused"

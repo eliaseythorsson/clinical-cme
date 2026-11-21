@@ -210,8 +210,9 @@ depth of feedback and the spacing of the topic.
 - Vary the position of the correct answer between items and between rounds.
 - Apply the same rarity budget: the stem carries data that bear on several options, not
   only on the correct one.
-- When re-testing an open gap, put the same decision point in a new clinical context;
-  the aim is to test transfer, not recall of the earlier vignette.
+- When re-testing an open gap (the plan's `retest_gap`), put the same decision point in a new
+  clinical context; the aim is to test transfer, not recall of the earlier vignette. The key
+  names the gap (`retests: G0007`).
 - MCQs are presented first, on their own. Each stem must stand alone: no "the patient above",
   and no reference to the case.
 - Write the key before the stem (in the sealed file: the correct answer and its one-line

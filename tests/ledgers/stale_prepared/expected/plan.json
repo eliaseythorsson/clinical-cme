@@ -35,6 +35,11 @@
    "label": "Bowel obstruction, ischemia",
    "reason": "spaced review due 2026-09-11; last 1.0/5 on 2026-09-10; flagged confident error last time; open gap: Example gap 3.3: missed the decision point | Confident but incorrect answer on 2026-09-10; re-test the same decision point.",
    "reason_code": "due",
+   "retest_gap": {
+    "gap": "Example gap 3.3: missed the decision point | Confident but incorrect answer on 2026-09-10; re-test the same decision point.",
+    "how": "Write this item on the gap's decision point, in a new clinical context, and put \"retests\": \"GI-06\" on the item in the round JSON. Only an item that says so, answered well, closes the gap.",
+    "id": "GI-06"
+   },
    "slot": "case",
    "topic": "GI-06"
   },

@@ -317,7 +317,7 @@ with the items answered; the case's topic stays due.
      `<!-- /answers -->`; an optional `<!-- answers: notes -->` block for answer-change
      requests, a dispute settled mid-round, or anything else to log;
    - `<work>/round.json` completed (`state_schema.md` §2): items with mastery, confidence and
-     `coding`; gaps; resolved notes; key learning points; selection reasons; `log_id` =
+     `coding` (and `retests`, the gap id from the key, on an item that tested an open gap); gaps; resolved notes; key learning points; selection reasons; `log_id` =
      `next_id`; title, summary, tags; the compact `case` (only when there was one) and a
      `stem_summary` per MCQ and focused question, plus `aspect` per focused question (all
      three are in the keys); `grade_changes`, `drill`, `errata`, `pending_errata_logged`.

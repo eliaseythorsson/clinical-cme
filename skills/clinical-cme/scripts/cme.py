@@ -43,6 +43,7 @@ import base64
 import copy
 import datetime as dt
 import json
+import math
 import os
 import random
 import re
@@ -85,6 +86,7 @@ DEFAULT_PROFILE = {
     "domain_self_ratings": {}, "domain_emphasis": {}, "notes": "", "onboarded_at": None,
 }
 SELF_RATING_FACTOR = {1: 1.6, 2: 1.3, 3: 1.0, 4: 0.8, 5: 0.6}
+MIN_RETURN_DAYS = 3      # no tested topic and no open gap comes back sooner than this (ADR 0003)
 CONFIDENCE_LEVELS = ("sure", "unsure", "guess")
 CONF_PROB = {"sure": 0.9, "unsure": 0.6, "guess": 0.3}
 MIN_SESSIONS_FOR_REVIEW = 3
@@ -436,7 +438,9 @@ def schedule_topic(prev_step, mastery, comfort, misconception, self_gap, interva
                 interval = max(intervals[0], int(round(interval * 0.5)))
     if self_gap:
         interval = min(interval, 7)
-    interval = max(1, int(interval))
+    # Whatever the answer, the topic rests a few days: a re-test the next day is answered from the
+    # feedback just read, so it neither measures nor builds what the learner will keep.
+    interval = max(MIN_RETURN_DAYS, int(interval))
     return k_new, today + dt.timedelta(days=interval), calibration, interval
 
 
@@ -460,6 +464,27 @@ def item_outcome(it):
         return None if it.get("correct") is None else (1.0 if it.get("correct") else 0.0)
     m = it.get("mastery")
     return None if m is None else max(0.0, min(1.0, float(m) / 5.0))
+
+
+def gap_ref(g):
+    """How an item names the gap it retests: the gap's id; its topic for a gap not yet numbered."""
+    return g.get("id") or g.get("topic")
+
+
+def number_gaps(state):
+    """Give every open gap an id (G0001, …). Ledgers written before gaps had ids get them here."""
+    n = max([id_num(g.get("id")) for g in state["gaps"] + state["resolved"] if g.get("id")] + [0])
+    for g in state["gaps"]:
+        if not g.get("id"):
+            n += 1
+            g["id"] = "G%04d" % n
+    return n
+
+
+def gap_awaits_retest(g):
+    """True until an item has tested this gap since it was last written."""
+    retested, written = parse_date(g.get("last_retested")), parse_date(g.get("date"))
+    return retested is None or written is None or retested <= written
 
 
 def ensure_topic(state, tid, domain=None, label=None):
@@ -519,6 +544,11 @@ def domain_weights(state):
     emphasis = prof.get("domain_emphasis") or {}
     weights = bp_weights(state)
     domains = set(weights) | set(ratings) | set(emphasis) | {t.get("domain") for t in state["topics"].values()}
+    shown = {}       # domain -> [sum, n] of the current mastery of its tested topics
+    for t in state["topics"].values():
+        if isinstance(t.get("mastery"), (int, float)):
+            x = shown.setdefault(t.get("domain"), [0.0, 0])
+            x[0] += float(t["mastery"]); x[1] += 1
     eff = {}
     for d in domains:
         if not d:
@@ -530,6 +560,11 @@ def domain_weights(state):
             r = int(round(float(r))) if r is not None else None
         except (TypeError, ValueError):
             r = None
+        # Corrected for overconfidence: a rating lowers a domain's share only as far as the
+        # answers given in that domain bear it out. A 5/5 over a mean mastery of 3 counts as 3.
+        # A low rating always counts: asking for more practice costs nothing.
+        if r is not None and d in shown:
+            r = min(r, max(1, int(math.floor(shown[d][0] / shown[d][1] + 1e-9))))
         w *= SELF_RATING_FACTOR.get(r, 1.0)
         try:
             w *= float(emphasis.get(d, 1.0))
@@ -577,14 +612,17 @@ def plan_round(st, args, today):
     rng = random.Random(args.seed if args.seed is not None else int(today.strftime("%Y%m%d")) * 100 + len(log))
     restrict = args.domain.upper() if args.domain else None
 
-    tested_today = {tid for tid, t in topics.items() if parse_date(t.get("last")) == today}
+    # Tested in the last few days: left to rest, whatever its due date says (a ledger written by
+    # an older version can hold a topic due the day after a miss).
+    resting = {tid for tid, t in topics.items()
+               if parse_date(t.get("last")) and (today - parse_date(t["last"])).days < MIN_RETURN_DAYS}
     recent = set()
     for s in log[-3:]:
         recent.update(s.get("topics") or [])
     recent_domains = [domain_of(t) for s in log[-10:] for t in (s.get("topics") or [])]
 
     def allowed(tid):
-        if tid in tested_today and not args.allow_repeat:
+        if tid in resting and not args.allow_repeat:
             return False
         if restrict and (topics.get(tid, {}).get("domain") or domain_of(tid)) != restrict:
             return False
@@ -618,8 +656,10 @@ def plan_round(st, args, today):
     for tid, g in sorted(gaps_by_topic.items(), key=lambda kv: (gap_rank(kv[1]), kv[1].get("date") or "")):
         if tid in due_ids or not allowed(tid):
             continue
-        lt, gd = parse_date((topics.get(tid) or {}).get("last")), parse_date(g.get("date"))
-        if lt is None or gd is None or lt <= gd:
+        # One targeted re-test of a gap that no item has tested since it was written, once the
+        # gap is a few days old; after that the gap comes back with its topic's spacing.
+        gd = parse_date(g.get("date"))
+        if gap_awaits_retest(g) and (gd is None or (today - gd).days >= MIN_RETURN_DAYS or args.allow_repeat):
             gap_ids.append(tid)
 
     def new_candidates():
@@ -798,6 +838,14 @@ def plan_round(st, args, today):
                              "in the feedback.")}
             target["drill"] = drill
 
+    for c in chosen:
+        g = gaps_by_topic.get(c.get("topic"))
+        if g:
+            c["retest_gap"] = {
+                "id": gap_ref(g), "gap": clip(g.get("gap"), CLIP_GAP),
+                "how": "Write this item on the gap's decision point, in a new clinical context, and "
+                       "put \"retests\": \"%s\" on the item in the round JSON. Only an item that "
+                       "says so, answered well, closes the gap." % gap_ref(g)}
     used_cases, used_stems = all_sessions_for_novelty(st)
     for c in chosen:
         same = [x for x in used_cases if x.get("topic") == c.get("topic")]
@@ -885,6 +933,8 @@ def validate_round(rnd):
                 w.append("%s: mastery out of range" % tag)
         except (TypeError, ValueError):
             w.append("%s: mastery missing" % tag)
+        if it.get("retests") is not None and not isinstance(it["retests"], str):
+            w.append("%s: 'retests' must be the id of the gap the item retests" % tag)
         c = it.get("coding")
         if not isinstance(c, dict):
             w.append("%s: coding block missing" % tag)
@@ -941,6 +991,8 @@ def compact_item(it):
         out["correct"] = it.get("correct")
     if typ == "focused" and it.get("aspect"):
         out["aspect"] = it["aspect"]
+    if it.get("retests"):
+        out["retests"] = it["retests"]
     if typ != "case" and (it.get("stem_summary") or it.get("stem")):
         out["stem"] = clip(it.get("stem_summary") or it.get("stem"), 90)
     c = it.get("coding") or {}
@@ -1044,7 +1096,13 @@ def apply_round(state, rnd, today):
     self_gap_topics = {g["topic"] for g in gaps_in if g.get("source") == "self"}
 
     summary = {}
+    number_gaps(state)
     gap_index = {g.get("topic"): g for g in state["gaps"]}
+    for it in rnd["items"]:
+        g = gap_index.get(it["topic"])
+        if it.get("retests") and (not g or it["retests"] not in (g["id"], it["topic"])):
+            warnings.append("%s %s: 'retests' names %s, which is not an open gap on that topic"
+                            % (it.get("type"), it["topic"], it["retests"]))
     for tid, items in by_topic.items():
         t = ensure_topic(state, tid, items[0].get("domain"), next((i.get("label") for i in items if i.get("label")), None))
         adj = [adjusted_item_mastery(i) for i in items]
@@ -1093,6 +1151,13 @@ def apply_round(state, rnd, today):
         mastery = summary.get(tid, {}).get("mastery")
         cal = summary.get(tid, {}).get("calibration")
         notes = [n for n in resolved_by_topic.get(tid, []) if n]
+        # the items of this round that say they test the open gap (by its id; by its topic for a
+        # round planned before the gap had an id)
+        retests = [i for i in by_topic.get(tid, []) if existing and i.get("retests") in (existing["id"], tid)]
+        if existing and tid in by_topic and not retests:
+            warnings.append("%s has open gap %s and no item says it retests it; if an item tested that "
+                            "point, add \"retests\": \"%s\" to it (the gap stays open otherwise)"
+                            % (tid, existing["id"], existing["id"]))
         if new:
             graded = [g["gap"] for g in new if g.get("source") != "self"]
             selfrep = [g["gap"] for g in new if g.get("source") == "self"]
@@ -1106,21 +1171,30 @@ def apply_round(state, rnd, today):
                      "date": iso(rdate),
                      "opened": (existing or {}).get("opened") or (existing or {}).get("date") or iso(rdate)}
             if existing:
+                entry["id"] = existing["id"]
                 gaps.remove(existing)
+            else:
+                entry["id"] = "G%04d" % (number_gaps(state) + 1)
             gaps.append(entry); gap_index[tid] = entry
             for n in notes:
                 state["resolved"].append({"topic": tid, "note": clip(n, 200), "resolved": iso(rdate), "partial": True})
         elif existing and tid in by_topic:
             ex_date = parse_date(existing.get("date"))
-            if mastery is not None and mastery >= 4 and cal not in ("overconfident", "confident_error") \
-                    and (ex_date is None or ex_date < rdate):
+            # A gap closes only on an item that tested that gap and was answered well. A good
+            # score on another point of the same topic says nothing about the point that was missed.
+            answered = [adjusted_item_mastery(i) for i in retests]
+            well = bool(answered) and not any(mc for _, mc in answered) \
+                and round_half(sum(m for m, _ in answered) / len(answered)) >= 4
+            summary.setdefault(tid, {})["gap_retested"] = bool(retests)
+            if well and cal not in ("overconfident", "confident_error") and (ex_date is None or ex_date < rdate):
                 gaps.remove(existing); del gap_index[tid]
-                state["resolved"].append({"topic": tid, "note": clip(existing.get("gap"), 200),
+                state["resolved"].append({"id": existing["id"], "topic": tid, "note": clip(existing.get("gap"), 200),
                                           "opened": existing.get("opened") or existing.get("date"),
                                           "resolved": iso(rdate), "partial": False})
                 summary.setdefault(tid, {})["gap_resolved"] = True
             else:
-                existing["last_retested"] = iso(rdate)
+                if retests:
+                    existing["last_retested"] = iso(rdate)
                 for n in notes:
                     state["resolved"].append({"topic": tid, "note": clip(n, 200), "resolved": iso(rdate), "partial": True})
         elif notes:

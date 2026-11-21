@@ -237,7 +237,9 @@ Brier calibration, R2C2), adapted; it is one rater's judgement, not a validated 
 cases are built to tempt it, and the feedback says whether you avoided it.
 
 **How is the next date decided?** Spaced repetition: strong answers come back later, weak ones
-sooner; feeling confident while scoring low brings a topic back quickly.
+sooner, though never sooner than three days, so that a repeat tests what you kept rather than
+what you just read; feeling confident while scoring low brings a topic back quickly. A gap stays
+open until a later question tests that exact point and you answer it well.
 
 **What if I skip the reflection or walk away?** After the final feedback the round is saved;
 reply "skip" to save without a reflection. If you stop after the short questions, say so ("no

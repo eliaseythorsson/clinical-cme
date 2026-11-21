@@ -30,7 +30,7 @@
    "calibration": "confident_error",
    "comfort": null,
    "domain": "ENDO",
-   "due": "2026-10-29",
+   "due": "2026-10-31",
    "history": [
     [
      "2026-10-05",
@@ -181,7 +181,7 @@
    "calibration": "confident_error",
    "comfort": 4,
    "domain": "ENDO",
-   "due": "2026-10-29",
+   "due": "2026-10-31",
    "history": [
     [
      "2026-10-05",
@@ -230,7 +230,7 @@
    "calibration": "underconfident",
    "comfort": 2,
    "domain": "GEN",
-   "due": "2026-10-30",
+   "due": "2026-10-31",
    "history": [
     [
      "2026-10-28",

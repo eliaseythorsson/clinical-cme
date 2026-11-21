@@ -44,7 +44,10 @@ Planning notes:
   Icelandic national guidance where it exists, otherwise the European society's. State the
   region and specialty in one line above each verification list, so the checker and the
   examiner work to the same ones.
-- A re-tested gap gets the same decision point in a new clinical context (transfer).
+- An item with `retest_gap` in the plan re-tests that gap: the same decision point in a new
+  clinical context (transfer). Write `retests: <retest_gap.id>` in that item's key, next to
+  its stem summary, so the examiner can copy it into the round JSON; without it a good answer
+  cannot close the gap.
 - A `drill` is built into its item (`case_design.md` §9, §11.5).
 - Every vignette and stem is clearly different from `already_used` and
   `recent_cases_any_topic`: patient, setting, presentation, twist.
