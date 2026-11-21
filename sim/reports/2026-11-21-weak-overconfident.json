@@ -1,0 +1,280 @@
+{
+ "schema": 2,
+ "ok": true,
+ "date": "2026-11-21",
+ "persona": "weak-overconfident",
+ "skill_version": "4.3.1",
+ "commit": "cea86ce",
+ "examiner_model": "claude-fable-5-2",
+ "learner_model": "claude-fable-5-2",
+ "config": {
+  "session_minutes": 20,
+  "mcqs": 3,
+  "focused": 0,
+  "case": true,
+  "round_set_at": "2026-11-21T01:09:34Z",
+  "case_format": "unfolding",
+  "feedback_depth": "detailed",
+  "target_sessions_per_week": 3,
+  "review_interval_days": 42,
+  "intervals_days": [
+   1,
+   3,
+   7,
+   16,
+   35,
+   90
+  ],
+  "new_topics_per_round": 1,
+  "lab_units": "SI",
+  "blood_gas_units": "mmHg",
+  "guideline_region": "Iceland/Europe",
+  "item_order": "mcqs_first",
+  "helpers": false,
+  "prepare_ahead": false,
+  "prepare_task": false,
+  "testing": false,
+  "show_coding": true,
+  "reminders": false,
+  "resource_preferences": {
+   "free_only": false,
+   "formats": [
+    "guidelines",
+    "review articles"
+   ]
+  }
+ },
+ "round": {
+  "session": "S0001",
+  "shape": "3 MCQ, case (two stages)",
+  "score": 3.0,
+  "confident_misses": 2,
+  "continued_from_earlier_run": false
+ },
+ "messages": {
+  "examiner": 7,
+  "learner": 5
+ },
+ "checks": {
+  "blinding": {
+   "ok": true,
+   "leaks": 0,
+   "to_review": 5,
+   "seal_lifted_at": {
+    "questions": 3,
+    "case": 8
+   },
+   "never_lifted": [],
+   "terms_checked": 454,
+   "block_line": "Block: Cardiology, round 1 of 12",
+   "findings": [
+    {
+     "part": "questions",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "failure",
+     "message": 2,
+     "excerpt": "…*Question 1** A 71-year-old man with known heart failure (LVEF 30%) is admitted with a week of increasing …"
+    },
+    {
+     "part": "questions",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "heart",
+     "message": 2,
+     "excerpt": "…on. **Question 1** A 71-year-old man with known heart failure (LVEF 30%) is admitted with a week of inc…"
+    },
+    {
+     "part": "questions",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "coronary",
+     "message": 2,
+     "excerpt": "…boratory. What is the most appropriate timing of coronary angiography? A. Immediately (within 2 hours) B. …"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "rhythm",
+     "message": 2,
+     "excerpt": "…arrival: BP 128/76 mmHg, heart rate 88/min (sinus rhythm), SpO₂ 93% on 2 L/min, warm peripheries, JVP rais…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "rhythm",
+     "message": 5,
+     "excerpt": "…. 1. Your differential diagnosis, ranked (for the rhythm and for what may lie behind it), with the main ar…"
+    }
+   ],
+   "problems": []
+  },
+  "saved": {
+   "ok": true,
+   "session": "S0001",
+   "output_folders": [
+    "out1",
+    "out2"
+   ],
+   "files_compared": 4,
+   "problems": []
+  },
+  "log": {
+   "ok": true,
+   "sections": [
+    "a_case",
+    "a_final",
+    "a_questions",
+    "case",
+    "coded",
+    "discussion",
+    "fb_questions",
+    "feedback",
+    "grade_changes",
+    "questions",
+    "reflection",
+    "stage2"
+   ],
+   "problems": [],
+   "examiner_text_not_logged": [
+    {
+     "message": 2,
+     "starts": "Today's round: three MCQs, then one case, about 25 minutes. Block: Cardiology, round 1 of "
+    },
+    {
+     "message": 12,
+     "starts": "Saved as session S0001: atrial fibrillation (case, 3/5), acute heart failure, endocarditis"
+    },
+    {
+     "message": 12,
+     "starts": "Your reflection is recorded. Two things it changed: the endocarditis imaging you named (PE"
+    }
+   ]
+  }
+ },
+ "timings": {
+  "steps": [
+   {
+    "step": 1,
+    "label": "start of round",
+    "learner_message": 1,
+    "wait_s": 74.3,
+    "turn_s": 216.0,
+    "examiner_messages": 1,
+    "examiner_chars": 3450,
+    "learner_s": null
+   },
+   {
+    "step": 2,
+    "label": "after the answers to the questions",
+    "learner_message": 3,
+    "wait_s": 65.3,
+    "turn_s": 81.9,
+    "examiner_messages": 2,
+    "examiner_chars": 9387,
+    "learner_s": 13.4
+   },
+   {
+    "step": 3,
+    "label": "after the Stage 1 answer",
+    "learner_message": 6,
+    "wait_s": 35.4,
+    "turn_s": 103.3,
+    "examiner_messages": 1,
+    "examiner_chars": 1308,
+    "learner_s": 16.9
+   },
+   {
+    "step": 4,
+    "label": "after the final answers",
+    "learner_message": 8,
+    "wait_s": 151.8,
+    "turn_s": 182.3,
+    "examiner_messages": 2,
+    "examiner_chars": 10446,
+    "learner_s": 16.5
+   },
+   {
+    "step": 5,
+    "label": "after the reflection",
+    "learner_message": 11,
+    "wait_s": 74.7,
+    "turn_s": 175.8,
+    "examiner_messages": 1,
+    "examiner_chars": 799,
+    "learner_s": 11.6
+   }
+  ],
+  "total_wait_s": 401.5,
+  "longest_wait_s": 151.8,
+  "elapsed_s": 716.6
+ },
+ "quality": {
+  "scorer_model": "claude-fable-5-2",
+  "items": [
+   {
+    "id": "Q1",
+    "type": "mcq",
+    "topic": "CARD-02",
+    "answered": true,
+    "score": 5,
+    "note": "Matches ESC 2021 diuretic algorithm: under-dosed first bolus, output ~63 mL/h, so double the IV loop dose; B the only defensible answer. Option C wording slightly loose. From knowledge."
+   },
+   {
+    "id": "Q2",
+    "type": "mcq",
+    "topic": "CARD-05",
+    "answered": true,
+    "score": 5,
+    "note": "ESC 2023 IE: TOE is class I with a prosthetic valve and after a negative TTE; key unambiguous, distractors are each right one step later. On the easy side for an internist."
+   },
+   {
+    "id": "Q3",
+    "type": "mcq",
+    "topic": "CARD-01",
+    "answered": true,
+    "score": 5,
+    "note": "ESC 2023 ACS very-high-risk criteria (refractory pain, recurrent dynamic ST change) correctly keyed to under 2 h; stem realistic and tests a common, consequential misreading of 'stable'."
+   },
+   {
+    "id": "Case",
+    "type": "case",
+    "topic": "CARD-03",
+    "answered": true,
+    "score": 5,
+    "note": "Coherent, realistic first-diagnosed AF; results fit; key correct on ESC 2024 (CHA2DS2-VA 3, 24 h window), apixaban 5 mg with one criterion, CrCl ~31, aspirin stopped. Good numeric trap."
+   }
+  ],
+  "feedback": [
+   {
+    "id": "questions",
+    "score": 5,
+    "note": "Grades right; rules and thresholds accurate and correctly attributed (ESC 2021 HF, DOSE, ESC 2023 IE/ACS, IIa downgrade); open about unverified sources. 'Little extra natriuresis' a bit strong."
+   },
+   {
+    "id": "final",
+    "score": 4,
+    "note": "Fair grading; apixaban, 24 h window, RACE II and EAST-AFNET 4 figures correct. Quibbles: EAST CI is 96% not 95%; ESC 2024 points cited via a secondary summary; 'bradycardia and falls' is rhetoric."
+   },
+   {
+    "id": "dispute",
+    "score": 4,
+    "note": "Conceded what did not change care (score, window) and held the dose and angiography timing on patient-impact grounds; proportionate, but brief and no source re-check or citation."
+   }
+  ],
+  "item_mean": 5.0,
+  "feedback_mean": 4.33,
+  "score": 5,
+  "note": "Accurate, current ESC-based items at the right pitch for internal medicine, with fair grading and feedback aimed at the deciding criterion; only minor citation and wording quibbles.",
+  "concerns": [
+   "Final feedback: EAST-AFNET 4 hazard ratio interval was a 96% CI in the paper, reported as 95%.",
+   "Final feedback: ESC 2024 AF recommendations are cited through an ACC summary, and the 24-hour window from memory (stated); correct as far as I know, but worth a primary citation.",
+   "Q1 option C ('same daily dose' as infusion) does not say which dose; harmless but could be tightened.",
+   "Scorer note: web searches returned links only, so accuracy was judged from knowledge rather than re-read primary text."
+  ],
+  "problems": []
+ },
+ "note": null
+}
