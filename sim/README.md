@@ -86,7 +86,7 @@ If an agent returns an error or asks you a question instead of working, continue
 | **Log complete and verbatim** | the session document has every section the round's shape calls for; what it says was presented, answered and sent is word for word what was sent; every learner message is in it | Section bodies of part A and the reflection in part B are matched against the recorded messages, ignoring only runs of whitespace. |
 
 The seal on the short questions lifts with the learner message matching the
-`<!-- answers: questions -->` block of `answers.md`; the seal on the case with the message matching
+`<!-- answers: questions -->` block of `answers.md` (written by `cme.py answer`); the seal on the case with the message matching
 its last answers block (`final`, or `case` for a one-step case). If no message matches, the check
 fails as undetermined. A case the learner never answered (the round was stopped before it) stays
 sealed to the end: every examiner message of the round is searched for its topic, its diagnosis

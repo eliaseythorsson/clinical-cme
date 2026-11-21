@@ -150,6 +150,8 @@ class Script:
         self.work = os.path.join(self.run, "work")
         self.store = os.path.join(self.run, "store")
         self.n = 0
+        self.filed = set()
+        cme("--today", TODAY, "start", os.path.join(self.store, "data", "state.json"), "--work", self.work)
 
     def p(self, *parts):
         return os.path.join(self.work, *parts)
@@ -164,7 +166,15 @@ class Script:
         self.clock += after
         self.n += 1
         path = self.put("outbox/%02d.md" % self.n, text)
+        if role == "learner":
+            self.received = path
         return sim_json("send", "--run", self.run, "--role", role, "--file", path, "--ts", str(self.clock))
+
+    def answer(self, part, text=None):
+        """File an answer as the examiner does: the learner's last message as it arrived, or `text`."""
+        source = ("--file", self.received) if text is None else ("--text", text)
+        cme("answer", "--work", self.work, "--part", part, *source)
+        self.filed.add(part)
 
     def turn_end(self, role, after=0.0):
         self.clock += after
@@ -206,6 +216,7 @@ class Script:
             fbq = fbq.replace("The case follows.", "The case follows (it is fictitious  secretitis).")
         self.send("examiner", fbq, 30)
         self.send("examiner", cme("present", self.p("sealed_case.md"), "--block", "case"), 1)
+        self.answer("questions")
         self.put("feedback_questions.md", fbq)
         self.turn_end("examiner", 9)
 
@@ -215,29 +226,29 @@ class Script:
         self.send("learner", ANSWERS["case"], 90)
         self.turn_end("learner")
         self.send("examiner", STAGE2, 12)
-        self.put("sealed_case.md", SEALED_CASE + "\n<!-- present: stage2 -->\n" + STAGE2 + "<!-- /present -->\n")
+        self.answer("case", "Differential: infection, malignancy, inflammatory. Tests: special scan and a blood count."
+                    if "retyped_answer" in self.faults else None)
+        self.put("stage2.md", STAGE2)          # as sent; the sealed case is not touched
         self.turn_end("examiner", 2)
         # turn 4: final answers -> feedback, first save
         self.send("learner", ANSWERS["final"], 45)
         self.turn_end("learner")
         self.send("examiner", FEEDBACK, 40)
+        self.answer("final")
 
     def save(self, rnd=ROUND, feedback=FEEDBACK, answers=None, parts=("questions", "case", "final")):
-        """The first save, behind the scenes after the final feedback went out."""
-        state = os.path.join(self.store, "data", "state.json")
-        index = os.path.join(self.store, "data", "index.json")
+        """The first save, behind the scenes after the final feedback went out: everything is
+        found in the work folder. Answers were filed as they arrived; `answers` adds the rest
+        (notes)."""
         logged = dict(ANSWERS, **(answers or {}))
-        if "retyped_answer" in self.faults:
-            logged["case"] = "Differential: infection, malignancy, inflammatory. Tests: special scan and a blood count."
         if "retyped_feedback" in self.faults:
             feedback = feedback.replace("you ordered it", "you asked for it")
         self.put("feedback.md", feedback)
-        self.put("answers.md", "".join("<!-- answers: %s -->\n%s\n<!-- /answers -->\n" % (k, logged[k]) for k in parts))
+        for part in parts:
+            if part not in self.filed:
+                self.answer(part, logged[part])
         self.put("round.json", rnd)
-        cme("--today", TODAY, "save", state, "--round", self.p("round.json"),
-            "--sealed", self.p("sealed_questions.md"), self.p("sealed_case.md"), "--answers", self.p("answers.md"),
-            "--feedback-questions", self.p("feedback_questions.md"), "--feedback", self.p("feedback.md"),
-            "--index", index, "--out-dir", self.p("out1"))
+        cme("--today", TODAY, "save", "--work", self.work)
         self.store_files(self.p("out1"))
         assert self.turn_end("examiner", 15)["round_closed"] is False
 
@@ -246,10 +257,9 @@ class Script:
         self.send("learner", reflection_text, 30)
         self.turn_end("learner")
         self.put("reflection.json", reflection or {"topic_comfort": {"GEN-11": 4}, "performance": 4, "solid": "a", "gaps": "b"})
+        self.answer("reflection")
         self.put("B.md", part_b)
-        cme("--today", TODAY, "close", self.p("out1", "data", "state.json"), "--reflection", self.p("reflection.json"),
-            "--md", self.p("B.md"), "--doc", self.p("out1", "data", "sessions", "S0001.json"),
-            "--index", self.p("out1", "data", "index.json"), "--out-dir", self.p("out2"))
+        cme("--today", TODAY, "close", "--work", self.work)
         self.send("examiner", CLOSE, 25)
         self.store_files(self.p("out2"), skip=("S0001.json",) if "session_not_saved" in self.faults else ())
         assert self.turn_end("examiner", 10)["stop"] is False

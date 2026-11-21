@@ -128,8 +128,9 @@ the one you read; if it moved, re-read and re-run as for the page.
 - **One store per learner.** The store kind lives in the learner's head and the page, not in the
   ledger; never start a second one.
 - **Save once per step.** `save` after the final feedback, `close` after the reflection,
-  `stash` after the close (one small file, which does not touch the ledger). Never run `save`
-  twice on the same ledger file.
+  `stash` after the close (one small file, which does not touch the ledger). `save --work`
+  always starts from the ledger as it was read, so it can be run again after fixing a
+  warning; never run `save` on a ledger that `save` wrote.
 - **The prepared round is sealed.** Read `data/prepared.json` into a file and hand it to
   `start`; never open it in the conversation.
 
@@ -180,9 +181,12 @@ its store and continue, or start a fresh ledger in it only if the learner asks t
   (§4.3) after checking their `gen` is higher than the store's.
 - **Session saved without a reflection** (the learner left after the feedback): nothing to do.
   `start` reports `last_session.unreflected`; the next `save` finalises it as "reflection
-  skipped". If the learner wants to add the reflection at the start of the next session, run
-  `cme.py close` on it before planning (the snapshot is still in the ledger), with that
-  session's file as `--doc`.
+  skipped". If the learner wants to add the reflection at the start of the next session
+  (the snapshot is still in the ledger): read that session's file into
+  `<work>/store/sessions/`, add the reflection with `cme.py answer --part reflection`, write
+  `reflection.json` and `B.md`, run `cme.py close --work <work>` and save its files; then run
+  `start <work>/out2/data/state.json --work <work>` for today's round as usual (`start` sets
+  the closed round's files aside).
 - **The artifact cannot be found**: ask for the link. Never create a second ledger silently.
 - **The index is missing or damaged**: `cme.py` rebuilds what it can from the ledger on the next
   save; `cme.py reindex <folder>` rebuilds it fully from the session files.

@@ -79,6 +79,11 @@ the round", "Check sources", "Save the round"). Run `python3 <skill>/scripts/cme
 <command> …` (standard library only) in a scratch folder `<work>`; never write learner data
 into the skill's folder.
 
+**The work folder.** One round, one `<work>` folder, and every file of the round in it under a
+fixed name: `start` notes where the ledger is, `answer` adds each of the learner's answers,
+and `save` and `close` find the rest by name (`state_schema.md` §6.1). You never list the
+round's files on a command line and never copy an earlier answer again.
+
 ## Files in this skill
 
 | Path | Read when |
@@ -93,7 +98,7 @@ into the skill's folder.
 | `references/session_log.md` | Session-document layout, errata, search, teaching export |
 | `references/onboarding.md` | First run, FAQ, settings |
 | `references/progress_review.md` | When a review is due or requested |
-| `scripts/cme.py` | Every session (start, present, save, close, prepare, stash, stats, review …) |
+| `scripts/cme.py` | Every session (start, present, answer, save, close, prepare, stash, stats, review …) |
 | `templates/page.html` | The learner's page, published at setup |
 | `templates/blueprint.json` | Default internal/hospital-medicine blueprint |
 
@@ -189,11 +194,12 @@ Five learner turns with an unfolding case; fewer with a one-step case or none.
    (`store.md` §4.1).
    - No store found → ask once as in `store.md` §3. First-timers → setup
      (`references/onboarding.md`).
-2. `python3 cme.py start <work>/store/state.json --out <work>/plan.json --prepared
+2. `python3 cme.py start <work>/store/state.json --work <work> --prepared
    <work>/store/prepared.json` plus `--prefs '<the cme/prefs JSON>'` when it exists (add
    `--domain CODE`, `--mcqs N`, `--focused N`, `--no-case`, `--no-new` if the learner asked for
    this round, e.g. "just focused questions today" → `--mcqs 0 --no-case --focused 3`). It
-   prints neutral status and plan counts, never topics. Route on it:
+   writes the plan to `<work>/plan.json`, notes the ledger and the page settings for `save`,
+   and prints neutral status and plan counts, never topics. Route on it:
    - `onboarding_needed` → setup.
    - `review_due` → offer the progress review in one line (now, after today's round, or in a
      week); default to after the round. Mention that it includes the optional deep analysis.
@@ -268,10 +274,11 @@ the original graded. If answers are missing, ask once; proceed if the learner sa
    summary and no reflection prompt yet; it ends "The case follows."), and **straight after it
    the case**, exactly as printed. Two messages one after the other, or one message with the
    case under a rule.
-4. **Behind the scenes, in one batch**, write `<work>/feedback_questions.md` (the feedback
-   exactly as sent), `<work>/answers.md` with the block `<!-- answers: questions -->` …
-   `<!-- /answers -->` (the learner's answers verbatim), and `<work>/round.json` with the
-   short-question items (`state_schema.md` §2), to be completed after the case.
+4. **Behind the scenes, in one batch**: add the learner's answers with `python3 cme.py answer
+   --work <work> --part questions` (their message on standard input, exactly as they wrote
+   it; description "File the answers"), and write `<work>/feedback_questions.md` (the feedback
+   exactly as sent) and `<work>/round.json` with the short-question items (`state_schema.md`
+   §2), to be completed after the case.
 5. End the turn with one short line.
 
 No case in the round → this is the final feedback: send it complete (gap summary and reflection
@@ -294,9 +301,9 @@ with the items answered; the case's topic stays due.
    available (ordered by the admitting team)"; the course; the Stage 2 questions. A test that
    is not in the bank gets a realistic result written on the spot, consistent with what the
    bank shows. No hints, no reactions.
-3. **Behind the scenes, in one batch**: add the text as sent to `sealed_case.md` as a
-   `<!-- present: stage2 -->` block (description "Update today's round") and append the
-   `<!-- answers: case -->` block to `answers.md`.
+3. **Behind the scenes, in one batch**: write `<work>/stage2.md`, the text exactly as sent
+   (description "Update today's round"; `sealed_case.md` is not opened or changed), and add
+   the Stage 1 answer with `cme.py answer --work <work> --part case`.
 
 ### Turn 4. Final answers in → case feedback, first save
 
@@ -310,26 +317,23 @@ with the items answered; the case's topic stays due.
 3. **Send the final feedback** (`feedback_guide.md` §2 part 2: case reveal → case → gap summary
    for the whole round with mastery 0–5 per topic and the coding line → up to two reading
    pointers → the reflection prompt).
-4. **Behind the scenes, in one parallel batch**, write:
-   - `<work>/feedback.md`: the final feedback exactly as sent;
-   - `<work>/answers.md` completed: blocks `<!-- answers: questions -->`,
-     `<!-- answers: case -->`, `<!-- answers: final -->` (Stage 2 answers), each closed by
-     `<!-- /answers -->`; an optional `<!-- answers: notes -->` block for answer-change
-     requests, a dispute settled mid-round, or anything else to log;
-   - `<work>/round.json` completed (`state_schema.md` §2): items with mastery, confidence and
-     `coding` (and `retests`, the gap id from the key, on an item that tested an open gap); gaps; resolved notes; key learning points; selection reasons; `log_id` =
+4. **Behind the scenes, in one parallel batch**:
+   - add the last answers with `cme.py answer --work <work> --part final` (`--part case` for
+     a one-step case); answer-change requests, a dispute settled mid-round or anything else
+     to log go in with `--part notes`. Earlier parts are already there: add, never rewrite;
+   - write `<work>/feedback.md`: the final feedback exactly as sent;
+   - write `<work>/round.json` completed (`state_schema.md` §2): items with mastery, confidence and
+     `coding` (and `retests`, the gap id from the key, on an item that tested an open gap);
+     gaps; resolved notes; key learning points; selection reasons; `log_id` =
      `next_id`; title, summary, tags; the compact `case` (only when there was one) and a
      `stem_summary` per MCQ and focused question, plus `aspect` per focused question (all
      three are in the keys); `grade_changes`, `drill`, `errata`, `pending_errata_logged`.
      **No `reflection` key.**
-5. `python3 cme.py save <work>/store/state.json --round <work>/round.json --sealed
-   <work>/sealed_questions.md <work>/sealed_case.md --answers <work>/answers.md
-   --feedback-questions <work>/feedback_questions.md --feedback <work>/feedback.md --index
-   <work>/store/index.json --page <work>/store/index.html [--prefs '<same JSON as at start>']
-   --out-dir <work>/out1` (name only the files that exist; `--page` only when `index.html` was
-   read). It records the round, assembles the verbatim part A in the order of the round, and
-   updates the index. Fix any `warnings` (missing coding, unknown vocabulary, missing blocks)
-   and re-run into a fresh `--out-dir` from the unchanged inputs.
+5. `python3 cme.py save --work <work>`. It finds the ledger, the index and the page where
+   `start` read them and the round's files by name, records the round, assembles the verbatim
+   part A in the order of the round, updates the index and writes everything into
+   `<work>/out1`. Fix any `warnings` (missing coding, unknown vocabulary, a missing file or
+   block) and run the same command again.
 6. **Save**: put back every file in its `files` list, in one write where the store allows
    (`store.md` §4). Keep the new version. If `files` includes `index.html` (`page_upgraded`),
    the page is being updated to this version of the skill: follow `store.md` §4.5 once.
@@ -343,12 +347,12 @@ with the items answered; the case's topic stays due.
   resolved first (`feedback_guide.md` §7); keep every exchange verbatim for the Discussion
   section, and put the outcome in `grade_changes` (and the new score in `items`). "skip" →
   `{"skipped": true}`.
-- **In one parallel batch**, write `<work>/reflection.json` (`state_schema.md` §3) and
-  `<work>/B.md` (reflection verbatim, discussion verbatim, grade changes, coded analysis, errata
-  from `errata_to_log`; layout in `session_log.md` §3).
-- `python3 cme.py close <work>/out1/data/state.json --reflection <work>/reflection.json --md
-  <work>/B.md --doc <work>/out1/data/sessions/<id>.json --index <work>/out1/data/index.json
-  --out-dir <work>/out2`. This runs locally and prints everything the close message needs.
+- **In one parallel batch**: add the reflection as written with `cme.py answer --work <work>
+  --part reflection`, and write `<work>/reflection.json` (`state_schema.md` §3) and
+  `<work>/B.md` (discussion verbatim, grade changes, coded analysis, errata from
+  `errata_to_log`; layout in `session_log.md` §3; `close` puts the reflection above them).
+- `python3 cme.py close --work <work>`. It continues from `<work>/out1`, writes into
+  `<work>/out2`, runs locally and prints everything the close message needs.
 - **Close** in one message, sent before the store is written: what was saved (topics tested, score, session ID, number of items
   due over the next few days — not their names; plus "1 correction to an earlier session was
   added to your log" if errata were written); in one line how the reflection changed the plan,
@@ -393,10 +397,9 @@ On while the skill is being tested (`config.testing`; "testing mode on/off" unde
   items, 1–5? 3. The feedback, 1–5? 4. Anything else, in a line?"
 - **Store check**, behind the scenes after every save and the stash of this turn: read the
   store again as at the start, plus `data/sessions/<id>.json`, into `<work>/check/`; then
-  `python3 cme.py verify --written <work>/out1 <work>/out2 [<work>/out3] --store
-  <work>/check --out <work>/verify.json` (every output folder whose files were saved this
-  round). `"ok": false` → tell the learner at once in one line which files did not save, and
-  follow "If a save cannot be made".
+  `python3 cme.py verify --work <work> --store <work>/check` (it compares every output folder
+  of this round, `out1` to `out3`, and writes `<work>/verify.json`). `"ok": false` → tell the
+  learner at once in one line which files did not save, and follow "If a save cannot be made".
 - **The learner's answers** (their next message, any form; "skip" is fine): `python3 cme.py
   testing-note --session <id> --feedback '{"waiting": "…", "waiting_step": "…", "items": N,
   "feedback": N, "note": "…"}' --verify <work>/verify.json --out-dir <work>/outT` → save its

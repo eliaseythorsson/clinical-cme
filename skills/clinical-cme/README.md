@@ -22,7 +22,7 @@ waiting for something to be generated.
 
 - **New order.** Short questions → their feedback → the full case → its feedback, with the gap
   summary for the whole round and one reflection at the end. The round is blind part by part,
-  and the log keeps both feedback messages in place (`cme.py save --feedback-questions`).
+  and the log keeps both feedback messages in place (`feedback_questions.md` and `feedback.md`).
 - **The whole round is prepared ahead.** After each close the next round is planned and
   written in full — short questions, the case's Stage 1 with a results bank (so Stage 2 goes
   out the moment Stage 1 is answered), and the notes for both feedbacks — and kept, packed, in

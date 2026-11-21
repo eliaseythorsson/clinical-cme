@@ -119,7 +119,7 @@ def start_with_prepared(tmp_path, today):
 def test_stale_prepared_round_is_not_used_and_a_new_round_is_planned(tmp_path):
     out, plan = start_with_prepared(tmp_path, LEDGERS["stale_prepared"])
     assert out["prepared"] == {"used": False, "why": "too old"}
-    assert "present" not in out and not os.path.exists(str(tmp_path / "work"))
+    assert "present" not in out and os.listdir(str(tmp_path / "work")) == ["work.json"]   # no drafted files
     assert "prepared" not in plan
     assert plan == read(examples.expected_path("stale_prepared", "plan"))
 
@@ -129,8 +129,8 @@ def test_the_same_prepared_round_is_used_while_it_is_fresh(tmp_path):
     out, plan = start_with_prepared(tmp_path, soon)
     assert out["prepared"]["used"] is True and out["prepared"]["made"] == PREPARED_MADE
     assert out["plan"]["prepared"] is True and plan["prepared"]["used"] is True and plan["date"] == soon
-    assert sorted(os.listdir(str(tmp_path / "work"))) == ["kit_case.md", "kit_questions.md",
-                                                         "sealed_case.md", "sealed_questions.md"]
+    assert sorted(os.listdir(str(tmp_path / "work"))) == ["kit_case.md", "kit_questions.md", "sealed_case.md",
+                                                         "sealed_questions.md", "work.json"]
 
 
 def test_prepared_round_no_longer_fits_once_the_ledger_has_moved_on(tmp_path):

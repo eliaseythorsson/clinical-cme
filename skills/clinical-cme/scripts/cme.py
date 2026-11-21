@@ -5,18 +5,20 @@ The learner's scheduling memory is ONE JSON document, the state; each round also
 document, and an index lists the sessions for the page. This script never talks to a store or
 to any assistant tool: the assistant fetches the files from wherever the learner's store is
 (see references/store.md), runs a command here, and puts the files it writes back. Every
-command that writes takes --out or --out-dir and prints, for each file, its store path ("as",
+command that writes takes --out, --out-dir or --work and prints, for each file, its store path ("as",
 e.g. data/state.json).
 
 Session (fast path):
-  start   STATE --out PLAN [plan options] [--prefs J] [--prepared PREPARED.json]
+  start   STATE --work W [plan options] [--prefs J] [--prepared PREPARED.json]
                                                   neutral status + plan in one call (no topics); with a
-                                                  valid prepared round, also the questions to present
-  save    STATE --round R.json --sealed F.. --answers F.. [--feedback-questions FQ.md] --feedback FB.md
-          [--index IDX] [--prefs J] [--page LIVE_INDEX.html] --out-dir D
-                                                  record the graded round + session doc (part A) + index
-  close   STATE --reflection R.json --md B.md --doc SESSION.json [--index IDX] --out-dir D
-                                                  apply the reflection + part B + index
+                                                  valid prepared round, also the questions to present.
+                                                  W is the round's work folder: the plan is W/plan.json
+  answer  --work W --part questions|case|final|notes|reflection [--file F | --text T]
+                                                  append the learner's answer to W/answers.md (default: stdin)
+  save    --work W                                record the graded round + session doc (part A) + index,
+                                                  from the files in W by their fixed names, into W/out1
+  close   --work W [--reflection J]               apply the reflection + part B + index, into W/out2
+                                                  (every file save and close use can still be named by a flag)
   addendum --doc SESSION.json --md ADD.md --out-dir D
   prepare STATE --out NEXT_PLAN [--if-needed PREPARED.json] [--allow-unreflected]
                                                   after the close: plan the NEXT round (prints counts only)
@@ -1927,11 +1929,30 @@ def status_dict(st, path, today):
 def cmd_start(args):
     """status + plan in one call. Prints neutral status and plan counts only (no topics)."""
     today = today_from(args)
+    work = getattr(args, "work", None) or args.work_dir
+    if not args.out:
+        if not work:
+            die("start needs --work WORK_FOLDER (or --out PLAN.json)")
+        args.out = os.path.join(work, "plan.json")
+    work = work or os.path.dirname(os.path.abspath(args.out))
+    args.work_dir = work
     st = load_json(args.state)
     check_schema(st)
     prefs_warn = []
-    prefs_changes = apply_prefs(st, load_json_arg(args.prefs), prefs_warn)
+    prefs = load_json_arg(args.prefs)
+    prefs_changes = apply_prefs(st, prefs, prefs_warn)
     status = status_dict(st, args.state, today)
+    if not status["onboarding_needed"]:
+        os.makedirs(work, exist_ok=True)
+        ledger = os.path.abspath(args.state)
+        set_aside = set_aside_earlier_round(work)
+        if set_aside:
+            status["earlier_round_set_aside"] = set_aside
+            if not os.path.isfile(ledger):      # the ledger was the earlier round's own output
+                ledger = os.path.join(set_aside, os.path.relpath(ledger, os.path.abspath(work)))
+        save_json({"state": ledger, "session_id": st.get("next_id"),
+                   "started": iso(today), "prefs": prefs}, os.path.join(work, WORK_FILE))
+        status["work"] = os.path.abspath(work)
     if prefs_changes:
         status["page_settings_applied"] = prefs_changes
     if prefs_warn:
@@ -2164,10 +2185,13 @@ def blocks(paths, rx):
     return out
 
 
-def assemble_part_a(sealed, answers, feedback, item_order, warnings, feedback_questions=None):
+def assemble_part_a(sealed, answers, feedback, item_order, warnings, feedback_questions=None, stage2=None):
     """Part A in the order of the round. With mcqs_first the short questions are graded before
-    the case is shown, so their feedback (if sent on its own) follows their answers."""
+    the case is shown, so their feedback (if sent on its own) follows their answers. `stage2` is
+    Stage 2 as it was sent (the work folder's stage2.md); it replaces a stage2 present block."""
     pres = blocks(sealed, PRESENT_RE)
+    if stage2 and stage2.strip():
+        pres["stage2"] = stage2.strip()
     ans = blocks(answers, ANSWER_RE)
     fb = fbq = None
     if feedback:
@@ -2266,41 +2290,186 @@ def page_upgrade(out_dir, live_page, warnings):
             "page_upgrade": {"from": live, "to": PAGE_VERSION}}
 
 
+# ---------------------------------------------------------------- the work folder
+#
+# One round is worked on in one scratch folder. `start` notes there where the ledger is;
+# `answer` adds the learner's answers part by part; `save` and `close` find everything else by
+# these names, so no command line has to list the round's files.
+
+WORK_FILE = "work.json"                 # written by start: where the ledger is, the page settings
+ANSWERS_FILE = "answers.md"             # written by answer, one block per part
+ANSWER_PARTS = ("questions", "case", "final", "notes", "reflection")
+SEALED_FILES = ("sealed_questions.md", "sealed_case.md")
+STAGE2_FILE = "stage2.md"               # Stage 2 exactly as sent
+FEEDBACK_QUESTIONS_FILE = "feedback_questions.md"
+FEEDBACK_FILE = "feedback.md"
+ROUND_FILE = "round.json"
+REFLECTION_FILE = "reflection.json"
+PART_B_FILE = "B.md"
+SAVE_DIR = "out1"                       # what save writes; close reads it
+CLOSE_DIR = "out2"                      # what close writes
+ROUND_FILES = PREPARED_FILES + (ANSWERS_FILE, STAGE2_FILE, FEEDBACK_QUESTIONS_FILE, FEEDBACK_FILE, ROUND_FILE,
+                                REFLECTION_FILE, PART_B_FILE, "verify.json")
+ROUND_DIRS = (SAVE_DIR, CLOSE_DIR, "out3", "next", "check")
+REFLECTION_HEADING_RE = re.compile(r"^###\s+Reflection\b", re.M)
+ANSWER_MARK_RE = re.compile(r"<!--\s*/?\s*answers\b")
+
+
+def read_text(path):
+    with open(path, "r", encoding="utf-8") as fh:
+        return fh.read()
+
+
+def work_info(work):
+    """What `start` noted in the work folder ({} when start was not run there)."""
+    path = os.path.join(work, WORK_FILE)
+    info = load_json(path) if os.path.isfile(path) else {}
+    return info if isinstance(info, dict) else {}
+
+
+def in_work(work, name):
+    """The path of a file of the round in the work folder, or None when it is not there."""
+    path = os.path.join(work, name) if work else None
+    return path if path and os.path.isfile(path) else None
+
+
+def find_ledger(work, info):
+    """The ledger this round started from: where `start` read it, else the usual places."""
+    cands = [info.get("state"), os.path.join(work, "store", "state.json"), os.path.join(work, "store", STATE_PATH)]
+    for path in cands:
+        if path and os.path.isfile(path):
+            return path
+    die("no ledger found for the work folder %s: run `start STATE --work %s` first, or name it (save STATE …)"
+        % (work, work))
+
+
+def beside_ledger(state_path, *names):
+    """A file of the store read together with the ledger: beside it, or one folder up when the
+    ledger sits in data/ (the page, index.html)."""
+    here = os.path.dirname(os.path.abspath(state_path))
+    dirs = [here] + ([os.path.dirname(here)] if os.path.basename(here) == "data" else [])
+    for d in dirs:
+        path = os.path.join(d, *names)
+        if os.path.isfile(path):
+            return path
+    return None
+
+
+def set_aside_earlier_round(work):
+    """A second round in the same work folder: move the files of the round before it into
+    earlier/<n>/, so its answers and feedback cannot end up in the new round's log. Nothing
+    happens in a folder where no round has got as far as an answer or a save."""
+    if not any(os.path.exists(os.path.join(work, n)) for n in (ANSWERS_FILE, SAVE_DIR, CLOSE_DIR)):
+        return None
+    earlier = os.path.join(work, "earlier")
+    n = 1
+    while os.path.exists(os.path.join(earlier, str(n))):
+        n += 1
+    dest = os.path.join(earlier, str(n))
+    os.makedirs(dest)
+    for name in ROUND_FILES + ROUND_DIRS + (WORK_FILE,):
+        if os.path.exists(os.path.join(work, name)):
+            os.replace(os.path.join(work, name), os.path.join(dest, name))
+    return os.path.abspath(dest)
+
+
+def answer_blocks(path):
+    """[(part, text)] of an answers file, in the order they were added."""
+    if not path or not os.path.isfile(path):
+        return []
+    return [(name, body.strip()) for name, body in ANSWER_RE.findall(read_text(path))]
+
+
+def cmd_answer(args):
+    """Append what the learner answered for one part to the work folder's answers.md, as it was
+    written. Earlier parts are never rewritten; the same text for the same part is added once."""
+    if not os.path.isdir(args.work):
+        die("work folder not found: %s" % args.work)
+    if args.file:
+        try:
+            text = read_text(args.file)
+        except OSError:
+            die("file not found: %s" % args.file)
+    elif args.text is not None:
+        text = args.text
+    else:
+        text = sys.stdin.read()
+    text = text.strip("\n")
+    if not text.strip():
+        die("no answer text: give --file, --text, or the text on standard input")
+    if ANSWER_MARK_RE.search(text):
+        die("the text holds an answers marker (<!-- answers … -->); remove that line and add it again")
+    path = os.path.join(args.work, ANSWERS_FILE)
+    have = answer_blocks(path)
+    out = {"ok": True, "part": args.part, "chars": len(text)}
+    if (args.part, text.strip()) in have:
+        out["already_added"] = True
+    else:
+        before = read_text(path) if os.path.isfile(path) else ""
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(("\n" if before and not before.endswith("\n") else "")
+                     + "<!-- answers: %s -->\n%s\n<!-- /answers -->\n" % (args.part, text))
+        have.append((args.part, text.strip()))
+    out["parts"] = [name for name, _ in have]
+    print(json.dumps(out, ensure_ascii=False))
+
+
 def cmd_save(args):
-    """First save after the feedback: record + session document (part A) + index, in one go."""
-    rnd = load_json_arg(args.round) or {}
-    st_in = load_json(args.state)
+    """First save after the feedback: record + session document (part A) + index, in one go.
+    With --work everything is found in the work folder by its fixed name; a flag names a file
+    that is somewhere else."""
+    work = getattr(args, "work", None)
+    info = work_info(work) if work else {}
+    state_path = args.state or (find_ledger(work, info) if work else None)
+    if not state_path:
+        die("save needs --work WORK_FOLDER (or the ledger and the round's files by name)")
+    round_src = args.round or in_work(work, ROUND_FILE)
+    if not round_src:
+        die("save needs %s in the work folder (or --round)" % ROUND_FILE)
+    out_dir = args.out_dir or (os.path.join(work, SAVE_DIR) if work else None)
+    if not out_dir:
+        die("save needs --out-dir (or --work)")
+    sealed = args.sealed or [p for p in (in_work(work, n) for n in SEALED_FILES) if p]
+    answers = args.answers or [p for p in (in_work(work, ANSWERS_FILE),) if p]
+    feedback = args.feedback or in_work(work, FEEDBACK_FILE)
+    feedback_questions = args.feedback_questions or in_work(work, FEEDBACK_QUESTIONS_FILE)
+    stage2 = in_work(work, STAGE2_FILE)
+    index = args.index or (beside_ledger(state_path, "index.json") if work else None)
+    page = args.page or (beside_ledger(state_path, "index.html") if work else None)
+    prefs = load_json_arg(args.prefs) if args.prefs else info.get("prefs")
+    rnd = load_json_arg(round_src) or {}
+    st_in = load_json(state_path)
     check_schema(st_in)
     sid = rnd.get("log_id") or st_in.get("next_id")
     rnd["log_id"] = sid
     if not rnd.get("date"):
         rnd["date"] = iso(today_from(args))
     warnings = []
-    os.makedirs(args.out_dir, exist_ok=True)
+    os.makedirs(out_dir, exist_ok=True)
     # the round mix set on the page is kept in the ledger from now on
-    prefs_changes = apply_prefs(st_in, load_json_arg(args.prefs), warnings)
+    prefs_changes = apply_prefs(st_in, prefs, warnings)
     if args.md:
-        with open(args.md, "r", encoding="utf-8") as fh:
-            md = fh.read()
+        md = read_text(args.md)
     else:
-        if not args.feedback and not args.feedback_questions:
-            die("save needs --md A.md, or --sealed … --answers … --feedback FEEDBACK.md")
-        md = assemble_part_a(args.sealed, args.answers, args.feedback,
+        if not feedback and not feedback_questions:
+            die("save needs the feedback as sent: %s in the work folder (or --feedback), or --md A.md"
+                % FEEDBACK_FILE)
+        md = assemble_part_a(sealed, answers, feedback,
                              rnd.get("item_order") or st_in["config"].get("item_order"), warnings,
-                             args.feedback_questions)
+                             feedback_questions, read_text(stage2) if stage2 else None)
     st = copy.deepcopy(st_in)       # st_in stays the ledger as it was before this round
     res = record_round(st, copy.deepcopy(rnd), today_from(args))
-    files = [write_out(args.out_dir, STATE_PATH, st)]
+    files = [write_out(out_dir, STATE_PATH, st)]
     rec = report(files[0]["path"], os.path.getsize(files[0]["path"]), res)
     doc = session_doc_a(rnd, sid, md)
-    files.append(write_out(args.out_dir, session_path(sid), doc))
-    idx = load_index(args.index, st_in)
+    files.append(write_out(out_dir, session_path(sid), doc))
+    idx = load_index(index, st_in)
     index_put_session(idx, doc)
-    files.append(write_out(args.out_dir, INDEX_PATH, finish_index(idx, st)))
-    files.append(write_out(args.out_dir, PREPARED_PATH, {"v": 1, "empty": True}))
-    with open(os.path.join(args.out_dir, "A.md"), "w", encoding="utf-8") as fh:
+    files.append(write_out(out_dir, INDEX_PATH, finish_index(idx, st)))
+    files.append(write_out(out_dir, PREPARED_PATH, {"v": 1, "empty": True}))
+    with open(os.path.join(out_dir, "A.md"), "w", encoding="utf-8") as fh:
         fh.write(md)
-    pf = page_upgrade(args.out_dir, args.page, warnings)
+    pf = page_upgrade(out_dir, page, warnings)
     if pf:
         files.append(pf)
         rec["page_upgraded"] = pf["page_upgrade"]
@@ -2313,30 +2482,67 @@ def cmd_save(args):
 
 
 def cmd_close(args):
-    """Second save after the reflection: reflect + part B into the session document + index."""
-    os.makedirs(args.out_dir, exist_ok=True)
+    """Second save after the reflection: reflect + part B into the session document + index.
+    With --work it continues from what `save` wrote there (out1) and reads reflection.json, B.md
+    and the reflection added with `answer`; without a save in this folder (a reflection given
+    at a later session) it starts from the ledger and the session file read from the store."""
+    work = getattr(args, "work", None)
+    info = work_info(work) if work else {}
+    saved = os.path.join(work, SAVE_DIR) if work else None
+    from_save = bool(saved and os.path.isfile(os.path.join(saved, STATE_PATH)))
+    state_path = args.state or (os.path.join(saved, STATE_PATH) if from_save else None) \
+        or (find_ledger(work, info) if work else None)
+    if not state_path:
+        die("close needs --work WORK_FOLDER (or the ledger and the files by name)")
+    reflection = args.reflection or in_work(work, REFLECTION_FILE)
+    if not reflection:
+        die("close needs the reflection: %s in the work folder, or --reflection" % REFLECTION_FILE)
+    out_dir = args.out_dir or (os.path.join(work, CLOSE_DIR) if work else None)
+    if not out_dir:
+        die("close needs --out-dir (or --work)")
+    md_path = args.md or in_work(work, PART_B_FILE)
     today = today_from(args)
-    st = load_json(args.state)
+    st = load_json(state_path)
     check_schema(st)
-    res = reflect_round(st, load_json_arg(args.reflection) or {}, today, args.session)
+    res = reflect_round(st, load_json_arg(reflection) or {}, today, args.session)
     sid = res["session_id"]
-    with open(args.md, "r", encoding="utf-8") as fh:
-        md_b = fh.read()
-    doc = load_json(args.doc) if args.doc else {"id": sid}
+    md_b = read_text(md_path) if md_path else ""
+    said = "\n\n".join(body for name, body in answer_blocks(in_work(work, ANSWERS_FILE)) if name == "reflection")
+    if said and not REFLECTION_HEADING_RE.search(md_b):
+        md_b = "### Reflection (verbatim)\n\n%s\n\n%s" % (said, md_b.lstrip("\n"))
+    if not md_b.strip():
+        die("close needs part B: %s in the work folder (or --md), or the reflection added with "
+            "`answer --part reflection`" % PART_B_FILE)
+    doc_path = args.doc
+    if not doc_path and work:
+        name = "%s.json" % sid
+        doc_path = (in_work(saved, session_path(sid)) if from_save else None) \
+            or beside_ledger(state_path, "sessions", name) or beside_ledger(state_path, name)
+        if not doc_path:
+            die("the session file of %s was not found: read %s from the store into a sessions folder "
+                "beside the ledger first, or name it with --doc" % (sid, session_path(sid)))
+    doc = load_json(doc_path) if doc_path else {"id": sid}
     if doc.get("id") and doc["id"] != sid:
         die("session document %s does not match the reflected session %s" % (doc.get("id"), sid))
+    index = args.index
+    page = args.page
+    if work and not index:
+        index = in_work(saved, INDEX_PATH) if from_save else beside_ledger(state_path, "index.json")
+    if work and not page and not from_save:     # after a save here, the page was already checked
+        page = beside_ledger(state_path, "index.html")
+    os.makedirs(out_dir, exist_ok=True)
     doc["closing"] = md_b
     doc["reflected"] = True
     sess = next((s for s in st["sessions"] if s.get("id") == sid), None)
     if sess and isinstance(sess.get("score"), (int, float)):
         doc["score"] = sess["score"]
-    files = [write_out(args.out_dir, STATE_PATH, st), write_out(args.out_dir, session_path(sid), doc)]
+    files = [write_out(out_dir, STATE_PATH, st), write_out(out_dir, session_path(sid), doc)]
     ref = report(files[0]["path"], os.path.getsize(files[0]["path"]), res)
-    idx = load_index(args.index, st)
+    idx = load_index(index, st)
     index_put_session(idx, doc)
-    files.append(write_out(args.out_dir, INDEX_PATH, finish_index(idx, st)))
+    files.append(write_out(out_dir, INDEX_PATH, finish_index(idx, st)))
     page_warn = []
-    pf = page_upgrade(args.out_dir, args.page, page_warn)
+    pf = page_upgrade(out_dir, page, page_warn)
     if pf:
         files.append(pf)
         ref["page_upgraded"] = pf["page_upgrade"]
@@ -2374,7 +2580,14 @@ def same_content(a, b):
 
 def cmd_verify(args):
     """Testing mode: compare what cme.py produced with what the store holds after the save."""
-    wanted = written_files(args.written)
+    work = getattr(args, "work", None)
+    written = args.written or [d for d in (os.path.join(work or "", n) for n in (SAVE_DIR, CLOSE_DIR, "out3"))
+                               if work and os.path.isdir(d)]
+    if not written:
+        die("verify needs --written OUT_DIR… (or --work with the output folders of save and close in it)")
+    if work and not args.out:
+        args.out = os.path.join(work, "verify.json")
+    wanted = written_files(written)
     missing, mismatched = [], []
     for rel, src in sorted(wanted.items()):
         cand = [os.path.join(args.store, rel), os.path.join(args.store, os.path.basename(rel))]
@@ -2511,22 +2724,25 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("status"); s.add_argument("state"); s.set_defaults(fn=cmd_status)
-    s = sub.add_parser("start"); s.add_argument("state"); s.add_argument("--out", required=True)
+    s = sub.add_parser("start"); s.add_argument("state"); s.add_argument("--out"); s.add_argument("--work")
     s.add_argument("--prefs"); s.add_argument("--focused", type=int)
     s.add_argument("--mcqs", type=int); s.add_argument("--no-case", action="store_true")
     s.add_argument("--domain"); s.add_argument("--no-new", action="store_true")
     s.add_argument("--allow-repeat", action="store_true"); s.add_argument("--no-drill", action="store_true")
     s.add_argument("--force-drill", action="store_true"); s.add_argument("--seed", type=int)
     s.add_argument("--prepared"); s.add_argument("--work-dir"); s.set_defaults(fn=cmd_start)
-    s = sub.add_parser("save"); s.add_argument("state"); s.add_argument("--round", required=True)
+    s = sub.add_parser("answer"); s.add_argument("--work", required=True)
+    s.add_argument("--part", required=True, choices=ANSWER_PARTS)
+    s.add_argument("--file"); s.add_argument("--text"); s.set_defaults(fn=cmd_answer)
+    s = sub.add_parser("save"); s.add_argument("state", nargs="?"); s.add_argument("--work"); s.add_argument("--round")
     s.add_argument("--sealed", nargs="+"); s.add_argument("--answers", nargs="+"); s.add_argument("--feedback")
     s.add_argument("--feedback-questions")
     s.add_argument("--md"); s.add_argument("--index"); s.add_argument("--prefs"); s.add_argument("--page")
-    s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_save)
-    s = sub.add_parser("close"); s.add_argument("state"); s.add_argument("--reflection", required=True)
-    s.add_argument("--md", required=True); s.add_argument("--doc"); s.add_argument("--index"); s.add_argument("--session")
+    s.add_argument("--out-dir"); s.set_defaults(fn=cmd_save)
+    s = sub.add_parser("close"); s.add_argument("state", nargs="?"); s.add_argument("--work"); s.add_argument("--reflection")
+    s.add_argument("--md"); s.add_argument("--doc"); s.add_argument("--index"); s.add_argument("--session")
     s.add_argument("--page")
-    s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_close)
+    s.add_argument("--out-dir"); s.set_defaults(fn=cmd_close)
     s = sub.add_parser("addendum"); s.add_argument("--doc", required=True); s.add_argument("--md", required=True)
     s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_addendum)
     s = sub.add_parser("prepare"); s.add_argument("state"); s.add_argument("--out", required=True)
@@ -2535,7 +2751,7 @@ def main(argv=None):
     s.add_argument("--dir", required=True); s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_stash)
     s = sub.add_parser("present"); s.add_argument("files", nargs="+"); s.add_argument("--block", required=True)
     s.set_defaults(fn=cmd_present)
-    s = sub.add_parser("verify"); s.add_argument("--written", nargs="+", required=True)
+    s = sub.add_parser("verify"); s.add_argument("--written", nargs="+"); s.add_argument("--work")
     s.add_argument("--store", required=True); s.add_argument("--out"); s.set_defaults(fn=cmd_verify)
     s = sub.add_parser("testing-note"); s.add_argument("--session", required=True)
     s.add_argument("--feedback", required=True); s.add_argument("--verify")
