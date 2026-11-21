@@ -13,6 +13,8 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
   - `references/` — store, schema, case design, feedback, analysis, logging, review, onboarding
   - `templates/` — learner page (`page.html`), default blueprint, resource library
 - `tests/` — pytest suite for `cme.py` (`conftest.py` runs it the way the assistant does)
+  - `tests/ledgers/` — synthetic example ledgers with their expected plan, schedule and applied
+    round; `tests/examples.py` says how to accept a deliberate change
 - `sim/` — simulation harness (`simulate.py`, personas, saved reports); run with `/simulate`,
   procedure in `sim/README.md`. Run folders (`sim/runs/`) are never committed
 - `docs/agents/` — config read by the engineering skills (see below)

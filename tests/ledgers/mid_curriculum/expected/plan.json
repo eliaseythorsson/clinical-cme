@@ -1,0 +1,251 @@
+{
+ "blood_gas_units": "mmHg",
+ "case_format": "unfolding",
+ "counts": {
+  "case": 1,
+  "focused": 1,
+  "mcqs": 3
+ },
+ "date": "2026-10-28",
+ "estimated_minutes": 29,
+ "feedback_depth": "detailed",
+ "guideline_region": "Iceland/Europe",
+ "helpers": true,
+ "item_order": "mcqs_first",
+ "items": [
+  {
+   "already_used": [
+    {
+     "date": "2026-10-23",
+     "id": "S0010",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 10.4",
+     "topic": "TOX-03"
+    }
+   ],
+   "domain": "TOX",
+   "label": "Environmental (hypothermia, hyperthermia)",
+   "reason": "spaced review due 2026-10-24; last 3.0/5 on 2026-10-23; flagged overconfident last time",
+   "reason_code": "due",
+   "slot": "case",
+   "topic": "TOX-03"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-10-05",
+     "id": "S0001",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 1.3",
+     "topic": "ENDO-06"
+    },
+    {
+     "date": "2026-10-09",
+     "id": "S0003",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 3.3",
+     "topic": "ENDO-06"
+    },
+    {
+     "date": "2026-10-12",
+     "id": "S0004",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 4.2",
+     "topic": "ENDO-06"
+    },
+    {
+     "date": "2026-10-16",
+     "id": "S0006",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 6.3",
+     "topic": "ENDO-06"
+    },
+    {
+     "date": "2026-10-23",
+     "id": "S0010",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 10.3",
+     "topic": "ENDO-06"
+    }
+   ],
+   "aspect_hint": "interpretation",
+   "aspect_note": "Suggested aspect (least recently tested). If this item re-tests an open gap, ask about the gap's decision point instead, whatever its aspect.",
+   "domain": "ENDO",
+   "label": "Pheochromocytoma, hypercalcemia of malignancy",
+   "reason": "spaced review due 2026-10-24; last 2.0/5 on 2026-10-23; open gap: Example gap 10.3: missed the decision point",
+   "reason_code": "due",
+   "separation": "other domain",
+   "slot": "focused",
+   "topic": "ENDO-06"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-10-07",
+     "id": "S0002",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 2.3",
+     "topic": "RENAL-03"
+    },
+    {
+     "aspect": "disposition",
+     "date": "2026-10-14",
+     "id": "S0005",
+     "kind": "focused",
+     "stem": "Example focused stem 5.1",
+     "topic": "RENAL-03"
+    }
+   ],
+   "domain": "RENAL",
+   "label": "Potassium disorders",
+   "reason": "spaced review due 2026-10-21; last 5.0/5 on 2026-10-14",
+   "reason_code": "due",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "RENAL-03"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-10-19",
+     "id": "S0007",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 7.4",
+     "topic": "EMRG-02"
+    }
+   ],
+   "domain": "EMRG",
+   "label": "Acute agitation, behavioral emergency",
+   "reason": "spaced review due 2026-10-22; last 4.0/5 on 2026-10-19",
+   "reason_code": "due",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "EMRG-02"
+  },
+  {
+   "domain": "GEN",
+   "label": "Fluid & electrolyte therapy, maintenance fluids",
+   "reason": "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)",
+   "reason_code": "new",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "GEN-12"
+  }
+ ],
+ "lab_units": "SI",
+ "note": "Blind: do not reveal topics, domains, reasons or the drill before all answers are in. Make every vignette and stem clearly different from already_used and recent_cases_any_topic (patient, setting, presentation, twist). MCQs and focused questions are presented together and get their feedback before the case is shown; neither they nor their feedback may cue the case.",
+ "ok": true,
+ "pending_errata": [],
+ "prepare_ahead": true,
+ "presentation_order": [
+  "mcq RENAL-03",
+  "mcq EMRG-02",
+  "mcq GEN-12",
+  "focused ENDO-06",
+  "case TOX-03"
+ ],
+ "profile": {
+  "notes": "",
+  "practice_setting": [],
+  "role": null,
+  "specialty": "Internal/hospital medicine",
+  "subspecialty": null
+ },
+ "recent_cases_any_topic": [
+  {
+   "date": "2026-10-05",
+   "diagnosis": "Example diagnosis: Valvular disease & infective endocarditis",
+   "id": "S0001",
+   "patient": "Example patient 1",
+   "presentation": "Example presentation 1",
+   "setting": "ward",
+   "topic": "CARD-05"
+  },
+  {
+   "date": "2026-10-07",
+   "diagnosis": "Example diagnosis: Acute pancreatitis",
+   "id": "S0002",
+   "patient": "Example patient 2",
+   "presentation": "Example presentation 2",
+   "setting": "ward",
+   "topic": "GI-02"
+  },
+  {
+   "date": "2026-10-09",
+   "diagnosis": "Example diagnosis: VTE prophylaxis & treatment",
+   "id": "S0003",
+   "patient": "Example patient 3",
+   "presentation": "Example presentation 3",
+   "setting": "ward",
+   "topic": "HEME-04"
+  },
+  {
+   "date": "2026-10-12",
+   "diagnosis": "Example diagnosis: Acute respiratory failure, ARDS, mechanical ventilation basi…",
+   "id": "S0004",
+   "patient": "Example patient 4",
+   "presentation": "Example presentation 4",
+   "setting": "ward",
+   "topic": "PULM-04"
+  },
+  {
+   "date": "2026-10-14",
+   "diagnosis": "Example diagnosis: VTE prophylaxis & treatment",
+   "id": "S0005",
+   "patient": "Example patient 5",
+   "presentation": "Example presentation 5",
+   "setting": "ward",
+   "topic": "HEME-04"
+  },
+  {
+   "date": "2026-10-16",
+   "diagnosis": "Example diagnosis: Diagnostic reasoning & cognitive bias (meta-skill; good for…",
+   "id": "S0006",
+   "patient": "Example patient 6",
+   "presentation": "Example presentation 6",
+   "setting": "ward",
+   "topic": "GEN-10"
+  },
+  {
+   "date": "2026-10-19",
+   "diagnosis": "Example diagnosis: Diagnostic reasoning & cognitive bias (meta-skill; good for…",
+   "id": "S0007",
+   "patient": "Example patient 7",
+   "presentation": "Example presentation 7",
+   "setting": "ward",
+   "topic": "GEN-10"
+  },
+  {
+   "date": "2026-10-21",
+   "diagnosis": "Example diagnosis: Valvular disease & infective endocarditis",
+   "id": "S0008",
+   "patient": "Example patient 8",
+   "presentation": "Example presentation 8",
+   "setting": "ward",
+   "topic": "CARD-05"
+  },
+  {
+   "date": "2026-10-22",
+   "diagnosis": "Example diagnosis: Acute respiratory failure, ARDS, mechanical ventilation basi…",
+   "id": "S0009",
+   "patient": "Example patient 9",
+   "presentation": "Example presentation 9",
+   "setting": "ward",
+   "topic": "PULM-04"
+  },
+  {
+   "date": "2026-10-23",
+   "diagnosis": "Example diagnosis: Seizure & status epilepticus",
+   "id": "S0010",
+   "patient": "Example patient 10",
+   "presentation": "Example presentation 10",
+   "setting": "ward",
+   "topic": "NEURO-03"
+  }
+ ],
+ "session_id": "S0011",
+ "session_minutes": 20,
+ "show_coding": true,
+ "specialty": "Internal/hospital medicine",
+ "testing": false
+}

@@ -1,0 +1,76 @@
+{
+ "blood_gas_units": "mmHg",
+ "case_format": "unfolding",
+ "counts": {
+  "case": 1,
+  "focused": 0,
+  "mcqs": 3
+ },
+ "date": "2026-11-20",
+ "estimated_minutes": 24,
+ "feedback_depth": "detailed",
+ "guideline_region": "Iceland/Europe",
+ "helpers": true,
+ "item_order": "mcqs_first",
+ "items": [
+  {
+   "domain": "EMRG",
+   "label": "Anaphylaxis (see RHEUM-04)",
+   "reason": "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)",
+   "reason_code": "new",
+   "slot": "case",
+   "topic": "EMRG-01"
+  },
+  {
+   "domain": "CARD",
+   "label": "Pericardial disease, myocarditis",
+   "reason": "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)",
+   "reason_code": "new",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "CARD-07"
+  },
+  {
+   "domain": "PULM",
+   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
+   "reason": "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)",
+   "reason_code": "new",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "PULM-04"
+  },
+  {
+   "domain": "HEME",
+   "label": "Febrile neutropenia (see ID-08)",
+   "reason": "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)",
+   "reason_code": "new",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "HEME-08"
+  }
+ ],
+ "lab_units": "SI",
+ "note": "Blind: do not reveal topics, domains, reasons or the drill before all answers are in. Make every vignette and stem clearly different from already_used and recent_cases_any_topic (patient, setting, presentation, twist). MCQs and focused questions are presented together and get their feedback before the case is shown; neither they nor their feedback may cue the case.",
+ "ok": true,
+ "pending_errata": [],
+ "prepare_ahead": true,
+ "presentation_order": [
+  "mcq CARD-07",
+  "mcq PULM-04",
+  "mcq HEME-08",
+  "case EMRG-01"
+ ],
+ "profile": {
+  "notes": "",
+  "practice_setting": [],
+  "role": null,
+  "specialty": "Internal/hospital medicine",
+  "subspecialty": null
+ },
+ "recent_cases_any_topic": [],
+ "session_id": "S0001",
+ "session_minutes": 20,
+ "show_coding": true,
+ "specialty": "Internal/hospital medicine",
+ "testing": false
+}

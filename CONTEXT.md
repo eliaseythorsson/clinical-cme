@@ -93,6 +93,10 @@ The learner's field of practice, which sets the pitch of items and which guideli
 **Testing mode**:
 A learner setting that adds a short feedback check and a store-integrity check at the end of each round.
 
+**Example ledger**:
+A synthetic ledger kept with the tests (fresh, mid-curriculum, overdue, unreflected, stale prepared round), with the expected plan, due dates and applied round saved beside it.
+_Avoid_: fixture, golden file (in conversation)
+
 **Simulation**:
 A scripted run of the skill in which one agent is the examiner and another plays a learner persona.
 

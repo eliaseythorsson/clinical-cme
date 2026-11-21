@@ -1,0 +1,150 @@
+{
+ "blood_gas_units": "mmHg",
+ "case_format": "unfolding",
+ "counts": {
+  "case": 1,
+  "focused": 1,
+  "mcqs": 2
+ },
+ "date": "2026-11-20",
+ "estimated_minutes": 26,
+ "feedback_depth": "detailed",
+ "guideline_region": "Iceland/Europe",
+ "helpers": true,
+ "item_order": "mcqs_first",
+ "items": [
+  {
+   "already_used": [
+    {
+     "date": "2026-09-07",
+     "id": "S0003",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 3.3",
+     "topic": "GI-06"
+    },
+    {
+     "aspect": "interpretation",
+     "date": "2026-09-10",
+     "id": "S0004",
+     "kind": "focused",
+     "stem": "Example focused stem 4.1",
+     "topic": "GI-06"
+    }
+   ],
+   "domain": "GI",
+   "label": "Bowel obstruction, ischemia",
+   "reason": "spaced review due 2026-09-11; last 1.0/5 on 2026-09-10; flagged confident error last time; open gap: Example gap 3.3: missed the decision point | Confident but incorrect answer on 2026-09-10; re-test the same decision point.",
+   "reason_code": "due",
+   "slot": "case",
+   "topic": "GI-06"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-09-01",
+     "id": "S0001",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 1.3",
+     "topic": "RENAL-06"
+    }
+   ],
+   "aspect_hint": "disposition",
+   "aspect_note": "Suggested aspect (least recently tested). If this item re-tests an open gap, ask about the gap's decision point instead, whatever its aspect.",
+   "domain": "RENAL",
+   "label": "CKD inpatient management, indications for dialysis",
+   "reason": "spaced review due 2026-09-04; last 5.0/5 on 2026-09-01",
+   "reason_code": "due",
+   "separation": "other domain",
+   "slot": "focused",
+   "topic": "RENAL-06"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-09-03",
+     "id": "S0002",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 2.3",
+     "topic": "RHEUM-04"
+    }
+   ],
+   "domain": "RHEUM",
+   "label": "Anaphylaxis, drug hypersensitivity",
+   "reason": "spaced review due 2026-09-06; last 4.0/5 on 2026-09-03",
+   "reason_code": "due",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "RHEUM-04"
+  },
+  {
+   "domain": "EMRG",
+   "label": "Acute agitation, behavioral emergency",
+   "reason": "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)",
+   "reason_code": "new",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "EMRG-02"
+  }
+ ],
+ "lab_units": "SI",
+ "note": "Blind: do not reveal topics, domains, reasons or the drill before all answers are in. Make every vignette and stem clearly different from already_used and recent_cases_any_topic (patient, setting, presentation, twist). MCQs and focused questions are presented together and get their feedback before the case is shown; neither they nor their feedback may cue the case.",
+ "ok": true,
+ "pending_errata": [],
+ "prepare_ahead": true,
+ "presentation_order": [
+  "mcq RHEUM-04",
+  "mcq EMRG-02",
+  "focused RENAL-06",
+  "case GI-06"
+ ],
+ "profile": {
+  "notes": "",
+  "practice_setting": [],
+  "role": null,
+  "specialty": "Internal/hospital medicine",
+  "subspecialty": null
+ },
+ "recent_cases_any_topic": [
+  {
+   "date": "2026-09-01",
+   "diagnosis": "Example diagnosis: Endocarditis (see CARD-05)",
+   "id": "S0001",
+   "patient": "Example patient 1",
+   "presentation": "Example presentation 1",
+   "setting": "ward",
+   "topic": "ID-05"
+  },
+  {
+   "date": "2026-09-03",
+   "diagnosis": "Example diagnosis: Sepsis & septic shock",
+   "id": "S0002",
+   "patient": "Example patient 2",
+   "presentation": "Example presentation 2",
+   "setting": "ward",
+   "topic": "PULM-07"
+  },
+  {
+   "date": "2026-09-07",
+   "diagnosis": "Example diagnosis: Transitions of care, discharge safety, readmission",
+   "id": "S0003",
+   "patient": "Example patient 3",
+   "presentation": "Example presentation 3",
+   "setting": "ward",
+   "topic": "GEN-09"
+  },
+  {
+   "date": "2026-09-10",
+   "diagnosis": "Example diagnosis: Transitions of care, discharge safety, readmission",
+   "id": "S0004",
+   "patient": "Example patient 4",
+   "presentation": "Example presentation 4",
+   "setting": "ward",
+   "topic": "GEN-09"
+  }
+ ],
+ "session_id": "S0005",
+ "session_minutes": 20,
+ "show_coding": true,
+ "specialty": "Internal/hospital medicine",
+ "testing": false
+}

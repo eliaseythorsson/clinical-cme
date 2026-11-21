@@ -1,0 +1,190 @@
+{
+ "blood_gas_units": "mmHg",
+ "case_format": "unfolding",
+ "counts": {
+  "case": 1,
+  "focused": 0,
+  "mcqs": 3
+ },
+ "date": "2026-11-20",
+ "estimated_minutes": 24,
+ "feedback_depth": "detailed",
+ "guideline_region": "Iceland/Europe",
+ "helpers": true,
+ "item_order": "mcqs_first",
+ "items": [
+  {
+   "already_used": [
+    {
+     "date": "2026-08-17",
+     "diagnosis": "Example diagnosis: Intracranial hemorrhage",
+     "id": "S0006",
+     "patient": "Example patient 6",
+     "presentation": "Example presentation 6",
+     "setting": "ward",
+     "topic": "NEURO-02"
+    },
+    {
+     "date": "2026-08-13",
+     "id": "S0005",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 5.3",
+     "topic": "NEURO-02"
+    }
+   ],
+   "domain": "NEURO",
+   "label": "Intracranial hemorrhage",
+   "reason": "spaced review due 2026-08-18; last 1.0/5 on 2026-08-17; flagged confident error last time; open gap: Confident but incorrect answer on 2026-08-17; re-test the same decision point.",
+   "reason_code": "due",
+   "slot": "case",
+   "topic": "NEURO-02"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-08-05",
+     "id": "S0002",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 2.1",
+     "topic": "TOX-02"
+    },
+    {
+     "date": "2026-08-07",
+     "id": "S0003",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 3.1",
+     "topic": "TOX-02"
+    }
+   ],
+   "domain": "TOX",
+   "label": "Serotonin syndrome / NMS / malignant hyperthermia",
+   "reason": "spaced review due 2026-08-09; last 5.0/5 on 2026-08-07",
+   "reason_code": "due",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "TOX-02"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-08-05",
+     "diagnosis": "Example diagnosis: Healthcare-associated / MDRO, antibiotic selection",
+     "id": "S0002",
+     "patient": "Example patient 2",
+     "presentation": "Example presentation 2",
+     "setting": "ward",
+     "topic": "ID-10"
+    },
+    {
+     "date": "2026-08-03",
+     "id": "S0001",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 1.2",
+     "topic": "ID-10"
+    },
+    {
+     "date": "2026-08-07",
+     "id": "S0003",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 3.2",
+     "topic": "ID-10"
+    }
+   ],
+   "domain": "ID",
+   "label": "Healthcare-associated / MDRO, antibiotic selection",
+   "reason": "spaced review due 2026-08-10; last 5.0/5 on 2026-08-07",
+   "reason_code": "due",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "ID-10"
+  },
+  {
+   "domain": "ENDO",
+   "label": "Inpatient glycemic management",
+   "reason": "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)",
+   "reason_code": "new",
+   "separation": "other domain",
+   "slot": "mcq",
+   "topic": "ENDO-02"
+  }
+ ],
+ "lab_units": "SI",
+ "note": "Blind: do not reveal topics, domains, reasons or the drill before all answers are in. Make every vignette and stem clearly different from already_used and recent_cases_any_topic (patient, setting, presentation, twist). MCQs and focused questions are presented together and get their feedback before the case is shown; neither they nor their feedback may cue the case.",
+ "ok": true,
+ "pending_errata": [],
+ "prepare_ahead": true,
+ "presentation_order": [
+  "mcq TOX-02",
+  "mcq ID-10",
+  "mcq ENDO-02",
+  "case NEURO-02"
+ ],
+ "profile": {
+  "notes": "",
+  "practice_setting": [],
+  "role": null,
+  "specialty": "Internal/hospital medicine",
+  "subspecialty": null
+ },
+ "recent_cases_any_topic": [
+  {
+   "date": "2026-08-03",
+   "diagnosis": "Example diagnosis: Fluid & electrolyte therapy, maintenance fluids",
+   "id": "S0001",
+   "patient": "Example patient 1",
+   "presentation": "Example presentation 1",
+   "setting": "ward",
+   "topic": "GEN-12"
+  },
+  {
+   "date": "2026-08-05",
+   "diagnosis": "Example diagnosis: Healthcare-associated / MDRO, antibiotic selection",
+   "id": "S0002",
+   "patient": "Example patient 2",
+   "presentation": "Example presentation 2",
+   "setting": "ward",
+   "topic": "ID-10"
+  },
+  {
+   "date": "2026-08-07",
+   "diagnosis": "Example diagnosis: Thrombocytopenia, HIT, TTP/HUS",
+   "id": "S0003",
+   "patient": "Example patient 3",
+   "presentation": "Example presentation 3",
+   "setting": "ward",
+   "topic": "HEME-02"
+  },
+  {
+   "date": "2026-08-10",
+   "diagnosis": "Example diagnosis: Thrombocytopenia, HIT, TTP/HUS",
+   "id": "S0004",
+   "patient": "Example patient 4",
+   "presentation": "Example presentation 4",
+   "setting": "ward",
+   "topic": "HEME-02"
+  },
+  {
+   "date": "2026-08-13",
+   "diagnosis": "Example diagnosis: Systemic vasculitis, GCA",
+   "id": "S0005",
+   "patient": "Example patient 5",
+   "presentation": "Example presentation 5",
+   "setting": "ward",
+   "topic": "RHEUM-02"
+  },
+  {
+   "date": "2026-08-17",
+   "diagnosis": "Example diagnosis: Intracranial hemorrhage",
+   "id": "S0006",
+   "patient": "Example patient 6",
+   "presentation": "Example presentation 6",
+   "setting": "ward",
+   "topic": "NEURO-02"
+  }
+ ],
+ "session_id": "S0007",
+ "session_minutes": 20,
+ "show_coding": true,
+ "specialty": "Internal/hospital medicine",
+ "testing": false
+}

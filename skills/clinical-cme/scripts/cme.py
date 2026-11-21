@@ -195,9 +195,14 @@ def load_json_arg(value):
 def save_json(obj, path):
     d = os.path.dirname(os.path.abspath(path)) or "."
     fd, tmp = tempfile.mkstemp(prefix=".cme-", dir=d)
-    with os.fdopen(fd, "w", encoding="utf-8") as fh:
-        json.dump(obj, fh, ensure_ascii=False, indent=1, sort_keys=False)
-    os.replace(tmp, path)
+    try:        # written beside the file, then moved over it: an interrupted write leaves `path` as it was
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(obj, fh, ensure_ascii=False, indent=1, sort_keys=False)
+        os.replace(tmp, path)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise
     return os.path.getsize(path)
 
 
