@@ -38,7 +38,8 @@ starting a fresh examiner each turn.
 
 1. **Set up.** `python3 sim/simulate.py init --persona <persona>` (default `strong`). It prints
    the run folder and the paths of `examiner_prompt.md` and `learner_prompt.md`, and records
-   the learner's opening request; the clock starts here, so go straight on.
+   the learner's opening request; the clock starts here, so go straight on. Each `init` gets a
+   run folder of its own, so several personas can be started at once.
    Options: `--prepare-ahead` (the examiner also prepares the next round after the close; much
    longer), `--from-run <earlier run folder>` (a second round on the same store),
    `--skill <folder>` (test an installed copy instead of `skills/clinical-cme/`),
@@ -162,7 +163,10 @@ A persona file elsewhere can be given by path (`--persona path/to/file.md`).
 
 ## Files of a run (`sim/runs/<stamp>/`, not committed)
 
-The folder's name does not name the persona: its path is in the examiner's brief.
+The folder is named after the second the run started (`YYYYmmdd-HHMMSS`); a run started in the
+same second as another gets `-2`, `-3`, … after it. The name does not name the persona: its
+path is in the examiner's brief. `--runs-dir <folder>` makes the run folder somewhere other
+than `sim/runs/`; `--run <folder>` names the folder itself, which must be new or empty.
 
 | Path | What |
 |---|---|

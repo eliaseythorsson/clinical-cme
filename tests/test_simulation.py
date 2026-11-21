@@ -306,6 +306,31 @@ class Script:
             return out, json.load(fh)
 
 
+def test_runs_started_in_the_same_second_get_a_folder_each(tmp_path):
+    runs = str(tmp_path / "runs")
+    stamp = "20261121-030405"
+    args = ("--runs-dir", runs, "--stamp", stamp, "--today", TODAY)
+    first = sim_json("init", "--persona", "strong", *args)
+    second = sim_json("init", "--persona", "disputes", *args)
+    assert os.path.basename(first["run"]) == stamp and os.path.basename(second["run"]) == stamp + "-2"
+    for out, persona in ((first, "strong"), (second, "disputes")):
+        assert json.load(open(os.path.join(out["run"], "run.json")))["persona"] == persona
+        assert os.path.isfile(os.path.join(out["run"], "store", "data", "state.json"))
+        assert persona not in os.path.basename(out["run"])       # the name still does not name the persona
+        assert persona not in open(out["examiner_prompt"]).read()
+
+
+def test_inits_started_at_once_never_share_a_folder(tmp_path):
+    runs = str(tmp_path / "runs")
+    procs = [subprocess.Popen([sys.executable, SIM, "init", "--persona", "strong", "--runs-dir", runs,
+                               "--stamp", "20261121-030405", "--today", TODAY],
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) for _ in range(4)]
+    outs = [p.communicate() for p in procs]
+    assert all(p.returncode == 0 for p in procs), outs
+    made = sorted(json.loads(o)["run"] for o, _ in outs)
+    assert len(set(made)) == 4 and sorted(os.listdir(runs)) == sorted(os.path.basename(m) for m in made)
+
+
 @pytest.fixture
 def script(tmp_path):
     return lambda *faults: Script(tmp_path, faults).play()
