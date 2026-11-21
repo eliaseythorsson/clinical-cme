@@ -136,14 +136,17 @@ def cme(*args):
 
 
 class Script:
-    """One scripted round in a run folder. `faults` names what to do wrong."""
+    """One scripted round in a run folder. `faults` names what to do wrong. The round is played
+    in steps (open, case, save, close) so that the persona scripts in test_sim_personas.py can
+    take a different path through it."""
+    persona = "strong"
 
     def __init__(self, tmp_path, faults=()):
         self.run = str(tmp_path / "run")
         self.reports = str(tmp_path / "reports")
         self.faults = set(faults)
         self.clock = 1000.0
-        sim("init", "--persona", "strong", "--run", self.run, "--today", TODAY)
+        sim("init", "--persona", self.persona, "--run", self.run, "--today", TODAY)
         self.work = os.path.join(self.run, "work")
         self.store = os.path.join(self.run, "store")
         self.n = 0
@@ -176,9 +179,8 @@ class Script:
                 os.makedirs(os.path.dirname(dest), exist_ok=True)
                 shutil.copyfile(os.path.join(root, n), dest)
 
-    def play(self):
-        state = os.path.join(self.store, "data", "state.json")
-        index = os.path.join(self.store, "data", "index.json")
+    def open_round(self):
+        """Turns 1 and 2: the questions, their answers, their feedback, and the case presented."""
         # the harness set the clock of message 1 itself; pin it for the timing assertions
         lines = open(os.path.join(self.run, "transcript.jsonl")).read().splitlines()
         first = json.loads(lines[0]); first["ts"] = self.clock
@@ -206,6 +208,9 @@ class Script:
         self.send("examiner", cme("present", self.p("sealed_case.md"), "--block", "case"), 1)
         self.put("feedback_questions.md", fbq)
         self.turn_end("examiner", 9)
+
+    def case(self):
+        """Turns 3 and 4 up to the final feedback as sent."""
         # turn 3: Stage 1 answer -> Stage 2
         self.send("learner", ANSWERS["case"], 90)
         self.turn_end("learner")
@@ -216,27 +221,32 @@ class Script:
         self.send("learner", ANSWERS["final"], 45)
         self.turn_end("learner")
         self.send("examiner", FEEDBACK, 40)
-        logged = dict(ANSWERS)
+
+    def save(self, rnd=ROUND, feedback=FEEDBACK, answers=None, parts=("questions", "case", "final")):
+        """The first save, behind the scenes after the final feedback went out."""
+        state = os.path.join(self.store, "data", "state.json")
+        index = os.path.join(self.store, "data", "index.json")
+        logged = dict(ANSWERS, **(answers or {}))
         if "retyped_answer" in self.faults:
             logged["case"] = "Differential: infection, malignancy, inflammatory. Tests: special scan and a blood count."
-        feedback = FEEDBACK.replace("you ordered it", "you asked for it") if "retyped_feedback" in self.faults else FEEDBACK
+        if "retyped_feedback" in self.faults:
+            feedback = feedback.replace("you ordered it", "you asked for it")
         self.put("feedback.md", feedback)
-        self.put("answers.md", "".join("<!-- answers: %s -->\n%s\n<!-- /answers -->\n" % (k, logged[k])
-                                       for k in ("questions", "case", "final")))
-        self.put("round.json", ROUND)
+        self.put("answers.md", "".join("<!-- answers: %s -->\n%s\n<!-- /answers -->\n" % (k, logged[k]) for k in parts))
+        self.put("round.json", rnd)
         cme("--today", TODAY, "save", state, "--round", self.p("round.json"),
             "--sealed", self.p("sealed_questions.md"), self.p("sealed_case.md"), "--answers", self.p("answers.md"),
             "--feedback-questions", self.p("feedback_questions.md"), "--feedback", self.p("feedback.md"),
             "--index", index, "--out-dir", self.p("out1"))
         self.store_files(self.p("out1"))
         assert self.turn_end("examiner", 15)["round_closed"] is False
-        if "stop_before_reflection" in self.faults:
-            return self
-        # turn 5: reflection -> close, final save
-        self.send("learner", ANSWERS["reflection"], 30)
+
+    def close(self, reflection=None, part_b=PART_B, reflection_text=ANSWERS["reflection"]):
+        """Turn 5: the reflection, the close message and the final save."""
+        self.send("learner", reflection_text, 30)
         self.turn_end("learner")
-        self.put("reflection.json", {"topic_comfort": {"GEN-11": 4}, "performance": 4, "solid": "a", "gaps": "b"})
-        self.put("B.md", PART_B)
+        self.put("reflection.json", reflection or {"topic_comfort": {"GEN-11": 4}, "performance": 4, "solid": "a", "gaps": "b"})
+        self.put("B.md", part_b)
         cme("--today", TODAY, "close", self.p("out1", "data", "state.json"), "--reflection", self.p("reflection.json"),
             "--md", self.p("B.md"), "--doc", self.p("out1", "data", "sessions", "S0001.json"),
             "--index", self.p("out1", "data", "index.json"), "--out-dir", self.p("out2"))
@@ -245,6 +255,13 @@ class Script:
         assert self.turn_end("examiner", 10)["stop"] is False
         last = self.turn_end("learner", 5)          # the learner has nothing to add
         assert last["stop"] is True and last["round_closed"] is True
+
+    def play(self):
+        self.open_round()
+        self.case()
+        self.save()
+        if "stop_before_reflection" not in self.faults:
+            self.close()
         return self
 
     def report(self, *extra):
@@ -285,7 +302,7 @@ def test_clean_round_passes_every_check_and_the_report_is_written(script):
     assert rep["checks"]["blinding"]["seal_lifted_at"] == {"questions": 3, "case": 8}
     assert rep["checks"]["saved"]["output_folders"] == ["out1", "out2"]
     assert rep["round"] == {"session": "S0001", "shape": "1 MCQ, 1 focused, case (two stages)", "score": rep["round"]["score"],
-                            "continued_from_earlier_run": False}
+                            "confident_misses": 0, "continued_from_earlier_run": False}
     assert rep["quality"] == {"score": 4, "note": "sound"}
     md = open(out["report"], encoding="utf-8").read()
     assert "all automatic checks passed" in md and "## Waiting time per step" in md and "model-a / model-b" in md
