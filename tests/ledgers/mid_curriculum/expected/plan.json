@@ -74,6 +74,11 @@
    "label": "Pheochromocytoma, hypercalcemia of malignancy",
    "reason": "spaced review due 2026-10-24; last 2.0/5 on 2026-10-23; open gap: Example gap 10.3: missed the decision point",
    "reason_code": "due",
+   "retest_gap": {
+    "gap": "Example gap 10.3: missed the decision point",
+    "how": "Write this item on the gap's decision point, in a new clinical context, and put \"retests\": \"ENDO-06\" on the item in the round JSON. Only an item that says so, answered well, closes the gap.",
+    "id": "ENDO-06"
+   },
    "separation": "other domain",
    "slot": "focused",
    "topic": "ENDO-06"

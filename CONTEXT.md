@@ -60,6 +60,12 @@ _Avoid_: dashboard
 **Gap**:
 A specific point the learner got wrong or flagged as shaky, linked to a blueprint topic, open until an item tests that point and it is answered well.
 
+**Retest**:
+An item written on an open gap's decision point, in a new clinical context; it names the gap, and only a retest answered well closes it.
+
+**Rest**:
+The minimum of three days before a tested topic or a new gap can come back.
+
 ## Curriculum
 
 **Blueprint**:

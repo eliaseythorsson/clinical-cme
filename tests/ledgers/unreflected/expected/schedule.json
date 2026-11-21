@@ -5,7 +5,7 @@
    "calibration": "confident_error",
    "comfort": null,
    "domain": "EMRG",
-   "due": "2026-10-20",
+   "due": "2026-10-22",
    "history": [
     [
      "2026-10-19",
@@ -55,7 +55,7 @@
    "calibration": "not_rated",
    "comfort": null,
    "domain": "HEME",
-   "due": "2026-10-20",
+   "due": "2026-10-22",
    "history": [
     [
      "2026-10-07",
@@ -113,7 +113,7 @@
    "calibration": "confident_error",
    "comfort": 4,
    "domain": "EMRG",
-   "due": "2026-10-20",
+   "due": "2026-10-22",
    "history": [
     [
      "2026-10-19",
@@ -163,7 +163,7 @@
    "calibration": "aligned",
    "comfort": 2,
    "domain": "HEME",
-   "due": "2026-10-20",
+   "due": "2026-10-22",
    "history": [
     [
      "2026-10-07",
@@ -221,7 +221,7 @@
    "calibration": "confident_error",
    "comfort": 4,
    "domain": "GEN",
-   "due": "2026-10-17",
+   "due": "2026-10-19",
    "history": [
     [
      "2026-10-14",
@@ -271,7 +271,7 @@
    "calibration": "underconfident",
    "comfort": 2,
    "domain": "HEME",
-   "due": "2026-10-18",
+   "due": "2026-10-19",
    "history": [
     [
      "2026-10-16",

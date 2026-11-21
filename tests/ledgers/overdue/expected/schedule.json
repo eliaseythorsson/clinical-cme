@@ -5,7 +5,7 @@
    "calibration": "confident_error",
    "comfort": null,
    "domain": "ENDO",
-   "due": "2026-11-21",
+   "due": "2026-11-23",
    "history": [
     [
      "2026-11-20",
@@ -92,7 +92,7 @@
    "calibration": "not_rated",
    "comfort": null,
    "domain": "TOX",
-   "due": "2026-11-21",
+   "due": "2026-11-23",
    "history": [
     [
      "2026-08-05",
@@ -125,7 +125,7 @@
    "calibration": "confident_error",
    "comfort": 4,
    "domain": "ENDO",
-   "due": "2026-11-21",
+   "due": "2026-11-23",
    "history": [
     [
      "2026-11-20",
@@ -212,7 +212,7 @@
    "calibration": "aligned",
    "comfort": 2,
    "domain": "TOX",
-   "due": "2026-11-21",
+   "due": "2026-11-23",
    "history": [
     [
      "2026-08-05",

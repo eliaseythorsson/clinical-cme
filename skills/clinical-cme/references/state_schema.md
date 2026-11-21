@@ -27,9 +27,9 @@ memory: one JSON document, read to a file and written from a file (`store.md` §
                           "last": "2026-10-26", "attempts": 4, "mastery": 3.5, "step": 3, "due": "2026-11-11",
                           "comfort": 5, "calibration": "aligned",
                           "history": [["2026-10-26", 3.5, 5, "aligned"]]}},
-  "gaps": [{"topic": "RENAL-02", "gap": "re-testable description", "self": null,
-            "source": ["graded"], "date": "2026-10-26", "opened": "2026-09-17"}],
-  "resolved": [{"topic": "CARD-03", "note": "…", "opened": "…", "resolved": "…", "partial": false}],
+  "gaps": [{"id": "G0007", "topic": "RENAL-02", "gap": "re-testable description", "self": null,
+            "source": ["graded"], "date": "2026-10-26", "opened": "2026-09-17", "last_retested": null}],
+  "resolved": [{"id": "G0004", "topic": "CARD-03", "note": "…", "opened": "…", "resolved": "…", "partial": false}],
   "sessions": [ { "…one entry per session of the current review period (full coding)…" } ],
   "previous": [ { "…sessions of the previous period, compact coding…" } ],
   "agg": { "…all-time counters: sessions, items, errors by category/type/step/severity/bias, ART, IDEA, calibration, Brier, drills, disputes…" },
@@ -69,7 +69,7 @@ A session entry:
             "coding": {"art": {"DG": 2, "PR": 1, "DDX": 1, "TEST": 2, "META": 0, "MGMT": 1}, "idea": {"I": 2, "D": 1, "E": 1, "A": 0},
                        "errors": [{"element": "…", "stage": 1, "category": "synthesis", "art_domain": "DDX",
                                    "bias": ["premature_closure"], "bias_evidence": "the learner's words", "severity": "critical", "confidence": "sure"}]}},
-           {"type": "mcq", "topic": "CARD-03", "mastery": 5, "confidence": "sure", "correct": true, "stem": "…", "coding": {"errors": []}},
+           {"type": "mcq", "topic": "CARD-03", "mastery": 5, "confidence": "sure", "correct": true, "retests": "G0004", "stem": "…", "coding": {"errors": []}},
            {"type": "focused", "topic": "HEME-04", "mastery": 3, "confidence": "unsure", "aspect": "management", "stem": "…",
             "coding": {"art": {"MGMT": 1}, "errors": [{"element": "…", "category": "knowledge", "knowledge_type": "numeric", "art_domain": "MGMT", "severity": "important"}]}}],
  "why": {"RENAL-02": "due", "CARD-03": "due"}, "self_performance": 3, "self_comfort": {"RENAL-02": 5},
@@ -96,7 +96,7 @@ Teaching points are the `key_learning` lines, identified as `<id>.<n>` (`S0021.2
      "coding": {"art": {"DG": 2, "PR": 1, "DDX": 1, "TEST": 2, "META": 0, "MGMT": 1}, "idea": {"I": 2, "D": 1, "E": 1, "A": 0},
                 "errors": [{"element": "…", "stage": 1, "category": "synthesis", "knowledge_type": null, "art_domain": "DDX",
                             "bias": ["premature_closure"], "bias_evidence": "'clearly dry from the run'", "severity": "critical", "confidence": "sure"}]}},
-    {"type": "mcq", "topic": "ID-06", "mastery": 1, "correct": false, "confidence": "guess",
+    {"type": "mcq", "topic": "ID-06", "mastery": 1, "correct": false, "confidence": "guess", "retests": "G0005",
      "stem_summary": "First CDI episode, outpatient, choice of agent",
      "coding": {"errors": [{"element": "…", "category": "knowledge", "knowledge_type": "outdated", "severity": "important"}]}},
     {"type": "focused", "topic": "HEME-04", "mastery": 3, "confidence": "unsure", "aspect": "management",
@@ -120,6 +120,10 @@ Teaching points are the `key_learning` lines, identified as `<id>.<n>` (`S0021.2
 ```
 
 - `source` of a gap: `graded`, `transfer`, `misconception` or `self`.
+- `retests` on an item: the id of the open gap the item was written to test, copied from the
+  plan's `retest_gap.id` for that item. Put it only on an item that asked about the gap's
+  decision point. It is the only way a gap closes (§4); `record` warns when a topic with an open
+  gap was tested and no item carries it.
 - `mastery` per item: cases 0–5 from the rubric; focused questions 0–5 from their table
   (`feedback_guide.md` §2 B2); MCQs typically 4–5 if correct with sound reasoning, 3 if correct
   with flawed reasoning, 1–2 if wrong.
@@ -157,7 +161,7 @@ Mastery per topic is the mean of its items' scores this round, after confidence 
 
 - MCQ correct but marked **guess** → counts as at most 3.
 - MCQ wrong but marked **sure**, or a case or focused question scoring ≤ 2 marked **sure** → a **confident error**
-  (misconception): step resets to 0 (next day) and a gap with source `misconception` is added.
+  (misconception): step resets to 0 and a gap with source `misconception` is added.
 
 | Mastery | Step (`intervals_days` index) |
 |---|---|
@@ -165,12 +169,20 @@ Mastery per topic is the mean of its items' scores this round, after confidence 
 | 2.5–3.5 | hold |
 | ≤ 2 | reset to 0 |
 
+**No topic returns sooner than three days**, whatever the step, the answer or the calibration
+(with the default intervals: a miss, a confident error and a topic held at step 0 all return
+after three days). The day after a round the learner still holds the feedback in short-term
+memory: a re-test then is answered from the explanation just read, so it shows little about
+what will be kept and adds little to it, and a topic stuck at 3/5 filled every round. `plan`
+applies the same rest to ledgers written before this rule (a topic tested in the last two days
+is not chosen, even if its stored due date has passed); only `--allow-repeat` overrides it.
+
 Self-assessment, with comfort *c* for the topic:
 
 | Condition | Label | Effect |
 |---|---|---|
-| c − mastery ≥ 2 | overconfident | do not advance; back in ≤ 3 days |
-| mastery − c ≥ 2 and mastery ≥ 4 | underconfident | advance, but halve the interval |
+| c − mastery ≥ 2 | overconfident | do not advance; back after 3 days |
+| mastery − c ≥ 2 and mastery ≥ 4 | underconfident | advance, but halve the interval (never under 3 days) |
 | otherwise | aligned | none |
 | no rating | not_rated | none |
 
@@ -179,9 +191,21 @@ A self-reported gap caps the interval at 7 days. Comfort ratings feed `domain_se
 sampled (rating 1→1.6, 2→1.3, 3→1.0, 4→0.8, 5→0.6, times blueprint weight, times emphasis,
 divided by how often the domain appeared in the last ten sessions).
 
+The rating is **corrected for overconfidence** when the weight is worked out: once a domain has
+tested topics, the rating used is the lower of the stored rating and the mean current mastery of
+those topics, rounded down. So a 5/5 over answers averaging 3 counts as 3 and does not reduce
+the domain's share; a 5/5 over answers averaging 4.6 counts as 4. A low rating always counts as
+given, and so does a rating for a domain with nothing tested yet. The stored rating stays the
+learner's own, so the progress review can still compare it with performance. Reason: physicians'
+self-assessment agrees poorly with measured performance, and worst where performance is weakest,
+so an unchecked "comfortable" would steer questions away from exactly the domains that need them.
+
 Selection (`plan`): due topics first (overconfident and misconception ahead, then most overdue,
-then lowest mastery), then open gaps not re-tested since logged (misconception > self > transfer
-> graded), then new topics by domain weight. Slots are filled case first, then focused questions,
+then lowest mastery), then open gaps that no item has tested since they were written and that are
+at least three days old (misconception > self > transfer > graded), then new topics by domain
+weight. A topic tested in the last two days is never chosen. Every chosen item whose topic has an
+open gap carries `retest_gap` (`id`, `gap`, `how`): the author writes the item on that decision
+point and the round JSON names the gap in the item's `retests`. Slots are filled case first, then focused questions,
 then MCQs, so due topics and open gaps go to the formats that show reasoning. MCQs and focused
 questions come from other domains than the case and are unrelated to it and to each other
 (cross-references, shared significant words). In rounds of four or more items the last short
@@ -190,9 +214,15 @@ topic; in smaller rounds whenever the previous session introduced nothing new
 (`new_topics_per_round: 0` or `--no-new` disables this). Each focused item gets an
 `aspect_hint`: the aspect tested least recently.
 
-Open gaps: one per topic; a new entry replaces the old one, so its text must carry forward
-anything still unresolved. A gap retires to `resolved` when a later round scores the topic ≥ 4,
-not overconfident, with no new gap.
+Open gaps: one per topic, each with an id (`G0007`; gaps from older ledgers are numbered at the
+next `record`, and until then an item may name such a gap by its topic id). A new entry replaces
+the old one and keeps its id, so its text must carry forward anything still unresolved. A gap
+retires to `resolved` only when, in a later round, the items whose `retests` names it score ≥ 4
+(after the confidence rules, so not a guess and not a confident error), the topic is not
+overconfident, and no new gap is logged on the topic. A good answer on another point of the same
+topic leaves the gap open and still waiting for its retest: the learner showed they know
+something else, not that the missed point is fixed. A retest that falls short sets
+`last_retested`; from then on the gap comes back with its topic's spacing.
 
 Review due: when `review_interval_days` has passed and at least three sessions were done, or
 the interval plus 21 days has passed regardless. A snooze always wins.

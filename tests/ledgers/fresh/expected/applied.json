@@ -535,8 +535,8 @@
    "PULM-04": {
     "calibration": "underconfident",
     "comfort": 2,
-    "due": "2026-11-22",
-    "interval_days": 2,
+    "due": "2026-11-23",
+    "interval_days": 3,
     "mastery": 5.0,
     "misconception": false,
     "step": 1

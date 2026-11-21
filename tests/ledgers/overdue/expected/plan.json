@@ -36,6 +36,11 @@
    "label": "Intracranial hemorrhage",
    "reason": "spaced review due 2026-08-18; last 1.0/5 on 2026-08-17; flagged confident error last time; open gap: Confident but incorrect answer on 2026-08-17; re-test the same decision point.",
    "reason_code": "due",
+   "retest_gap": {
+    "gap": "Confident but incorrect answer on 2026-08-17; re-test the same decision point.",
+    "how": "Write this item on the gap's decision point, in a new clinical context, and put \"retests\": \"NEURO-02\" on the item in the round JSON. Only an item that says so, answered well, closes the gap.",
+    "id": "NEURO-02"
+   },
    "slot": "case",
    "topic": "NEURO-02"
   },

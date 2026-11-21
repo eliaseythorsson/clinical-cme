@@ -126,6 +126,7 @@
    {
     "date": "2026-10-19",
     "gap": "Example gap 7.1: missed the decision point",
+    "id": "G0002",
     "opened": "2026-10-19",
     "self": null,
     "source": [
@@ -136,6 +137,7 @@
    {
     "date": "2026-10-19",
     "gap": "Confident but incorrect answer on 2026-10-19; re-test the same decision point.",
+    "id": "G0003",
     "opened": "2026-10-19",
     "self": null,
     "source": [
@@ -176,6 +178,7 @@
     "topic": "NEURO-03"
    },
    {
+    "id": "G0001",
     "note": "Confident but incorrect answer on 2026-10-16; re-test the same decision point.",
     "opened": "2026-10-16",
     "partial": false,
@@ -219,6 +222,7 @@
      },
      "confidence": "sure",
      "mastery": 5,
+     "retests": "GEN-04",
      "topic": "GEN-04",
      "type": "case"
     },
@@ -438,6 +442,7 @@
    {
     "date": "2026-10-19",
     "gap": "Example gap 7.1: missed the decision point",
+    "id": "G0002",
     "opened": "2026-10-19",
     "self": null,
     "source": [
@@ -448,6 +453,7 @@
    {
     "date": "2026-10-19",
     "gap": "Confident but incorrect answer on 2026-10-19; re-test the same decision point.",
+    "id": "G0003",
     "opened": "2026-10-19",
     "self": null,
     "source": [
@@ -488,6 +494,7 @@
     "topic": "NEURO-03"
    },
    {
+    "id": "G0001",
     "note": "Confident but incorrect answer on 2026-10-16; re-test the same decision point.",
     "opened": "2026-10-16",
     "partial": false,
@@ -531,6 +538,7 @@
      },
      "confidence": "sure",
      "mastery": 5,
+     "retests": "GEN-04",
      "topic": "GEN-04",
      "type": "case"
     },
@@ -644,8 +652,8 @@
    "EMRG-01": {
     "calibration": "confident_error",
     "comfort": null,
-    "due": "2026-10-20",
-    "interval_days": 1,
+    "due": "2026-10-22",
+    "interval_days": 3,
     "mastery": 1.0,
     "misconception": true,
     "step": 0
@@ -655,6 +663,7 @@
     "comfort": null,
     "due": "2026-10-22",
     "gap_resolved": true,
+    "gap_retested": true,
     "interval_days": 3,
     "mastery": 5.0,
     "misconception": false,
@@ -663,8 +672,8 @@
    "HEME-02": {
     "calibration": "not_rated",
     "comfort": null,
-    "due": "2026-10-20",
-    "interval_days": 1,
+    "due": "2026-10-22",
+    "interval_days": 3,
     "mastery": 2.0,
     "misconception": false,
     "step": 0
@@ -691,8 +700,8 @@
    "EMRG-01": {
     "calibration": "confident_error",
     "comfort": 4,
-    "due": "2026-10-20",
-    "interval_days": 1,
+    "due": "2026-10-22",
+    "interval_days": 3,
     "mastery": 1.0,
     "misconception": true,
     "step": 0
@@ -702,6 +711,7 @@
     "comfort": 5,
     "due": "2026-10-22",
     "gap_resolved": true,
+    "gap_retested": true,
     "interval_days": 3,
     "mastery": 5.0,
     "misconception": false,
@@ -710,8 +720,8 @@
    "HEME-02": {
     "calibration": "aligned",
     "comfort": 2,
-    "due": "2026-10-20",
-    "interval_days": 1,
+    "due": "2026-10-22",
+    "interval_days": 3,
     "mastery": 2.0,
     "misconception": false,
     "step": 0
@@ -775,6 +785,7 @@
     },
     "confidence": "sure",
     "mastery": 5,
+    "retests": "GEN-04",
     "topic": "GEN-04",
     "type": "case"
    },
@@ -964,8 +975,20 @@
    },
    "gaps": [
     {
+     "date": "2026-10-14",
+     "gap": "Example gap 5.2: missed the decision point",
+     "id": "G0001",
+     "opened": "2026-10-14",
+     "self": null,
+     "source": [
+      "graded"
+     ],
+     "topic": "NEURO-03"
+    },
+    {
      "date": "2026-10-16",
      "gap": "Confident but incorrect answer on 2026-10-16; re-test the same decision point.",
+     "id": "G0002",
      "opened": "2026-10-16",
      "self": "Example self-reported gap 6",
      "source": [
@@ -998,13 +1021,6 @@
      "partial": false,
      "resolved": "2026-10-14",
      "topic": "PULM-02"
-    },
-    {
-     "note": "Example gap 5.2: missed the decision point",
-     "opened": "2026-10-14",
-     "partial": false,
-     "resolved": "2026-10-16",
-     "topic": "NEURO-03"
     }
    ],
    "session": {
@@ -1139,14 +1155,14 @@
    "errata_ids": [],
    "errata_to_log": [],
    "gen": 13,
-   "open_gaps": 1,
+   "open_gaps": 2,
    "session_id": "S0006",
    "topics": {
     "GEN-04": {
      "calibration": "confident_error",
      "comfort": 4,
-     "due": "2026-10-17",
-     "interval_days": 1,
+     "due": "2026-10-19",
+     "interval_days": 3,
      "mastery": 1.0,
      "misconception": true,
      "step": 0
@@ -1163,8 +1179,8 @@
     "HEME-06": {
      "calibration": "underconfident",
      "comfort": 2,
-     "due": "2026-10-18",
-     "interval_days": 2,
+     "due": "2026-10-19",
+     "interval_days": 3,
      "mastery": 5.0,
      "misconception": false,
      "step": 1
@@ -1173,14 +1189,16 @@
      "calibration": "aligned",
      "comfort": 4,
      "due": "2026-10-19",
-     "gap_resolved": true,
+     "gap_retested": false,
      "interval_days": 3,
      "mastery": 4.0,
      "misconception": false,
      "step": 1
     }
    },
-   "warnings": []
+   "warnings": [
+    "NEURO-03 has open gap G0001 and no item says it retests it; if an item tested that point, add \"retests\": \"G0001\" to it (the gap stays open otherwise)"
+   ]
   },
   "reflection": {
    "gaps": "Example: what felt shaky in round 6",

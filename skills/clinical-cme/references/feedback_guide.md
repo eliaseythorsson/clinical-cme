@@ -108,7 +108,9 @@ an answer only for not matching the wording of the key.
 ### D. Gap summary
 - New gaps, written precisely enough to re-test: the decision point, the correct rule,
   and what the learner did instead.
-- Prior gaps re-tested: resolved, partly resolved or persisting.
+- Prior gaps re-tested: resolved, partly resolved or persisting. A gap counts as re-tested
+  only if an item asked about its decision point; that item carries `retests` in the round
+  JSON, and only then can the gap close (`state_schema.md` §2, §4).
 - Transfer gaps: knowledge shown in one item but not applied in another.
 - Calibration notes: confident and wrong (a misconception, highest priority), correct
   but guessed (not yet mastered), unsure but correct (likely to be stronger than they
@@ -200,14 +202,15 @@ Use this wording, adapted to the round's topics:
 How the reply is used (`reflect` command; see `state_schema.md` §3–4):
 - Comfort per topic is compared with the graded mastery. Feeling secure while scoring
   low (comfort ≥ mastery + 2) marks the topic **overconfident**: it is not advanced and
-  returns within three days. Scoring well while feeling unsure marks it
+  returns after three days. Scoring well while feeling unsure marks it
   **underconfident**: it advances, but returns sooner to consolidate.
 - Shaky areas named in the free text become open gaps with source `self`. If they belong
   to a topic that was not tested, that topic is created or pulled forward to within a
   week. Map each one to a blueprint ID; if none fits, create a new ID in the blueprint's
   style and tell the learner.
 - Comfort ratings feed the domain self-ratings that weight how often new topics from each
-  domain are sampled.
+  domain are sampled. A high rating lowers a domain's share only as far as the answers in
+  that domain bear it out (`state_schema.md` §4).
 
 After the reply, say in one line how it changed the plan, without naming future dates
 per topic, for example: "Noted — the anticoagulation reversal question you raised is now

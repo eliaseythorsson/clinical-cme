@@ -130,6 +130,8 @@ def round_for(st, plan):
             rnd["case"] = {"patient": "Example patient %d" % n, "setting": "ward",
                            "presentation": "Example presentation %d" % n,
                            "diagnosis": "Example diagnosis: %s" % label}
+        if planned.get("retest_gap"):      # the author wrote the item on the open gap, as the plan asks
+            item["retests"] = planned["retest_gap"]["id"]
         if name == "weak":
             rnd["gaps"].append({"topic": tid, "gap": "Example gap %d.%d: missed the decision point" % (n, i),
                                 "source": "graded"})
