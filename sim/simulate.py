@@ -341,7 +341,9 @@ class Round:
         self.work = rp(run, "work")
         self.store = rp(run, "store")
         self.state = read_json(rp(self.store, "data", "state.json")) or {}
-        self.round = read_json(rp(self.work, "round.json")) or {}
+        # record.json is the round record `save` built (key headers + the examiner's grading);
+        # round.json alone describes the round only when it was written out in full
+        self.round = read_json(rp(self.work, "record.json")) or read_json(rp(self.work, "round.json")) or {}
         self.plan = read_json(rp(self.work, "plan.json")) or {}
         self.start_state = read_json(rp(run, "ledger_at_start.json"))
         sessions = self.state.get("sessions") or []

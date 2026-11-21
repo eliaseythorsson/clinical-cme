@@ -285,7 +285,7 @@ the original graded. If answers are missing, ask once; proceed if the learner sa
    --work <work> --part questions` (their message on standard input, exactly as they wrote
    it; description "File the answers"), and write `<work>/feedback_questions.md` (the feedback
    exactly as sent) and `<work>/round.json` with the short-question items (`state_schema.md`
-   §2), to be completed after the case.
+   §2: per item its `key`, "Q1", "Q2", …, and the grading), to be completed after the case.
 5. End the turn with one short line.
 
 No case in the round → this is the final feedback: send it complete (gap summary and reflection
@@ -329,18 +329,23 @@ with the items answered; the case's topic stays due.
      a one-step case); answer-change requests, a dispute settled mid-round or anything else
      to log go in with `--part notes`. Earlier parts are already there: add, never rewrite;
    - write `<work>/feedback.md`: the final feedback exactly as sent;
-   - write `<work>/round.json` completed (`state_schema.md` §2): items with mastery, confidence and
-     `coding` (and `retests`, the gap id from the key, on an item that tested an open gap);
-     gaps; resolved notes; key learning points; selection reasons; `log_id` =
-     `next_id`; title, summary, tags; the compact `case` (only when there was one) and a
-     `stem_summary` per MCQ and focused question, plus `aspect` per focused question (all
-     three are in the keys); `grade_changes`, `drill`, `errata`, `pending_errata_logged`.
-     **No `reflection` key.**
+   - write `<work>/round.json` completed (`state_schema.md` §2), the grading only: per
+     answered item its `key` ("Q1", …, "case": the id of its key header in the sealed file),
+     `mastery`, `confidence`, `correct` for an MCQ, and `coding`; then gaps; resolved notes;
+     key learning points; a one- or two-sentence `summary`; `grade_changes`, `drill`,
+     `errata`, `pending_errata_logged`. **No `reflection` key.** Topics, labels, stem
+     summaries, aspects, `retests`, the compact case, the selection reasons, the case format,
+     the session ID and a title are filled in by `save` from the key headers and the plan: do
+     not copy them.
 5. `python3 cme.py save --work <work>`. It finds the ledger, the index and the page where
    `start` read them and the round's files by name, records the round, assembles the verbatim
    part A in the order of the round, updates the index and writes everything into
    `<work>/out1`. Fix any `warnings` (missing coding, unknown vocabulary, a missing file or
-   block) and run the same command again.
+   block) and run the same command again. If it stops with an `error` about a key header
+   (missing, or a field missing or misspelt), nothing was recorded: correct that header in the
+   sealed file as the message says (`author.md` §3, "Key headers"; for a round whose sealed
+   files have no headers at all, write the items of `round.json` out in full instead,
+   `state_schema.md` §2) and run it again.
 6. **Save**: put back every file in its `files` list, in one write where the store allows
    (`store.md` §4). Keep the new version. If `files` includes `index.html` (`page_upgraded`),
    the page is being updated to this version of the skill: follow `store.md` §4.5 once.

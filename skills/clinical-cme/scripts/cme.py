@@ -17,6 +17,9 @@ Session (fast path):
                                                   append the learner's answer to W/answers.md (default: stdin)
   save    --work W                                record the graded round + session doc (part A) + index,
                                                   from the files in W by their fixed names, into W/out1
+                                                  round.json names each item's key ("key": "Q1") and holds
+                                                  the grading; the rest comes from the key headers
+  keys    DIR|SEALED.. [--plan PLAN]              check the key headers of sealed files (no content printed)
   close   --work W [--reflection J]               apply the reflection + part B + index, into W/out2
                                                   (every file save and close use can still be named by a flag)
   addendum --doc SESSION.json --md ADD.md --out-dir D
@@ -2689,6 +2692,236 @@ def page_upgrade(out_dir, live_page, warnings):
             "page_upgrade": {"from": live, "to": PAGE_VERSION}}
 
 
+# ---------------------------------------------------------------- structured keys
+#
+# The author writes a small header with each key in the sealed files:
+#
+#   <!-- key: Q1 -->
+#   type: mcq
+#   topic: CARD-03
+#   label: Atrial fibrillation
+#   reason: due
+#   retests: G0004
+#   stem_summary: New AF after surgery, when to anticoagulate
+#   <!-- /key -->
+#
+# `save` builds the round record from these headers: an item of round.json names its key
+# ("key": "Q1") and carries only what the examiner decided (score, confidence, coding).
+
+KEY_RE = re.compile(r"<!--[ \t]*key:[ \t]*([A-Za-z0-9_]+)[ \t]*-->[ \t]*\n(.*?)\n?[ \t]*<!--[ \t]*/key[ \t]*-->", re.S)
+KEY_OPEN_RE = re.compile(r"<!--\s*key\b")
+KEY_ID_RE = re.compile(r"^(Q[1-9][0-9]?|case)$")
+KEY_TYPES = ("mcq", "focused", "case")
+KEY_COMMON = ("type", "topic", "label", "reason")           # every header needs these
+KEY_REQUIRED = {"mcq": ("stem_summary",), "focused": ("stem_summary", "aspect"),
+                "case": ("patient", "setting", "presentation", "diagnosis")}
+KEY_OPTIONAL = {"mcq": (), "focused": (), "case": ("twist",)}
+KEY_ANY = ("domain", "retests")                              # optional in every header
+KEY_ITEM_FIELDS = ("type", "topic", "label", "domain", "retests", "stem_summary", "aspect")
+KEY_CASE_FIELDS = ("patient", "setting", "presentation", "diagnosis", "twist")
+KEY_EMPTY = ("", "-", "none", "null", "n/a", "na")
+RECORD_FILE = "record.json"             # written by save: the round record as it was recorded
+PLAN_FILE = "plan.json"
+
+
+def key_id(text):
+    """A key's id as written, in its one spelling: Q1, Q2, … or case."""
+    t = str(text or "").strip()
+    return "case" if t.lower() == "case" else t.upper()
+
+
+def parse_key_headers(text, where="sealed file"):
+    """The key headers of one sealed file: ({id: {field: value}}, [problems]). A header that has a
+    problem is still returned, marked `_bad`, so that whoever uses it can refuse it. The problems
+    name the file, the key and the field, never a value: they can be shown before the answers."""
+    headers, problems = {}, []
+    found = KEY_RE.findall(text or "")
+    if len(KEY_OPEN_RE.findall(text or "")) > len(found):
+        problems.append("%s: a key header is not closed, or its first line is not '<!-- key: Q1 -->' "
+                        "(or '<!-- key: case -->'); close each with '<!-- /key -->'" % where)
+    for raw_id, body in found:
+        kid = key_id(raw_id)
+        tag = "%s, key %s" % (where, kid)
+        bad = []
+        if not KEY_ID_RE.match(kid):
+            bad.append("%s: the id must be Q1, Q2, … (the question's number) or case" % tag)
+        if kid in headers:
+            bad.append("%s: there are two headers with this id" % tag)
+        h = {}
+        for n, line in enumerate(body.splitlines(), 1):
+            line = line.strip()
+            if not line:
+                continue
+            m = re.match(r"^[-*+\s]*[*_`]*([A-Za-z][A-Za-z _-]*?)[*_`]*\s*:[*_`]*\s*(.*)$", line)
+            if not m:
+                bad.append("%s: line %d is not 'field: value'" % (tag, n))
+                continue
+            name = re.sub(r"[ -]+", "_", m.group(1).strip().lower())
+            value = m.group(2).strip().strip("*_`").strip()
+            if name in h:
+                bad.append("%s: '%s' is given twice" % (tag, name))
+            h[name] = value
+        typ = (h.get("type") or "").lower()
+        h["type"] = typ
+        if typ not in KEY_TYPES:
+            bad.append("%s: 'type' must be one of %s" % (tag, ", ".join(KEY_TYPES)))
+            typ = None
+        elif (typ == "case") != (kid == "case"):
+            bad.append("%s: the case's header is '<!-- key: case -->' and has type case; questions are Q1, Q2, …" % tag)
+        need = KEY_COMMON + (KEY_REQUIRED[typ] if typ else ())
+        for f in need:
+            if (h.get(f) or "").lower() in KEY_EMPTY:
+                bad.append("%s: '%s' is missing" % (tag, f))
+        if typ:
+            known = need + KEY_OPTIONAL[typ] + KEY_ANY
+            for f in sorted(set(h) - set(known)):
+                bad.append("%s: '%s' is not a field of a %s header (fields: %s)"
+                           % (tag, f, typ, ", ".join(known)))
+        for f in KEY_ANY + (KEY_OPTIONAL[typ] if typ else ()):
+            if f in h and h[f].lower() in KEY_EMPTY:
+                del h[f]
+        if typ == "focused" and h.get("aspect"):
+            h["aspect"] = h["aspect"].lower()
+            if h["aspect"] not in FOCUSED_ASPECTS:
+                bad.append("%s: 'aspect' must be one of %s" % (tag, ", ".join(FOCUSED_ASPECTS)))
+        if h.get("reason", "").lower().replace(" ", "_") == "new_in_domain":
+            h["reason"] = "new"         # the ledger knows one word for a topic's first appearance
+        if bad:
+            h["_bad"] = bad
+            problems.extend(bad)
+        if kid in headers:              # which of the two is meant cannot be told: neither is used
+            headers[kid].setdefault("_bad", []).extend(b for b in bad if "two headers" in b)
+        headers.setdefault(kid, h)
+    return headers, problems
+
+
+def key_headers(paths):
+    """The key headers of a round's sealed files: ({id: header}, [problems], {file: [ids]})."""
+    headers, problems, by_file = {}, [], {}
+    for path in paths or []:
+        name = os.path.basename(path)
+        found, probs = parse_key_headers(read_text(path), name)
+        problems.extend(probs)
+        by_file[name] = list(found)
+        for kid, h in found.items():
+            if kid in headers:
+                dup = "%s, key %s: another sealed file already has a header with this id" % (name, kid)
+                problems.append(dup)
+                headers[kid].setdefault("_bad", []).append(dup)
+                continue
+            headers[kid] = h
+    return headers, problems, by_file
+
+
+def fill_round_from_keys(rnd, sealed, plan=None):
+    """Build the round record in place: every item of `rnd` that names a key ("key": "Q1") gets
+    its topic, label, domain, stem summary, aspect and `retests` from that key's header, and the
+    round gets the compact case, the selection reasons and, where it has none, a title and tags.
+    A field the examiner did write wins and is listed under `overridden`. Raises CmeError, with
+    every problem in one message, when a header an item names is missing or malformed.
+    Returns None for a round that names no key (a round record written out in full)."""
+    items = rnd.get("items") or []
+    if not any(isinstance(it, dict) and it.get("key") for it in items):
+        return None
+    headers, header_problems, by_file = key_headers(sealed)
+    problems, filled, overridden, graded = [], [], [], set()
+    for n, it in enumerate(items, 1):
+        if not it.get("key"):
+            if not it.get("topic"):
+                problems.append("round.json, item %d: it has neither \"key\" (the id of its key header, "
+                                "e.g. \"Q1\" or \"case\") nor a topic" % n)
+            continue
+        kid = key_id(it["key"])
+        h = headers.get(kid)
+        if h is None:
+            problems.append("round.json, item %d: no key header '<!-- key: %s -->' in %s (headers found: %s)"
+                            % (n, kid, " or ".join(os.path.basename(p) for p in sealed or []) or "the sealed files "
+                               "(none in the work folder)", ", ".join(headers) or "none"))
+            continue
+        if kid in graded:
+            problems.append("round.json, item %d: key %s is already used by an earlier item" % (n, kid))
+            continue
+        graded.add(kid)
+        if h.get("_bad"):
+            problems.extend(h["_bad"])
+            continue
+        it["key"] = kid
+        for f in KEY_ITEM_FIELDS:
+            if f in it:
+                if f in h and it[f] != h[f]:
+                    overridden.append("%s.%s" % (kid, f))
+            elif f in h:
+                it[f] = h[f]
+        if it.get("retests") is None:
+            it.pop("retests", None)
+        it.setdefault("domain", domain_of(it["topic"]))
+        reasons = rnd.get("selection_reasons")
+        if not isinstance(reasons, dict):
+            reasons = rnd["selection_reasons"] = {}
+        reasons.setdefault(it["topic"], h["reason"])
+        if h["type"] == "case" and not rnd.get("case"):
+            rnd["case"] = {f: h[f] for f in KEY_CASE_FIELDS if h.get(f)}
+        filled.append(kid)
+    if problems:
+        die("the round record cannot be built from the keys: " + "; ".join(problems)
+            + ". Correct the header in the sealed file (references/author.md, section 3), or the "
+              "\"key\" in round.json, and run save again. Nothing was recorded.")
+    if not rnd.get("case_format") and any(is_case(it) for it in items) and (plan or {}).get("case_format"):
+        rnd["case_format"] = plan["case_format"]
+    case = rnd.get("case") if any(is_case(it) for it in items) else None
+    if not rnd.get("title"):
+        if case and case.get("presentation"):
+            rnd["title"] = clip(" — ".join(x for x in (case["presentation"], case.get("diagnosis")) if x), 90)
+        else:
+            rnd["title"] = clip(next((it["stem_summary"] for it in items if it.get("stem_summary")), None), 90)
+    if not rnd.get("tags"):
+        rnd["tags"] = sorted({it["topic"] for it in items if it.get("topic")})
+    if not rnd.get("summary"):
+        rnd["summary"] = " ".join(str(x) for x in (rnd.get("key_learning") or [])[:2]) or rnd.get("title")
+    out = {"filled": filled, "not_graded": [k for k in headers if k not in graded]}
+    if overridden:
+        out["overridden"] = overridden
+    # a header nobody graded (the learner stopped before the case) cannot block the save
+    known = {p for kid in graded for p in headers[kid].get("_bad", [])}
+    out["warnings"] = [p for p in header_problems if p not in known]
+    return out
+
+
+def cmd_keys(args):
+    """Check the key headers of sealed files (the author's last step, and before a stash). Prints
+    which keys each file has and what is wrong with them; never a topic or any other value."""
+    paths = []
+    for p in args.paths:
+        if os.path.isdir(p):
+            paths += [os.path.join(p, n) for n in SEALED_FILES if os.path.isfile(os.path.join(p, n))]
+        elif os.path.isfile(p):
+            paths.append(p)
+        else:
+            die("not found: %s" % p)
+    if not paths:
+        die("no sealed files (%s) in %s" % (", ".join(SEALED_FILES), ", ".join(args.paths)))
+    headers, problems, by_file = key_headers(paths)
+    for name, ids in by_file.items():
+        if not ids and present_blocks(read_text(next(p for p in paths if os.path.basename(p) == name))):
+            problems.append("%s: no key header; each item needs one ('<!-- key: Q1 -->' … '<!-- /key -->', "
+                            "references/author.md section 3)" % name)
+    if args.plan:
+        want = (load_json(args.plan).get("counts") or {})
+        have = {"mcqs": 0, "focused": 0, "case": 0}
+        for h in headers.values():
+            k = {"mcq": "mcqs", "focused": "focused", "case": "case"}.get(h.get("type"))
+            if k:
+                have[k] += 1
+        written = {os.path.basename(p) for p in paths}
+        for k, name in (("mcqs", "MCQ"), ("focused", "focused-question"), ("case", "case")):
+            part = "sealed_case.md" if k == "case" else "sealed_questions.md"
+            if part in written and int(want.get(k) or 0) != have[k]:
+                problems.append("%s: the plan has %d %s item(s), the keys have %d header(s) of that type"
+                                % (part, int(want.get(k) or 0), name, have[k]))
+    print(json.dumps({"ok": not problems, "keys": by_file, "problems": problems}, indent=1, ensure_ascii=False))
+    return 0 if not problems else 1
+
+
 # ---------------------------------------------------------------- the work folder
 #
 # One round is worked on in one scratch folder. `start` notes there where the ledger is;
@@ -2708,7 +2941,7 @@ PART_B_FILE = "B.md"
 SAVE_DIR = "out1"                       # what save writes; close reads it
 CLOSE_DIR = "out2"                      # what close writes
 ROUND_FILES = PREPARED_FILES + (ANSWERS_FILE, STAGE2_FILE, FEEDBACK_QUESTIONS_FILE, FEEDBACK_FILE, ROUND_FILE,
-                                REFLECTION_FILE, PART_B_FILE, "verify.json")
+                                RECORD_FILE, REFLECTION_FILE, PART_B_FILE, "verify.json")
 ROUND_DIRS = (SAVE_DIR, CLOSE_DIR, "out3", "next", "check")
 REFLECTION_HEADING_RE = re.compile(r"^###\s+Reflection\b", re.M)
 ANSWER_MARK_RE = re.compile(r"<!--\s*/?\s*answers\b")
@@ -2844,6 +3077,11 @@ def cmd_save(args):
     if not rnd.get("date"):
         rnd["date"] = iso(today_from(args))
     warnings = []
+    # the round record: what the author wrote in the key headers + what the examiner graded
+    plan_path = in_work(work, PLAN_FILE)
+    keys = fill_round_from_keys(rnd, sealed, load_json(plan_path) if plan_path else None)
+    if keys:
+        warnings.extend(keys.pop("warnings"))
     os.makedirs(out_dir, exist_ok=True)
     # the round mix set on the page is kept in the ledger from now on
     prefs_changes = apply_prefs(st_in, prefs, warnings)
@@ -2874,6 +3112,10 @@ def cmd_save(args):
         rec["page_upgraded"] = pf["page_upgrade"]
     if prefs_changes:
         rec["page_settings_applied"] = prefs_changes
+    if keys:
+        rec["keys"] = keys
+    if work:                        # the round record as recorded, beside the examiner's round.json
+        save_json(rnd, os.path.join(work, RECORD_FILE))
     rec["files"] = files
     rec["warnings"] = list(rec.get("warnings") or []) + warnings
     rec["transcript_chars"] = len(md)
@@ -3145,6 +3387,7 @@ def main(argv=None):
     s.add_argument("--feedback-questions")
     s.add_argument("--md"); s.add_argument("--index"); s.add_argument("--prefs"); s.add_argument("--page")
     s.add_argument("--out-dir"); s.set_defaults(fn=cmd_save)
+    s = sub.add_parser("keys"); s.add_argument("paths", nargs="+"); s.add_argument("--plan"); s.set_defaults(fn=cmd_keys)
     s = sub.add_parser("close"); s.add_argument("state", nargs="?"); s.add_argument("--work"); s.add_argument("--reflection")
     s.add_argument("--md"); s.add_argument("--doc"); s.add_argument("--index"); s.add_argument("--session")
     s.add_argument("--page")

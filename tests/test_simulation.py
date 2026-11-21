@@ -18,8 +18,24 @@ TODAY = "2026-11-01"
 
 SEALED_QUESTIONS = """## Keys
 
-Q1 — HEME-01 Anaemia work-up. Correct: B, because the ferritin settles it in this setting.
-Q2 — NEURO-04 focused. Best answer: image first, then decide on lumbar puncture afterwards.
+<!-- key: Q1 -->
+type: mcq
+topic: HEME-01
+label: Anemia workup (inpatient)
+reason: new
+stem_summary: Tired woman of 54, which test comes first
+<!-- /key -->
+Correct: B, because the ferritin settles it in this setting.
+
+<!-- key: Q2 -->
+type: focused
+topic: NEURO-04
+label: Altered mental status / delirium
+reason: new
+aspect: testing
+stem_summary: Worst headache of his life at 30, what now
+<!-- /key -->
+Best answer: image first, then decide on lumbar puncture afterwards.
 
 ## Verification list
 - guideline for the first key, current edition and threshold
@@ -35,7 +51,16 @@ Answer with a letter and a confidence word for Q1, and a few lines for Q2.
 """
 SEALED_CASE = """## Key
 
-GEN-11. Diagnosis: Fictitious secretitis
+<!-- key: case -->
+type: case
+topic: GEN-11
+label: Patient safety, quality improvement, high-value care
+reason: new
+patient: 60M
+setting: emergency department
+presentation: three days of malaise
+diagnosis: Fictitious secretitis
+<!-- /key -->
 Decisive test: the special scan, which shows the lesion in every such patient.
 
 <!-- bank -->
@@ -86,19 +111,18 @@ ANSWERS = {
     "final": "1. secretitis 2. treat for a week",
     "reflection": "Comfort: 4 4 5. Own rating 4. Solid: headache. Shaky: treatment duration.",
 }
+# The examiner's round.json: which key each item answers, and the grading. `save` fills in the
+# rest from the key headers above and writes the round record to record.json.
 ROUND = {
-    "log_id": "S0001", "case_format": "unfolding", "title": "Malaise in a 60-year-old — fictitious secretitis",
+    "log_id": "S0001", "title": "Malaise in a 60-year-old — fictitious secretitis",
     "summary": "s", "tags": ["x"],
     "items": [
-        {"type": "mcq", "topic": "HEME-01", "mastery": 5, "correct": True, "confidence": "sure",
-         "stem_summary": "x", "coding": {"errors": []}},
-        {"type": "focused", "topic": "NEURO-04", "mastery": 4, "confidence": "sure", "aspect": "testing",
-         "stem_summary": "x", "coding": {"art": {"TEST": 2}, "errors": []}},
-        {"type": "case", "topic": "GEN-11", "mastery": 4, "confidence": "sure",
+        {"key": "Q1", "mastery": 5, "correct": True, "confidence": "sure", "coding": {"errors": []}},
+        {"key": "Q2", "mastery": 4, "confidence": "sure", "coding": {"art": {"TEST": 2}, "errors": []}},
+        {"key": "case", "mastery": 4, "confidence": "sure",
          "coding": {"art": {"DG": 2}, "idea": {"I": 3, "D": 2, "E": 1, "A": 1}, "errors": []}},
     ],
     "gaps": [{"topic": "GEN-11", "gap": "treatment duration", "source": "graded"}],
-    "case": {"patient": "60M", "diagnosis": "Fictitious secretitis"},
 }
 PART_B = """### Reflection (verbatim)
 
