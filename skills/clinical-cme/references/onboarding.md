@@ -24,7 +24,10 @@ are in, or attach your `state.json`."
 > - **No waiting.** Each round is written at the end of the one before, so it starts at once;
 >   the sources are checked while you answer; and your answers are graded by a different
 >   assistant than the one that wrote the questions.
-> - **Blind topics.** You are not told what is being tested, or why, until you have answered.
+> - **Blind topics, in themed blocks.** Rounds come in blocks of 12 on one area (say,
+>   cardiology): the case and most short questions are from it, the rest are repeats that have
+>   come due and something from elsewhere. You are told the area and where you are in the
+>   block; which topic is being tested, and why, you learn after you have answered.
 > - **Realistic work-up.** Cases come with the history and the routine tests a ward team would
 >   have. Anything more specialised, you ask for, and you say what result you expect.
 > - **Self-contained feedback.** Grading against current guidelines, with the key evidence

@@ -38,6 +38,12 @@ Planning notes:
 
 - An item without a specific topic (`new_in_domain`) gets an untested topic from that
   blueprint domain; record the ID and label you chose in the key.
+- The round belongs to a themed block (`block` in the plan). The case and most short questions
+  are on the theme, so they share a domain: keep each short question on a different problem
+  from the case and from the others, so that none cues another. An item with `reason_code`
+  `revisit` is a theme topic tested before and not yet due: write it on another decision point
+  of the topic than the stems in `already_used`. The learner knows the theme; never write it,
+  or any item's domain, into the text to present.
 - Pitch at the learner's role and the plan's `specialty`; use the plan's units. Choose
   guidelines by the plan's `guideline_region`: keys, model answers and verification searches
   name that region's guideline (body and year) first, and for "Iceland/Europe" that is

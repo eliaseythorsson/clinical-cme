@@ -1,80 +1,6 @@
 {
  "after_record": {
-  "EMRG-02": {
-   "attempts": 2,
-   "calibration": "not_rated",
-   "comfort": null,
-   "domain": "EMRG",
-   "due": "2026-11-04",
-   "history": [
-    [
-     "2026-10-19",
-     4.0,
-     4,
-     "aligned"
-    ],
-    [
-     "2026-10-28",
-     5.0,
-     null,
-     "not_rated"
-    ]
-   ],
-   "label": "Acute agitation, behavioral emergency",
-   "last": "2026-10-28",
-   "mastery": 5.0,
-   "step": 2
-  },
-  "ENDO-06": {
-   "attempts": 6,
-   "calibration": "confident_error",
-   "comfort": null,
-   "domain": "ENDO",
-   "due": "2026-10-31",
-   "history": [
-    [
-     "2026-10-05",
-     5.0,
-     5,
-     "aligned"
-    ],
-    [
-     "2026-10-09",
-     2.0,
-     2,
-     "aligned"
-    ],
-    [
-     "2026-10-12",
-     4.0,
-     4,
-     "aligned"
-    ],
-    [
-     "2026-10-16",
-     5.0,
-     2,
-     "underconfident"
-    ],
-    [
-     "2026-10-23",
-     2.0,
-     2,
-     "aligned"
-    ],
-    [
-     "2026-10-28",
-     1.0,
-     null,
-     "confident_error"
-    ]
-   ],
-   "label": "Pheochromocytoma, hypercalcemia of malignancy",
-   "last": "2026-10-28",
-   "mastery": 1.0,
-   "step": 0
-  },
-  "GEN-12": {
+  "GEN-04": {
    "attempts": 1,
    "calibration": "not_rated",
    "comfort": null,
@@ -88,29 +14,47 @@
      "not_rated"
     ]
    ],
-   "label": "Fluid & electrolyte therapy, maintenance fluids",
+   "label": "Pain management & opioid stewardship",
    "last": "2026-10-28",
    "mastery": 5.0,
    "step": 1
   },
-  "RENAL-03": {
-   "attempts": 3,
+  "PULM-04": {
+   "attempts": 6,
    "calibration": "not_rated",
    "comfort": null,
-   "domain": "RENAL",
-   "due": "2026-11-13",
+   "domain": "PULM",
+   "due": "2026-11-04",
    "history": [
     [
-     "2026-10-07",
+     "2026-10-09",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-10-12",
      4.0,
-     4,
+     5,
      "aligned"
     ],
     [
-     "2026-10-14",
-     5.0,
+     "2026-10-19",
+     3.0,
      5,
+     "overconfident"
+    ],
+    [
+     "2026-10-22",
+     2.0,
+     2,
      "aligned"
+    ],
+    [
+     "2026-10-23",
+     5.0,
+     2,
+     "underconfident"
     ],
     [
      "2026-10-28",
@@ -119,14 +63,52 @@
      "not_rated"
     ]
    ],
-   "label": "Potassium disorders",
+   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
    "last": "2026-10-28",
    "mastery": 4.0,
-   "step": 3
+   "step": 2
+  },
+  "PULM-06": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Pulmonary embolism (management)",
+   "last": "2026-10-28",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "PULM-08": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     4.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Shock differentiation & resuscitation",
+   "last": "2026-10-28",
+   "mastery": 4.0,
+   "step": 1
   },
   "TOX-03": {
    "attempts": 2,
-   "calibration": "not_rated",
+   "calibration": "confident_error",
    "comfort": null,
    "domain": "TOX",
    "due": "2026-10-31",
@@ -139,93 +121,19 @@
     ],
     [
      "2026-10-28",
-     4.0,
+     1.0,
      null,
-     "not_rated"
+     "confident_error"
     ]
    ],
    "label": "Environmental (hypothermia, hyperthermia)",
    "last": "2026-10-28",
-   "mastery": 4.0,
-   "step": 1
+   "mastery": 1.0,
+   "step": 0
   }
  },
  "after_reflect": {
-  "EMRG-02": {
-   "attempts": 2,
-   "calibration": "aligned",
-   "comfort": 4,
-   "domain": "EMRG",
-   "due": "2026-11-04",
-   "history": [
-    [
-     "2026-10-19",
-     4.0,
-     4,
-     "aligned"
-    ],
-    [
-     "2026-10-28",
-     5.0,
-     4,
-     "aligned"
-    ]
-   ],
-   "label": "Acute agitation, behavioral emergency",
-   "last": "2026-10-28",
-   "mastery": 5.0,
-   "step": 2
-  },
-  "ENDO-06": {
-   "attempts": 6,
-   "calibration": "confident_error",
-   "comfort": 4,
-   "domain": "ENDO",
-   "due": "2026-10-31",
-   "history": [
-    [
-     "2026-10-05",
-     5.0,
-     5,
-     "aligned"
-    ],
-    [
-     "2026-10-09",
-     2.0,
-     2,
-     "aligned"
-    ],
-    [
-     "2026-10-12",
-     4.0,
-     4,
-     "aligned"
-    ],
-    [
-     "2026-10-16",
-     5.0,
-     2,
-     "underconfident"
-    ],
-    [
-     "2026-10-23",
-     2.0,
-     2,
-     "aligned"
-    ],
-    [
-     "2026-10-28",
-     1.0,
-     4,
-     "confident_error"
-    ]
-   ],
-   "label": "Pheochromocytoma, hypercalcemia of malignancy",
-   "last": "2026-10-28",
-   "mastery": 1.0,
-   "step": 0
-  },
-  "GEN-12": {
+  "GEN-04": {
    "attempts": 1,
    "calibration": "underconfident",
    "comfort": 2,
@@ -239,30 +147,86 @@
      "underconfident"
     ]
    ],
-   "label": "Fluid & electrolyte therapy, maintenance fluids",
+   "label": "Pain management & opioid stewardship",
    "last": "2026-10-28",
    "mastery": 5.0,
    "step": 1
   },
-  "RENAL-03": {
-   "attempts": 3,
+  "PULM-04": {
+   "attempts": 6,
    "calibration": "aligned",
-   "comfort": 4,
-   "domain": "RENAL",
-   "due": "2026-11-13",
+   "comfort": 5,
+   "domain": "PULM",
+   "due": "2026-11-04",
    "history": [
     [
-     "2026-10-07",
-     4.0,
-     4,
-     "aligned"
+     "2026-10-09",
+     3.0,
+     5,
+     "overconfident"
     ],
     [
-     "2026-10-14",
-     5.0,
+     "2026-10-12",
+     4.0,
      5,
      "aligned"
     ],
+    [
+     "2026-10-19",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-10-22",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-23",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-28",
+     4.0,
+     5,
+     "aligned"
+    ]
+   ],
+   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
+   "last": "2026-10-28",
+   "mastery": 4.0,
+   "step": 2
+  },
+  "PULM-06": {
+   "attempts": 1,
+   "calibration": "aligned",
+   "comfort": 4,
+   "domain": "PULM",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     5.0,
+     4,
+     "aligned"
+    ]
+   ],
+   "label": "Pulmonary embolism (management)",
+   "last": "2026-10-28",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "PULM-08": {
+   "attempts": 1,
+   "calibration": "aligned",
+   "comfort": 4,
+   "domain": "PULM",
+   "due": "2026-10-31",
+   "history": [
     [
      "2026-10-28",
      4.0,
@@ -270,15 +234,15 @@
      "aligned"
     ]
    ],
-   "label": "Potassium disorders",
+   "label": "Shock differentiation & resuscitation",
    "last": "2026-10-28",
    "mastery": 4.0,
-   "step": 3
+   "step": 1
   },
   "TOX-03": {
    "attempts": 2,
-   "calibration": "aligned",
-   "comfort": 5,
+   "calibration": "confident_error",
+   "comfort": 4,
    "domain": "TOX",
    "due": "2026-10-31",
    "history": [
@@ -290,15 +254,15 @@
     ],
     [
      "2026-10-28",
-     4.0,
-     5,
-     "aligned"
+     1.0,
+     4,
+     "confident_error"
     ]
    ],
    "label": "Environmental (hypothermia, hyperthermia)",
    "last": "2026-10-28",
-   "mastery": 4.0,
-   "step": 1
+   "mastery": 1.0,
+   "step": 0
   }
  },
  "date": "2026-10-28",

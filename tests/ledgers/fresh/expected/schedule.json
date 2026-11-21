@@ -1,6 +1,6 @@
 {
  "after_record": {
-  "CARD-07": {
+  "CARD-01": {
    "attempts": 1,
    "calibration": "not_rated",
    "comfort": null,
@@ -14,16 +14,54 @@
      "not_rated"
     ]
    ],
-   "label": "Pericardial disease, myocarditis",
+   "label": "Acute coronary syndrome (STEMI/NSTEMI/UA)",
    "last": "2026-11-20",
    "mastery": 5.0,
    "step": 1
   },
-  "EMRG-01": {
+  "CARD-02": {
    "attempts": 1,
    "calibration": "not_rated",
    "comfort": null,
-   "domain": "EMRG",
+   "domain": "CARD",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Acute decompensated heart failure (HFrEF / HFpEF)",
+   "last": "2026-11-20",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "CARD-06": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "CARD",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Hypertensive emergency/urgency",
+   "last": "2026-11-20",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "CARD-08": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "CARD",
    "due": "2026-11-23",
    "history": [
     [
@@ -33,52 +71,14 @@
      "not_rated"
     ]
    ],
-   "label": "Anaphylaxis (see RHEUM-04)",
+   "label": "Venous thromboembolism — PE (see also PULM/HEME)",
    "last": "2026-11-20",
    "mastery": 4.0,
-   "step": 1
-  },
-  "HEME-08": {
-   "attempts": 1,
-   "calibration": "not_rated",
-   "comfort": null,
-   "domain": "HEME",
-   "due": "2026-11-23",
-   "history": [
-    [
-     "2026-11-20",
-     5.0,
-     null,
-     "not_rated"
-    ]
-   ],
-   "label": "Febrile neutropenia (see ID-08)",
-   "last": "2026-11-20",
-   "mastery": 5.0,
-   "step": 1
-  },
-  "PULM-04": {
-   "attempts": 1,
-   "calibration": "not_rated",
-   "comfort": null,
-   "domain": "PULM",
-   "due": "2026-11-23",
-   "history": [
-    [
-     "2026-11-20",
-     5.0,
-     null,
-     "not_rated"
-    ]
-   ],
-   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
-   "last": "2026-11-20",
-   "mastery": 5.0,
    "step": 1
   }
  },
  "after_reflect": {
-  "CARD-07": {
+  "CARD-01": {
    "attempts": 1,
    "calibration": "aligned",
    "comfort": 4,
@@ -92,54 +92,16 @@
      "aligned"
     ]
    ],
-   "label": "Pericardial disease, myocarditis",
+   "label": "Acute coronary syndrome (STEMI/NSTEMI/UA)",
    "last": "2026-11-20",
    "mastery": 5.0,
    "step": 1
   },
-  "EMRG-01": {
-   "attempts": 1,
-   "calibration": "aligned",
-   "comfort": 4,
-   "domain": "EMRG",
-   "due": "2026-11-23",
-   "history": [
-    [
-     "2026-11-20",
-     4.0,
-     4,
-     "aligned"
-    ]
-   ],
-   "label": "Anaphylaxis (see RHEUM-04)",
-   "last": "2026-11-20",
-   "mastery": 4.0,
-   "step": 1
-  },
-  "HEME-08": {
-   "attempts": 1,
-   "calibration": "aligned",
-   "comfort": 5,
-   "domain": "HEME",
-   "due": "2026-11-23",
-   "history": [
-    [
-     "2026-11-20",
-     5.0,
-     5,
-     "aligned"
-    ]
-   ],
-   "label": "Febrile neutropenia (see ID-08)",
-   "last": "2026-11-20",
-   "mastery": 5.0,
-   "step": 1
-  },
-  "PULM-04": {
+  "CARD-02": {
    "attempts": 1,
    "calibration": "underconfident",
    "comfort": 2,
-   "domain": "PULM",
+   "domain": "CARD",
    "due": "2026-11-23",
    "history": [
     [
@@ -149,9 +111,47 @@
      "underconfident"
     ]
    ],
-   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
+   "label": "Acute decompensated heart failure (HFrEF / HFpEF)",
    "last": "2026-11-20",
    "mastery": 5.0,
+   "step": 1
+  },
+  "CARD-06": {
+   "attempts": 1,
+   "calibration": "aligned",
+   "comfort": 5,
+   "domain": "CARD",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     5.0,
+     5,
+     "aligned"
+    ]
+   ],
+   "label": "Hypertensive emergency/urgency",
+   "last": "2026-11-20",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "CARD-08": {
+   "attempts": 1,
+   "calibration": "aligned",
+   "comfort": 4,
+   "domain": "CARD",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     4.0,
+     4,
+     "aligned"
+    ]
+   ],
+   "label": "Venous thromboembolism — PE (see also PULM/HEME)",
+   "last": "2026-11-20",
+   "mastery": 4.0,
    "step": 1
   }
  },

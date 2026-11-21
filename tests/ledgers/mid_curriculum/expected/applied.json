@@ -111,6 +111,16 @@
    "score_sum": 40.599999999999994,
    "sessions": 11
   },
+  "block": {
+   "chosen": "auto",
+   "last": "2026-10-28",
+   "length": 12,
+   "reason": "Pulmonary & Critical Care: mean 5.0 of 5 over 1 topic tested, not yet a theme",
+   "round": 1,
+   "started": "2026-10-28",
+   "theme": "PULM"
+  },
+  "blocks": [],
   "domain_self_ratings": {
    "CARD": 3.9,
    "EMRG": 4,
@@ -127,16 +137,26 @@
   },
   "gaps": [
    {
-    "date": "2026-10-28",
-    "gap": "Example gap 10.3: missed the decision point | Confident but incorrect answer on 2026-10-28; re-test the same decision point.",
+    "date": "2026-10-23",
+    "gap": "Example gap 10.3: missed the decision point",
     "id": "G0001",
     "opened": "2026-10-23",
     "self": null,
     "source": [
-     "graded",
-     "misconception"
+     "graded"
     ],
     "topic": "ENDO-06"
+   },
+   {
+    "date": "2026-10-28",
+    "gap": "Confident but incorrect answer on 2026-10-28; re-test the same decision point.",
+    "id": "G0002",
+    "opened": "2026-10-28",
+    "self": null,
+    "source": [
+     "misconception"
+    ],
+    "topic": "TOX-03"
    }
   ],
   "gen": 22,
@@ -214,12 +234,17 @@
    }
   ],
   "session": {
+   "block": {
+    "length": 12,
+    "round": 1,
+    "theme": "PULM"
+   },
    "case": {
-    "diagnosis": "Example diagnosis: Environmental (hypothermia, hyperthermia)",
+    "diagnosis": "Example diagnosis: Acute respiratory failure, ARDS, mechanical ventilation basi…",
     "patient": "Example patient 11",
     "presentation": "Example presentation 11",
     "setting": "ward",
-    "topic": "TOX-03"
+    "topic": "PULM-04"
    },
    "date": "2026-10-28",
    "drill": null,
@@ -249,7 +274,7 @@
      },
      "confidence": "guess",
      "mastery": 4,
-     "topic": "TOX-03",
+     "topic": "PULM-04",
      "type": "case"
     },
     {
@@ -269,9 +294,8 @@
      },
      "confidence": "sure",
      "mastery": 1,
-     "retests": "ENDO-06",
      "stem": "Example focused stem 11.1",
-     "topic": "ENDO-06",
+     "topic": "TOX-03",
      "type": "focused"
     },
     {
@@ -282,7 +306,7 @@
      "correct": true,
      "mastery": 4,
      "stem": "Example MCQ stem 11.2",
-     "topic": "RENAL-03",
+     "topic": "PULM-08",
      "type": "mcq"
     },
     {
@@ -293,7 +317,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 11.3",
-     "topic": "EMRG-02",
+     "topic": "PULM-06",
      "type": "mcq"
     },
     {
@@ -304,7 +328,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 11.4",
-     "topic": "GEN-12",
+     "topic": "GEN-04",
      "type": "mcq"
     }
    ],
@@ -324,17 +348,17 @@
    ],
    "title": "Example round S0011",
    "topics": [
+    "PULM-04",
     "TOX-03",
-    "ENDO-06",
-    "RENAL-03",
-    "EMRG-02",
-    "GEN-12"
+    "PULM-08",
+    "PULM-06",
+    "GEN-04"
    ],
    "why": {
-    "EMRG-02": "due",
-    "ENDO-06": "due",
-    "GEN-12": "new",
-    "RENAL-03": "due",
+    "GEN-04": "new",
+    "PULM-04": "due",
+    "PULM-06": "new",
+    "PULM-08": "new",
     "TOX-03": "due"
    }
   },
@@ -466,32 +490,52 @@
    "score_sum": 40.599999999999994,
    "sessions": 11
   },
+  "block": {
+   "chosen": "auto",
+   "last": "2026-10-28",
+   "length": 12,
+   "reason": "Pulmonary & Critical Care: mean 5.0 of 5 over 1 topic tested, not yet a theme",
+   "round": 1,
+   "started": "2026-10-28",
+   "theme": "PULM"
+  },
+  "blocks": [],
   "domain_self_ratings": {
    "CARD": 3.9,
-   "EMRG": 4.0,
-   "ENDO": 3.3,
+   "EMRG": 4,
+   "ENDO": 2.9,
    "GEN": 2.9,
    "GI": 3.1,
    "HEME": 3.9,
    "ID": 4.1,
    "NEURO": 4.0,
-   "PULM": 3.3,
-   "RENAL": 4.2,
+   "PULM": 3.9,
+   "RENAL": 4.3,
    "RHEUM": 4.7,
-   "TOX": 4.5
+   "TOX": 4.2
   },
   "gaps": [
    {
-    "date": "2026-10-28",
-    "gap": "Example gap 10.3: missed the decision point | Confident but incorrect answer on 2026-10-28; re-test the same decision point.",
+    "date": "2026-10-23",
+    "gap": "Example gap 10.3: missed the decision point",
     "id": "G0001",
     "opened": "2026-10-23",
     "self": null,
     "source": [
-     "graded",
-     "misconception"
+     "graded"
     ],
     "topic": "ENDO-06"
+   },
+   {
+    "date": "2026-10-28",
+    "gap": "Confident but incorrect answer on 2026-10-28; re-test the same decision point.",
+    "id": "G0002",
+    "opened": "2026-10-28",
+    "self": null,
+    "source": [
+     "misconception"
+    ],
+    "topic": "TOX-03"
    }
   ],
   "gen": 23,
@@ -569,12 +613,17 @@
    }
   ],
   "session": {
+   "block": {
+    "length": 12,
+    "round": 1,
+    "theme": "PULM"
+   },
    "case": {
-    "diagnosis": "Example diagnosis: Environmental (hypothermia, hyperthermia)",
+    "diagnosis": "Example diagnosis: Acute respiratory failure, ARDS, mechanical ventilation basi…",
     "patient": "Example patient 11",
     "presentation": "Example presentation 11",
     "setting": "ward",
-    "topic": "TOX-03"
+    "topic": "PULM-04"
    },
    "date": "2026-10-28",
    "drill": null,
@@ -604,7 +653,7 @@
      },
      "confidence": "guess",
      "mastery": 4,
-     "topic": "TOX-03",
+     "topic": "PULM-04",
      "type": "case"
     },
     {
@@ -624,9 +673,8 @@
      },
      "confidence": "sure",
      "mastery": 1,
-     "retests": "ENDO-06",
      "stem": "Example focused stem 11.1",
-     "topic": "ENDO-06",
+     "topic": "TOX-03",
      "type": "focused"
     },
     {
@@ -637,7 +685,7 @@
      "correct": true,
      "mastery": 4,
      "stem": "Example MCQ stem 11.2",
-     "topic": "RENAL-03",
+     "topic": "PULM-08",
      "type": "mcq"
     },
     {
@@ -648,7 +696,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 11.3",
-     "topic": "EMRG-02",
+     "topic": "PULM-06",
      "type": "mcq"
     },
     {
@@ -659,7 +707,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 11.4",
-     "topic": "GEN-12",
+     "topic": "GEN-04",
      "type": "mcq"
     }
    ],
@@ -675,11 +723,11 @@
    },
    "score": 3.8,
    "self_comfort": {
-    "EMRG-02": 4,
-    "ENDO-06": 4,
-    "GEN-12": 2,
-    "RENAL-03": 4,
-    "TOX-03": 5
+    "GEN-04": 2,
+    "PULM-04": 5,
+    "PULM-06": 4,
+    "PULM-08": 4,
+    "TOX-03": 4
    },
    "self_performance": 3,
    "started_at": null,
@@ -689,17 +737,17 @@
    ],
    "title": "Example round S0011",
    "topics": [
+    "PULM-04",
     "TOX-03",
-    "ENDO-06",
-    "RENAL-03",
-    "EMRG-02",
-    "GEN-12"
+    "PULM-08",
+    "PULM-06",
+    "GEN-04"
    ],
    "why": {
-    "EMRG-02": "due",
-    "ENDO-06": "due",
-    "GEN-12": "new",
-    "RENAL-03": "due",
+    "GEN-04": "new",
+    "PULM-04": "due",
+    "PULM-06": "new",
+    "PULM-08": "new",
     "TOX-03": "due"
    }
   },
@@ -724,21 +772,48 @@
   "errata_to_log": [],
   "gen": 22,
   "next_id": "S0012",
-  "open_gaps": 1,
+  "open_gaps": 2,
   "reflection_pending": true,
   "score": 3.8,
   "session_id": "S0011",
   "topics": {
-   "EMRG-02": {
+   "GEN-04": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-10-31",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "PULM-04": {
     "calibration": "not_rated",
     "comfort": null,
     "due": "2026-11-04",
     "interval_days": 7,
-    "mastery": 5.0,
+    "mastery": 4.0,
     "misconception": false,
     "step": 2
    },
-   "ENDO-06": {
+   "PULM-06": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-10-31",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "PULM-08": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-10-31",
+    "interval_days": 3,
+    "mastery": 4.0,
+    "misconception": false,
+    "step": 1
+   },
+   "TOX-03": {
     "calibration": "confident_error",
     "comfort": null,
     "due": "2026-10-31",
@@ -746,33 +821,6 @@
     "mastery": 1.0,
     "misconception": true,
     "step": 0
-   },
-   "GEN-12": {
-    "calibration": "not_rated",
-    "comfort": null,
-    "due": "2026-10-31",
-    "interval_days": 3,
-    "mastery": 5.0,
-    "misconception": false,
-    "step": 1
-   },
-   "RENAL-03": {
-    "calibration": "not_rated",
-    "comfort": null,
-    "due": "2026-11-13",
-    "interval_days": 16,
-    "mastery": 4.0,
-    "misconception": false,
-    "step": 3
-   },
-   "TOX-03": {
-    "calibration": "not_rated",
-    "comfort": null,
-    "due": "2026-10-31",
-    "interval_days": 3,
-    "mastery": 4.0,
-    "misconception": false,
-    "step": 1
    }
   },
   "warnings": []
@@ -781,28 +829,10 @@
   "errata_ids": [],
   "errata_to_log": [],
   "gen": 23,
-  "open_gaps": 1,
+  "open_gaps": 2,
   "session_id": "S0011",
   "topics": {
-   "EMRG-02": {
-    "calibration": "aligned",
-    "comfort": 4,
-    "due": "2026-11-04",
-    "interval_days": 7,
-    "mastery": 5.0,
-    "misconception": false,
-    "step": 2
-   },
-   "ENDO-06": {
-    "calibration": "confident_error",
-    "comfort": 4,
-    "due": "2026-10-31",
-    "interval_days": 3,
-    "mastery": 1.0,
-    "misconception": true,
-    "step": 0
-   },
-   "GEN-12": {
+   "GEN-04": {
     "calibration": "underconfident",
     "comfort": 2,
     "due": "2026-10-31",
@@ -811,23 +841,41 @@
     "misconception": false,
     "step": 1
    },
-   "RENAL-03": {
-    "calibration": "aligned",
-    "comfort": 4,
-    "due": "2026-11-13",
-    "interval_days": 16,
-    "mastery": 4.0,
-    "misconception": false,
-    "step": 3
-   },
-   "TOX-03": {
+   "PULM-04": {
     "calibration": "aligned",
     "comfort": 5,
+    "due": "2026-11-04",
+    "interval_days": 7,
+    "mastery": 4.0,
+    "misconception": false,
+    "step": 2
+   },
+   "PULM-06": {
+    "calibration": "aligned",
+    "comfort": 4,
+    "due": "2026-10-31",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "PULM-08": {
+    "calibration": "aligned",
+    "comfort": 4,
     "due": "2026-10-31",
     "interval_days": 3,
     "mastery": 4.0,
     "misconception": false,
     "step": 1
+   },
+   "TOX-03": {
+    "calibration": "confident_error",
+    "comfort": 4,
+    "due": "2026-10-31",
+    "interval_days": 3,
+    "mastery": 1.0,
+    "misconception": true,
+    "step": 0
    }
   },
   "warnings": []
@@ -837,16 +885,16 @@
   "performance": 3,
   "solid": "Example: what felt solid in round 11",
   "topic_comfort": {
-   "EMRG-02": 4,
-   "ENDO-06": 4,
-   "GEN-12": 2,
-   "RENAL-03": 4,
-   "TOX-03": 5
+   "GEN-04": 2,
+   "PULM-04": 5,
+   "PULM-06": 4,
+   "PULM-08": 4,
+   "TOX-03": 4
   }
  },
  "round": {
   "case": {
-   "diagnosis": "Example diagnosis: Environmental (hypothermia, hyperthermia)",
+   "diagnosis": "Example diagnosis: Acute respiratory failure, ARDS, mechanical ventilation basics",
    "patient": "Example patient 11",
    "presentation": "Example presentation 11",
    "setting": "ward"
@@ -874,7 +922,7 @@
     },
     "confidence": "guess",
     "mastery": 4,
-    "topic": "TOX-03",
+    "topic": "PULM-04",
     "type": "case"
    },
    {
@@ -893,9 +941,8 @@
     },
     "confidence": "sure",
     "mastery": 1,
-    "retests": "ENDO-06",
     "stem_summary": "Example focused stem 11.1",
-    "topic": "ENDO-06",
+    "topic": "TOX-03",
     "type": "focused"
    },
    {
@@ -906,7 +953,7 @@
     "correct": true,
     "mastery": 4,
     "stem_summary": "Example MCQ stem 11.2",
-    "topic": "RENAL-03",
+    "topic": "PULM-08",
     "type": "mcq"
    },
    {
@@ -917,7 +964,7 @@
     "correct": true,
     "mastery": 5,
     "stem_summary": "Example MCQ stem 11.3",
-    "topic": "EMRG-02",
+    "topic": "PULM-06",
     "type": "mcq"
    },
    {
@@ -928,17 +975,17 @@
     "correct": true,
     "mastery": 5,
     "stem_summary": "Example MCQ stem 11.4",
-    "topic": "GEN-12",
+    "topic": "GEN-04",
     "type": "mcq"
    }
   ],
   "log_id": "S0011",
   "minutes": 29,
   "selection_reasons": {
-   "EMRG-02": "due",
-   "ENDO-06": "due",
-   "GEN-12": "new",
-   "RENAL-03": "due",
+   "GEN-04": "new",
+   "PULM-04": "due",
+   "PULM-06": "new",
+   "PULM-08": "new",
    "TOX-03": "due"
   },
   "summary": "Synthetic round 11 of an example ledger.",

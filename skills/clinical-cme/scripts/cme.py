@@ -89,6 +89,12 @@ DEFAULT_PROFILE = {
 }
 SELF_RATING_FACTOR = {1: 1.6, 2: 1.3, 3: 1.0, 4: 0.8, 5: 0.6}
 MIN_RETURN_DAYS = 3      # no tested topic and no open gap comes back sooner than this (ADR 0003)
+# Themed blocks (ADR 0003): a run of rounds on one domain. Shares are of a round's short questions,
+# in percent; the case is always on the theme.
+BLOCK_LENGTH = 12
+BLOCK_SHARES = (("theme", 60), ("repeat", 25), ("wildcard", 15))
+MIN_THEME_TOPICS = 4     # a domain with fewer blueprint topics is not proposed as a theme
+THEME_REST_BLOCKS = 4    # a domain's pull as the next theme recovers over this many blocks after its own
 CONFIDENCE_LEVELS = ("sure", "unsure", "guess")
 CONF_PROB = {"sure": 0.9, "unsure": 0.6, "guess": 0.3}
 MIN_SESSIONS_FOR_REVIEW = 3
@@ -127,6 +133,7 @@ CAP_PREVIOUS = 60        # older sessions kept in compact form
 CAP_HISTORY = 8          # per-topic history rows
 CAP_RESOLVED = 40
 CAP_REVIEWS = 6
+CAP_BLOCKS = 24          # finished blocks kept (theme, dates, rounds)
 CAP_ERRATA = 40
 CLIP_GAP = 400
 CLIP_ELEMENT = 220
@@ -320,6 +327,7 @@ def new_state(today):
         "sessions": [], "previous": [], "agg": empty_agg(),
         "reviews": [], "drills": [], "errata": [], "pending_errata": [],
         "teaching_point_checks": {}, "unreflected": None,
+        "block": None, "blocks": [],     # the current themed block (set when its first round is recorded) and finished ones
     }
 
 
@@ -576,6 +584,151 @@ def domain_weights(state):
     return eff
 
 
+# ---------------------------------------------------------------- themed blocks (ADR 0003)
+
+def domain_name(st, d):
+    return ((st.get("blueprint") or {}).get(d) or {}).get("name") or d
+
+
+def block_line(st, block):
+    """The one line the learner sees about the block: the theme and the position, nothing else."""
+    return "Block: %s, round %d of %d" % (domain_name(st, block["theme"]), block["round"], block["length"])
+
+
+def block_open(st):
+    """The ledger's block, if it has one with rounds still to come and a theme the blueprint knows."""
+    b = st.get("block")
+    if not isinstance(b, dict) or b.get("theme") not in (st.get("blueprint") or {}):
+        return None
+    return b if int(b.get("round") or 0) < int(b.get("length") or BLOCK_LENGTH) else None
+
+
+def propose_theme(st, exclude=()):
+    """The domain proposed as the next theme, with a one-line reason: the weakest domain, or the
+    one longest without a block. Returns {"theme", "reason", "ranking"} or None (no blueprint).
+
+    Each domain is scored as its weight for new material (blueprint weight, self-rating corrected
+    for overconfidence, emphasis: see domain_weights), raised by 10% per open gap (to 50%), times
+    how long it has gone without a block: a quarter right after its own block, back to full after
+    four other blocks; a domain never yet a theme counts in full. No chance involved; ties go to
+    blueprint order. The theme of the block just finished is not proposed again straight away."""
+    bp = st.get("blueprint") or {}
+    eff = domain_weights(st)
+    sizes = {d: len((info or {}).get("topics") or {}) for d, info in bp.items()}
+    pool = [d for d in bp if eff.get(d, 0) > 0 and sizes[d] >= MIN_THEME_TOPICS] \
+        or [d for d in bp if eff.get(d, 0) > 0 and sizes[d]] or [d for d in bp if sizes[d]]
+    last = (st.get("block") or {}).get("theme") if isinstance(st.get("block"), dict) else None
+    skip = set(exclude) | ({last} if last else set())
+    pool = [d for d in pool if d not in skip] or [d for d in pool if d not in set(exclude)] or pool
+    if not pool:
+        return None
+    themes = [b.get("theme") for b in (st.get("blocks") or [])] + ([last] if last else [])
+    tested, open_gaps = {}, {}
+    for t in st["topics"].values():
+        if isinstance(t.get("mastery"), (int, float)):
+            tested.setdefault(t.get("domain"), []).append(float(t["mastery"]))
+    for g in st.get("gaps") or []:
+        d = (st["topics"].get(g.get("topic")) or {}).get("domain") or domain_of(g.get("topic") or "")
+        open_gaps[d] = open_gaps.get(d, 0) + 1
+
+    def since(d):       # blocks begun since d's own; None if d was never a theme
+        return themes[::-1].index(d) + 1 if d in themes else None
+
+    def score(d):
+        rest = min(since(d) or THEME_REST_BLOCKS, THEME_REST_BLOCKS) / float(THEME_REST_BLOCKS)
+        return eff.get(d, 0) * (1 + 0.1 * min(open_gaps.get(d, 0), 5)) * rest
+
+    order = list(bp)
+    ranking = sorted(pool, key=lambda d: (-round(score(d), 6), order.index(d)))
+    best = ranking[0]
+    why = []
+    if tested.get(best):
+        m = tested[best]
+        why.append("mean %.1f of 5 over %d topic%s tested" % (sum(m) / len(m), len(m), "" if len(m) == 1 else "s"))
+    else:
+        why.append("nothing tested yet")
+    if open_gaps.get(best):
+        why.append("%d open gap%s" % (open_gaps[best], "" if open_gaps[best] == 1 else "s"))
+    n = since(best)
+    why.append("not yet a theme" if n is None else "last a theme %d block%s ago" % (n, "" if n == 1 else "s"))
+    return {"theme": best, "reason": "%s: %s" % (domain_name(st, best), ", ".join(why)), "ranking": ranking}
+
+
+def next_block(st):
+    """(block, starts): the block the next round belongs to, with `round` the rounds already
+    recorded in it, and whether that round starts it. A ledger with no block (written before
+    blocks, or new) or with a finished one gets a new block on the proposed theme; it is only
+    written to the ledger when its first round is recorded (advance_block), so planning reads
+    only. (None, False) for a ledger with no blueprint."""
+    b = block_open(st)
+    if b:
+        return dict(b, round=int(b.get("round") or 0), length=int(b.get("length") or BLOCK_LENGTH)), False
+    p = propose_theme(st)
+    if not p:
+        return None, False
+    return {"theme": p["theme"], "round": 0, "length": BLOCK_LENGTH, "started": None,
+            "chosen": "auto", "reason": p["reason"]}, True
+
+
+def start_block(st, theme, chosen="auto", reason=None, length=BLOCK_LENGTH):
+    """Make `theme` the ledger's block, at round 0, filing the block it replaces under `blocks`
+    if any round was recorded in it. `chosen` says who picked the theme: "auto" or "learner"."""
+    if theme not in (st.get("blueprint") or {}):
+        die("unknown domain %r: the theme must be one of %s" % (theme, ", ".join(st.get("blueprint") or {})))
+    old = st.get("block")
+    if isinstance(old, dict) and old.get("theme") and int(old.get("round") or 0) > 0:
+        st.setdefault("blocks", []).append({k: old.get(k) for k in ("theme", "started", "last", "round", "length", "chosen")})
+        st["blocks"] = st["blocks"][-CAP_BLOCKS:]
+    st.setdefault("blocks", [])
+    st["block"] = {"theme": theme, "round": 0, "length": int(length), "started": None, "last": None,
+                   "chosen": chosen, "reason": reason}
+    return st["block"]
+
+
+def advance_block(st, rdate):
+    """Count a round recorded on `rdate` in the block, starting the next block first when the
+    ledger has none open. Call it before the round is applied: the proposed theme then is the one
+    the round was planned on. Returns what the session entry keeps: theme, round, length."""
+    b, starts = next_block(st)
+    if b is None:
+        return None
+    b = start_block(st, b["theme"], b.get("chosen") or "auto", b.get("reason")) if starts else st["block"]
+    b["round"] = int(b.get("round") or 0) + 1
+    b["length"] = int(b.get("length") or BLOCK_LENGTH)
+    b["started"] = b.get("started") or iso(rdate)
+    b["last"] = iso(rdate)
+    return {"theme": b["theme"], "round": b["round"], "length": b["length"]}
+
+
+def block_status(st):
+    """The block as the learner may see it before the next round: theme, position and the line."""
+    b, starts = next_block(st)
+    if b is None:
+        return None
+    out = {"theme": b["theme"], "name": domain_name(st, b["theme"]), "round": b["round"] + 1,
+           "length": b["length"], "starts": starts}
+    out["line"] = block_line(st, out)
+    return out
+
+
+def block_mix(shorts, n):
+    """How many of a round's `shorts` short questions go to the theme, to due repeats and to the
+    wildcard in round `n` of a block. The shares (60/25/15) are met over the block, not in each
+    round: with three short questions a round would otherwise never have a wildcard. Round n gets
+    what the first n rounds are owed (largest remainder) less what the first n-1 were given."""
+    def owed(k):
+        quota = [shorts * k * pct for _, pct in BLOCK_SHARES]
+        got = [q // 100 for q in quota]
+        for i in sorted(range(len(got)), key=lambda i: (-(quota[i] % 100), i))[:shorts * k - sum(got)]:
+            got[i] += 1
+        return got
+    mix = [max(0, a - b) for a, b in zip(owed(max(1, n)), owed(max(1, n) - 1))]
+    while sum(mix) > shorts:
+        mix[mix.index(max(mix))] -= 1
+    mix[0] += shorts - sum(mix)
+    return {name: mix[i] for i, (name, _) in enumerate(BLOCK_SHARES)}
+
+
 def all_sessions_for_novelty(state):
     """(cases, stems) from current and previous sessions, oldest first."""
     cases, stems = [], []
@@ -613,6 +766,10 @@ def plan_round(st, args, today):
     log = st["sessions"]
     rng = random.Random(args.seed if args.seed is not None else int(today.strftime("%Y%m%d")) * 100 + len(log))
     restrict = args.domain.upper() if args.domain else None
+    # The block this round belongs to. Its theme steers the round unless the learner asked for a
+    # one-off domain round (--domain), which still counts as a round of the block.
+    block = block_status(st)
+    theme = block["theme"] if block and not restrict else None
 
     # Tested in the last few days: left to rest, whatever its due date says (a ledger written by
     # an older version can hold a topic due the day after a miss).
@@ -717,7 +874,13 @@ def plan_round(st, args, today):
             return "open gap (%s) from %s: %s" % (", ".join([src] if isinstance(src, str) else src),
                                                  g.get("date"), clip(g.get("gap"), 240))
         if code == "new":
+            if theme and dom(tid) == theme:
+                return "not yet tested; in the block's theme"
             return "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)"
+        if code == "revisit":
+            text = "the block's theme; tested before, not yet due (last %s/5 on %s): " \
+                   "ask about another decision point of the topic" % (t.get("mastery"), t.get("last"))
+            return text
         return code
 
     labels = {tid: {"label": label_of(tid) or ""} for tid in set(bpt) | set(topics)}
@@ -742,9 +905,10 @@ def plan_round(st, args, today):
             return False
         if tid and any(related(tid, c) for c in case_topics):
             return False
-        if level <= 1 and not restrict and domain in case_domains:
+        shared = bool(restrict) or domain == theme     # a domain several items of the round may share
+        if level <= 1 and not shared and domain in case_domains:
             return False
-        if level == 0 and domain in used_domains:
+        if level == 0 and not shared and domain in used_domains:
             return False
         if level <= 1 and tid and any(related(tid, c["topic"]) for c in chosen if c["slot"] != "case" and c.get("topic")):
             return False
@@ -778,22 +942,118 @@ def plan_round(st, args, today):
                               + ("" if slot == "case" else ", unrelated to the case")}
         return None
 
+    def separation(item, level):
+        return ("no case this round; unrelated to the other questions" if not case_topics else
+                "same domain as the case (the block's theme), unrelated topic"
+                if item["domain"] in case_domains and item["domain"] == theme else
+                "same domain as the case (domain round), unrelated topic"
+                if item["domain"] in case_domains else
+                "other domain" if level == 0 else "other domain than the case")
+
     def take_short(slot, new_only=False):
         for level in (0, 1, 2):
             if level == 2 and not restrict and [d for d in eff if d not in case_domains]:
                 break
             item = take(slot, level, new_only)
             if item:
-                item["separation"] = ("no case this round; unrelated to the other questions"
-                                      if not case_topics else
-                                      "same domain as the case (domain round), unrelated topic"
-                                      if item["domain"] in case_domains else
-                                      "other domain" if level == 0 else "other domain than the case")
+                item["separation"] = separation(item, level)
                 return item
         return None
 
+    # ---- a round of a themed block: each slot draws on one share (theme, repeat, wildcard)
+
+    def dom(tid):
+        return (topics.get(tid) or {}).get("domain") or (bpt.get(tid) or {}).get("domain") or domain_of(tid)
+
+    def fits(slot, tid, d, level):
+        return tid not in used_topics and (slot == "case" or mcq_ok(tid, d, level))
+
+    def entry(slot, tid, d, code, share):
+        return {"slot": slot, "topic": tid, "label": label_of(tid), "domain": d, "share": share,
+                "reason_code": code, "reason": reason_for(tid, code)}
+
+    last_case = ((log[-1].get("case") or {}).get("topic") if log else None)
+
+    def take_waiting(slot, level, share, where=None):
+        """The most urgent due topic, then a gap ready for its retest. `where`: True for the
+        theme only, False for the other domains only. The case is not on the topic of the last
+        round's case while the theme has anything else to give (level 0)."""
+        for source, code in ((due_ids, "due"), (gap_ids, "gap")):
+            for tid in source:
+                if where is not None and (dom(tid) == theme) != where:
+                    continue
+                if slot == "case" and level == 0 and tid == last_case:
+                    continue
+                if fits(slot, tid, dom(tid), level):
+                    return entry(slot, tid, dom(tid), code, share)
+        return None
+
+    def take_new(slot, level, share, in_theme):
+        pick = weighted_pick([x for x in new_candidates()
+                              if (x[2] == theme) == in_theme and fits(slot, x[1], x[2], level)])
+        return entry(slot, pick[1], pick[2], "new", share) if pick else None
+
+    def take_theme(slot, level, new_first=False):
+        """Theme material: what is due or awaits a retest in the theme, then an untested topic,
+        then the theme topic tested longest ago (another decision point of it)."""
+        item = None
+        if not new_first:
+            item = take_waiting(slot, level, "theme", True)
+        item = item or take_new(slot, level, "theme", True)
+        if not item and new_first:
+            item = take_waiting(slot, level, "theme", True)
+        if item:
+            return item
+        seen = sorted((t.get("last") or "", t.get("mastery") if t.get("mastery") is not None else 0, tid)
+                      for tid, t in topics.items() if dom(tid) == theme and allowed(tid))
+        for _, _, tid in seen:
+            if slot == "case" and level == 0 and tid == last_case:
+                continue
+            if fits(slot, tid, theme, level):
+                return entry(slot, tid, theme, "revisit", "theme")
+        if eff.get(theme, 0) > 0 or theme in bp_weights(st):
+            return {"slot": slot, "topic": None, "domain": theme, "share": "theme", "reason_code": "new_in_domain",
+                    "reason": "the block's theme; choose a specific untested topic in it"
+                              + ("" if slot == "case" else ", unrelated to the case")}
+        return None
+
+    def take_wildcard(slot, level):
+        """Something new from outside the theme, by domain weight."""
+        item = take_new(slot, level, "wildcard", False)
+        if item:
+            return item
+        excl = set(case_domains) | {theme} | (set(used_domains) if level == 0 else set())
+        pick = weighted_pick(domain_only_candidates(excl))
+        if pick:
+            return {"slot": slot, "topic": None, "domain": pick[2], "share": "wildcard",
+                    "reason_code": "new_in_domain",
+                    "reason": "under-sampled domain; choose a specific untested topic in it, unrelated to the case"}
+        return None
+
+    def take_share(slot, share, new_first=False):
+        """A short question for one share. A share with nothing to give passes its slot on: a
+        repeat or wildcard slot to the theme, and the theme to whatever the ledger has."""
+        # a repeat slot goes first to what waits outside the theme: the theme's own slots take the rest
+        for level, where in ((0, False), (1, False), (1, None)):
+            item = (take_waiting(slot, level, "repeat", where) if share == "repeat" else
+                    take_wildcard(slot, level) if share == "wildcard" and where is False else None)
+            if item:
+                item["separation"] = separation(item, level)
+                return item
+        for level in (1, 2):
+            item = take_theme(slot, level, new_first)
+            if item:
+                item["separation"] = separation(item, level)
+                return item
+        item = take_short(slot)
+        if item:
+            item["share"] = "repeat" if item["reason_code"] in ("due", "gap") else "wildcard"
+        return item
+
     for _ in range(n_case):
-        item = take("case")
+        # the case of a block is always on its theme
+        item = (take_theme("case", 0) or take_theme("case", 1)) if theme else None
+        item = item or take("case")
         if item:
             chosen.append(item); used_topics.add(item["topic"]); used_domains.append(item["domain"])
             case_topics.append(item["topic"]); case_domains.append(item["domain"])
@@ -807,11 +1067,22 @@ def plan_round(st, args, today):
     total = n_case + len(shorts)
     wants_new = int(cfg.get("new_topics_per_round", 1) or 0) > 0 and not args.no_new
     reserve_new = wants_new and len(shorts) >= 1 and total >= 2 and (total >= 4 or not last_session_had_new())
-    for i, slot in enumerate(shorts):
+    mix = block_mix(len(shorts), block["round"]) if theme else None
+    # Due repeats take the first slots (the focused questions, when the round has them), then the
+    # theme, then the wildcard.
+    shares = [name for name, _ in sorted(BLOCK_SHARES, key=lambda x: x[0] != "repeat") for _ in range(mix[name])] \
+        if theme else [None] * len(shorts)
+    for i, (slot, share) in enumerate(zip(shorts, shares)):
         item = None
-        if reserve_new and i == len(shorts) - 1 and not any(c["reason_code"].startswith("new") for c in chosen):
-            item = take_short(slot, new_only=True)
-        item = item or take_short(slot)
+        if share:
+            # the last theme slot is kept for new theme material when the round has nothing new yet
+            last_theme = share == "theme" and "theme" not in shares[i + 1:]
+            item = take_share(slot, share, new_first=reserve_new and last_theme and not mix["wildcard"]
+                              and not any(c["reason_code"].startswith("new") for c in chosen))
+        else:
+            if reserve_new and i == len(shorts) - 1 and not any(c["reason_code"].startswith("new") for c in chosen):
+                item = take_short(slot, new_only=True)
+            item = item or take_short(slot)
         if item:
             chosen.append(item); used_topics.add(item.get("topic")); used_domains.append(item["domain"])
 
@@ -891,10 +1162,15 @@ def plan_round(st, args, today):
         "profile": dict({k: st["profile"].get(k) for k in ("role", "subspecialty", "practice_setting", "notes")},
                         specialty=guideline_context(st)["specialty"]),
         "recent_cases_any_topic": used_cases[-15:],
+        # the block: `line` is what the learner is told (theme and position); `mix` is how this
+        # round's short questions were shared out (None in a one-off domain round)
+        "block": dict(block, mix=mix) if block else None,
         "items": chosen,
         "pending_errata": st.get("pending_errata") or [],
-        "note": "Blind: do not reveal topics, domains, reasons or the drill before all answers are "
-                "in. Make every vignette and stem clearly different from already_used and "
+        "note": "Blind: do not reveal topics, reasons or the drill before all answers are in. The "
+                "learner is told the block's theme and position (block.line) and nothing more "
+                "specific: never which items are on the theme, nor the domain of any other item. "
+                "Make every vignette and stem clearly different from already_used and "
                 "recent_cases_any_topic (patient, setting, presentation, twist). MCQs and focused "
                 "questions are presented together and get their feedback before the case is shown; "
                 "neither they nor their feedback may cue the case.",
@@ -908,7 +1184,8 @@ def plan_summary(plan, out):
     return {"ok": True, "out": out, "items": len(plan["items"]),
             "mcqs": counts["mcqs"], "focused": counts["focused"], "case": counts["case"],
             "case_format": plan["case_format"], "estimated_minutes": plan["estimated_minutes"],
-            "item_order": plan["item_order"], "session_id": plan["session_id"]}
+            "item_order": plan["item_order"], "session_id": plan["session_id"],
+            "block": (plan.get("block") or {}).get("line")}
 
 
 def cmd_plan(args):
@@ -1342,6 +1619,8 @@ def to_previous(sess):
         out["case"] = {k: sess["case"].get(k) for k in ("topic", "presentation", "diagnosis") if sess["case"].get(k)}
     if sess.get("url"):
         out["url"] = sess["url"]
+    if sess.get("block"):
+        out["block"] = sess["block"]
     return out
 
 
@@ -1361,8 +1640,12 @@ def record_round(st, rnd, today):
         st["unreflected"] = None
     for k in ("helpers", "prepare_ahead"):       # speed settings (4.3): on unless the learner turns them off
         st["config"].setdefault(k, DEFAULT_CONFIG[k])
+    # The round counts in its block here, once: reflecting later re-applies the round, not this.
+    in_block = advance_block(st, parse_date(rnd.get("date")) or today)
     snap = snapshot(st)
     entry, summary, warnings, errata_ids = apply_round(st, rnd, today)
+    if in_block:
+        entry["block"] = in_block
     if rnd.get("reflection") is None:
         entry["_snapshot"] = snap
         entry["_round"] = rnd
@@ -1413,6 +1696,8 @@ def reflect_round(st, refl, today, session=None):
             if it:
                 it.update({k: v for k, v in ch.items() if k not in ("type", "topic")})
     entry, summary, warnings, errata_ids = apply_round(st, rnd, today)
+    if sess.get("block"):
+        entry["block"] = sess["block"]
     st["unreflected"] = None
     compact(st)
     st["gen"] = int(st.get("gen") or 0) + 1
@@ -1913,6 +2198,8 @@ def status_dict(st, path, today):
         "review_due": rdue, "review_due_date": rdate,
         "pending_errata_count": len(st.get("pending_errata") or []),
         "drills_active": len(st.get("drills") or []),
+        # the block the next round belongs to; `line` is what the opening line says about it
+        "block": block_status(st),
         "round": {"mcqs": cfg.get("mcqs", 3), "focused": cfg.get("focused", 0), "case": bool(cfg.get("case", True)),
                   "minutes": cfg.get("session_minutes"), "item_order": cfg.get("item_order")},
         "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
@@ -2131,6 +2418,9 @@ def take_prepared(args, st, today):
         files = inner.get("files") or {"sealed_questions.md": inner["sealed"]}
     except Exception:
         return no("unreadable")
+    now, was = block_status(st) or {}, plan.get("block") or {}
+    if (now.get("theme"), now.get("round")) != (was.get("theme"), was.get("round")):
+        return no("it was not prepared for this round of the block")
     q_text = present_blocks(files.get("sealed_questions.md")).get("questions")
     c_text = present_blocks(files.get("sealed_case.md")).get("case")
     first = q_text or c_text

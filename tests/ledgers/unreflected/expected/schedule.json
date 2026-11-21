@@ -1,24 +1,5 @@
 {
  "after_record": {
-  "EMRG-01": {
-   "attempts": 1,
-   "calibration": "confident_error",
-   "comfort": null,
-   "domain": "EMRG",
-   "due": "2026-10-22",
-   "history": [
-    [
-     "2026-10-19",
-     1.0,
-     null,
-     "confident_error"
-    ]
-   ],
-   "label": "Anaphylaxis (see RHEUM-04)",
-   "last": "2026-10-19",
-   "mastery": 1.0,
-   "step": 0
-  },
   "GEN-04": {
    "attempts": 3,
    "calibration": "not_rated",
@@ -40,60 +21,79 @@
     ],
     [
      "2026-10-19",
-     5.0,
+     2.0,
      null,
      "not_rated"
     ]
    ],
    "label": "Pain management & opioid stewardship",
    "last": "2026-10-19",
-   "mastery": 5.0,
-   "step": 1
+   "mastery": 2.0,
+   "step": 0
   },
-  "HEME-02": {
-   "attempts": 3,
+  "PULM-02": {
+   "attempts": 4,
    "calibration": "not_rated",
    "comfort": null,
-   "domain": "HEME",
-   "due": "2026-10-22",
+   "domain": "PULM",
+   "due": "2026-10-26",
    "history": [
     [
-     "2026-10-07",
-     3.0,
-     5,
-     "overconfident"
+     "2026-10-09",
+     2.0,
+     2,
+     "aligned"
     ],
     [
-     "2026-10-09",
+     "2026-10-12",
+     1.0,
+     4,
+     "confident_error"
+    ],
+    [
+     "2026-10-14",
      5.0,
      2,
      "underconfident"
     ],
     [
      "2026-10-19",
-     2.0,
+     5.0,
      null,
      "not_rated"
     ]
    ],
-   "label": "Thrombocytopenia, HIT, TTP/HUS",
+   "label": "COPD exacerbation",
    "last": "2026-10-19",
-   "mastery": 2.0,
-   "step": 0
+   "mastery": 5.0,
+   "step": 2
   },
-  "ID-02": {
-   "attempts": 2,
-   "calibration": "not_rated",
+  "PULM-05": {
+   "attempts": 1,
+   "calibration": "confident_error",
    "comfort": null,
-   "domain": "ID",
+   "domain": "PULM",
    "due": "2026-10-22",
    "history": [
     [
-     "2026-10-12",
-     5.0,
-     4,
-     "aligned"
-    ],
+     "2026-10-19",
+     1.0,
+     null,
+     "confident_error"
+    ]
+   ],
+   "label": "Pleural effusion / empyema",
+   "last": "2026-10-19",
+   "mastery": 1.0,
+   "step": 0
+  },
+  "PULM-08": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-10-22",
+   "history": [
     [
      "2026-10-19",
      3.0,
@@ -101,36 +101,17 @@
      "not_rated"
     ]
    ],
-   "label": "Skin & soft tissue infections, necrotizing fasciitis",
+   "label": "Shock differentiation & resuscitation",
    "last": "2026-10-19",
    "mastery": 3.0,
-   "step": 1
+   "step": 0
   }
  },
  "after_reflect": {
-  "EMRG-01": {
-   "attempts": 1,
-   "calibration": "confident_error",
-   "comfort": 4,
-   "domain": "EMRG",
-   "due": "2026-10-22",
-   "history": [
-    [
-     "2026-10-19",
-     1.0,
-     4,
-     "confident_error"
-    ]
-   ],
-   "label": "Anaphylaxis (see RHEUM-04)",
-   "last": "2026-10-19",
-   "mastery": 1.0,
-   "step": 0
-  },
   "GEN-04": {
    "attempts": 3,
    "calibration": "aligned",
-   "comfort": 5,
+   "comfort": 2,
    "domain": "GEN",
    "due": "2026-10-22",
    "history": [
@@ -148,60 +129,79 @@
     ],
     [
      "2026-10-19",
-     5.0,
-     5,
+     2.0,
+     2,
      "aligned"
     ]
    ],
    "label": "Pain management & opioid stewardship",
    "last": "2026-10-19",
-   "mastery": 5.0,
-   "step": 1
+   "mastery": 2.0,
+   "step": 0
   },
-  "HEME-02": {
-   "attempts": 3,
+  "PULM-02": {
+   "attempts": 4,
    "calibration": "aligned",
-   "comfort": 2,
-   "domain": "HEME",
-   "due": "2026-10-22",
+   "comfort": 5,
+   "domain": "PULM",
+   "due": "2026-10-26",
    "history": [
     [
-     "2026-10-07",
-     3.0,
-     5,
-     "overconfident"
+     "2026-10-09",
+     2.0,
+     2,
+     "aligned"
     ],
     [
-     "2026-10-09",
+     "2026-10-12",
+     1.0,
+     4,
+     "confident_error"
+    ],
+    [
+     "2026-10-14",
      5.0,
      2,
      "underconfident"
     ],
     [
      "2026-10-19",
-     2.0,
-     2,
+     5.0,
+     5,
      "aligned"
     ]
    ],
-   "label": "Thrombocytopenia, HIT, TTP/HUS",
+   "label": "COPD exacerbation",
    "last": "2026-10-19",
-   "mastery": 2.0,
-   "step": 0
+   "mastery": 5.0,
+   "step": 2
   },
-  "ID-02": {
-   "attempts": 2,
-   "calibration": "overconfident",
-   "comfort": 5,
-   "domain": "ID",
+  "PULM-05": {
+   "attempts": 1,
+   "calibration": "confident_error",
+   "comfort": 4,
+   "domain": "PULM",
    "due": "2026-10-22",
    "history": [
     [
-     "2026-10-12",
-     5.0,
+     "2026-10-19",
+     1.0,
      4,
-     "aligned"
-    ],
+     "confident_error"
+    ]
+   ],
+   "label": "Pleural effusion / empyema",
+   "last": "2026-10-19",
+   "mastery": 1.0,
+   "step": 0
+  },
+  "PULM-08": {
+   "attempts": 1,
+   "calibration": "overconfident",
+   "comfort": 5,
+   "domain": "PULM",
+   "due": "2026-10-22",
+   "history": [
     [
      "2026-10-19",
      3.0,
@@ -209,10 +209,10 @@
      "overconfident"
     ]
    ],
-   "label": "Skin & soft tissue infections, necrotizing fasciitis",
+   "label": "Shock differentiation & resuscitation",
    "last": "2026-10-19",
    "mastery": 3.0,
-   "step": 1
+   "step": 0
   }
  },
  "after_reflecting_waiting_round": {

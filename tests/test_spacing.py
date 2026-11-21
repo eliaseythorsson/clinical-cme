@@ -95,6 +95,7 @@ def test_a_ledger_from_an_older_version_with_a_topic_due_tomorrow_waits_too(work
 
 def test_an_open_gap_on_an_untested_topic_waits_three_days(work):
     st = ledger(work)
+    st["config"]["mcqs"] = 4      # with four short questions every round of a block has a slot for a repeat
     play(st, DAY, [mcq("CARD-01", 5)],
          gaps=[{"topic": "RENAL-02", "gap": "did not apply it in the case", "source": "transfer"}])
     assert "RENAL-02" not in planned_topics(st, DAY + days(1))

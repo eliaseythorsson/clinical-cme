@@ -373,6 +373,8 @@ class Round:
                 self.unanswered.append(dict(topic, type="case"))
         self.never_lifted = {"case"} if self.unanswered or (self.items and not self.has_case
                                                             and "sealed_case.md" in self.sealed) else set()
+        # the block the round was played in (theme, round, length), as the saved session keeps it
+        self.block = (self.session or {}).get("block")
         self._label_parts()
 
     def planned_case(self):
@@ -421,10 +423,20 @@ def significant_words(label):
     return sorted({w for w in re.findall(r"[a-z]+", label.lower()) if len(w) >= 5 and w not in GENERIC_WORDS})
 
 
+def block_line(rnd):
+    """The line the opening message must show: the block's theme and position (ADR 0003)."""
+    if not rnd.block:
+        return None
+    name = ((rnd.state.get("blueprint") or {}).get(rnd.block.get("theme")) or {}).get("name") or rnd.block.get("theme")
+    return "Block: %s, round %s of %s" % (name, rnd.block.get("round"), rnd.block.get("length"))
+
+
 def forbidden_terms(rnd):
     """(part, kind, level, term, pattern). `fail` terms are leaks; `warn` terms are for a human to
-    judge (a topic word or the domain's name in the text shown)."""
+    judge (a topic word or the domain's name in the text shown). The name of the block's theme is
+    shown on purpose, so it is not a term."""
     terms = []
+    theme = ((rnd.state.get("blueprint") or {}).get((rnd.block or {}).get("theme")) or {}).get("name")
 
     def phrase(part, kind, level, text):
         text = norm(text)
@@ -447,7 +459,7 @@ def forbidden_terms(rnd):
                 # British and American spellings alike (anemia / anaemia, edema / oedema)
                 spelt = re.escape(w).replace("ae", "e").replace("oe", "e").replace("e", "(?:e|ae|oe)")
                 terms.append((part, "topic word", "warn", w, re.compile(r"\b%s(?:s|es)?\b" % spelt, re.I)))
-        if domain:
+        if domain and domain != theme:
             phrase(part, "domain name", "warn", domain)
     last_part = "case" if rnd.has_case else "questions"
     diagnosis = (rnd.round.get("case") or {}).get("diagnosis")
@@ -495,6 +507,10 @@ def check_blinding(rnd):
             problems.append("cannot tell which learner message answered the %s (no matching block in answers.md); "
                             "every examiner message was scanned for it" % part)
     terms = forbidden_terms(rnd)
+    line = block_line(rnd)
+    first = next((m for m in rnd.messages if m["role"] == "examiner"), None)
+    if line and first and norm(line).lower() not in norm(first["text"]).lower():
+        problems.append("the opening message does not show the block line \"%s\"" % line)
     for m in rnd.messages:
         if m["role"] != "examiner":
             continue
@@ -514,7 +530,7 @@ def check_blinding(rnd):
     return {"ok": not leaks and not problems, "leaks": len(leaks),
             "to_review": len([f for f in findings if f["level"] == "warn"]),
             "seal_lifted_at": rnd.lift, "never_lifted": sorted(rnd.never_lifted),
-            "terms_checked": len(terms), "findings": findings, "problems": problems}
+            "terms_checked": len(terms), "block_line": line, "findings": findings, "problems": problems}
 
 
 # ---------------------------------------------------------------- check 2: every file saved
