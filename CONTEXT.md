@@ -98,7 +98,7 @@ A run of rounds (default 12) with one domain as its theme; most new material and
 _Avoid_: module, month
 
 **Theme**:
-The domain of the current block. It is visible to the learner; topics stay blind.
+The domain of the current block. It is visible to the learner; topics stay blind. It is proposed with a one-line reason and the learner can change it, at the end of a block or in the middle of one.
 
 **Share**:
 The part of a round's short questions given to the theme (60%), to due repeats (25%) or to the wildcard (15%), met over the block rather than in every round.

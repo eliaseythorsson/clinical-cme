@@ -266,7 +266,7 @@ so an unchecked "comfortable" would steer questions away from exactly the domain
 
 **Blocks.** Rounds run in blocks of 12 on one domain, the theme (`docs/adr/0003`). `block` is
 the current block: `round` counts the rounds recorded in it (`record`/`save` add one; a
-reflection does not), `chosen` is `auto` or `learner`. `blocks` keeps the finished ones. A
+reflection does not), `chosen` is `auto` or `learner` (§4.1). `blocks` keeps the finished ones. A
 ledger with no `block` (new, or written before blocks) or with a finished one gets its next
 block when the next round is recorded: nothing else in the ledger changes, so history, gaps and
 due dates carry over. The theme is proposed without chance: each domain with at least four
@@ -297,6 +297,47 @@ and `line`, the one thing the learner is told: "Block: Gastroenterology & Hepato
 12". `start`, `status`, `plan` and `prepare` print it too. A one-off `--domain` round ignores the
 theme (`mix` is null) and still counts as a round of the block. A prepared round is used only
 for the round of the block it was planned for.
+
+### 4.1 Changing the theme
+
+The theme is proposed; the learner decides. Three places carry it:
+
+- **The end of a block.** `save` and `close` of a block's last round print `next_block`:
+  `finished`, the proposed `theme` and `name`, its `reason`, and `line`, which goes into the
+  close message word for word: "Block finished: Cardiology. Next block: Nephrology &
+  Electrolytes: mean 2.4 of 5 over 3 topics tested, 1 open gap, not yet a theme. To change it,
+  say "pick another" or name an area." The reason is at the level of the domain (mean mastery,
+  number of open gaps, when it last was a theme) and names no topic. Nothing is written for the
+  proposal: if the learner says nothing, the next round starts that block.
+- **The opening line of a block's first round.** `status`/`start` give `block.reason` while
+  `block.starts` is true ("New block: Nephrology & Electrolytes: … . Round 1 of 12"), so a learner
+  who missed the close message can still change it before answering anything.
+- **The learner's line.** "pick another" → `theme STATE --another --out-dir D`; an area named
+  ("cardiology next", "switch to GI") → `theme STATE --set "<what they said>" --out-dir D`
+  (`--set` takes a domain id, a name, or a part of one that fits one domain only; otherwise it
+  stops and lists the domains). Save the `files` like a settings change and send `say` ("New
+  block: Gastroenterology & Hepatology: your choice. Round 1 of 12."). `theme STATE` alone
+  writes nothing and prints the block, the proposal if a block has just ended, and `choices`
+  (every domain, the proposal's ranking first) for "which areas are there?".
+
+What the change does: the block the next round would have belonged to is replaced by a new block
+of 12 on the new theme, at round 0, `chosen: "learner"`. At the end of a block that is simply
+another theme for the block about to start. In the middle of one, the current block ends where
+it is and is kept in `blocks` with the rounds it had (a block changed before its first round is
+not kept); the new block starts with the next round. Nothing else in the ledger moves: history,
+gaps and due dates stay, and topics of the theme left behind come back as due repeats. A theme
+left mid-block counts as having had its block when the next themes are proposed. `--another`
+takes the next domain of the ranking and keeps the ones turned down in `block.declined` until
+the block's first round is recorded, so asking again moves on and does not come back; after the
+last one it starts from the top. The learner may name a domain too small to be proposed (fewer
+than four topics): it is accepted with a warning, and its rounds revisit the same topics on
+other decision points. The prepared round is emptied, as for any settings change.
+
+When to run it: between rounds. At the opening line, before any answer: run `theme`, then
+`start` again on the changed ledger (the first plan is discarded; nothing was recorded). Once
+the learner has answered anything, finish the round on the theme it was planned on and run
+`theme` on the ledger `close` wrote; say so in one line. A change run on the ledger read at the
+start of a round in progress would be lost when `save` writes that round.
 
 The rest of this paragraph is the order within those shares, and the whole rule for a `--domain`
 round. Selection (`plan`): due topics first (overconfident and misconception ahead, then most overdue,
@@ -361,6 +402,7 @@ survive in `agg`. The verbatim detail is in the session documents, which are nev
 | `review STATE --review REVIEW.json --out NEXT` | Record a review; closes the period. |
 | `snooze STATE --days 7 --out NEXT` | Postpone a due review. |
 | `settings STATE [--config J] [--profile J] [--blueprint FILE] --out-dir D` | Change settings and put the changed ledger into the file layout in `D`, ready to save: the ledger, the index, an emptied `data/prepared.json` and the page if it is out of date (`files`, as `place` prints them). The index and the page are the ones read beside `STATE` unless `--index` or `--page` names them. A change to `mcqs`, `focused` or `case` is checked (at least one item) and supersedes any older page setting; a refused change writes nothing. (`--out NEXT` writes the changed ledger alone as one file.) |
+| `theme STATE [--set DOMAIN \| --another] --out-dir D` | The learner changes the theme of the block (§4.1): `--set` a domain by id or name, `--another` the next proposal. Prints `block`, `was`, `say` and, like `settings`, the `files` to save. Alone: the block, the proposal and the domains to choose from; writes nothing. |
 | `init --profile J --config J --blueprint FILE --out STATE` | First-run creation. |
 | `blueprint-md FILE --out BP.json` | Convert a Markdown blueprint. |
 | `validate STATE` | Structural check. |

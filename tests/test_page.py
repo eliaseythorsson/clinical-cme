@@ -131,3 +131,20 @@ def test_rendered_page_keeps_history_scores_and_progress(rendered):
 def test_rendered_page_shows_the_theme_of_the_block_and_no_coming_topic(rendered):
     assert rendered["ids"]["block"] == "Block: Alphology · 4 of 12 rounds done"
     assert "UNTESTED-TOPIC" not in rendered["text"] and "SECRET-REASON" not in rendered["text"]
+    assert rendered["styles"]["block-bar"] == {"width": "33%"}       # progress through the block (issue #17)
+
+
+@pytest.mark.parametrize("block, shown", [
+    ({"theme": "AAA", "round": 0, "length": 12, "chosen": "learner"}, "Block: Alphology · starts with your next round (12 rounds)"),
+    ({"theme": "AAA", "round": 12, "length": 12},
+     "Block: Alphology · finished (12 rounds); the next block starts with your next round"),
+])
+def test_rendered_page_shows_a_block_not_yet_begun_and_a_finished_one(block, shown, tmp_path):
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node is not installed")
+    state = tmp_path / "state.json"
+    state.write_text(json.dumps(dict(STATE, block=block)), encoding="utf-8")
+    proc = subprocess.run([node, HARNESS, PAGE, str(state)], capture_output=True, text=True, timeout=60)
+    assert proc.returncode == 0, proc.stderr
+    assert json.loads(proc.stdout)["ids"]["block"] == shown

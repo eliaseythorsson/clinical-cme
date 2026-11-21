@@ -27,7 +27,8 @@ are in, or attach your `state.json`."
 > - **Blind topics, in themed blocks.** Rounds come in blocks of 12 on one area (say,
 >   cardiology): the case and most short questions are from it, the rest are repeats that have
 >   come due and something from elsewhere. You are told the area and where you are in the
->   block; which topic is being tested, and why, you learn after you have answered.
+>   block, and you can change the area at any time; which topic is being tested, and why, you
+>   learn after you have answered.
 > - **Realistic work-up.** Cases come with the history and the routine tests a ward team would
 >   have. Anything more specialised, you ask for, and you say what result you expect.
 > - **Self-contained feedback.** Grading against current guidelines, with the key evidence
@@ -174,6 +175,13 @@ and say why; the grading is on that reasoning (the right answer without a reason
 goes into a round": switch MCQs, focused questions and the full case on or off and set how many),
 or ask in a chat ("add a focused question to my rounds"). A change on the page applies from your
 next round; whichever change you made last wins.
+
+**Can I choose the area of a block?** Yes. At the end of a block the next area is proposed with
+the reason (where you are weakest, or what has waited longest); say "pick another" for the next
+suggestion, or name the area you want ("cardiology next"). You can do the same in the middle of
+a block: it ends there, and the new one starts with your next round. Nothing is lost: what you
+have done stays in your record and comes back as repeats. Your page shows the current block and
+how far you are through it.
 
 **Why won't it tell me the topic?** Knowing the topic changes how you think. The topic and the
 reason it was chosen are revealed with the feedback: the short questions' when you have

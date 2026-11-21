@@ -213,7 +213,7 @@ Five learner turns with an unfolding case; fewer with a one-step case or none.
      12"). Rounds run in blocks of 12 on one domain; the learner is told the theme and the
      position and nothing more specific: not which questions are on the theme, not the domain
      of any other item. When `block.starts` is true this round opens a new block; say so in
-     the same line ("New block: …" is enough).
+     the same line with `block.reason` ("New block: …").
    - keep `next_id`, `pending_errata_count`, `helpers`, `speed_settings_new`, `prepared`,
      `testing`, and `guideline_region` and `specialty`: every grade and every piece of feedback
      in the round uses that region's guidelines, pitched at that specialty.
@@ -369,7 +369,8 @@ with the items answered; the case's topic stays due.
   due over the next few days — not their names; plus "1 correction to an earlier session was
   added to your log" if errata were written); in one line how the reflection changed the plan,
   without dates per topic; when the next session fits the target frequency. Reminders follow
-  `config.reminders` (chosen at setup; do not offer again unless asked). If `speed_settings_new`
+  `config.reminders` (chosen at setup; do not offer again unless asked). If `close` printed
+  `next_block`, add its `line` word for word. If `speed_settings_new`
   was true at the start, add once: "New: your next round is now written and source-checked in
   advance, by a separate author and checker, so it starts at once and feedback follows your
   answers directly. Say 'helpers off' or 'don't prepare ahead' to change that. I can also set
@@ -457,6 +458,8 @@ folder as downloads so the next session can save them (`store.md` §6). Never re
   <work>/outS` → save its `files`; confirm in one line. Emphasis is `profile.domain_emphasis`; a changed blueprint is
   `--blueprint <file>`. Any settings change sets aside the prepared round; offer nothing, the
   next round is simply written at its start.
+- **Theme** ("pick another", "cardiology next"): `cme.py theme <ledger> --another` or `--set
+  "<area>"`, with `--out-dir <work>/outS` → save its `files`; send its `say` (`state_schema.md` §4.1).
 - **Region or specialty** ("use UK guidelines", "my specialty is geriatrics"): one `settings`
   call as above, `--config '{"guideline_region": "UK"}'` or `--profile '{"specialty":
   "Geriatrics"}'` (the learner's own words are fine; add `lab_units` or `blood_gas_units` only
