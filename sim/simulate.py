@@ -202,16 +202,34 @@ def fill(template, values):
     return template
 
 
+def claim_run_folder(base, stamp):
+    """Make and return a run folder of its own under base: <stamp>, or <stamp>-2, <stamp>-3, ... when
+    runs started in the same second have taken the earlier names. Making the folder is the claim
+    (mkdir fails if it exists), so parallel inits never share one. The name goes into the
+    examiner's brief, so it must not name the persona: a stamp and a counter only."""
+    os.makedirs(base, exist_ok=True)
+    n = 1
+    while True:
+        run = os.path.join(base, stamp if n == 1 else "%s-%d" % (stamp, n))
+        try:
+            os.mkdir(run)
+            return run
+        except FileExistsError:
+            n += 1
+
+
 def cmd_init(args):
     persona_path, persona, profile, expect = persona_parts(args.persona)
     skill = os.path.abspath(args.skill or DEFAULT_SKILL)
     if not os.path.isfile(os.path.join(skill, "scripts", "cme.py")):
         raise SimError("no skill at %s" % skill)
-    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-    # the folder's name goes into the examiner's brief, so it must not name the persona
-    run = os.path.abspath(args.run or os.path.join(HERE, "runs", stamp))
-    if os.path.exists(run) and os.listdir(run):
-        raise SimError("%s already exists and is not empty" % run)
+    if args.run:
+        run = os.path.abspath(args.run)
+        if os.path.exists(run) and os.listdir(run):
+            raise SimError("%s already exists and is not empty" % run)
+    else:
+        run = claim_run_folder(os.path.abspath(args.runs_dir or os.path.join(HERE, "runs")),
+                               args.stamp or dt.datetime.now().strftime("%Y%m%d-%H%M%S"))
     for d in ("store", "work", "messages", "learner"):
         os.makedirs(rp(run, d))
     config = dict(SIM_CONFIG)
@@ -1095,6 +1113,8 @@ def main(argv=None):
     s.add_argument("--persona", default="strong"); s.add_argument("--run"); s.add_argument("--skill")
     s.add_argument("--today"); s.add_argument("--config"); s.add_argument("--prepare-ahead", action="store_true")
     s.add_argument("--from-run", help="continue on the store of an earlier run (a second round)")
+    s.add_argument("--runs-dir", help="where a run folder is made when --run is not given (default sim/runs/)")
+    s.add_argument("--stamp", help=argparse.SUPPRESS)   # tests: the start second, to make two runs share it
     s.add_argument("--opening"); s.set_defaults(fn=cmd_init)
     s = sub.add_parser("send", help="send a message file to the other side")
     s.add_argument("--run", required=True); s.add_argument("--role", choices=ROLES, required=True)
