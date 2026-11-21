@@ -37,8 +37,9 @@ Markdown, headings exactly as below (a short qualifier after them is fine):
 
 Sections follow the order of the round: the short questions, their answers and their feedback,
 then the case, its answers and the final feedback (with `case_first`, the case sections come
-first and there is one feedback section). `cme.py save` assembles it from the sealed `present`
-blocks, the answer blocks, `--feedback-questions` and `--feedback`. The
+first and there is one feedback section). `cme.py save` assembles it from the files in the work
+folder (`state_schema.md` §6.1): the sealed `present` blocks, `stage2.md`, the answers added
+with `cme.py answer`, `feedback_questions.md` and `feedback.md`. The
 "Questions" sections hold the MCQs and the focused questions together, as they were presented
 and answered; a round without a case has no case sections. Write "None." under a section with
 nothing to report. `cme.py doc --part A` adds the metadata from
@@ -51,6 +52,10 @@ the round JSON (id, date, title, summary, tags, topics, score, format, drill):
   `numeric-error`, `data-gathering`, `slip`), and `drill` if one ran.
 
 ## 3. Part B (`B.md`, after the reflection)
+
+Write `B.md` from "Discussion" on. The reflection is added with `cme.py answer --part
+reflection`, and `close` puts it above the rest as the first section; a `B.md` that already has
+a "Reflection" heading is kept as it is.
 
 ```markdown
 ### Reflection (verbatim)

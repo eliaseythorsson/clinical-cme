@@ -238,10 +238,11 @@ survive in `agg`. The verbatim detail is in the session documents, which are nev
 
 | Command | Use |
 |---|---|
-| `start STATE --out PLAN [--prefs J] [--prepared PREPARED.json [--work-dir D]] [plan options]` | Session start: `status` and `plan` in one call. Prints the neutral status with the plan's counts (MCQs, focused, case, `estimated_minutes`) under `plan`, plus `helpers`, `prepare_ahead` and `speed_settings_new`. No topic names. `--prefs` is the page's `cme/prefs` document (§7); `page_settings_applied` says when it changed the mix. `--prepared` is the store's `data/prepared.json` (§8): when it still fits, `prepared.used` is true, `present` holds the first part's text to send (`prepared.present_block` says which), the plan is written to `--out` and the drafted files (`prepared.ready`: `sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) beside it (or into `--work-dir`); otherwise `prepared.why` says why not and the round is planned as usual. |
-| `present SEALED… --block questions\|case\|stage2` | Print only the text the learner is to see from sealed files (one `present` block), so it can be sent without opening the keys. |
-| `save STATE --round R.json --sealed F… --answers A.md [--feedback-questions FQ.md] --feedback FB.md [--index IDX] [--prefs J] [--page INDEX.html] --out-dir D` | First save after the final feedback: `record` + session document (part A assembled in the order of the round from the sealed `present` blocks, the answers, the questions' feedback and the final feedback; or `--md A.md`) + index + an emptied `data/prepared.json`. Prints what `record` prints plus `files`. Pass the same `--prefs` as to `start` so the mix is kept in the ledger. `--page` is the learner's current `index.html`: if it is older than the skill's template, `files` also holds the new `index.html` (`page_upgraded`). |
-| `close STATE --reflection R.json --md B.md --doc SESSION.json [--index IDX] --out-dir D` | Second save: `reflect` + part B into the session document + index. |
+| `start STATE --work W [--prefs J] [--prepared PREPARED.json] [plan options]` | Session start: `status` and `plan` in one call. `W` is the round's work folder (§6.1): the plan is written to `W/plan.json`, and `W/work.json` notes where the ledger is and the page settings, for `save`. If an earlier round was played in `W`, its files are first moved to `W/earlier/<n>/` (`earlier_round_set_aside`). (`--out PLAN` instead of `--work` still works: the work folder is then the plan's folder, or `--work-dir`.) Prints the neutral status with the plan's counts (MCQs, focused, case, `estimated_minutes`) under `plan`, plus `helpers`, `prepare_ahead` and `speed_settings_new`. No topic names. `--prefs` is the page's `cme/prefs` document (§7); `page_settings_applied` says when it changed the mix. `--prepared` is the store's `data/prepared.json` (§8): when it still fits, `prepared.used` is true, `present` holds the first part's text to send (`prepared.present_block` says which), the drafted files (`prepared.ready`: `sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) are written into the work folder; otherwise `prepared.why` says why not and the round is planned as usual. |
+| `present SEALED… --block questions\|case\|bank` | Print only the text the learner is to see from sealed files (one `present` block, or the case's results bank), so it can be sent without opening the keys. |
+| `answer --work W --part questions\|case\|final\|notes\|reflection [--file F \| --text T]` | Append what the learner answered for one part to `W/answers.md`, exactly as given (default: standard input). Earlier parts are never rewritten; the same text for the same part is added once; a second message for a part is added after the first. Prints the part names filed so far, never the text. |
+| `save --work W` | First save after the final feedback: `record` + session document (part A assembled in the order of the round from the sealed `present` blocks, Stage 2 as sent, the answers, the questions' feedback and the final feedback) + index + an emptied `data/prepared.json`, written into `W/out1`. Everything is found by its fixed name (§6.1); the page settings given to `start` are applied so the mix is kept in the ledger. Prints what `record` prints plus `files`. If the learner's `index.html` is older than the skill's template, `files` also holds the new `index.html` (`page_upgraded`). It always starts from the ledger as read, so it can be run again. |
+| `close --work W [--reflection J]` | Second save: `reflect` + part B into the session document + index, written into `W/out2`. It continues from `W/out1`; the reflection JSON is `W/reflection.json` unless given. With no save in `W` (a reflection given at a later session) it starts from the ledger `start` read and the session file beside it (`sessions/<id>.json`), and stops if that file is not there. |
 | `addendum --doc SESSION.json --md ADD.md --out-dir D` | Append later discussion to a session document. |
 | `prepare STATE --out NEXT_PLAN [--if-needed PREPARED.json] [--allow-unreflected]` | After the close: plan the next round (as of tomorrow) from the closed ledger. Prints counts only, or `"prepare": false` with the reason (setting off, reflection pending, or — with `--if-needed` — a usable round is already prepared). `--allow-unreflected` plans although the last session has no reflection yet (the scheduled task uses it). |
 | `stash STATE --plan NEXT_PLAN --dir DRAFTS --out-dir D` | Pack that plan and the files drafted for it in `DRAFTS` (`sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) into `data/prepared.json` (§8). The first part's sealed file must be there; a missing case is a warning (it is then written at the next session). |
@@ -254,6 +255,7 @@ survive in `agg`. The verbatim detail is in the session documents, which are nev
 | `record STATE --round ROUND.json --out NEXT` | Apply a graded round (reflection pending if absent). Prints per-topic next due, warnings, `errata_to_log`. |
 | `reflect STATE --reflection R.json --out NEXT [--session ID]` | Re-apply the last unreflected session with its reflection. |
 | `doc --part A --md A.md --round ROUND [--id S0042] --out A.json` / `doc --part B --md B.md --out B.json` | The session document, or its part B, as JSON (single steps of `save` and `close`). |
+| `verify [--work W \| --written OUT…] --store CHECK [--out V.json]` | Testing mode: compare what `save`, `close` and `stash` wrote (`W/out1`–`out3`) with the store read again into `CHECK`; with `--work` the result is also written to `W/verify.json`. |
 | `stats STATE` | Review figures: period, previous period, all time; gaps, calibration, teaching points unchecked, blind spots. |
 | `review STATE --review REVIEW.json --out NEXT` | Record a review; closes the period. |
 | `snooze STATE --days 7 --out NEXT` | Postpone a due review. |
@@ -265,6 +267,31 @@ survive in `agg`. The verbatim detail is in the session documents, which are nev
 Add `--today YYYY-MM-DD` (before the command) to fix the date. Every command that writes for the
 store prints `files`: local `path` and store path `as`. Commands that write take `--out`; never write over the
 file you read in the same step, so a failed write can be retried from it.
+
+### 6.1 The work folder
+
+One round is worked on in one scratch folder, and every file has a fixed name there:
+
+| File | Written by | Read by |
+|---|---|---|
+| `work.json` | `start`: the ledger's path, the session ID, the page settings | `save`, `close` |
+| `plan.json` | `start` | whoever writes the items |
+| `sealed_questions.md`, `sealed_case.md`, `kit_*.md`, `evidence_*.md` | the author and the checker, or `start` from a prepared round | `present`, the examiner once a part is answered, `save` (the `present` blocks) |
+| `answers.md` | `answer`, one block per part (`<!-- answers: questions -->` … `<!-- /answers -->`) | `save` (questions, case, final, notes), `close` (reflection) |
+| `feedback_questions.md`, `stage2.md`, `feedback.md` | the examiner: each message exactly as sent | `save` |
+| `round.json` (§2) | the examiner | `save` |
+| `reflection.json` (§3), `B.md` (`session_log.md` §3) | the examiner | `close` |
+| `out1/`, `out2/` | `save`, `close`: the files to put into the store, each under its store path | `close` (from `out1`), `prepare`, `stash`, `verify` |
+
+The ledger is the one `start` read; the index (`index.json`) and the page (`index.html`) are
+taken from beside it (or, for a ledger in `data/`, the page from one folder up). Without
+`work.json`, `save` and `close` look for the ledger in `W/store/`.
+
+A file that is somewhere else can still be named: `save [STATE] [--round R.json] [--sealed F…]
+[--answers F…] [--feedback-questions FQ.md] [--feedback FB.md] [--md A.md] [--index IDX]
+[--prefs J] [--page INDEX.html] [--out-dir D]` and `close [STATE] [--reflection R.json] [--md
+B.md] [--doc SESSION.json] [--index IDX] [--session ID] [--page INDEX.html] [--out-dir D]`. A
+`<!-- present: stage2 -->` block in a sealed file is used when there is no `stage2.md`.
 
 ## 7. Page settings (`cme/prefs`)
 

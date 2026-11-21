@@ -184,8 +184,8 @@ before the final answers. Stage 2 is assembled from it once the learner has answ
   matter, targets, monitoring) and disposition or follow-up.
 
 Do not let Stage 2 grade or hint at Stage 1. Keep both stages in the final feedback. After
-sending Stage 2, add its text exactly as sent to `sealed_case.md` as a
-`<!-- present: stage2 -->` block: the log copies it from there.
+sending Stage 2, write its text exactly as sent to `stage2.md` in the work folder: the log
+copies it from there, and the sealed case stays closed.
 
 ### Answer format prompt
 Close the presentation with a short instruction such as:
@@ -239,7 +239,7 @@ Check every line that applies and record the outcome in the sealed file as one l
 numbers that pass, and for each that fails the fix you made ("pre-flight 6, 10–13 pass" or
 "pre-flight 1–5, 7–9 pass; 4: added the family history"). `sealed_questions.md` carries lines 6
 and 10–13, `sealed_case.md` the rest; with no case in the round, only the lines that apply. The
-text the learner will see goes between `<!-- present: questions|case|stage2 -->` and
+text the learner will see goes between `<!-- present: questions|case -->` and
 `<!-- /present -->` exactly as it will be sent: `cme.py save` copies it into the log. Do not
 work through the list in your thinking: there it would expose the content it checks.
 

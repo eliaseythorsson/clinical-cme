@@ -66,6 +66,10 @@ An item written on an open gap's decision point, in a new clinical context; it n
 **Rest**:
 The minimum of three days before a tested topic or a new gap can come back.
 
+**Work folder**:
+The scratch folder in which one round is worked on; every file of the round has a fixed name there, and `save` and `close` need nothing else.
+_Avoid_: temp folder, session folder
+
 ## Curriculum
 
 **Blueprint**:

@@ -233,8 +233,8 @@ right is telling you something about the grading.
 ## 8. The log needs the feedback verbatim
 
 Part A of the log copies both feedback messages exactly as sent (`session_log.md` §2): write
-part 1 to `feedback_questions.md` and part 2 to `feedback.md` right after sending each, while
-the learner reads. Keep tables and headings in plain Markdown so the copy renders well on the
+part 1 to `feedback_questions.md` and part 2 to `feedback.md` in the work folder right after
+sending each, while the learner reads; `cme.py save` finds them there. Keep tables and headings in plain Markdown so the copy renders well on the
 page.
 
 ## 9. Feedback kits: notes made while the learner answers

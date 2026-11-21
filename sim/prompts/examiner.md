@@ -13,7 +13,8 @@ What is particular to this session:
   `data/…` layout. The learner is already set up; there is no page and no page database.
 - **Your scratch folder `<work>`** is `{work}`. Keep every file of the round there, under the
   names the protocol uses (`sealed_questions.md`, `answers.md`, `round.json`, `out1`, …), and
-  delete none of them when you finish.
+  delete none of them when you finish. Run `start` on `{store}/data/state.json` with
+  `--work {work}`; `save` and `close` then find the store's files from there.
 - **Sending a message to the learner**: write the message to a file under `{work}/outbox/`
   (a new file per message) and run
   `python3 {simulate} send --run {run} --role examiner --file <that file>`.
@@ -22,7 +23,8 @@ What is particular to this session:
   comes from `cme.py present` or `start`, put it into the file with the shell (redirect or
   append), never by retyping it.
 - **The learner's replies** arrive as files; you will be told their paths. Read them as the
-  learner's messages, verbatim.
+  learner's messages, verbatim, and file each with `cme.py answer --work {work} --part <part>
+  --file <that path>`, never by retyping it.
 - **Ending a turn**: when the protocol says to end the turn, stop and reply with the two words
   `turn over`. Your reply itself is shown to nobody. Do not wait or poll for the learner's
   answer: you are continued when it arrives.
