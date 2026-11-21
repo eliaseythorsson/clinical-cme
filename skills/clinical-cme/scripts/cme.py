@@ -26,8 +26,9 @@ Session (fast path):
   prepare STATE --out NEXT_PLAN [--if-needed PREPARED.json] [--allow-unreflected]
                                                   after the close: plan the NEXT round (prints counts only)
   finish-prepare STATE --work W [--revised] [--no-evidence]
-                                                  after the checkers: count contradicted keys (a missing evidence
-                                                  file is an error), stash the round when it is clean
+                                                  after the checkers: check the key headers, count contradicted
+                                                  keys (a bad header or a missing evidence file is an error),
+                                                  stash the round when it is clean
   stash   STATE --plan NEXT_PLAN --dir DRAFTS --out-dir D   the stashing step of finish-prepare alone
   present SEALED.. --block questions|case|stage2  print only the text to show the learner
 
@@ -1232,8 +1233,8 @@ def plan_round(st, args, today):
             c["retest_gap"] = {
                 "id": gap_ref(g), "gap": clip(g.get("gap"), CLIP_GAP),
                 "how": "Write this item on the gap's decision point, in a new clinical context, and "
-                       "put \"retests\": \"%s\" on the item in the round JSON. Only an item that "
-                       "says so, answered well, closes the gap." % gap_ref(g)}
+                       "write the line 'retests: %s' in the item's key header (references/author.md, "
+                       "section 3). Only an item that says so, answered well, closes the gap." % gap_ref(g)}
     used_cases, used_stems = all_sessions_for_novelty(st)
     for c in chosen:
         same = [x for x in used_cases if x.get("topic") == c.get("topic")]
@@ -2590,10 +2591,12 @@ def contradicted_keys(text):
 
 
 def cmd_finish_prepare(args):
-    """After the checkers: read the evidence files' counts of contradicted keys and, when the
-    round is clean (or was revised), stash it. An evidence file that is missing, empty or
-    without its count line stops the command: it is never read as "nothing contradicted".
-    Prints counts and file names only."""
+    """After the checkers: check the key headers of the sealed files, read the evidence files'
+    counts of contradicted keys and, when the round is clean (or was revised), stash it. A
+    missing or malformed key header stops the command, so that it is not found only at `save`,
+    in the middle of the round. An evidence file that is missing, empty or without its count
+    line stops it too: it is never read as "nothing contradicted".
+    Prints counts, file names and the names of keys and fields only."""
     work = args.work
     plan_path = args.plan or (os.path.join(work, NEXT_DIR, "plan.json") if work else None)
     folder = args.dir or (os.path.join(work, NEXT_DIR) if work else None)
@@ -2604,6 +2607,11 @@ def cmd_finish_prepare(args):
     check_schema(st)
     plan = plan_for_stash(st, plan_path)
     files, has, warnings = prepared_round_files(plan, folder)
+    _, key_problems = check_key_headers([os.path.join(folder, n) for n in SEALED_FILES if n in files], plan)
+    if key_problems:
+        die("the key headers are not complete in %s: %s. Nothing was stashed. Have the headers corrected in "
+            "the sealed files (references/author.md, section 3; `keys` runs this check alone), then run this "
+            "command again" % (folder, "; ".join(key_problems)))
     out = {"ok": True}
     if args.no_evidence:
         # no checker was run (no helpers): the evidence is checked at the session, after the answers
@@ -3059,26 +3067,17 @@ def fill_round_from_keys(rnd, sealed, plan=None):
     return out
 
 
-def cmd_keys(args):
-    """Check the key headers of sealed files (the author's last step, and before a stash). Prints
-    which keys each file has and what is wrong with them; never a topic or any other value."""
-    paths = []
-    for p in args.paths:
-        if os.path.isdir(p):
-            paths += [os.path.join(p, n) for n in SEALED_FILES if os.path.isfile(os.path.join(p, n))]
-        elif os.path.isfile(p):
-            paths.append(p)
-        else:
-            die("not found: %s" % p)
-    if not paths:
-        die("no sealed files (%s) in %s" % (", ".join(SEALED_FILES), ", ".join(args.paths)))
+def check_key_headers(paths, plan=None):
+    """Check the key headers of sealed files before a round is played: ({file: [ids]}, [problems]).
+    Every item needs a well-formed header; with `plan`, each file written must have as many
+    headers of each type as the plan has items. The problems name files, keys and fields only."""
     headers, problems, by_file = key_headers(paths)
     for name, ids in by_file.items():
         if not ids and present_blocks(read_text(next(p for p in paths if os.path.basename(p) == name))):
             problems.append("%s: no key header; each item needs one ('<!-- key: Q1 -->' … '<!-- /key -->', "
                             "references/author.md section 3)" % name)
-    if args.plan:
-        want = (load_json(args.plan).get("counts") or {})
+    if plan:
+        want = plan.get("counts") or {}
         have = {"mcqs": 0, "focused": 0, "case": 0}
         for h in headers.values():
             k = {"mcq": "mcqs", "focused": "focused", "case": "case"}.get(h.get("type"))
@@ -3090,6 +3089,24 @@ def cmd_keys(args):
             if part in written and int(want.get(k) or 0) != have[k]:
                 problems.append("%s: the plan has %d %s item(s), the keys have %d header(s) of that type"
                                 % (part, int(want.get(k) or 0), name, have[k]))
+    return by_file, problems
+
+
+def cmd_keys(args):
+    """Check the key headers of sealed files (the author's last step; `finish-prepare` runs the
+    same check before it stashes). Prints which keys each file has and what is wrong with them;
+    never a topic or any other value."""
+    paths = []
+    for p in args.paths:
+        if os.path.isdir(p):
+            paths += [os.path.join(p, n) for n in SEALED_FILES if os.path.isfile(os.path.join(p, n))]
+        elif os.path.isfile(p):
+            paths.append(p)
+        else:
+            die("not found: %s" % p)
+    if not paths:
+        die("no sealed files (%s) in %s" % (", ".join(SEALED_FILES), ", ".join(args.paths)))
+    by_file, problems = check_key_headers(paths, load_json(args.plan) if args.plan else None)
     print(json.dumps({"ok": not problems, "keys": by_file, "problems": problems}, indent=1, ensure_ascii=False))
     return 0 if not problems else 1
 

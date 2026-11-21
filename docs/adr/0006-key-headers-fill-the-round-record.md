@@ -4,6 +4,7 @@ Until now the examiner retyped, after the round, facts the author had already de
 
 - The header is plain `field: value` lines between HTML-comment markers, like the `present` and `bank` blocks: no JSON for an author to get wrong, invisible to `present`, and readable with the standard library.
 - A header an answered item needs that is missing or malformed stops `save` before anything is written, with every problem in one message; guessing a topic would corrupt the schedule. A bad header nobody graded only warns.
+- A round prepared ahead is checked before it is kept: `finish-prepare` runs the `keys` check and stashes nothing while a header is missing or malformed, so the problem reaches the author who can correct it, behind the scenes, and not the examiner at `save` with the learner waiting.
 - A field the examiner does write wins and is reported (`keys.overridden`), so the examiner stays the second opinion on the author (for example dropping `retests` from an item that did not test the gap).
 - A `round.json` written out in full, without `key`, is still recorded as before, so rounds prepared before this change and hand-made records keep working.
 - `save` leaves `round.json` as the examiner wrote it and writes the assembled record to `record.json`, so running `save` again gives the same result.

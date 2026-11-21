@@ -41,11 +41,16 @@ follows the round now, run it after the review instead, from the ledger the revi
    both. Without helpers, skip this step: the evidence is then checked at the session, after
    the answers.
 4. **Finish**: `python3 cme.py finish-prepare <work>/out2/data/state.json --work <work>` (add
-   `--no-evidence` when step 3 was skipped). It reads the checkers' counts, prints counts
-   only, and stashes the round into `<work>/out3` when it is clean:
+   `--no-evidence` when step 3 was skipped). It checks the key headers, reads the checkers'
+   counts, prints counts and the names of files, keys and fields only, and stashes the round
+   into `<work>/out3` when it is clean:
    - `"stashed": true` → save its one file (`store.md` §4).
    - `"revise": true` (a key is contradicted; nothing stashed yet) → start the author once
      more with Parts `revise`, wait, then run the command again with `--revised` and save.
+   - an error naming key headers (one missing or malformed; nothing stashed) → start the
+     author once more with Parts `headers` and the error's list of problems in its prompt (it
+     names no content), wait, then run the command again. Without an author, correct the
+     headers yourself (`author.md` §3).
    - an error naming an evidence file (missing, empty or unfinished) → start the checker for
      that file once more and run the command again; never pass `--no-evidence` to get past it.
 

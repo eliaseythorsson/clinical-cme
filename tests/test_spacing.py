@@ -115,6 +115,10 @@ def test_gaps_are_numbered_and_the_plan_names_the_gap_to_retest(work):
     assert gid == "G0001"
     item = next(it for it in plan(st, DAY + days(3))["items"] if it.get("topic") == "CARD-01")
     assert item["retest_gap"]["id"] == gid and item["retest_gap"]["gap"] == "missed the point"
+    # the author is told where the gap is named: the item's key header (issue #36), not the round JSON
+    how = item["retest_gap"]["how"]
+    assert "'retests: G0001' in the item's key header" in how and "author.md" in how
+    assert "round JSON" not in how and "round.json" not in how
 
 
 def test_a_good_answer_on_the_topic_that_does_not_retest_the_gap_leaves_it_open(work):

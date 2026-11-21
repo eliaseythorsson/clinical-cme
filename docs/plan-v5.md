@@ -38,7 +38,8 @@ failed save, no feedback you would distrust, no wait you would notice.
 
 - `save --work <dir>` that finds files by fixed names; append-per-part answers; structured key
   headers so `cme.py` fills `round.json` and the model adds only scores and coding; one
-  `finish-prepare` (count contradicted keys, fail loudly on a missing evidence file, stash);
+  `finish-prepare` (check key headers, count contradicted keys, fail loudly on a bad header or a
+  missing evidence file, stash);
   settings + place in one command.
 - SKILL.md to about 250 lines; prepare-only, other requests and FAQ into references.
 - Cut the database store, Drive mirror, v3 migration and `legacy/`, the capability table for other

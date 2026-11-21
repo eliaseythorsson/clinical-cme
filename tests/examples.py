@@ -227,27 +227,47 @@ def play(name, st=None):
 
 # ---- sealed files for a plan, as an author would draft them: keys outside the present blocks
 
+def key_header(kid, st, item, taken):
+    """The key header an author writes for one item of the plan (references/author.md §3)."""
+    tid = topic_for(st, item, taken)
+    taken.add(tid)
+    label = (cme.bp_topics(st).get(tid) or {}).get("label") or tid
+    lines = ["type: %s" % item["slot"], "topic: %s" % tid, "label: %s" % label, "reason: %s" % item["reason_code"]]
+    if item.get("retest_gap"):
+        lines.append("retests: %s" % item["retest_gap"]["id"])
+    if item["slot"] == "case":
+        lines += ["patient: 60F", "setting: ward", "presentation: Example presentation",
+                  "diagnosis: Example diagnosis: %s" % label]
+    else:
+        if item["slot"] == "focused":
+            lines.append("aspect: %s" % (item.get("aspect_hint") or "diagnosis"))
+        lines.append("stem_summary: Example stem %s" % kid)
+    return "<!-- key: %s -->\n%s\n<!-- /key -->" % (kid, "\n".join(lines))
+
+
 def sealed_files(st, plan):
     """{file name: text} for `plan`. Everything the learner must not see before answering sits
-    outside the present and bank blocks and carries the word SEALED."""
+    outside the present and bank blocks and carries the word SEALED; each key starts with its
+    key header."""
     labels = cme.bp_topics(st)
     shorts = [it for it in plan["items"] if it["slot"] != "case"]
     case = next((it for it in plan["items"] if it["slot"] == "case"), None)
-    files = {}
+    files, taken = {}, set()
     if shorts:
         keys = ["SEALED KEY Q%d: B (%s %s)" % (i + 1, it.get("topic") or it["domain"],
                                               (labels.get(it.get("topic")) or {}).get("label") or "")
                 for i, it in enumerate(shorts)]
+        headed = ["%s\n%s" % (key_header("Q%d" % (i + 1), st, it, taken), key) for i, (it, key) in enumerate(zip(shorts, keys))]
         stems = ["Q%d. Example stem %d. A) one B) two C) three" % (i + 1, i + 1) for i in range(len(shorts))]
         files["sealed_questions.md"] = ("%s\n<!-- present: questions -->\n%s\n<!-- /present -->\n"
-                                        % ("\n".join(keys), "\n".join(stems)))
+                                        % ("\n".join(headed), "\n".join(stems)))
         files["kit_questions.md"] = "SEALED feedback notes for the questions: %s\n" % "; ".join(keys)
     if case:
         label = (labels.get(case.get("topic")) or {}).get("label") or case["domain"]
         files["sealed_case.md"] = (
-            "SEALED KEY: Diagnosis: Example diagnosis: %s\nSEALED topic: %s\n"
+            "%s\nSEALED KEY: Diagnosis: Example diagnosis: %s\nSEALED topic: %s\n"
             "<!-- present: case -->\nAn example patient presents. What do you do first?\n<!-- /present -->\n"
             "<!-- bank -->\nExample result: sodium 140 mmol/L.\nStage 2: what now?\n<!-- /bank -->\n"
-            % (label, case.get("topic") or case["domain"]))
+            % (key_header("case", st, case, taken), label, case.get("topic") or case["domain"]))
         files["kit_case.md"] = "SEALED feedback notes for the case: Example diagnosis: %s\n" % label
     return files
