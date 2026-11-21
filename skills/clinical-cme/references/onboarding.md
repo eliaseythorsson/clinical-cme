@@ -151,7 +151,7 @@ Tell the learner (show this):
 
 - **Always-ready rounds; ask once**, where this session can create scheduled tasks: "Shall I
   add a nightly task that makes sure your next round is prepared, so it always starts at once
-  even if you close the app early?" Yes → SKILL.md, "Always-ready rounds". No is the default.
+  even if you close the app early?" Yes → `preparing.md` §4. No is the default.
 - **Reminders are optional; ask once.** "Would you like reminders for your sessions?" No (the
   default) · Yes, matching my frequency. Save with `settings --config '{"reminders": …}'`.
   Yes: if this session can create scheduled tasks, create one matching `target_sessions_per_week`

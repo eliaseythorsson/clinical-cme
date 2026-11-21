@@ -8,9 +8,12 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
 
 - `skills/clinical-cme/` — the shippable skill folder. Install by copying this folder into a
   skills directory (or zipping it for upload). Keep it free of personal/learner data.
-  - `SKILL.md` — the protocol the assistant follows in a round
+  - `SKILL.md` — the protocol the assistant follows in a round; about 250 lines, only what
+    needs judgement (presenting, grading, feedback): procedure belongs in `cme.py`, the rest
+    in `references/`
   - `scripts/cme.py` — the state engine (Python 3.8+, standard library only)
-  - `references/` — store, schema, case design, feedback, analysis, logging, review, onboarding
+  - `references/` — store, schema, case design, feedback, analysis, logging, review, onboarding,
+    preparing ahead, other requests
   - `templates/` — learner page (`page.html`), default blueprint, resource library
 - `tests/` — pytest suite for `cme.py` (`conftest.py` runs it the way the assistant does)
   - `tests/ledgers/` — synthetic example ledgers with their expected plan, schedule and applied
