@@ -650,6 +650,8 @@ def propose_theme(st, exclude=()):
         or [d for d in bp if eff.get(d, 0) > 0 and sizes[d]] or [d for d in bp if sizes[d]]
     last = (st.get("block") or {}).get("theme") if isinstance(st.get("block"), dict) else None
     skip = set(exclude) | ({last} if last else set())
+    if last and not int(st["block"].get("round") or 0) and st.get("blocks"):
+        skip.add(st["blocks"][-1].get("theme"))     # a block chosen but not begun: the one before it was the last
     pool = [d for d in pool if d not in skip] or [d for d in pool if d not in set(exclude)] or pool
     if not pool:
         return None
@@ -880,7 +882,8 @@ def plan_round(st, args, today):
     resting = {tid for tid, t in topics.items()
                if parse_date(t.get("last")) and (today - parse_date(t["last"])).days < MIN_RETURN_DAYS}
     # In each of the last two rounds: left out of this one, due or not (the drill-down limit).
-    last_rounds = [set(s.get("topics") or []) for s in ((st.get("previous") or []) + log)[-DRILLDOWN_MAX_ROUNDS:]]
+    history = (st.get("previous") or []) + log
+    last_rounds = [set(s.get("topics") or []) for s in history[-DRILLDOWN_MAX_ROUNDS:]]
     drilled = set.intersection(*last_rounds) if len(last_rounds) == DRILLDOWN_MAX_ROUNDS else set()
     recent = set()
     for s in log[-3:]:
@@ -926,6 +929,11 @@ def plan_round(st, args, today):
         # gap is a few days old; after that the gap comes back with its topic's spacing.
         gd = parse_date(g.get("date"))
         if gap_awaits_retest(g) and (gd is None or (today - gd).days >= MIN_RETURN_DAYS or args.allow_repeat):
+            gap_ids.append(tid)
+        # A gap of the theme whose topic was last tested under another theme: the pause it was
+        # given outside the theme ends with its domain's block (also after a change of theme).
+        elif theme and topics.get(tid, {}).get("domain") == theme and theme != next(
+                ((s.get("block") or {}).get("theme") for s in reversed(history) if tid in (s.get("topics") or [])), theme):
             gap_ids.append(tid)
 
     def new_candidates():

@@ -251,7 +251,9 @@ so that a block stays on its theme and one weak point does not fill the rounds:
   round straight after (two rounds in a row), it waits at least seven days.
 - Outside the theme a miss gets one targeted retest (its gap, after the rest). If the topic is
   not answered well then either, it waits at least seven days, and so after every further miss
-  until its domain is the theme: no short returns outside the theme.
+  until its domain is the theme: no short returns outside the theme. When its domain becomes
+  the theme (the next block, or the learner changing the theme), an open gap of a topic last
+  tested under another theme is ready for a retest at once, whatever is left of that wait.
 
 "Not answered well" is the bar a retest must clear: below 4, or overconfident, or a confident
 error. A good answer is never delayed by this. Where the limit lengthened an interval, `record`

@@ -220,3 +220,26 @@ def test_reflecting_later_keeps_the_limit_whatever_the_theme_is_by_then():
     reflected = cme.reflect_round(st, {}, DAY + days(4))["topics"]["CARD-01"]
     assert recorded == reflected and reflected["drilldown_limit"] is True
     assert due(st, "CARD-01") == DAY + days(3 + PAUSE)
+
+
+def test_a_change_of_theme_makes_the_new_themes_topics_drillable_from_the_next_round():
+    st = new_ledger("CARD")
+    play(st, DAY, [mcq("RENAL-02", 2)], ["RENAL-02"])
+    play(st, DAY + days(3), [mcq("RENAL-02", 2, retests="G0001")], ["RENAL-02"])      # paused: outside the theme
+    play(st, DAY + days(5), [mcq("CARD-01", 5)])
+    assert due(st, "RENAL-02") == DAY + days(3 + PAUSE)
+    assert "RENAL-02" not in planned(st, DAY + days(7))
+    assert cme.change_theme(st, "RENAL")["changed"] is True
+    item = planned(st, DAY + days(7))["RENAL-02"]            # its domain's block: the pause is over
+    assert item["share"] == "theme" and item["retest_gap"]["id"] == "G0001"
+    # a miss now counts in the theme: back after the rest, and after two rounds in a row it pauses
+    res = play(st, DAY + days(7), [mcq("RENAL-02", 2, retests="G0001")], ["RENAL-02"])
+    assert "drilldown_limit" not in res["RENAL-02"] and due(st, "RENAL-02") == DAY + days(10)
+    res = play(st, DAY + days(10), [mcq("RENAL-02", 2, retests="G0001")], ["RENAL-02"])
+    assert res["RENAL-02"]["drilldown_limit"] is True and due(st, "RENAL-02") == DAY + days(10 + PAUSE)
+    # that pause, given in the theme, stands; and the old theme's topics are now outside it
+    play(st, DAY + days(13), [mcq("RENAL-03", 5)])
+    assert "RENAL-02" not in planned(st, DAY + days(16))
+    play(st, DAY + days(16), [mcq("CARD-02", 2)], ["CARD-02"])
+    res = play(st, DAY + days(19), [mcq("CARD-02", 2, retests="G0002")], ["CARD-02"])
+    assert res["CARD-02"]["drilldown_limit"] is True and st["sessions"][-1]["block"]["theme"] == "RENAL"
