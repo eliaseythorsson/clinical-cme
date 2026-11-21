@@ -203,9 +203,11 @@ def test_opening_line_names_the_theme_and_position_and_nothing_else(name, work):
     names = {info["name"] for info in st["blueprint"].values()}
     m = re.match(r"^Block: (.+), round (\d+) of 12$", out["block"]["line"])
     assert m and m.group(1) in names and m.group(2) == "1"
-    assert out["block"] == {k: v for k, v in plan["block"].items() if k != "mix"}
+    # a block that starts also gives its reason (issue #17): domain level, like the theme itself
+    assert out["block"]["starts"] is True and out["block"]["reason"].startswith(m.group(1) + ": ")
+    assert {k: v for k, v in out["block"].items() if k != "reason"} == {k: v for k, v in plan["block"].items() if k != "mix"}
     assert out["plan"]["block"] == out["block"]["line"]
-    assert set(out["block"]) == {"theme", "name", "round", "length", "starts", "line"}
+    assert set(out["block"]) == {"theme", "name", "round", "length", "starts", "line", "reason"}
     labels = {it["label"] for it in plan["items"] if it.get("label")}
     assert labels and not any(label in json.dumps(out) for label in labels)
 

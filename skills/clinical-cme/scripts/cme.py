@@ -39,6 +39,9 @@ Other:
   snooze  STATE --days N --out NEXT
   settings STATE [--config JSON] [--profile JSON] [--blueprint F] --out-dir D
                                                   change settings and put the ledger in the layout, ready to save
+  theme   STATE [--set DOMAIN | --another] --out-dir D
+                                                  the learner changes the block's theme (a named domain, or the
+                                                  next proposal); alone: the block and the domains to choose from
   place   STATE [--index IDX] --out-dir D          put a state from review/snooze/init in the layout
   init    --profile JSON --config JSON --blueprint FILE(.json|.md) --out STATE
   import  EXPORT.json --out-dir D                 page export {state, sessions, reviews} -> file layout
@@ -713,9 +716,82 @@ def block_status(st):
     if b is None:
         return None
     out = {"theme": b["theme"], "name": domain_name(st, b["theme"]), "round": b["round"] + 1,
-           "length": b["length"], "starts": starts}
+           "length": b["length"], "starts": starts or b["round"] == 0}   # round 0: chosen, not yet begun
     out["line"] = block_line(st, out)
     return out
+
+
+# ---- changing the theme (issue #17)
+
+def block_end(st):
+    """After the last round of a block: the proposal for the next one, with the one line to tell
+    the learner (theme, reason, how to change it). None while the block has rounds to come."""
+    b = st.get("block")
+    if not isinstance(b, dict) or not b.get("theme") or block_open(st):
+        return None
+    p = propose_theme(st)
+    if not p:
+        return None
+    return {"finished": domain_name(st, b["theme"]), "theme": p["theme"], "name": domain_name(st, p["theme"]),
+            "reason": p["reason"],
+            "line": 'Block finished: %s. Next block: %s. To change it, say "pick another" or name an area.'
+                    % (domain_name(st, b["theme"]), p["reason"])}
+
+
+def find_domain(st, text):
+    """The blueprint domain the learner named: its id, its name, or a part of either that fits
+    one domain only."""
+    bp = st.get("blueprint") or {}
+    want = (text or "").strip().lower()
+    names = {d: str((info or {}).get("name") or d).lower() for d, info in bp.items()}
+    hits = [d for d in bp if want and (d.lower() == want or names[d] == want)] \
+        or [d for d in bp if want and (want in names[d] or d.lower().startswith(want))]
+    if len(hits) != 1:
+        die("%s domain for %r: the theme must be one of %s"
+            % ("more than one" if hits else "no", text,
+               "; ".join("%s (%s)" % (d, domain_name(st, d)) for d in (hits or bp))))
+    return hits[0]
+
+
+def change_theme(st, theme=None, another=False):
+    """The learner changes the theme, at the end of a block or in the middle of one: `theme` is
+    the domain they named, `another` asks for the next proposal instead. The block the next
+    round would have belonged to is replaced by a new one at round 0 (start_block files it if
+    any round was recorded in it). Themes turned down with "pick another" are remembered until
+    the new block's first round, so asking again moves on down the ranking.
+    Returns {"changed", "was", "reason", "warnings"}."""
+    cur, _ = next_block(st)
+    if cur is None:
+        die("the ledger has no blueprint: there is no theme to change")
+    old = st.get("block") if isinstance(st.get("block"), dict) else {}
+    is_open = block_open(st) is not None
+    pending = is_open and int(old.get("round") or 0) == 0
+    was = {"theme": cur["theme"], "name": domain_name(st, cur["theme"]),
+           "round": int(cur.get("round") or 0), "length": cur["length"], "begun": is_open and not pending}
+    warnings = []
+    declined = [d for d in (old.get("declined") or []) if d != cur["theme"]] if pending else []
+    if another:
+        declined.append(cur["theme"])
+        p = propose_theme(st, exclude=declined)
+        if p["theme"] in declined:              # every domain turned down: start again from the top
+            declined = [cur["theme"]]
+            p = propose_theme(st, exclude=declined)
+        theme, reason = p["theme"], p["reason"]
+    else:
+        theme = find_domain(st, theme)
+        n = len(((st.get("blueprint") or {}).get(theme) or {}).get("topics") or {})
+        if not n:
+            die("%s has no topics in the blueprint, so it cannot be a theme" % domain_name(st, theme))
+        if theme == cur["theme"] and is_open:
+            return {"changed": False, "was": was, "reason": old.get("reason"), "warnings": warnings}
+        if n < MIN_THEME_TOPICS:
+            warnings.append("%s has only %d topic%s: its rounds will revisit them on other decision points"
+                            % (domain_name(st, theme), n, "" if n == 1 else "s"))
+        reason = "%s: your choice" % domain_name(st, theme)
+    b = start_block(st, theme, "learner", reason)
+    if declined:
+        b["declined"] = declined
+    return {"changed": theme != cur["theme"] or not is_open, "was": was, "reason": reason, "warnings": warnings}
 
 
 def block_mix(shorts, n):
@@ -2055,6 +2131,51 @@ def cmd_settings(args):
     print(json.dumps(out, ensure_ascii=False))
 
 
+def cmd_theme(args):
+    """The learner changes the theme of the block: `--set DOMAIN` (an id, a name or part of one)
+    or `--another` (the next proposal). With neither, prints the block, the proposal and the
+    domains to choose from, and writes nothing. Like `settings`, --out-dir puts the changed
+    ledger straight into the file layout."""
+    today = today_from(args)
+    st = load_json(args.state)
+    check_schema(st)
+    if not args.set and not args.another:
+        p = propose_theme(st) or {"ranking": []}
+        bp = st.get("blueprint") or {}
+        order = p["ranking"] + [d for d in bp if d not in p["ranking"]]
+        print(json.dumps({"ok": True, "changed": False, "block": status_block(st), "next_block": block_end(st),
+                          "choices": [{"id": d, "name": domain_name(st, d),
+                                       "topics": len((bp[d] or {}).get("topics") or {})} for d in order]},
+                         ensure_ascii=False))
+        return
+    if args.set and args.another:
+        die("theme takes --set DOMAIN or --another, not both")
+    if not args.out and not args.out_dir:
+        die("theme needs --out-dir STORE_FILES (the changed ledger in the file layout, ready to save) or --out FILE")
+    res = change_theme(st, theme=args.set, another=args.another)
+    block = status_block(st)
+    out = {"ok": True, "changed": res["changed"], "block": block, "was": res["was"],
+           "say": ("New block: %s. Round 1 of %d." % (res["reason"], block["length"])) if res["changed"]
+                  else "%s is already the theme. %s." % (block["name"], block["line"])}
+    if res["warnings"]:
+        out["warnings"] = res["warnings"]
+    if res["changed"]:
+        st["gen"] = int(st.get("gen") or 0) + 1
+        st["updated"] = iso(today)
+        out["gen"] = st["gen"]
+        if args.out:
+            save_json(st, args.out)
+            out["out"] = args.out
+        if args.out_dir:
+            placed = place_state(st, args.out_dir, index=args.index or beside_ledger(args.state, "index.json"),
+                                 page=args.page or beside_ledger(args.state, "index.html"))
+            out["warnings"] = list(out.get("warnings") or []) + list(placed.get("warnings") or [])
+            out.update({k: v for k, v in placed.items() if k not in ("ok", "gen", "warnings")})
+            if not out["warnings"]:
+                del out["warnings"]
+    print(json.dumps(out, ensure_ascii=False))
+
+
 # ---------------------------------------------------------------- init, blueprint
 
 def cmd_init(args):
@@ -2219,7 +2340,7 @@ def status_dict(st, path, today):
         "pending_errata_count": len(st.get("pending_errata") or []),
         "drills_active": len(st.get("drills") or []),
         # the block the next round belongs to; `line` is what the opening line says about it
-        "block": block_status(st),
+        "block": status_block(st),
         "round": {"mcqs": cfg.get("mcqs", 3), "focused": cfg.get("focused", 0), "case": bool(cfg.get("case", True)),
                   "minutes": cfg.get("session_minutes"), "item_order": cfg.get("item_order")},
         "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
@@ -2231,6 +2352,15 @@ def status_dict(st, path, today):
         # true until the first save with version 4.3: tell the learner once about the speed settings
         "speed_settings_new": "helpers" not in cfg or "prepare_ahead" not in cfg,
     }
+
+
+def status_block(st):
+    """block_status, with the reason for the theme while the block has not begun (the opening
+    line of its first round gives it)."""
+    out = block_status(st)
+    if out and out["starts"]:
+        out["reason"] = next_block(st)[0].get("reason")
+    return out
 
 
 def cmd_start(args):
@@ -3116,6 +3246,8 @@ def cmd_save(args):
         rec["keys"] = keys
     if work:                        # the round record as recorded, beside the examiner's round.json
         save_json(rnd, os.path.join(work, RECORD_FILE))
+    if block_end(st):
+        rec["next_block"] = block_end(st)       # tell the learner its `line` in the closing message
     rec["files"] = files
     rec["warnings"] = list(rec.get("warnings") or []) + warnings
     rec["transcript_chars"] = len(md)
@@ -3189,6 +3321,8 @@ def cmd_close(args):
         ref["page_upgraded"] = pf["page_upgrade"]
     if page_warn:
         ref["warnings"] = list(ref.get("warnings") or []) + page_warn
+    if block_end(st):
+        ref["next_block"] = block_end(st)       # tell the learner its `line` in the closing message
     ref["files"] = files
     print(json.dumps(ref, indent=1, ensure_ascii=False))
 
@@ -3437,6 +3571,9 @@ def main(argv=None):
     s = sub.add_parser("settings"); s.add_argument("state"); s.add_argument("--config"); s.add_argument("--profile")
     s.add_argument("--blueprint"); s.add_argument("--out"); s.add_argument("--out-dir"); s.add_argument("--index")
     s.add_argument("--page"); s.set_defaults(fn=cmd_settings)
+    s = sub.add_parser("theme"); s.add_argument("state"); s.add_argument("--set"); s.add_argument("--another", action="store_true")
+    s.add_argument("--out"); s.add_argument("--out-dir"); s.add_argument("--index"); s.add_argument("--page")
+    s.set_defaults(fn=cmd_theme)
     s = sub.add_parser("init"); s.add_argument("--profile", default="{}"); s.add_argument("--config", default="{}")
     s.add_argument("--blueprint", required=True); s.add_argument("--out", required=True); s.set_defaults(fn=cmd_init)
     s = sub.add_parser("blueprint-md"); s.add_argument("file"); s.add_argument("--out", required=True); s.set_defaults(fn=cmd_blueprint_md)

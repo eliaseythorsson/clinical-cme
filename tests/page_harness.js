@@ -49,6 +49,8 @@ setTimeout(() => {
   const ids = {};
   for (const [id, e] of Object.entries(byId)) ids[id] = String(e.textContent || "") + String(e.innerHTML || "");
   const text = all.map(e => String(e.textContent || "") + "\n" + String(e.innerHTML || "")).join("\n");
-  process.stdout.write(JSON.stringify({text, ids}));
+  const styles = {};
+  for (const [id, e] of Object.entries(byId)) if (Object.keys(e.style).length) styles[id] = e.style;
+  process.stdout.write(JSON.stringify({text, ids, styles}));
   process.exit(0);
 }, 200);

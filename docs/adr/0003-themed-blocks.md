@@ -16,6 +16,17 @@ The theme is shown to the learner ("Block: gastroenterology, round 4 of 12"). Th
 - A round prepared ahead is used only for the round of the block it was planned for. A round prepared by a version without blocks is set aside once.
 - The learner changing the theme (issue #17) builds on `propose_theme` (theme, one-line reason, ranking) and `start_block` (a chosen theme, filing the block it replaces).
 
+## Changing the theme as built (issue #17)
+
+- The proposal is said, not stored. The last round of a block prints the next theme with its reason in one line (`next_block.line`, from `save` and `close`); the ledger is only written if the learner changes it. A learner who says nothing gets the proposed block, as before.
+- A change always starts a new block of 12 at round 0. Mid-block, the block left behind ends where it is and is filed with the rounds it had. The alternative, relabelling the running block and keeping its count, was rejected: "round 7 of 12" on a theme with one round in it would be untrue, and the shares are owed over a block of one theme.
+- A theme left mid-block counts as having had its block, so it is damped in the next proposals like any other. The learner turned it down; proposing it again at once would undo that. Its tested topics still come back as due repeats.
+- "Pick another" walks down the same deterministic ranking. The themes turned down are kept in the pending block (`declined`) until its first round, so asking twice does not alternate between two domains.
+- The learner's choice beats the size rule: a domain with fewer than four topics is never proposed but may be chosen, with a warning. The planner already revisits a theme's topics on other decision points when it runs out.
+- One command, `theme`, separate from `settings`: it changes the block, not a setting, and it has to print the line to say. It places the ledger the way `settings --out-dir` does, which also empties the prepared round (it was written for the old theme).
+- The change is made between rounds. A round in progress is finished on the theme it was planned on; the engine cannot see a round in progress from the ledger, so this is a rule for the examiner (`state_schema.md` §4.1), not a check.
+- The page shows the theme and a bar for the rounds done. It does not show the proposal for the next block: computing it there would copy the ranking into the page, and the close message and the next opening line already say it.
+
 ## Spacing rules as built (issue #15)
 
 - The three-day minimum applies to every tested topic, not only to misses: the calibration rules (overconfident, underconfident) could otherwise undercut it. It is a floor on the interval, and the planner also refuses a topic tested in the last two days, so ledgers that already hold a next-day due date need no migration.

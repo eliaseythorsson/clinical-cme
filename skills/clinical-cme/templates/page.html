@@ -120,6 +120,7 @@ h1{font-weight:600;font-size:1.75rem;letter-spacing:-.025em;line-height:1.1;marg
 .score b{font-weight:600;font-size:.95rem;font-variant-numeric:tabular-nums;line-height:1}
 .meter{width:52px;height:4px;border-radius:4px;background:var(--line);overflow:hidden}
 .meter i{display:block;height:100%;border-radius:4px;background:var(--faint)}
+.block-meter{width:120px;margin-top:6px} .block-meter i{background:var(--accent)}
 .good .meter i,.meter.good i{background:var(--good)} .warn .meter i,.meter.warn i{background:var(--warn)} .crit .meter i,.meter.crit i{background:var(--crit)}
 .score.good b{color:var(--good)} .score.warn b{color:var(--warn)} .score.crit b{color:var(--crit)}
 
@@ -211,6 +212,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
       <h1>Clinical CME</h1>
       <div class="sub" id="who">Your rounds, ledger and log</div>
       <div class="sub" id="block" hidden></div>
+      <div class="meter block-meter" id="block-meter" role="progressbar" aria-label="Rounds done in this block" hidden><i id="block-bar"></i></div>
     </div>
     <button class="btn" id="export" type="button" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg>
@@ -398,8 +400,12 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     if (b && b.theme) {
       const name = ((state.blueprint || {})[b.theme] || {}).name || b.theme;
       const done = +b.round || 0, len = +b.length || 12;
-      $("block").textContent = "Block: " + name + " · " + (done >= len ? "finished (" + len + " rounds)" : done + " of " + len + " rounds done");
+      $("block").textContent = "Block: " + name + " · " + (done >= len ? "finished (" + len + " rounds); the next block starts with your next round"
+        : !done ? "starts with your next round (" + len + " rounds)" : done + " of " + len + " rounds done");
       $("block").hidden = false;
+      $("block-bar").style.width = Math.round(100 * Math.min(done, len) / len) + "%";
+      $("block-meter").setAttribute("aria-valuenow", Math.min(done, len)); $("block-meter").setAttribute("aria-valuemax", len);
+      $("block-meter").hidden = false;
     }
     $("c-progress").textContent = Object.keys(topics).length || "";
   }
