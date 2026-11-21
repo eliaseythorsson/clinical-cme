@@ -111,6 +111,16 @@
    "score_sum": 19.0,
    "sessions": 5
   },
+  "block": {
+   "chosen": "auto",
+   "last": "2026-11-20",
+   "length": 12,
+   "reason": "Pulmonary & Critical Care: mean 5.0 of 5 over 1 topic tested, not yet a theme",
+   "round": 1,
+   "started": "2026-11-20",
+   "theme": "PULM"
+  },
+  "blocks": [],
   "domain_self_ratings": {
    "GEN": 4.3,
    "GI": 2.7,
@@ -131,7 +141,7 @@
     "source": [
      "graded"
     ],
-    "topic": "RHEUM-04"
+    "topic": "PULM-06"
    }
   ],
   "gen": 10,
@@ -161,12 +171,17 @@
    }
   ],
   "session": {
+   "block": {
+    "length": 12,
+    "round": 1,
+    "theme": "PULM"
+   },
    "case": {
-    "diagnosis": "Example diagnosis: Bowel obstruction, ischemia",
+    "diagnosis": "Example diagnosis: Sepsis & septic shock",
     "patient": "Example patient 5",
     "presentation": "Example presentation 5",
     "setting": "ward",
-    "topic": "GI-06"
+    "topic": "PULM-07"
    },
    "date": "2026-11-20",
    "drill": null,
@@ -196,8 +211,7 @@
      },
      "confidence": "unsure",
      "mastery": 5,
-     "retests": "GI-06",
-     "topic": "GI-06",
+     "topic": "PULM-07",
      "type": "case"
     },
     {
@@ -210,8 +224,9 @@
      },
      "confidence": "sure",
      "mastery": 5,
+     "retests": "GI-06",
      "stem": "Example focused stem 5.1",
-     "topic": "RENAL-06",
+     "topic": "GI-06",
      "type": "focused"
     },
     {
@@ -229,7 +244,7 @@
      "correct": false,
      "mastery": 2,
      "stem": "Example MCQ stem 5.2",
-     "topic": "RHEUM-04",
+     "topic": "PULM-06",
      "type": "mcq"
     },
     {
@@ -240,7 +255,7 @@
      "correct": true,
      "mastery": 4,
      "stem": "Example MCQ stem 5.3",
-     "topic": "EMRG-02",
+     "topic": "PULM-04",
      "type": "mcq"
     }
    ],
@@ -260,16 +275,16 @@
    ],
    "title": "Example round S0005",
    "topics": [
+    "PULM-07",
     "GI-06",
-    "RENAL-06",
-    "RHEUM-04",
-    "EMRG-02"
+    "PULM-06",
+    "PULM-04"
    ],
    "why": {
-    "EMRG-02": "new",
     "GI-06": "due",
-    "RENAL-06": "due",
-    "RHEUM-04": "due"
+    "PULM-04": "new",
+    "PULM-06": "new",
+    "PULM-07": "due"
    }
   },
   "session_ids": [
@@ -394,16 +409,25 @@
    "score_sum": 19.0,
    "sessions": 5
   },
+  "block": {
+   "chosen": "auto",
+   "last": "2026-11-20",
+   "length": 12,
+   "reason": "Pulmonary & Critical Care: mean 5.0 of 5 over 1 topic tested, not yet a theme",
+   "round": 1,
+   "started": "2026-11-20",
+   "theme": "PULM"
+  },
+  "blocks": [],
   "domain_self_ratings": {
-   "EMRG": 5,
    "GEN": 4.3,
-   "GI": 2.5,
+   "GI": 3.5,
    "HEME": 4.0,
    "ID": 4.3,
    "NEURO": 4,
-   "PULM": 2.0,
+   "PULM": 3.0,
    "RENAL": 5.0,
-   "RHEUM": 3.3
+   "RHEUM": 4
   },
   "gaps": [
    {
@@ -415,7 +439,7 @@
     "source": [
      "graded"
     ],
-    "topic": "RHEUM-04"
+    "topic": "PULM-06"
    }
   ],
   "gen": 11,
@@ -445,12 +469,17 @@
    }
   ],
   "session": {
+   "block": {
+    "length": 12,
+    "round": 1,
+    "theme": "PULM"
+   },
    "case": {
-    "diagnosis": "Example diagnosis: Bowel obstruction, ischemia",
+    "diagnosis": "Example diagnosis: Sepsis & septic shock",
     "patient": "Example patient 5",
     "presentation": "Example presentation 5",
     "setting": "ward",
-    "topic": "GI-06"
+    "topic": "PULM-07"
    },
    "date": "2026-11-20",
    "drill": null,
@@ -480,8 +509,7 @@
      },
      "confidence": "unsure",
      "mastery": 5,
-     "retests": "GI-06",
-     "topic": "GI-06",
+     "topic": "PULM-07",
      "type": "case"
     },
     {
@@ -494,8 +522,9 @@
      },
      "confidence": "sure",
      "mastery": 5,
+     "retests": "GI-06",
      "stem": "Example focused stem 5.1",
-     "topic": "RENAL-06",
+     "topic": "GI-06",
      "type": "focused"
     },
     {
@@ -513,7 +542,7 @@
      "correct": false,
      "mastery": 2,
      "stem": "Example MCQ stem 5.2",
-     "topic": "RHEUM-04",
+     "topic": "PULM-06",
      "type": "mcq"
     },
     {
@@ -524,7 +553,7 @@
      "correct": true,
      "mastery": 4,
      "stem": "Example MCQ stem 5.3",
-     "topic": "EMRG-02",
+     "topic": "PULM-04",
      "type": "mcq"
     }
    ],
@@ -540,10 +569,10 @@
    },
    "score": 3.75,
    "self_comfort": {
-    "EMRG-02": 5,
-    "GI-06": 2,
-    "RENAL-06": 5,
-    "RHEUM-04": 2
+    "GI-06": 5,
+    "PULM-04": 5,
+    "PULM-06": 2,
+    "PULM-07": 2
    },
    "self_performance": 3,
    "started_at": null,
@@ -553,16 +582,16 @@
    ],
    "title": "Example round S0005",
    "topics": [
+    "PULM-07",
     "GI-06",
-    "RENAL-06",
-    "RHEUM-04",
-    "EMRG-02"
+    "PULM-06",
+    "PULM-04"
    ],
    "why": {
-    "EMRG-02": "new",
     "GI-06": "due",
-    "RENAL-06": "due",
-    "RHEUM-04": "due"
+    "PULM-04": "new",
+    "PULM-06": "new",
+    "PULM-07": "due"
    }
   },
   "session_ids": [
@@ -585,15 +614,6 @@
   "score": 3.75,
   "session_id": "S0005",
   "topics": {
-   "EMRG-02": {
-    "calibration": "not_rated",
-    "comfort": null,
-    "due": "2026-11-23",
-    "interval_days": 3,
-    "mastery": 3.0,
-    "misconception": false,
-    "step": 0
-   },
    "GI-06": {
     "calibration": "not_rated",
     "comfort": null,
@@ -605,16 +625,16 @@
     "misconception": false,
     "step": 1
    },
-   "RENAL-06": {
+   "PULM-04": {
     "calibration": "not_rated",
     "comfort": null,
-    "due": "2026-11-27",
-    "interval_days": 7,
-    "mastery": 5.0,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 3.0,
     "misconception": false,
-    "step": 2
+    "step": 0
    },
-   "RHEUM-04": {
+   "PULM-06": {
     "calibration": "not_rated",
     "comfort": null,
     "due": "2026-11-23",
@@ -622,6 +642,15 @@
     "mastery": 2.0,
     "misconception": false,
     "step": 0
+   },
+   "PULM-07": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-27",
+    "interval_days": 7,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 2
    }
   },
   "warnings": []
@@ -633,18 +662,9 @@
   "open_gaps": 1,
   "session_id": "S0005",
   "topics": {
-   "EMRG-02": {
-    "calibration": "overconfident",
-    "comfort": 5,
-    "due": "2026-11-23",
-    "interval_days": 3,
-    "mastery": 3.0,
-    "misconception": false,
-    "step": 0
-   },
    "GI-06": {
-    "calibration": "underconfident",
-    "comfort": 2,
+    "calibration": "aligned",
+    "comfort": 5,
     "due": "2026-11-23",
     "gap_resolved": true,
     "gap_retested": true,
@@ -653,16 +673,16 @@
     "misconception": false,
     "step": 1
    },
-   "RENAL-06": {
-    "calibration": "aligned",
+   "PULM-04": {
+    "calibration": "overconfident",
     "comfort": 5,
-    "due": "2026-11-27",
-    "interval_days": 7,
-    "mastery": 5.0,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 3.0,
     "misconception": false,
-    "step": 2
+    "step": 0
    },
-   "RHEUM-04": {
+   "PULM-06": {
     "calibration": "aligned",
     "comfort": 2,
     "due": "2026-11-23",
@@ -670,6 +690,15 @@
     "mastery": 2.0,
     "misconception": false,
     "step": 0
+   },
+   "PULM-07": {
+    "calibration": "underconfident",
+    "comfort": 2,
+    "due": "2026-11-24",
+    "interval_days": 4,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 2
    }
   },
   "warnings": []
@@ -679,15 +708,15 @@
   "performance": 3,
   "solid": "Example: what felt solid in round 5",
   "topic_comfort": {
-   "EMRG-02": 5,
-   "GI-06": 2,
-   "RENAL-06": 5,
-   "RHEUM-04": 2
+   "GI-06": 5,
+   "PULM-04": 5,
+   "PULM-06": 2,
+   "PULM-07": 2
   }
  },
  "round": {
   "case": {
-   "diagnosis": "Example diagnosis: Bowel obstruction, ischemia",
+   "diagnosis": "Example diagnosis: Sepsis & septic shock",
    "patient": "Example patient 5",
    "presentation": "Example presentation 5",
    "setting": "ward"
@@ -697,7 +726,7 @@
    {
     "gap": "Example gap 5.2: missed the decision point",
     "source": "graded",
-    "topic": "RHEUM-04"
+    "topic": "PULM-06"
    }
   ],
   "items": [
@@ -721,8 +750,7 @@
     },
     "confidence": "unsure",
     "mastery": 5,
-    "retests": "GI-06",
-    "topic": "GI-06",
+    "topic": "PULM-07",
     "type": "case"
    },
    {
@@ -735,8 +763,9 @@
     },
     "confidence": "sure",
     "mastery": 5,
+    "retests": "GI-06",
     "stem_summary": "Example focused stem 5.1",
-    "topic": "RENAL-06",
+    "topic": "GI-06",
     "type": "focused"
    },
    {
@@ -753,7 +782,7 @@
     "correct": false,
     "mastery": 2,
     "stem_summary": "Example MCQ stem 5.2",
-    "topic": "RHEUM-04",
+    "topic": "PULM-06",
     "type": "mcq"
    },
    {
@@ -764,17 +793,17 @@
     "correct": true,
     "mastery": 4,
     "stem_summary": "Example MCQ stem 5.3",
-    "topic": "EMRG-02",
+    "topic": "PULM-04",
     "type": "mcq"
    }
   ],
   "log_id": "S0005",
   "minutes": 26,
   "selection_reasons": {
-   "EMRG-02": "new",
    "GI-06": "due",
-   "RENAL-06": "due",
-   "RHEUM-04": "due"
+   "PULM-04": "new",
+   "PULM-06": "new",
+   "PULM-07": "due"
   },
   "summary": "Synthetic round 5 of an example ledger.",
   "tags": [

@@ -27,6 +27,8 @@ STATE = {
     "sessions": [{"id": "S0001", "date": "2020-03-04", "title": "PAST-SESSION-TITLE", "score": 3.5},
                  {"id": "S0002", "date": "2020-03-05", "title": "OTHER-PAST-SESSION", "score": 4.5}],
     "review": {"next_due": "2031-01-01"},
+    "blueprint": {"AAA": {"name": "Alphology", "weight": 1.0, "topics": {"AAA-01": "Alpha topic", "AAA-09": "UNTESTED-TOPIC"}}},
+    "block": {"theme": "AAA", "round": 4, "length": 12, "started": "2020-01-02", "reason": "SECRET-REASON"},
 }
 
 
@@ -124,3 +126,8 @@ def test_rendered_page_keeps_history_scores_and_progress(rendered):
     for label in ("Alpha topic", "Beta topic", "Gamma topic"):
         assert label in ids["topics"]
     assert ids["t-review"] not in ("", "–")
+
+
+def test_rendered_page_shows_the_theme_of_the_block_and_no_coming_topic(rendered):
+    assert rendered["ids"]["block"] == "Block: Alphology · 4 of 12 rounds done"
+    assert "UNTESTED-TOPIC" not in rendered["text"] and "SECRET-REASON" not in rendered["text"]

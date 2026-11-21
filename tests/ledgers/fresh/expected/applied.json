@@ -105,18 +105,33 @@
    "score_sum": 4.75,
    "sessions": 1
   },
+  "block": {
+   "chosen": "auto",
+   "last": "2026-11-20",
+   "length": 12,
+   "reason": "Cardiology: nothing tested yet, not yet a theme",
+   "round": 1,
+   "started": "2026-11-20",
+   "theme": "CARD"
+  },
+  "blocks": [],
   "domain_self_ratings": {},
   "gaps": [],
   "gen": 2,
   "next_id": "S0002",
   "resolved": [],
   "session": {
+   "block": {
+    "length": 12,
+    "round": 1,
+    "theme": "CARD"
+   },
    "case": {
-    "diagnosis": "Example diagnosis: Anaphylaxis (see RHEUM-04)",
+    "diagnosis": "Example diagnosis: Venous thromboembolism — PE (see also PULM/HEME)",
     "patient": "Example patient 1",
     "presentation": "Example presentation 1",
     "setting": "ward",
-    "topic": "EMRG-01"
+    "topic": "CARD-08"
    },
    "date": "2026-11-20",
    "drill": null,
@@ -146,7 +161,7 @@
      },
      "confidence": "unsure",
      "mastery": 4,
-     "topic": "EMRG-01",
+     "topic": "CARD-08",
      "type": "case"
     },
     {
@@ -157,7 +172,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 1.1",
-     "topic": "CARD-07",
+     "topic": "CARD-01",
      "type": "mcq"
     },
     {
@@ -168,7 +183,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 1.2",
-     "topic": "PULM-04",
+     "topic": "CARD-02",
      "type": "mcq"
     },
     {
@@ -179,7 +194,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 1.3",
-     "topic": "HEME-08",
+     "topic": "CARD-06",
      "type": "mcq"
     }
    ],
@@ -199,16 +214,16 @@
    ],
    "title": "Example round S0001",
    "topics": [
-    "EMRG-01",
-    "CARD-07",
-    "PULM-04",
-    "HEME-08"
+    "CARD-08",
+    "CARD-01",
+    "CARD-02",
+    "CARD-06"
    ],
    "why": {
-    "CARD-07": "new",
-    "EMRG-01": "new",
-    "HEME-08": "new",
-    "PULM-04": "new"
+    "CARD-01": "new",
+    "CARD-02": "new",
+    "CARD-06": "new",
+    "CARD-08": "new"
    }
   },
   "session_ids": [
@@ -323,23 +338,35 @@
    "score_sum": 4.75,
    "sessions": 1
   },
+  "block": {
+   "chosen": "auto",
+   "last": "2026-11-20",
+   "length": 12,
+   "reason": "Cardiology: nothing tested yet, not yet a theme",
+   "round": 1,
+   "started": "2026-11-20",
+   "theme": "CARD"
+  },
+  "blocks": [],
   "domain_self_ratings": {
-   "CARD": 4,
-   "EMRG": 4,
-   "HEME": 5,
-   "PULM": 2
+   "CARD": 3.9
   },
   "gaps": [],
   "gen": 3,
   "next_id": "S0002",
   "resolved": [],
   "session": {
+   "block": {
+    "length": 12,
+    "round": 1,
+    "theme": "CARD"
+   },
    "case": {
-    "diagnosis": "Example diagnosis: Anaphylaxis (see RHEUM-04)",
+    "diagnosis": "Example diagnosis: Venous thromboembolism — PE (see also PULM/HEME)",
     "patient": "Example patient 1",
     "presentation": "Example presentation 1",
     "setting": "ward",
-    "topic": "EMRG-01"
+    "topic": "CARD-08"
    },
    "date": "2026-11-20",
    "drill": null,
@@ -369,7 +396,7 @@
      },
      "confidence": "unsure",
      "mastery": 4,
-     "topic": "EMRG-01",
+     "topic": "CARD-08",
      "type": "case"
     },
     {
@@ -380,7 +407,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 1.1",
-     "topic": "CARD-07",
+     "topic": "CARD-01",
      "type": "mcq"
     },
     {
@@ -391,7 +418,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 1.2",
-     "topic": "PULM-04",
+     "topic": "CARD-02",
      "type": "mcq"
     },
     {
@@ -402,7 +429,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 1.3",
-     "topic": "HEME-08",
+     "topic": "CARD-06",
      "type": "mcq"
     }
    ],
@@ -418,10 +445,10 @@
    },
    "score": 4.75,
    "self_comfort": {
-    "CARD-07": 4,
-    "EMRG-01": 4,
-    "HEME-08": 5,
-    "PULM-04": 2
+    "CARD-01": 4,
+    "CARD-02": 2,
+    "CARD-06": 5,
+    "CARD-08": 4
    },
    "self_performance": 3,
    "started_at": null,
@@ -431,16 +458,16 @@
    ],
    "title": "Example round S0001",
    "topics": [
-    "EMRG-01",
-    "CARD-07",
-    "PULM-04",
-    "HEME-08"
+    "CARD-08",
+    "CARD-01",
+    "CARD-02",
+    "CARD-06"
    ],
    "why": {
-    "CARD-07": "new",
-    "EMRG-01": "new",
-    "HEME-08": "new",
-    "PULM-04": "new"
+    "CARD-01": "new",
+    "CARD-02": "new",
+    "CARD-06": "new",
+    "CARD-08": "new"
    }
   },
   "session_ids": [
@@ -459,7 +486,7 @@
   "score": 4.75,
   "session_id": "S0001",
   "topics": {
-   "CARD-07": {
+   "CARD-01": {
     "calibration": "not_rated",
     "comfort": null,
     "due": "2026-11-23",
@@ -468,30 +495,30 @@
     "misconception": false,
     "step": 1
    },
-   "EMRG-01": {
+   "CARD-02": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "CARD-06": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "CARD-08": {
     "calibration": "not_rated",
     "comfort": null,
     "due": "2026-11-23",
     "interval_days": 3,
     "mastery": 4.0,
-    "misconception": false,
-    "step": 1
-   },
-   "HEME-08": {
-    "calibration": "not_rated",
-    "comfort": null,
-    "due": "2026-11-23",
-    "interval_days": 3,
-    "mastery": 5.0,
-    "misconception": false,
-    "step": 1
-   },
-   "PULM-04": {
-    "calibration": "not_rated",
-    "comfort": null,
-    "due": "2026-11-23",
-    "interval_days": 3,
-    "mastery": 5.0,
     "misconception": false,
     "step": 1
    }
@@ -505,7 +532,7 @@
   "open_gaps": 0,
   "session_id": "S0001",
   "topics": {
-   "CARD-07": {
+   "CARD-01": {
     "calibration": "aligned",
     "comfort": 4,
     "due": "2026-11-23",
@@ -514,16 +541,16 @@
     "misconception": false,
     "step": 1
    },
-   "EMRG-01": {
-    "calibration": "aligned",
-    "comfort": 4,
+   "CARD-02": {
+    "calibration": "underconfident",
+    "comfort": 2,
     "due": "2026-11-23",
     "interval_days": 3,
-    "mastery": 4.0,
+    "mastery": 5.0,
     "misconception": false,
     "step": 1
    },
-   "HEME-08": {
+   "CARD-06": {
     "calibration": "aligned",
     "comfort": 5,
     "due": "2026-11-23",
@@ -532,12 +559,12 @@
     "misconception": false,
     "step": 1
    },
-   "PULM-04": {
-    "calibration": "underconfident",
-    "comfort": 2,
+   "CARD-08": {
+    "calibration": "aligned",
+    "comfort": 4,
     "due": "2026-11-23",
     "interval_days": 3,
-    "mastery": 5.0,
+    "mastery": 4.0,
     "misconception": false,
     "step": 1
    }
@@ -549,15 +576,15 @@
   "performance": 3,
   "solid": "Example: what felt solid in round 1",
   "topic_comfort": {
-   "CARD-07": 4,
-   "EMRG-01": 4,
-   "HEME-08": 5,
-   "PULM-04": 2
+   "CARD-01": 4,
+   "CARD-02": 2,
+   "CARD-06": 5,
+   "CARD-08": 4
   }
  },
  "round": {
   "case": {
-   "diagnosis": "Example diagnosis: Anaphylaxis (see RHEUM-04)",
+   "diagnosis": "Example diagnosis: Venous thromboembolism — PE (see also PULM/HEME)",
    "patient": "Example patient 1",
    "presentation": "Example presentation 1",
    "setting": "ward"
@@ -585,7 +612,7 @@
     },
     "confidence": "unsure",
     "mastery": 4,
-    "topic": "EMRG-01",
+    "topic": "CARD-08",
     "type": "case"
    },
    {
@@ -596,7 +623,7 @@
     "correct": true,
     "mastery": 5,
     "stem_summary": "Example MCQ stem 1.1",
-    "topic": "CARD-07",
+    "topic": "CARD-01",
     "type": "mcq"
    },
    {
@@ -607,7 +634,7 @@
     "correct": true,
     "mastery": 5,
     "stem_summary": "Example MCQ stem 1.2",
-    "topic": "PULM-04",
+    "topic": "CARD-02",
     "type": "mcq"
    },
    {
@@ -618,17 +645,17 @@
     "correct": true,
     "mastery": 5,
     "stem_summary": "Example MCQ stem 1.3",
-    "topic": "HEME-08",
+    "topic": "CARD-06",
     "type": "mcq"
    }
   ],
   "log_id": "S0001",
   "minutes": 24,
   "selection_reasons": {
-   "CARD-07": "new",
-   "EMRG-01": "new",
-   "HEME-08": "new",
-   "PULM-04": "new"
+   "CARD-01": "new",
+   "CARD-02": "new",
+   "CARD-06": "new",
+   "CARD-08": "new"
   },
   "summary": "Synthetic round 1 of an example ledger.",
   "tags": [

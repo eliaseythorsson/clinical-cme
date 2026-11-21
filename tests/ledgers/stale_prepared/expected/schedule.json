@@ -1,24 +1,5 @@
 {
  "after_record": {
-  "EMRG-02": {
-   "attempts": 1,
-   "calibration": "not_rated",
-   "comfort": null,
-   "domain": "EMRG",
-   "due": "2026-11-23",
-   "history": [
-    [
-     "2026-11-20",
-     3.0,
-     null,
-     "not_rated"
-    ]
-   ],
-   "label": "Acute agitation, behavioral emergency",
-   "last": "2026-11-20",
-   "mastery": 3.0,
-   "step": 0
-  },
   "GI-06": {
    "attempts": 3,
    "calibration": "not_rated",
@@ -50,44 +31,32 @@
    "mastery": 5.0,
    "step": 1
   },
-  "RENAL-06": {
-   "attempts": 2,
+  "PULM-04": {
+   "attempts": 1,
    "calibration": "not_rated",
    "comfort": null,
-   "domain": "RENAL",
-   "due": "2026-11-27",
+   "domain": "PULM",
+   "due": "2026-11-23",
    "history": [
     [
-     "2026-09-01",
-     5.0,
-     5,
-     "aligned"
-    ],
-    [
      "2026-11-20",
-     5.0,
+     3.0,
      null,
      "not_rated"
     ]
    ],
-   "label": "CKD inpatient management, indications for dialysis",
+   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
    "last": "2026-11-20",
-   "mastery": 5.0,
-   "step": 2
+   "mastery": 3.0,
+   "step": 0
   },
-  "RHEUM-04": {
-   "attempts": 2,
+  "PULM-06": {
+   "attempts": 1,
    "calibration": "not_rated",
    "comfort": null,
-   "domain": "RHEUM",
+   "domain": "PULM",
    "due": "2026-11-23",
    "history": [
-    [
-     "2026-09-03",
-     4.0,
-     4,
-     "aligned"
-    ],
     [
      "2026-11-20",
      2.0,
@@ -95,18 +64,86 @@
      "not_rated"
     ]
    ],
-   "label": "Anaphylaxis, drug hypersensitivity",
+   "label": "Pulmonary embolism (management)",
    "last": "2026-11-20",
    "mastery": 2.0,
    "step": 0
+  },
+  "PULM-07": {
+   "attempts": 4,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-11-27",
+   "history": [
+    [
+     "2026-09-01",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-09-03",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-09-07",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-11-20",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Sepsis & septic shock",
+   "last": "2026-11-20",
+   "mastery": 5.0,
+   "step": 2
   }
  },
  "after_reflect": {
-  "EMRG-02": {
+  "GI-06": {
+   "attempts": 3,
+   "calibration": "aligned",
+   "comfort": 5,
+   "domain": "GI",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-09-07",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-09-10",
+     1.0,
+     4,
+     "confident_error"
+    ],
+    [
+     "2026-11-20",
+     5.0,
+     5,
+     "aligned"
+    ]
+   ],
+   "label": "Bowel obstruction, ischemia",
+   "last": "2026-11-20",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "PULM-04": {
    "attempts": 1,
    "calibration": "overconfident",
    "comfort": 5,
-   "domain": "EMRG",
+   "domain": "PULM",
    "due": "2026-11-23",
    "history": [
     [
@@ -116,29 +153,54 @@
      "overconfident"
     ]
    ],
-   "label": "Acute agitation, behavioral emergency",
+   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
    "last": "2026-11-20",
    "mastery": 3.0,
    "step": 0
   },
-  "GI-06": {
-   "attempts": 3,
-   "calibration": "underconfident",
+  "PULM-06": {
+   "attempts": 1,
+   "calibration": "aligned",
    "comfort": 2,
-   "domain": "GI",
+   "domain": "PULM",
    "due": "2026-11-23",
    "history": [
     [
-     "2026-09-07",
+     "2026-11-20",
+     2.0,
+     2,
+     "aligned"
+    ]
+   ],
+   "label": "Pulmonary embolism (management)",
+   "last": "2026-11-20",
+   "mastery": 2.0,
+   "step": 0
+  },
+  "PULM-07": {
+   "attempts": 4,
+   "calibration": "underconfident",
+   "comfort": 2,
+   "domain": "PULM",
+   "due": "2026-11-24",
+   "history": [
+    [
+     "2026-09-01",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-09-03",
      2.0,
      2,
      "aligned"
     ],
     [
-     "2026-09-10",
-     1.0,
-     4,
-     "confident_error"
+     "2026-09-07",
+     5.0,
+     2,
+     "underconfident"
     ],
     [
      "2026-11-20",
@@ -147,60 +209,10 @@
      "underconfident"
     ]
    ],
-   "label": "Bowel obstruction, ischemia",
-   "last": "2026-11-20",
-   "mastery": 5.0,
-   "step": 1
-  },
-  "RENAL-06": {
-   "attempts": 2,
-   "calibration": "aligned",
-   "comfort": 5,
-   "domain": "RENAL",
-   "due": "2026-11-27",
-   "history": [
-    [
-     "2026-09-01",
-     5.0,
-     5,
-     "aligned"
-    ],
-    [
-     "2026-11-20",
-     5.0,
-     5,
-     "aligned"
-    ]
-   ],
-   "label": "CKD inpatient management, indications for dialysis",
+   "label": "Sepsis & septic shock",
    "last": "2026-11-20",
    "mastery": 5.0,
    "step": 2
-  },
-  "RHEUM-04": {
-   "attempts": 2,
-   "calibration": "aligned",
-   "comfort": 2,
-   "domain": "RHEUM",
-   "due": "2026-11-23",
-   "history": [
-    [
-     "2026-09-03",
-     4.0,
-     4,
-     "aligned"
-    ],
-    [
-     "2026-11-20",
-     2.0,
-     2,
-     "aligned"
-    ]
-   ],
-   "label": "Anaphylaxis, drug hypersensitivity",
-   "last": "2026-11-20",
-   "mastery": 2.0,
-   "step": 0
   }
  },
  "date": "2026-11-20",

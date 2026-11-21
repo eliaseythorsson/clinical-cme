@@ -210,6 +210,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     <div>
       <h1>Clinical CME</h1>
       <div class="sub" id="who">Your rounds, ledger and log</div>
+      <div class="sub" id="block" hidden></div>
     </div>
     <button class="btn" id="export" type="button" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg>
@@ -392,6 +393,14 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     const p = state.profile || {};
     const who = [p.display_name || p.role, [p.specialty, p.subspecialty].filter(Boolean).join(" · ")].filter(Boolean).join(" · ");
     if (who) $("who").textContent = who;
+    // The block's theme is shown on purpose (domain only); which topics come next stays hidden.
+    const b = state.block;
+    if (b && b.theme) {
+      const name = ((state.blueprint || {})[b.theme] || {}).name || b.theme;
+      const done = +b.round || 0, len = +b.length || 12;
+      $("block").textContent = "Block: " + name + " · " + (done >= len ? "finished (" + len + " rounds)" : done + " of " + len + " rounds done");
+      $("block").hidden = false;
+    }
     $("c-progress").textContent = Object.keys(topics).length || "";
   }
 

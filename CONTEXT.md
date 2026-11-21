@@ -10,7 +10,7 @@ One session of assessment: the short questions, their feedback, the case, its fe
 _Avoid_: quiz, session (when meaning the content)
 
 **Short question**:
-An MCQ or a focused question; asked before the case, on topics unrelated to it.
+An MCQ or a focused question; asked before the case, on topics unrelated to it (in a block they often share its domain, never its topic).
 
 **Focused question**:
 A mini-case ending in one free-text question on a single decision, graded on the reasoning.
@@ -87,6 +87,15 @@ _Avoid_: module, month
 
 **Theme**:
 The domain of the current block. It is visible to the learner; topics stay blind.
+
+**Share**:
+The part of a round's short questions given to the theme (60%), to due repeats (25%) or to the wildcard (15%), met over the block rather than in every round.
+
+**Due repeat**:
+A topic whose spacing date has come, or a gap ready for its retest, from any domain; fills the repeat share.
+
+**Wildcard**:
+A short question on an untested topic outside the theme, so breadth is not lost during a block.
 
 **Drill-down**:
 Successive rounds probing deeper into one sub-topic after wrong answers; capped, and only within the theme.

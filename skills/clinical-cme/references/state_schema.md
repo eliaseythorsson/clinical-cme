@@ -30,6 +30,9 @@ memory: one JSON document, read to a file and written from a file (`store.md` §
   "gaps": [{"id": "G0007", "topic": "RENAL-02", "gap": "re-testable description", "self": null,
             "source": ["graded"], "date": "2026-10-26", "opened": "2026-09-17", "last_retested": null}],
   "resolved": [{"id": "G0004", "topic": "CARD-03", "note": "…", "opened": "…", "resolved": "…", "partial": false}],
+  "block": {"theme": "GI", "round": 4, "length": 12, "started": "2026-10-12", "last": "2026-10-26",
+            "chosen": "auto", "reason": "Gastroenterology & Hepatology: nothing tested yet, not yet a theme"},
+  "blocks": [{"theme": "CARD", "started": "2026-09-01", "last": "2026-10-09", "round": 12, "length": 12, "chosen": "auto"}],
   "sessions": [ { "…one entry per session of the current review period (full coding)…" } ],
   "previous": [ { "…sessions of the previous period, compact coding…" } ],
   "agg": { "…all-time counters: sessions, items, errors by category/type/step/severity/bias, ART, IDEA, calibration, Brier, drills, disputes…" },
@@ -200,7 +203,42 @@ learner's own, so the progress review can still compare it with performance. Rea
 self-assessment agrees poorly with measured performance, and worst where performance is weakest,
 so an unchecked "comfortable" would steer questions away from exactly the domains that need them.
 
-Selection (`plan`): due topics first (overconfident and misconception ahead, then most overdue,
+**Blocks.** Rounds run in blocks of 12 on one domain, the theme (`docs/adr/0003`). `block` is
+the current block: `round` counts the rounds recorded in it (`record`/`save` add one; a
+reflection does not), `chosen` is `auto` or `learner`. `blocks` keeps the finished ones. A
+ledger with no `block` (new, or written before blocks) or with a finished one gets its next
+block when the next round is recorded: nothing else in the ledger changes, so history, gaps and
+due dates carry over. The theme is proposed without chance: each domain with at least four
+blueprint topics is scored as its weight for new material (above) raised by 10% per open gap (to
+50%), times how long it has been without a block (a quarter straight after its own, full again
+after four others; never a theme counts in full); the highest score wins, ties by blueprint
+order, and never the theme just finished. Each session entry keeps its `block` (`theme`,
+`round`, `length`).
+
+In a block the case is always on the theme, and the short questions are shared 60% theme, 25%
+due repeats, 15% wildcard. The shares are met over the block, not in each round (round `n` gets
+what the first `n` rounds are owed less what the earlier ones got), so three short questions are
+2 theme + 1 repeat in most rounds and a wildcard takes a slot in five of the twelve. Each plan
+item says which `share` it fills:
+
+- `theme`: a theme topic that is due or has a gap ready for its retest, then an untested theme
+  topic, then the theme topic tested longest ago (`reason_code: revisit`: another decision point
+  of it), then the domain alone (`new_in_domain`). The last theme slot goes to an untested topic
+  first when the round has nothing new yet. The case is not on the topic of the last round's
+  case while the theme has another to give.
+- `repeat`: the most urgent due topic or gap outside the theme, then inside it. With nothing
+  waiting the slot goes to the theme.
+- `wildcard`: an untested topic outside the theme, by domain weight.
+
+Short questions on the theme share the case's domain but are still unrelated to its topic. The
+plan's `block` holds `theme`, `name`, `round` (this round's number), `length`, `starts`, `mix`
+and `line`, the one thing the learner is told: "Block: Gastroenterology & Hepatology, round 4 of
+12". `start`, `status`, `plan` and `prepare` print it too. A one-off `--domain` round ignores the
+theme (`mix` is null) and still counts as a round of the block. A prepared round is used only
+for the round of the block it was planned for.
+
+The rest of this paragraph is the order within those shares, and the whole rule for a `--domain`
+round. Selection (`plan`): due topics first (overconfident and misconception ahead, then most overdue,
 then lowest mastery), then open gaps that no item has tested since they were written and that are
 at least three days old (misconception > self > transfer > graded), then new topics by domain
 weight. A topic tested in the last two days is never chosen. Every chosen item whose topic has an

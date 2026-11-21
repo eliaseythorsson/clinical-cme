@@ -289,20 +289,22 @@ def test_taking_and_stashing_a_prepared_round_prints_only_its_present_block(work
     name = "stale_prepared"
     st = examples.load_ledger(name)
     state = work.write("ledger.json", st)
-    soon = cme.iso(cme.parse_date(PREPARED_MADE) + dt.timedelta(days=1))
-    r = work.run("--today", soon, "start", state, "--prepared", examples.prepared_path(name),
+    made = PREPARED_MADE
+    soon = cme.iso(cme.parse_date(made) + dt.timedelta(days=1))
+    # stashing a newly prepared round
+    work.run("--today", made, "prepare", state, "--out", work.p("next.json"))
+    plan = work.read_json("next.json")
+    for fname, text in examples.sealed_files(st, plan).items():
+        work.write(fname, text)
+    r = work.run("stash", state, "--plan", work.p("next.json"), "--dir", work.path, "--out-dir", work.p("out"))
+    assert_blind(r.stdout.replace(work.path, ""), st, plan)
+    # taking it at the next start
+    r = work.run("--today", soon, "start", state, "--prepared", work.p("out", "data", "prepared.json"),
                  "--out", work.p("plan.json"), "--work-dir", work.p("round"))
     out = json.loads(r.stdout)
-    plan = work.read_json("plan.json")
     assert out["prepared"]["used"] is True
     assert out["present"] == "Q1. Example stem 1. A) one B) two C) three\nQ2. Example stem 2. A) one B) two C) three\n" \
                              "Q3. Example stem 3. A) one B) two C) three"
-    assert_blind(r.stdout.replace(work.path, ""), st, plan)
-    # stashing a newly prepared round
-    work.run("--today", soon, "prepare", state, "--out", work.p("next.json"))
-    for fname, text in examples.sealed_files(st, work.read_json("next.json")).items():
-        work.write(fname, text)
-    r = work.run("stash", state, "--plan", work.p("next.json"), "--dir", work.path, "--out-dir", work.p("out"))
     assert_blind(r.stdout.replace(work.path, ""), st, plan)
     stored = read_bytes(work.p("out", "data", "prepared.json")).decode("utf-8")
     assert_blind(stored, st, plan)      # packed: not readable at a glance in the store either

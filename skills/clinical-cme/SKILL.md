@@ -34,7 +34,8 @@ can be shared as it is.
 ## Principles
 
 1. **Blind until answered, part by part.** Never reveal a topic, domain or reason for selection
-   before that part's answers are committed — not in text, headings, task items, tool-call
+   before that part's answers are committed (the one exception is the theme of the current
+   block, which the opening line names: see Turn 1) — not in text, headings, task items, tool-call
    descriptions, web searches **or your own reasoning** ("Sealed" below). The short questions
    are revealed with their feedback, once all of them are answered; the case stays sealed until
    its last answer.
@@ -208,6 +209,11 @@ Five learner turns with an unfolding case; fewer with a one-step case or none.
    - `page_settings_applied` → the learner changed the mix on their page; say it in the opening
      line ("Using the mix you set on your page: …"), unless it only reports `unchanged`.
      `warnings` about page settings → one line, and the round goes ahead with the ledger's mix.
+   - `block.line` → goes into the opening line as printed ("Block: Cardiology, round 4 of
+     12"). Rounds run in blocks of 12 on one domain; the learner is told the theme and the
+     position and nothing more specific: not which questions are on the theme, not the domain
+     of any other item. When `block.starts` is true this round opens a new block; say so in
+     the same line ("New block: …" is enough).
    - keep `next_id`, `pending_errata_count`, `helpers`, `speed_settings_new`, `prepared`,
      `testing`, and `guideline_region` and `specialty`: every grade and every piece of feedback
      in the round uses that region's guidelines, pitched at that specialty.
@@ -222,8 +228,9 @@ Five learner turns with an unfolding case; fewer with a one-step case or none.
    - **Otherwise, yourself**: read `author.md`, `case_design.md` and `plan.json` (never paste
      it) and write `<work>/sealed_questions.md` (`author.md` §3); its `present` block is the text.
 4. **Send it** (message 1): one opening line, for example "Today's round: two MCQs and a
-   focused question, then one case, about 25 minutes. Last saved session: 25 Oct."
-   (`estimated_minutes` is a guide; nothing about content; if `days_since_last_session` is long
+   focused question, then one case, about 25 minutes. Block: Cardiology, round 4 of 12. Last
+   saved session: 25 Oct." (`estimated_minutes` is a guide; `block.line` word for word; nothing
+   else about content; if `days_since_last_session` is long
    or they are behind target, at most add "Welcome back — N items are waiting; we'll start with
    the most overdue", without scolding or enlarging the round), then the text exactly as
    printed. It already ends with its answer prompt.

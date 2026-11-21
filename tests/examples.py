@@ -171,6 +171,7 @@ def ledger_summary(st):
     return {"gen": st["gen"], "next_id": st["next_id"], "updated": st["updated"],
             "unreflected": st["unreflected"], "session": last,
             "session_ids": [s["id"] for s in st["previous"] + st["sessions"]],
+            "block": st.get("block"), "blocks": st.get("blocks"),
             "gaps": st["gaps"], "resolved": st["resolved"], "agg": st["agg"],
             "domain_self_ratings": st["profile"].get("domain_self_ratings")}
 

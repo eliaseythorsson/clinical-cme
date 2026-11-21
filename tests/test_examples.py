@@ -124,11 +124,32 @@ def test_stale_prepared_round_is_not_used_and_a_new_round_is_planned(tmp_path):
     assert plan == read(examples.expected_path("stale_prepared", "plan"))
 
 
-def test_the_same_prepared_round_is_used_while_it_is_fresh(tmp_path):
+def test_round_prepared_before_blocks_is_not_used(tmp_path):
+    """The example's prepared round was written by a version without themed blocks: it is not on
+    the theme of the block that starts with the next round, so it is set aside."""
     soon = cme.iso(cme.parse_date(PREPARED_MADE) + dt.timedelta(days=2))
     out, plan = start_with_prepared(tmp_path, soon)
+    assert out["prepared"] == {"used": False, "why": "it was not prepared for this round of the block"}
+    assert "prepared" not in plan and plan["block"]["line"] == out["block"]["line"]
+
+
+def test_a_newly_prepared_round_is_used_while_it_is_fresh(tmp_path):
+    name = "stale_prepared"
+    st, state = examples.load_ledger(name), examples.ledger_path(name)
+    work = tmp_path / "prep"
+    work.mkdir()
+    run_cme(["--today", PREPARED_MADE, "prepare", state, "--out", str(work / "next.json")])
+    for fname, text in examples.sealed_files(st, read(str(work / "next.json"))).items():
+        (work / fname).write_text(text, encoding="utf-8")
+    run_cme(["stash", state, "--plan", str(work / "next.json"), "--dir", str(work), "--out-dir", str(tmp_path / "out")])
+    soon = cme.iso(cme.parse_date(PREPARED_MADE) + dt.timedelta(days=2))
+    out = json.loads(run_cme(["--today", soon, "start", state, "--prepared",
+                              str(tmp_path / "out" / "data" / "prepared.json"),
+                              "--out", str(tmp_path / "plan.json"), "--work-dir", str(tmp_path / "work")]))
+    plan = read(str(tmp_path / "plan.json"))
     assert out["prepared"]["used"] is True and out["prepared"]["made"] == PREPARED_MADE
     assert out["plan"]["prepared"] is True and plan["prepared"]["used"] is True and plan["date"] == soon
+    assert plan["block"]["line"] == out["block"]["line"]
     assert sorted(os.listdir(str(tmp_path / "work"))) == ["kit_case.md", "kit_questions.md", "sealed_case.md",
                                                          "sealed_questions.md", "work.json"]
 

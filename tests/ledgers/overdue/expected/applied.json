@@ -111,6 +111,16 @@
    "score_sum": 25.25,
    "sessions": 7
   },
+  "block": {
+   "chosen": "auto",
+   "last": "2026-11-20",
+   "length": 12,
+   "reason": "Neurology: mean 1.0 of 5 over 1 topic tested, 1 open gap, not yet a theme",
+   "round": 1,
+   "started": "2026-11-20",
+   "theme": "NEURO"
+  },
+  "blocks": [],
   "domain_self_ratings": {
    "CARD": 4.3,
    "EMRG": 2,
@@ -124,6 +134,19 @@
    "TOX": 4.0
   },
   "gaps": [
+   {
+    "date": "2026-08-17",
+    "gap": "Confident but incorrect answer on 2026-08-17; re-test the same decision point.",
+    "id": "G0001",
+    "last_retested": "2026-11-20",
+    "opened": "2026-08-17",
+    "self": "Example self-reported gap 6",
+    "source": [
+     "misconception",
+     "self"
+    ],
+    "topic": "NEURO-02"
+   },
    {
     "date": "2026-11-20",
     "gap": "Example gap 7.1: missed the decision point",
@@ -144,7 +167,7 @@
     "source": [
      "misconception"
     ],
-    "topic": "ENDO-02"
+    "topic": "NEURO-06"
    }
   ],
   "gen": 14,
@@ -177,23 +200,20 @@
     "partial": false,
     "resolved": "2026-08-17",
     "topic": "HEME-01"
-   },
-   {
-    "id": "G0001",
-    "note": "Confident but incorrect answer on 2026-08-17; re-test the same decision point.",
-    "opened": "2026-08-17",
-    "partial": false,
-    "resolved": "2026-11-20",
-    "topic": "NEURO-02"
    }
   ],
   "session": {
+   "block": {
+    "length": 12,
+    "round": 1,
+    "theme": "NEURO"
+   },
    "case": {
-    "diagnosis": "Example diagnosis: Intracranial hemorrhage",
+    "diagnosis": "Example diagnosis: Acute weakness (GBS, myasthenic crisis, cord)",
     "patient": "Example patient 7",
     "presentation": "Example presentation 7",
     "setting": "ward",
-    "topic": "NEURO-02"
+    "topic": "NEURO-05"
    },
    "date": "2026-11-20",
    "drill": null,
@@ -223,8 +243,7 @@
      },
      "confidence": "sure",
      "mastery": 5,
-     "retests": "NEURO-02",
-     "topic": "NEURO-02",
+     "topic": "NEURO-05",
      "type": "case"
     },
     {
@@ -252,8 +271,9 @@
      "confidence": "guess",
      "correct": true,
      "mastery": 4,
+     "retests": "NEURO-02",
      "stem": "Example MCQ stem 7.2",
-     "topic": "ID-10",
+     "topic": "NEURO-02",
      "type": "mcq"
     },
     {
@@ -271,7 +291,7 @@
      "correct": false,
      "mastery": 1,
      "stem": "Example MCQ stem 7.3",
-     "topic": "ENDO-02",
+     "topic": "NEURO-06",
      "type": "mcq"
     }
    ],
@@ -291,15 +311,15 @@
    ],
    "title": "Example round S0007",
    "topics": [
-    "NEURO-02",
+    "NEURO-05",
     "TOX-02",
-    "ID-10",
-    "ENDO-02"
+    "NEURO-02",
+    "NEURO-06"
    ],
    "why": {
-    "ENDO-02": "new",
-    "ID-10": "due",
     "NEURO-02": "due",
+    "NEURO-05": "new",
+    "NEURO-06": "new",
     "TOX-02": "due"
    }
   },
@@ -427,20 +447,42 @@
    "score_sum": 25.25,
    "sessions": 7
   },
+  "block": {
+   "chosen": "auto",
+   "last": "2026-11-20",
+   "length": 12,
+   "reason": "Neurology: mean 1.0 of 5 over 1 topic tested, 1 open gap, not yet a theme",
+   "round": 1,
+   "started": "2026-11-20",
+   "theme": "NEURO"
+  },
+  "blocks": [],
   "domain_self_ratings": {
    "CARD": 4.3,
    "EMRG": 2,
-   "ENDO": 4,
    "GEN": 4.0,
    "GI": 4.0,
    "HEME": 3.9,
-   "ID": 3.7,
-   "NEURO": 4.8,
+   "ID": 3.0,
+   "NEURO": 4.6,
    "RENAL": 4,
    "RHEUM": 2.5,
    "TOX": 3.3
   },
   "gaps": [
+   {
+    "date": "2026-08-17",
+    "gap": "Confident but incorrect answer on 2026-08-17; re-test the same decision point.",
+    "id": "G0001",
+    "last_retested": "2026-11-20",
+    "opened": "2026-08-17",
+    "self": "Example self-reported gap 6",
+    "source": [
+     "misconception",
+     "self"
+    ],
+    "topic": "NEURO-02"
+   },
    {
     "date": "2026-11-20",
     "gap": "Example gap 7.1: missed the decision point",
@@ -461,7 +503,7 @@
     "source": [
      "misconception"
     ],
-    "topic": "ENDO-02"
+    "topic": "NEURO-06"
    }
   ],
   "gen": 15,
@@ -494,23 +536,20 @@
     "partial": false,
     "resolved": "2026-08-17",
     "topic": "HEME-01"
-   },
-   {
-    "id": "G0001",
-    "note": "Confident but incorrect answer on 2026-08-17; re-test the same decision point.",
-    "opened": "2026-08-17",
-    "partial": false,
-    "resolved": "2026-11-20",
-    "topic": "NEURO-02"
    }
   ],
   "session": {
+   "block": {
+    "length": 12,
+    "round": 1,
+    "theme": "NEURO"
+   },
    "case": {
-    "diagnosis": "Example diagnosis: Intracranial hemorrhage",
+    "diagnosis": "Example diagnosis: Acute weakness (GBS, myasthenic crisis, cord)",
     "patient": "Example patient 7",
     "presentation": "Example presentation 7",
     "setting": "ward",
-    "topic": "NEURO-02"
+    "topic": "NEURO-05"
    },
    "date": "2026-11-20",
    "drill": null,
@@ -540,8 +579,7 @@
      },
      "confidence": "sure",
      "mastery": 5,
-     "retests": "NEURO-02",
-     "topic": "NEURO-02",
+     "topic": "NEURO-05",
      "type": "case"
     },
     {
@@ -569,8 +607,9 @@
      "confidence": "guess",
      "correct": true,
      "mastery": 4,
+     "retests": "NEURO-02",
      "stem": "Example MCQ stem 7.2",
-     "topic": "ID-10",
+     "topic": "NEURO-02",
      "type": "mcq"
     },
     {
@@ -588,7 +627,7 @@
      "correct": false,
      "mastery": 1,
      "stem": "Example MCQ stem 7.3",
-     "topic": "ENDO-02",
+     "topic": "NEURO-06",
      "type": "mcq"
     }
    ],
@@ -604,9 +643,9 @@
    },
    "score": 2.75,
    "self_comfort": {
-    "ENDO-02": 4,
-    "ID-10": 5,
     "NEURO-02": 5,
+    "NEURO-05": 5,
+    "NEURO-06": 4,
     "TOX-02": 2
    },
    "self_performance": 3,
@@ -617,15 +656,15 @@
    ],
    "title": "Example round S0007",
    "topics": [
-    "NEURO-02",
+    "NEURO-05",
     "TOX-02",
-    "ID-10",
-    "ENDO-02"
+    "NEURO-02",
+    "NEURO-06"
    ],
    "why": {
-    "ENDO-02": "new",
-    "ID-10": "due",
     "NEURO-02": "due",
+    "NEURO-05": "new",
+    "NEURO-06": "new",
     "TOX-02": "due"
    }
   },
@@ -646,12 +685,31 @@
   "errata_to_log": [],
   "gen": 14,
   "next_id": "S0008",
-  "open_gaps": 2,
+  "open_gaps": 3,
   "reflection_pending": true,
   "score": 2.75,
   "session_id": "S0007",
   "topics": {
-   "ENDO-02": {
+   "NEURO-02": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-23",
+    "gap_retested": true,
+    "interval_days": 3,
+    "mastery": 3.0,
+    "misconception": false,
+    "step": 0
+   },
+   "NEURO-05": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "NEURO-06": {
     "calibration": "confident_error",
     "comfort": null,
     "due": "2026-11-23",
@@ -659,26 +717,6 @@
     "mastery": 1.0,
     "misconception": true,
     "step": 0
-   },
-   "ID-10": {
-    "calibration": "not_rated",
-    "comfort": null,
-    "due": "2026-11-23",
-    "interval_days": 3,
-    "mastery": 3.0,
-    "misconception": false,
-    "step": 1
-   },
-   "NEURO-02": {
-    "calibration": "not_rated",
-    "comfort": null,
-    "due": "2026-11-23",
-    "gap_resolved": true,
-    "gap_retested": true,
-    "interval_days": 3,
-    "mastery": 5.0,
-    "misconception": false,
-    "step": 1
    },
    "TOX-02": {
     "calibration": "not_rated",
@@ -696,10 +734,29 @@
   "errata_ids": [],
   "errata_to_log": [],
   "gen": 15,
-  "open_gaps": 2,
+  "open_gaps": 3,
   "session_id": "S0007",
   "topics": {
-   "ENDO-02": {
+   "NEURO-02": {
+    "calibration": "overconfident",
+    "comfort": 5,
+    "due": "2026-11-23",
+    "gap_retested": true,
+    "interval_days": 3,
+    "mastery": 3.0,
+    "misconception": false,
+    "step": 0
+   },
+   "NEURO-05": {
+    "calibration": "aligned",
+    "comfort": 5,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "NEURO-06": {
     "calibration": "confident_error",
     "comfort": 4,
     "due": "2026-11-23",
@@ -707,26 +764,6 @@
     "mastery": 1.0,
     "misconception": true,
     "step": 0
-   },
-   "ID-10": {
-    "calibration": "overconfident",
-    "comfort": 5,
-    "due": "2026-11-23",
-    "interval_days": 3,
-    "mastery": 3.0,
-    "misconception": false,
-    "step": 1
-   },
-   "NEURO-02": {
-    "calibration": "aligned",
-    "comfort": 5,
-    "due": "2026-11-23",
-    "gap_resolved": true,
-    "gap_retested": true,
-    "interval_days": 3,
-    "mastery": 5.0,
-    "misconception": false,
-    "step": 1
    },
    "TOX-02": {
     "calibration": "aligned",
@@ -745,15 +782,15 @@
   "performance": 3,
   "solid": "Example: what felt solid in round 7",
   "topic_comfort": {
-   "ENDO-02": 4,
-   "ID-10": 5,
    "NEURO-02": 5,
+   "NEURO-05": 5,
+   "NEURO-06": 4,
    "TOX-02": 2
   }
  },
  "round": {
   "case": {
-   "diagnosis": "Example diagnosis: Intracranial hemorrhage",
+   "diagnosis": "Example diagnosis: Acute weakness (GBS, myasthenic crisis, cord)",
    "patient": "Example patient 7",
    "presentation": "Example presentation 7",
    "setting": "ward"
@@ -787,8 +824,7 @@
     },
     "confidence": "sure",
     "mastery": 5,
-    "retests": "NEURO-02",
-    "topic": "NEURO-02",
+    "topic": "NEURO-05",
     "type": "case"
    },
    {
@@ -815,8 +851,9 @@
     "confidence": "guess",
     "correct": true,
     "mastery": 4,
+    "retests": "NEURO-02",
     "stem_summary": "Example MCQ stem 7.2",
-    "topic": "ID-10",
+    "topic": "NEURO-02",
     "type": "mcq"
    },
    {
@@ -833,16 +870,16 @@
     "correct": false,
     "mastery": 1,
     "stem_summary": "Example MCQ stem 7.3",
-    "topic": "ENDO-02",
+    "topic": "NEURO-06",
     "type": "mcq"
    }
   ],
   "log_id": "S0007",
   "minutes": 24,
   "selection_reasons": {
-   "ENDO-02": "new",
-   "ID-10": "due",
    "NEURO-02": "due",
+   "NEURO-05": "new",
+   "NEURO-06": "new",
    "TOX-02": "due"
   },
   "summary": "Synthetic round 7 of an example ledger.",

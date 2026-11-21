@@ -200,6 +200,8 @@ class Script:
         self.put("sealed_case.md", SEALED_CASE)
         # turn 1: questions out
         opening = "Today's round: two questions, then one case."
+        if "no_block_line" not in self.faults:
+            opening += " " + json.loads(cme("--today", TODAY, "status", os.path.join(self.store, "data", "state.json")))["block"]["line"] + "."
         if "leak_id" in self.faults:
             opening += " (Q1 is HEME-01.)"
         if "leak_key" in self.faults:
@@ -348,6 +350,15 @@ def test_blinding_leak_before_the_matching_answer_fails(script, fault, kind, par
     assert any(f["kind"] == kind and f["part"] == part and f["level"] == "fail" for f in b["findings"])
     assert "**FAIL**" in open(out["report"], encoding="utf-8").read()
     assert sim("check", "--run", os.path.dirname(os.path.dirname(out["report"])) + "/run", ok=False).returncode == 1
+
+
+def test_opening_without_the_block_line_fails(script):
+    s = script("no_block_line")
+    _, rep = s.report()
+    blinding = rep["checks"]["blinding"]
+    assert rep["ok"] is False and blinding["leaks"] == 0
+    assert blinding["block_line"] == "Block: Cardiology, round 1 of 12"
+    assert any("block line" in p for p in blinding["problems"])
 
 
 def test_topic_named_after_its_answers_is_not_a_leak(script):

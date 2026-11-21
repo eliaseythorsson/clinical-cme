@@ -1,61 +1,5 @@
 {
  "after_record": {
-  "ENDO-02": {
-   "attempts": 1,
-   "calibration": "confident_error",
-   "comfort": null,
-   "domain": "ENDO",
-   "due": "2026-11-23",
-   "history": [
-    [
-     "2026-11-20",
-     1.0,
-     null,
-     "confident_error"
-    ]
-   ],
-   "label": "Inpatient glycemic management",
-   "last": "2026-11-20",
-   "mastery": 1.0,
-   "step": 0
-  },
-  "ID-10": {
-   "attempts": 4,
-   "calibration": "not_rated",
-   "comfort": null,
-   "domain": "ID",
-   "due": "2026-11-23",
-   "history": [
-    [
-     "2026-08-03",
-     5.0,
-     2,
-     "underconfident"
-    ],
-    [
-     "2026-08-05",
-     2.0,
-     2,
-     "aligned"
-    ],
-    [
-     "2026-08-07",
-     5.0,
-     5,
-     "aligned"
-    ],
-    [
-     "2026-11-20",
-     3.0,
-     null,
-     "not_rated"
-    ]
-   ],
-   "label": "Healthcare-associated / MDRO, antibiotic selection",
-   "last": "2026-11-20",
-   "mastery": 3.0,
-   "step": 1
-  },
   "NEURO-02": {
    "attempts": 3,
    "calibration": "not_rated",
@@ -77,15 +21,53 @@
     ],
     [
      "2026-11-20",
-     5.0,
+     3.0,
      null,
      "not_rated"
     ]
    ],
    "label": "Intracranial hemorrhage",
    "last": "2026-11-20",
+   "mastery": 3.0,
+   "step": 0
+  },
+  "NEURO-05": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "NEURO",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Acute weakness (GBS, myasthenic crisis, cord)",
+   "last": "2026-11-20",
    "mastery": 5.0,
    "step": 1
+  },
+  "NEURO-06": {
+   "attempts": 1,
+   "calibration": "confident_error",
+   "comfort": null,
+   "domain": "NEURO",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     1.0,
+     null,
+     "confident_error"
+    ]
+   ],
+   "label": "Headache — dangerous causes",
+   "last": "2026-11-20",
+   "mastery": 1.0,
+   "step": 0
   },
   "TOX-02": {
    "attempts": 3,
@@ -120,65 +102,9 @@
   }
  },
  "after_reflect": {
-  "ENDO-02": {
-   "attempts": 1,
-   "calibration": "confident_error",
-   "comfort": 4,
-   "domain": "ENDO",
-   "due": "2026-11-23",
-   "history": [
-    [
-     "2026-11-20",
-     1.0,
-     4,
-     "confident_error"
-    ]
-   ],
-   "label": "Inpatient glycemic management",
-   "last": "2026-11-20",
-   "mastery": 1.0,
-   "step": 0
-  },
-  "ID-10": {
-   "attempts": 4,
-   "calibration": "overconfident",
-   "comfort": 5,
-   "domain": "ID",
-   "due": "2026-11-23",
-   "history": [
-    [
-     "2026-08-03",
-     5.0,
-     2,
-     "underconfident"
-    ],
-    [
-     "2026-08-05",
-     2.0,
-     2,
-     "aligned"
-    ],
-    [
-     "2026-08-07",
-     5.0,
-     5,
-     "aligned"
-    ],
-    [
-     "2026-11-20",
-     3.0,
-     5,
-     "overconfident"
-    ]
-   ],
-   "label": "Healthcare-associated / MDRO, antibiotic selection",
-   "last": "2026-11-20",
-   "mastery": 3.0,
-   "step": 1
-  },
   "NEURO-02": {
    "attempts": 3,
-   "calibration": "aligned",
+   "calibration": "overconfident",
    "comfort": 5,
    "domain": "NEURO",
    "due": "2026-11-23",
@@ -197,15 +123,53 @@
     ],
     [
      "2026-11-20",
+     3.0,
+     5,
+     "overconfident"
+    ]
+   ],
+   "label": "Intracranial hemorrhage",
+   "last": "2026-11-20",
+   "mastery": 3.0,
+   "step": 0
+  },
+  "NEURO-05": {
+   "attempts": 1,
+   "calibration": "aligned",
+   "comfort": 5,
+   "domain": "NEURO",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
      5.0,
      5,
      "aligned"
     ]
    ],
-   "label": "Intracranial hemorrhage",
+   "label": "Acute weakness (GBS, myasthenic crisis, cord)",
    "last": "2026-11-20",
    "mastery": 5.0,
    "step": 1
+  },
+  "NEURO-06": {
+   "attempts": 1,
+   "calibration": "confident_error",
+   "comfort": 4,
+   "domain": "NEURO",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     1.0,
+     4,
+     "confident_error"
+    ]
+   ],
+   "label": "Headache — dangerous causes",
+   "last": "2026-11-20",
+   "mastery": 1.0,
+   "step": 0
   },
   "TOX-02": {
    "attempts": 3,
