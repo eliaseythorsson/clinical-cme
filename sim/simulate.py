@@ -8,8 +8,12 @@ session relays between them (see sim/README.md). This script is everything that 
   init     make a run folder: a seeded folder store, a scratch folder, the two agents' briefs
   send     an agent sends a message to the other side; the time is recorded
   next     the session asks what to hand to the other agent, and whether to stop
-  check    the automatic checks: blinding, saved files, log complete and verbatim
-  report   checks + waiting time per step, written to sim/reports/ for comparison with later runs
+  check    the automatic checks: blinding, saved files, log complete and verbatim, and what the
+           persona is expected to produce (a settled dispute; a round saved without its case)
+  quality  the form a separate scorer agent fills in: clinical quality per item and per feedback
+  report   checks + waiting time per step + the quality scores (logged only, never a pass bar),
+           written to sim/reports/ for comparison with later runs
+  history  one line per saved report, to compare runs over time
 
 It talks to cme.py only through its command line, as the assistant does.
 """
@@ -29,6 +33,9 @@ DEFAULT_SKILL = os.path.join(ROOT, "skills", "clinical-cme")
 ROLES = ("examiner", "learner")
 MAX_LEARNER_MESSAGES = 12          # a round has at most ~6 learner turns; beyond this the run is stuck
 KEY_LINE_MIN = 30                  # shortest key/kit line (normalised characters) searched for verbatim
+EXPECTATIONS = ("dispute", "stopped")   # what a persona's `expect` list may name (extra checks)
+OUTCOMES = ("learner_right", "both_defensible", "upheld")
+NOTE_MAX = 200                     # a quality note in the report is one line
 OPENING = "Quiz me: today's CME round, please. My Clinical CME folder is {store}"
 
 # Settings every simulated ledger starts with. Helper agents cannot usually start helpers of their
@@ -178,7 +185,15 @@ def persona_parts(name):
         profile = json.loads(m.group(1)) if m else {}
     except ValueError as e:
         raise SimError("the ledger profile in %s is not valid JSON: %s" % (path, e))
-    return os.path.abspath(path), os.path.splitext(os.path.basename(path))[0], profile
+    if not isinstance(profile, dict):
+        raise SimError("the ledger profile in %s must be a JSON object" % path)
+    # `expect` is for the harness (which extra checks the persona's round must pass), not the ledger
+    expect = profile.pop("expect", None) or []
+    expect = [expect] if isinstance(expect, str) else list(expect)
+    unknown = [e for e in expect if e not in EXPECTATIONS]
+    if unknown:
+        raise SimError("%s expects %s; known: %s" % (path, ", ".join(map(str, unknown)), ", ".join(EXPECTATIONS)))
+    return os.path.abspath(path), os.path.splitext(os.path.basename(path))[0], profile, expect
 
 
 def fill(template, values):
@@ -188,12 +203,13 @@ def fill(template, values):
 
 
 def cmd_init(args):
-    persona_path, persona, profile = persona_parts(args.persona)
+    persona_path, persona, profile, expect = persona_parts(args.persona)
     skill = os.path.abspath(args.skill or DEFAULT_SKILL)
     if not os.path.isfile(os.path.join(skill, "scripts", "cme.py")):
         raise SimError("no skill at %s" % skill)
     stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-    run = os.path.abspath(args.run or os.path.join(HERE, "runs", "%s-%s" % (stamp, persona)))
+    # the folder's name goes into the examiner's brief, so it must not name the persona
+    run = os.path.abspath(args.run or os.path.join(HERE, "runs", stamp))
     if os.path.exists(run) and os.listdir(run):
         raise SimError("%s already exists and is not empty" % run)
     for d in ("store", "work", "messages", "learner"):
@@ -216,7 +232,9 @@ def cmd_init(args):
                 "--profile", json.dumps(profile), "--config", json.dumps(config), "--out", tmp)
         run_cme(skill, "place", tmp, "--out-dir", rp(run, "store"))
         os.remove(tmp)
-    meta = {"run": run, "persona": persona, "persona_file": persona_path, "skill": skill,
+    # the ledger as the round found it: the stopped check compares the case topic's schedule with it
+    shutil.copyfile(rp(run, "store", "data", "state.json"), rp(run, "ledger_at_start.json"))
+    meta = {"run": run, "persona": persona, "persona_file": persona_path, "expect": expect, "skill": skill,
             "skill_version": skill_version(skill), "commit": git_commit(), "config": config,
             "continued_from": os.path.abspath(args.from_run) if args.from_run else None,
             "sessions_at_start": len((read_json(rp(run, "store", "data", "state.json")) or {}).get("sessions") or []),
@@ -324,6 +342,8 @@ class Round:
         self.store = rp(run, "store")
         self.state = read_json(rp(self.store, "data", "state.json")) or {}
         self.round = read_json(rp(self.work, "round.json")) or {}
+        self.plan = read_json(rp(self.work, "plan.json")) or {}
+        self.start_state = read_json(rp(run, "ledger_at_start.json"))
         sessions = self.state.get("sessions") or []
         self.sid = self.round.get("log_id") or (sessions[-1].get("id") if sessions else None)
         self.doc = read_json(rp(self.store, "data", "sessions", "%s.json" % self.sid)) if self.sid else None
@@ -343,7 +363,29 @@ class Round:
         self.a = parse_sections((self.doc or {}).get("transcript") or "", SECTIONS_A)
         self.b = parse_sections((self.doc or {}).get("closing") or "", SECTIONS_B)
         self.two_stage = "final" in self.answers or "stage2" in self.a
+        self.session = next((s for s in sessions if s.get("id") == self.sid), None)
+        # a case that was planned but is not among the items graded: the learner stopped before it.
+        # It stays blind (its topic is still due), so its seal never lifts.
+        self.unanswered = []
+        if self.items and not self.has_case:
+            topic = self.planned_case()
+            if topic:
+                self.unanswered.append(dict(topic, type="case"))
+        self.never_lifted = {"case"} if self.unanswered or (self.items and not self.has_case
+                                                            and "sealed_case.md" in self.sealed) else set()
         self._label_parts()
+
+    def planned_case(self):
+        """The topic of the case the round was planned with: from plan.json, else the one
+        blueprint ID named in the hidden part of the case's keys."""
+        for it in self.plan.get("items") or []:
+            if it.get("slot") in ("case", "essay") and it.get("topic"):
+                return {k: it.get(k) for k in ("topic", "label", "domain") if it.get(k)}
+        known = {tid for dom in (self.state.get("blueprint") or {}).values()
+                 for tid in ((dom or {}).get("topics") or {})}
+        hidden = BANK_RE.sub("", PRESENT_RE.sub("", self.sealed.get("sealed_case.md", "")))
+        named = sorted({t for t in re.findall(r"\b[A-Z]{2,8}-\d{1,3}\b", hidden) if t in known})
+        return {"topic": named[0]} if len(named) == 1 else None
 
     def _label_parts(self):
         """Which learner message answered which part: found by matching the answers the examiner
@@ -389,7 +431,7 @@ def forbidden_terms(rnd):
         if len(text) >= 4:
             terms.append((part, kind, level, text, re.compile(re.escape(text).replace(r"\ ", r"\s+"), re.I)))
 
-    for it in rnd.items:
+    for it in rnd.items + rnd.unanswered:
         part = "case" if it.get("type") in ("case", "essay") else "questions"
         tid = it.get("topic")
         if tid:
@@ -414,6 +456,11 @@ def forbidden_terms(rnd):
         bare = re.sub(r"\([^)]*\)", " ", diagnosis)
         if norm(bare) != norm(diagnosis):
             phrase("case", "diagnosis", "fail", bare)
+    elif "case" in rnd.never_lifted:
+        # no graded case to take the diagnosis from: use the line of the keys that states it
+        hidden = BANK_RE.sub("", PRESENT_RE.sub("", rnd.sealed.get("sealed_case.md", "")))
+        for stated in re.findall(r"(?im)^.*?\bdiagnosis\b[*_`\s]*:[*_`\s]*([^\n.;]{4,80})", hidden):
+            phrase("case", "diagnosis", "fail", stated.strip("*_` "))
     if rnd.round.get("title"):
         phrase(last_part, "session title", "fail", rnd.round["title"])
     # key and feedback-note lines: everything in the sealed files that is not text to present
@@ -452,7 +499,9 @@ def check_blinding(rnd):
         if m["role"] != "examiner":
             continue
         for part, kind, level, term, rx in terms:
-            if part not in rnd.lift or m["n"] > (rnd.lift[part] or last + 1):
+            if part in rnd.never_lifted:
+                pass                      # never answered: sealed to the end of the round
+            elif part not in rnd.lift or m["n"] > (rnd.lift[part] or last + 1):
                 continue
             hit = rx.search(m["text"])
             if hit:
@@ -464,7 +513,8 @@ def check_blinding(rnd):
         leaks = [f for f in leaks if f["part"] not in undetermined]
     return {"ok": not leaks and not problems, "leaks": len(leaks),
             "to_review": len([f for f in findings if f["level"] == "warn"]),
-            "seal_lifted_at": rnd.lift, "terms_checked": len(terms), "findings": findings, "problems": problems}
+            "seal_lifted_at": rnd.lift, "never_lifted": sorted(rnd.never_lifted),
+            "terms_checked": len(terms), "findings": findings, "problems": problems}
 
 
 # ---------------------------------------------------------------- check 2: every file saved
@@ -609,21 +659,216 @@ def timings(rnd):
             "elapsed_s": round(msgs[-1]["ts"] - msgs[0]["ts"], 1) if len(msgs) > 1 else None}
 
 
+# ---------------------------------------------------------------- what a persona is expected to produce
+
+def empty_section(body):
+    return not norm(body) or norm(body).rstrip(".").lower() == "none"
+
+
+def holds_message(body, messages, role, min_chars):
+    """True if the section holds a message of that role word for word, or a paragraph of the
+    section (long enough to be telling) is word for word part of such a message."""
+    whole = norm(body)
+    paras = [norm(p) for p in re.split(r"\n\s*\n", body or "") if len(norm(p)) >= min_chars]
+    for m in messages:
+        if m["role"] != role or m["n"] == 1:
+            continue
+        got = norm(m["text"])
+        if (len(got) >= min_chars and got in whole) or any(p in got for p in paras):
+            return True
+    return False
+
+
+def check_dispute(rnd):
+    """The dispute persona: the round holds a settled dispute, in the ledger's grade changes and in
+    the log (the exchange word for word, and the change under 'Grade changes')."""
+    problems = []
+    changes = (rnd.session or {}).get("grade_changes") or []
+    if not rnd.session:
+        problems.append("the ledger holds no record of this round")
+    elif not changes:
+        problems.append("the ledger records no grade change for this round (grade_changes is empty)")
+    for g in changes:
+        if g.get("outcome") not in OUTCOMES:
+            problems.append("grade change on %s is not settled: outcome %s (expected one of %s)"
+                            % (g.get("item") or g.get("topic") or "?", json.dumps(g.get("outcome")), ", ".join(OUTCOMES)))
+    if empty_section(rnd.b.get("grade_changes")):
+        problems.append("the log's 'Grade changes' section is missing or says there were none")
+    # the exchange: under Discussion when raised after the final feedback, under Notes when
+    # settled mid-round (SKILL.md turns 2 and 5)
+    places = [(k, body) for k, body in (("discussion", rnd.b.get("discussion")), ("notes", rnd.a.get("notes")))
+              if not empty_section(body)]
+    logged_in = [k for k, body in places if holds_message(body, rnd.messages, "learner", 20)
+                 and holds_message(body, rnd.messages, "examiner", 40)]
+    if not logged_in:
+        problems.append("neither 'Discussion' nor 'Notes' holds the dispute word for word "
+                        "(the learner's challenge and the examiner's reply)")
+    return {"ok": not problems, "logged_in": logged_in, "problems": problems,
+            "grade_changes": [{k: g.get(k) for k in ("item", "topic", "from", "to", "outcome")} for g in changes]}
+
+
+def check_stopped(rnd):
+    """The stop-halfway persona: the round is saved with the items answered and without the case,
+    and the case's topic is still due (its schedule is as the round found it)."""
+    problems = []
+    sess = rnd.session or {}
+    items = sess.get("items") or []
+    topic = (rnd.planned_case() or {}).get("topic")
+    if not rnd.session:
+        problems.append("the ledger holds no record of this round")
+    else:
+        if not any(it.get("type") in ("mcq", "focused") for it in items):
+            problems.append("the saved round holds no short question")
+        if any(it.get("type") in ("case", "essay") for it in items) or sess.get("case"):
+            problems.append("the saved round holds a case; the learner stopped before it")
+    schedule = None
+    if rnd.session and not topic:
+        problems.append("cannot tell which topic the case was on (no case in plan.json, and the case's keys "
+                        "do not name exactly one blueprint ID)")
+    elif topic:
+        if topic in (sess.get("topics") or []):
+            problems.append("the case's topic %s is recorded as tested in this round" % topic)
+        fields = ("last", "attempts", "step", "due")
+        blank = {"last": None, "attempts": 0, "step": 0, "due": None}
+
+        def sched(state):
+            t = ((state or {}).get("topics") or {}).get(topic) or {}
+            return {k: t.get(k, blank[k]) or blank[k] for k in fields}
+
+        schedule = sched(rnd.state)
+        if rnd.start_state is None:
+            problems.append("no ledger_at_start.json in the run folder: cannot compare the topic's schedule")
+        elif schedule != sched(rnd.start_state):
+            problems.append("the schedule of the case's topic %s changed in this round (%s → %s): it should "
+                            "still be due as before" % (topic, json.dumps(sched(rnd.start_state)), json.dumps(schedule)))
+    return {"ok": not problems, "case_topic": topic, "case_topic_schedule": schedule,
+            "items_saved": len(items), "problems": problems}
+
+
+EXPECTED_CHECKS = {"dispute": check_dispute, "stopped": check_stopped}
+
+
 # ---------------------------------------------------------------- check, report
 
 def run_checks(run):
     rnd = Round(run)
     checks = {"blinding": check_blinding(rnd), "saved": check_saved(rnd), "log": check_log(rnd)}
+    for name in rnd.meta.get("expect") or []:
+        checks[name] = EXPECTED_CHECKS[name](rnd)
     return rnd, {"ok": all(c["ok"] for c in checks.values()), "checks": checks}
 
 
 def cmd_check(args):
     _, res = run_checks(args.run)
     write_json(rp(args.run, "checks.json"), res)
-    print(json.dumps({"ok": res["ok"], "blinding": res["checks"]["blinding"]["ok"],
-                      "saved": res["checks"]["saved"]["ok"], "log": res["checks"]["log"]["ok"],
-                      "details": rp(args.run, "checks.json")}, indent=1))
+    out = {"ok": res["ok"]}
+    out.update({name: c["ok"] for name, c in res["checks"].items()})
+    out["details"] = rp(args.run, "checks.json")
+    print(json.dumps(out, indent=1))
     return 0 if res["ok"] else 1
+
+
+# ---------------------------------------------------------------- clinical quality (logged only)
+
+def quality_form(rnd):
+    """What the scorer rates: every item of the round, and every feedback message as sent."""
+    items, q = [], 0
+    for it in rnd.items:
+        case = it.get("type") in ("case", "essay")
+        q += 0 if case else 1
+        items.append({"id": "Case" if case else "Q%d" % q, "type": it.get("type"), "topic": it.get("topic"),
+                      "about": it.get("stem_summary") or it.get("stem") or ((rnd.round.get("case") or {}).get("presentation") if case else None),
+                      "answered": True, "score": None, "note": ""})
+    for it in rnd.unanswered:
+        items.append({"id": "Case", "type": "case", "topic": it.get("topic"), "about": "presented, not answered: "
+                      "rate the case as written, if it was shown", "answered": False, "score": None, "note": ""})
+    feedback = []
+    if not empty_section(rnd.a.get("fb_questions")):
+        feedback.append({"id": "questions", "what": "the feedback on the short questions, as sent", "score": None, "note": ""})
+    if not empty_section(rnd.a.get("feedback")):
+        feedback.append({"id": "final", "what": "the final feedback, as sent (the case feedback and the gap summary; "
+                         "in a round without a case, the feedback that closed it)", "score": None, "note": ""})
+    if (rnd.session or {}).get("grade_changes") or not empty_section(rnd.b.get("discussion")):
+        feedback.append({"id": "dispute", "what": "the examiner's replies to the learner's challenge or discussion",
+                         "score": None, "note": ""})
+    return {"session": rnd.sid, "scorer_model": None, "items": items, "feedback": feedback,
+            "overall": {"score": None, "note": ""}, "concerns": []}
+
+
+def one_line(text, limit=NOTE_MAX):
+    text = norm(str(text or ""))
+    return text if len(text) <= limit else text[:limit - 1].rstrip() + "…"
+
+
+def valid_score(v):
+    return isinstance(v, int) and not isinstance(v, bool) and 1 <= v <= 5
+
+
+def load_quality(rnd):
+    """The scorer's filled-in form, as it goes into the report (None if there is none). Whatever is
+    wrong with it is listed under `problems` and recorded; it never fails a run (ADR 0004)."""
+    path = rp(rnd.run, "quality.json")
+    if not os.path.exists(path):
+        return None
+    got = read_json(path)
+    if not isinstance(got, dict):
+        return {"problems": ["quality.json is not valid JSON"], "items": [], "feedback": []}
+    want = quality_form(rnd)
+    problems = []
+    out = {"scorer_model": got.get("scorer_model"), "items": [], "feedback": []}
+    for group, keep in (("items", ("id", "type", "topic", "answered")), ("feedback", ("id",))):
+        rows = [r for r in got.get(group) or [] if isinstance(r, dict)]
+        for w in want[group]:
+            r = next((x for x in rows if x.get("id") == w["id"]), None)
+            optional = group == "items" and not w.get("answered")
+            if r is None or r.get("score") is None:
+                if not optional:
+                    problems.append("%s %s has no score" % (group, w["id"]))
+                continue
+            if not valid_score(r["score"]):
+                problems.append("%s %s: score %s is not a whole number 1-5" % (group, w["id"], json.dumps(r["score"])))
+                continue
+            row = {k: w.get(k) for k in keep}
+            row.update({"score": r["score"], "note": one_line(r.get("note"))})
+            out[group].append(row)
+        for r in rows:
+            if r.get("id") not in [w["id"] for w in want[group]]:
+                problems.append("%s %s is not part of this round; ignored" % (group, json.dumps(r.get("id"))))
+        scores = [r["score"] for r in out[group]]
+        out["%s_mean" % group.rstrip("s")] = round(sum(scores) / len(scores), 2) if scores else None
+    overall = got.get("overall") if isinstance(got.get("overall"), dict) else {}
+    if overall.get("score") is not None and not valid_score(overall["score"]):
+        problems.append("overall: score %s is not a whole number 1-5" % json.dumps(overall["score"]))
+        overall = dict(overall, score=None)
+    out["score"] = overall.get("score")
+    out["note"] = one_line(overall.get("note")) or None
+    out["concerns"] = [one_line(c) for c in got.get("concerns") or [] if norm(str(c))][:10]
+    out["problems"] = problems
+    return out
+
+
+def cmd_quality(args):
+    """Before the scorer agent: write its form and its brief. After it: say whether the form is whole."""
+    rnd = Round(args.run)
+    if not rnd.items:
+        raise SimError("no round in %s to score (no round.json, no saved round)" % args.run)
+    path = rp(args.run, "quality.json")
+    prompt = rp(args.run, "quality_prompt.md")
+    if not os.path.exists(path) or args.reset:
+        write_json(path, quality_form(rnd))
+        write(prompt, fill(read(os.path.join(HERE, "prompts", "quality.md")), {
+            "run": os.path.abspath(args.run), "form": os.path.abspath(path), "messages": rp(os.path.abspath(args.run), "messages"),
+            "work": os.path.abspath(rnd.work), "store": os.path.abspath(rnd.store)}))
+        print(json.dumps({"ok": True, "form": path, "quality_prompt": prompt,
+                          "then": "start a new agent (not the examiner, not the learner) with the quality prompt; "
+                                  "when it returns, run this command again, then report"}, indent=1))
+        return 0
+    q = load_quality(rnd)
+    print(json.dumps({"ok": not q["problems"], "form": path, "items_scored": len(q["items"]),
+                      "feedback_scored": len(q["feedback"]), "item_mean": q.get("item_mean"),
+                      "feedback_mean": q.get("feedback_mean"), "problems": q["problems"],
+                      "note": "logged only: these scores never fail a run"}, indent=1))
+    return 0
 
 
 def secs(v):
@@ -646,8 +891,7 @@ def report_markdown(rep):
         "| Ledger settings | %s |" % ", ".join("%s=%s" % (k, json.dumps(v)) for k, v in sorted((rep.get("config") or {}).items())
                                                if k in ("helpers", "prepare_ahead", "mcqs", "focused", "case", "case_format", "item_order")),
         "| Messages | %d examiner, %d learner |" % (rep["messages"]["examiner"], rep["messages"]["learner"]),
-        "| Clinical quality (logged only) | %s |" % ("%s/5%s" % (rep["quality"]["score"], " — " + rep["quality"]["note"] if rep["quality"].get("note") else "")
-                                                     if rep.get("quality") else "not scored"),
+        "| Clinical quality (logged only) | %s |" % quality_line(rep.get("quality")),
         "",
         "## Automatic checks",
         "",
@@ -658,10 +902,21 @@ def report_markdown(rep):
         % (mark(c["saved"]["ok"]), c["saved"].get("files_compared") if c["saved"].get("files_compared") is not None else "no",
            ", ".join(c["saved"]["output_folders"]) or "no output folders"),
         "| Log complete and verbatim | %s | sections: %s |" % (mark(c["log"]["ok"]), ", ".join(c["log"]["sections"]) or "none"),
-        "",
     ]
-    for name, title in (("blinding", "Blinding"), ("saved", "Saved files"), ("log", "Log")):
-        if c[name]["problems"]:
+    if "dispute" in c:
+        d = c["dispute"]
+        lines.append("| Persona: a settled dispute, in the log and in the grade changes | %s | %s; exchange logged under: %s |" % (
+            mark(d["ok"]), "; ".join("%s %s → %s (%s)" % (g.get("item") or g.get("topic") or "?", g.get("from"), g.get("to"), g.get("outcome"))
+                                     for g in d["grade_changes"]) or "no grade change", ", ".join(d["logged_in"]) or "nowhere"))
+    if "stopped" in c:
+        d = c["stopped"]
+        lines.append("| Persona: round saved without the case, its topic still due | %s | %d item(s) saved; case topic %s, schedule %s |" % (
+            mark(d["ok"]), d["items_saved"], d.get("case_topic") or "unknown",
+            json.dumps(d["case_topic_schedule"]) if d.get("case_topic_schedule") else "unknown"))
+    lines.append("")
+    for name, title in (("blinding", "Blinding"), ("saved", "Saved files"), ("log", "Log"),
+                        ("dispute", "Dispute"), ("stopped", "Stopped before the case")):
+        if name in c and c[name]["problems"]:
             lines += ["### %s: problems" % title, ""] + ["- %s" % p for p in c[name]["problems"]] + [""]
     if c["blinding"]["findings"]:
         lines += ["### Blinding: findings", "",
@@ -685,9 +940,53 @@ def report_markdown(rep):
         lines.append("| %d | %s | %s | %s | %d | %d | %s |" % (s["step"], s["label"], secs(s["wait_s"]), secs(s["turn_s"]),
                                                              s["examiner_messages"], s["examiner_chars"], secs(s["learner_s"])))
     lines += ["", "Total wait %s s; longest wait %s s; whole run %s s." % (secs(t["total_wait_s"]), secs(t["longest_wait_s"]), secs(t["elapsed_s"])), ""]
+    q = rep.get("quality") or {}
+    if q.get("items") or q.get("feedback") or q.get("problems"):
+        cell = lambda v: str(v if v is not None else "").replace("|", "/")
+        lines += ["## Clinical quality", "",
+                  "Scored 1–5 by a separate agent after the round%s. Kept for comparison over time; it is "
+                  "never a pass bar (`docs/adr/0004-no-clinical-correctness-judge.md`)." % (
+                      " (%s)" % q["scorer_model"] if q.get("scorer_model") else ""), "",
+                  "| | What | Score | Note |", "|---|---|---|---|"]
+        for r in q.get("items") or []:
+            lines.append("| Item | %s (%s, %s%s) | %d | %s |" % (r["id"], r.get("type") or "?", r.get("topic") or "?",
+                                                              "" if r.get("answered", True) else ", not answered", r["score"], cell(r.get("note"))))
+        for r in q.get("feedback") or []:
+            lines.append("| Feedback | %s | %d | %s |" % (r["id"], r["score"], cell(r.get("note"))))
+        lines += ["", "Mean: items %s, feedback %s." % (q.get("item_mean") if q.get("item_mean") is not None else "–",
+                                                         q.get("feedback_mean") if q.get("feedback_mean") is not None else "–"), ""]
+        if q.get("concerns"):
+            lines += ["For a clinician to look at:", ""] + ["- %s" % x for x in q["concerns"]] + [""]
+        if q.get("problems"):
+            lines += ["The scorer's form was incomplete (recorded, not a failure):", ""] + ["- %s" % x for x in q["problems"]] + [""]
     if rep.get("note"):
         lines += ["## Notes", "", rep["note"], ""]
     return "\n".join(lines)
+
+
+def quality_line(q):
+    if not q:
+        return "not scored"
+    parts = []
+    if q.get("item_mean") is not None:
+        parts.append("items %s/5 (n=%d)" % (q["item_mean"], len(q["items"])))
+    if q.get("feedback_mean") is not None:
+        parts.append("feedback %s/5 (n=%d)" % (q["feedback_mean"], len(q["feedback"])))
+    if q.get("score") is not None:
+        parts.append("overall %s/5" % q["score"])
+    return (", ".join(parts) or "not scored") + (" — " + q["note"].replace("|", "/") if q.get("note") else "")
+
+
+def confident_misses(items):
+    """Items answered `sure` and wrong: what the weak, overconfident persona should produce."""
+    n = 0
+    for it in items:
+        sure = str(it.get("confidence") or "").lower() == "sure"
+        if it.get("type") == "mcq":
+            n += 1 if sure and it.get("correct") is False else 0
+        else:
+            n += 1 if sure and isinstance(it.get("mastery"), (int, float)) and it["mastery"] <= 2 else 0
+    return n
 
 
 def cmd_report(args):
@@ -699,16 +998,22 @@ def cmd_report(args):
         "%d focused" % kinds.count("focused") if kinds.count("focused") else "",
         ("case (%s)" % ("two stages" if rnd.two_stage else "one step")) if rnd.has_case else "") if x)
     date = (rnd.meta.get("created") or dt.date.today().isoformat())[:10]
+    quality = load_quality(rnd)
+    if args.quality is not None:          # an overall score given by hand stands beside (or without) the scorer's
+        quality = dict(quality or {}, score=args.quality, note=args.quality_note)
+    elif quality and args.quality_note:
+        quality["note"] = args.quality_note
     rep = {
-        "schema": 1, "ok": res["ok"], "date": date, "persona": rnd.meta.get("persona"),
+        "schema": 2, "ok": res["ok"], "date": date, "persona": rnd.meta.get("persona"),
         "skill_version": rnd.meta.get("skill_version"), "commit": rnd.meta.get("commit"),
         "examiner_model": args.examiner_model, "learner_model": args.learner_model,
         "config": rnd.state.get("config") or rnd.meta.get("config"),
         "round": {"session": rnd.sid if rnd.doc else None, "shape": shape or None,
-                  "score": (rnd.doc or {}).get("score"), "continued_from_earlier_run": bool(rnd.meta.get("continued_from"))},
+                  "score": (rnd.doc or {}).get("score"), "confident_misses": confident_misses(rnd.items),
+                  "continued_from_earlier_run": bool(rnd.meta.get("continued_from"))},
         "messages": {r: sum(1 for m in rnd.messages if m["role"] == r) for r in ROLES},
         "checks": res["checks"], "timings": timings(rnd),
-        "quality": {"score": args.quality, "note": args.quality_note} if args.quality is not None else None,
+        "quality": quality,
         "note": args.note,
     }
     out_dir = os.path.abspath(args.out_dir or os.path.join(HERE, "reports"))
@@ -722,7 +1027,44 @@ def cmd_report(args):
     print(json.dumps({"ok": rep["ok"], "report": os.path.join(out_dir, name + ".md"),
                       "data": os.path.join(out_dir, name + ".json"),
                       "checks": {k2: v["ok"] for k2, v in res["checks"].items()},
-                      "longest_wait_s": rep["timings"]["longest_wait_s"]}, indent=1))
+                      "longest_wait_s": rep["timings"]["longest_wait_s"],
+                      "quality": {k: quality.get(k) for k in ("item_mean", "feedback_mean", "score")} if quality else None},
+                     indent=1))
+    return 0
+
+
+def cmd_history(args):
+    """One line per saved report, oldest first: the checks and the quality scores side by side."""
+    folder = os.path.abspath(args.reports or os.path.join(HERE, "reports"))
+    def order(name):                      # <date>-<persona>, then <date>-<persona>-2, -3, …
+        m = re.match(r"(\d{4}-\d{2}-\d{2})-(.*?)(?:-(\d+))?\.json$", name)
+        return (m.group(1), m.group(2), int(m.group(3) or 1)) if m else (name, "", 0)
+
+    names = sorted((n for n in os.listdir(folder) if n.endswith(".json")), key=order) if os.path.isdir(folder) else []
+    rows = []
+    for n in names:
+        r = read_json(os.path.join(folder, n))
+        if not isinstance(r, dict) or "checks" not in r:
+            continue
+        if args.persona and r.get("persona") != args.persona:
+            continue
+        q = r.get("quality") or {}
+        failed = [k for k, c in r["checks"].items() if not c.get("ok")]
+        rows.append({"report": n[:-5], "persona": r.get("persona"), "skill_version": r.get("skill_version"),
+                     "commit": r.get("commit"), "checks": "pass" if not failed else "FAIL: " + ", ".join(failed),
+                     "round_score": (r.get("round") or {}).get("score"), "quality_items": q.get("item_mean"),
+                     "quality_feedback": q.get("feedback_mean"), "quality_overall": q.get("score"),
+                     "longest_wait_s": (r.get("timings") or {}).get("longest_wait_s")})
+    if args.json:
+        print(json.dumps(rows, indent=1))
+        return 0
+    show = lambda v: "–" if v is None else str(v)
+    print("| Report | Persona | Version / commit | Checks | Round score | Quality: items | feedback | overall | Longest wait (s) |")
+    print("|---|---|---|---|---|---|---|---|---|")
+    for r in rows:
+        print("| %s | %s | %s / %s | %s | %s | %s | %s | %s | %s |" % (
+            r["report"], show(r["persona"]), show(r["skill_version"]), show(r["commit"]), r["checks"], show(r["round_score"]),
+            show(r["quality_items"]), show(r["quality_feedback"]), show(r["quality_overall"]), show(r["longest_wait_s"])))
     return 0
 
 
@@ -745,10 +1087,16 @@ def main(argv=None):
     s.add_argument("--ts", type=float, help=argparse.SUPPRESS); s.set_defaults(fn=cmd_next)
     s = sub.add_parser("check", help="run the automatic checks (exit 1 if any fails)")
     s.add_argument("--run", required=True); s.set_defaults(fn=cmd_check)
-    s = sub.add_parser("report", help="checks + timings, written to sim/reports/")
+    s = sub.add_parser("quality", help="write the quality scorer's form and brief; run again to check the filled form")
+    s.add_argument("--run", required=True); s.add_argument("--reset", action="store_true", help="write a fresh form")
+    s.set_defaults(fn=cmd_quality)
+    s = sub.add_parser("history", help="one line per saved report: checks and quality scores over time")
+    s.add_argument("--reports"); s.add_argument("--persona"); s.add_argument("--json", action="store_true")
+    s.set_defaults(fn=cmd_history)
+    s = sub.add_parser("report", help="checks + timings + quality scores, written to sim/reports/")
     s.add_argument("--run", required=True); s.add_argument("--out-dir")
     s.add_argument("--examiner-model"); s.add_argument("--learner-model")
-    s.add_argument("--quality", type=int, choices=range(1, 6), help="clinical quality 1-5, logged only (ADR 0004)")
+    s.add_argument("--quality", type=int, choices=range(1, 6), help="overall clinical quality 1-5 given by hand, logged only (ADR 0004)")
     s.add_argument("--quality-note"); s.add_argument("--note"); s.set_defaults(fn=cmd_report)
     args = ap.parse_args(argv)
     try:

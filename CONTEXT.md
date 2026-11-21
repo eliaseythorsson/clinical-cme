@@ -102,3 +102,10 @@ A scripted run of the skill in which one agent is the examiner and another plays
 
 **Persona**:
 The kind of learner an agent plays in a simulation (strong; weak and overconfident; disputes a grade; stops halfway).
+
+**Quality scorer**:
+A third agent in a simulation that, after the round, rates each item and each feedback message for clinical quality. It takes no part in the round.
+_Avoid_: judge
+
+**Clinical-quality score**:
+The quality scorer's rating, 1–5, of one item or one feedback message; kept in the simulation report for comparison over time, never a pass bar.
