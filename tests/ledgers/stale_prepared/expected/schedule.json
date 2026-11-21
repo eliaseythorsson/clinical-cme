@@ -1,36 +1,5 @@
 {
  "after_record": {
-  "GI-06": {
-   "attempts": 3,
-   "calibration": "not_rated",
-   "comfort": null,
-   "domain": "GI",
-   "due": "2026-11-23",
-   "history": [
-    [
-     "2026-09-07",
-     2.0,
-     2,
-     "aligned"
-    ],
-    [
-     "2026-09-10",
-     1.0,
-     4,
-     "confident_error"
-    ],
-    [
-     "2026-11-20",
-     5.0,
-     null,
-     "not_rated"
-    ]
-   ],
-   "label": "Bowel obstruction, ischemia",
-   "last": "2026-11-20",
-   "mastery": 5.0,
-   "step": 1
-  },
   "PULM-04": {
    "attempts": 1,
    "calibration": "not_rated",
@@ -105,40 +74,34 @@
    "last": "2026-11-20",
    "mastery": 5.0,
    "step": 2
-  }
- },
- "after_reflect": {
-  "GI-06": {
-   "attempts": 3,
-   "calibration": "aligned",
-   "comfort": 5,
-   "domain": "GI",
-   "due": "2026-11-23",
+  },
+  "RENAL-06": {
+   "attempts": 2,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "RENAL",
+   "due": "2026-11-27",
    "history": [
     [
-     "2026-09-07",
-     2.0,
-     2,
+     "2026-09-01",
+     5.0,
+     5,
      "aligned"
-    ],
-    [
-     "2026-09-10",
-     1.0,
-     4,
-     "confident_error"
     ],
     [
      "2026-11-20",
      5.0,
-     5,
-     "aligned"
+     null,
+     "not_rated"
     ]
    ],
-   "label": "Bowel obstruction, ischemia",
+   "label": "CKD inpatient management, indications for dialysis",
    "last": "2026-11-20",
    "mastery": 5.0,
-   "step": 1
-  },
+   "step": 2
+  }
+ },
+ "after_reflect": {
   "PULM-04": {
    "attempts": 1,
    "calibration": "overconfident",
@@ -210,6 +173,31 @@
     ]
    ],
    "label": "Sepsis & septic shock",
+   "last": "2026-11-20",
+   "mastery": 5.0,
+   "step": 2
+  },
+  "RENAL-06": {
+   "attempts": 2,
+   "calibration": "aligned",
+   "comfort": 5,
+   "domain": "RENAL",
+   "due": "2026-11-27",
+   "history": [
+    [
+     "2026-09-01",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-11-20",
+     5.0,
+     5,
+     "aligned"
+    ]
+   ],
+   "label": "CKD inpatient management, indications for dialysis",
    "last": "2026-11-20",
    "mastery": 5.0,
    "step": 2

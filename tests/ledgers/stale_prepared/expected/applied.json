@@ -133,6 +133,18 @@
   },
   "gaps": [
    {
+    "date": "2026-09-10",
+    "gap": "Example gap 3.3: missed the decision point | Confident but incorrect answer on 2026-09-10; re-test the same decision point.",
+    "id": "G0001",
+    "opened": "2026-09-07",
+    "self": null,
+    "source": [
+     "graded",
+     "misconception"
+    ],
+    "topic": "GI-06"
+   },
+   {
     "date": "2026-11-20",
     "gap": "Example gap 5.2: missed the decision point",
     "id": "G0002",
@@ -160,14 +172,6 @@
     "partial": false,
     "resolved": "2026-09-10",
     "topic": "GEN-09"
-   },
-   {
-    "id": "G0001",
-    "note": "Example gap 3.3: missed the decision point | Confident but incorrect answer on 2026-09-10; re-test the same decision point.",
-    "opened": "2026-09-07",
-    "partial": false,
-    "resolved": "2026-11-20",
-    "topic": "GI-06"
    }
   ],
   "session": {
@@ -224,9 +228,8 @@
      },
      "confidence": "sure",
      "mastery": 5,
-     "retests": "GI-06",
      "stem": "Example focused stem 5.1",
-     "topic": "GI-06",
+     "topic": "RENAL-06",
      "type": "focused"
     },
     {
@@ -276,15 +279,15 @@
    "title": "Example round S0005",
    "topics": [
     "PULM-07",
-    "GI-06",
+    "RENAL-06",
     "PULM-06",
     "PULM-04"
    ],
    "why": {
-    "GI-06": "due",
     "PULM-04": "new",
     "PULM-06": "new",
-    "PULM-07": "due"
+    "PULM-07": "due",
+    "RENAL-06": "due"
    }
   },
   "session_ids": [
@@ -421,7 +424,7 @@
   "blocks": [],
   "domain_self_ratings": {
    "GEN": 4.3,
-   "GI": 3.5,
+   "GI": 2.7,
    "HEME": 4.0,
    "ID": 4.3,
    "NEURO": 4,
@@ -430,6 +433,18 @@
    "RHEUM": 4
   },
   "gaps": [
+   {
+    "date": "2026-09-10",
+    "gap": "Example gap 3.3: missed the decision point | Confident but incorrect answer on 2026-09-10; re-test the same decision point.",
+    "id": "G0001",
+    "opened": "2026-09-07",
+    "self": null,
+    "source": [
+     "graded",
+     "misconception"
+    ],
+    "topic": "GI-06"
+   },
    {
     "date": "2026-11-20",
     "gap": "Example gap 5.2: missed the decision point",
@@ -458,14 +473,6 @@
     "partial": false,
     "resolved": "2026-09-10",
     "topic": "GEN-09"
-   },
-   {
-    "id": "G0001",
-    "note": "Example gap 3.3: missed the decision point | Confident but incorrect answer on 2026-09-10; re-test the same decision point.",
-    "opened": "2026-09-07",
-    "partial": false,
-    "resolved": "2026-11-20",
-    "topic": "GI-06"
    }
   ],
   "session": {
@@ -522,9 +529,8 @@
      },
      "confidence": "sure",
      "mastery": 5,
-     "retests": "GI-06",
      "stem": "Example focused stem 5.1",
-     "topic": "GI-06",
+     "topic": "RENAL-06",
      "type": "focused"
     },
     {
@@ -569,10 +575,10 @@
    },
    "score": 3.75,
    "self_comfort": {
-    "GI-06": 5,
     "PULM-04": 5,
     "PULM-06": 2,
-    "PULM-07": 2
+    "PULM-07": 2,
+    "RENAL-06": 5
    },
    "self_performance": 3,
    "started_at": null,
@@ -583,15 +589,15 @@
    "title": "Example round S0005",
    "topics": [
     "PULM-07",
-    "GI-06",
+    "RENAL-06",
     "PULM-06",
     "PULM-04"
    ],
    "why": {
-    "GI-06": "due",
     "PULM-04": "new",
     "PULM-06": "new",
-    "PULM-07": "due"
+    "PULM-07": "due",
+    "RENAL-06": "due"
    }
   },
   "session_ids": [
@@ -609,22 +615,11 @@
   "errata_to_log": [],
   "gen": 10,
   "next_id": "S0006",
-  "open_gaps": 1,
+  "open_gaps": 2,
   "reflection_pending": true,
   "score": 3.75,
   "session_id": "S0005",
   "topics": {
-   "GI-06": {
-    "calibration": "not_rated",
-    "comfort": null,
-    "due": "2026-11-23",
-    "gap_resolved": true,
-    "gap_retested": true,
-    "interval_days": 3,
-    "mastery": 5.0,
-    "misconception": false,
-    "step": 1
-   },
    "PULM-04": {
     "calibration": "not_rated",
     "comfort": null,
@@ -651,6 +646,15 @@
     "mastery": 5.0,
     "misconception": false,
     "step": 2
+   },
+   "RENAL-06": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-27",
+    "interval_days": 7,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 2
    }
   },
   "warnings": []
@@ -659,20 +663,9 @@
   "errata_ids": [],
   "errata_to_log": [],
   "gen": 11,
-  "open_gaps": 1,
+  "open_gaps": 2,
   "session_id": "S0005",
   "topics": {
-   "GI-06": {
-    "calibration": "aligned",
-    "comfort": 5,
-    "due": "2026-11-23",
-    "gap_resolved": true,
-    "gap_retested": true,
-    "interval_days": 3,
-    "mastery": 5.0,
-    "misconception": false,
-    "step": 1
-   },
    "PULM-04": {
     "calibration": "overconfident",
     "comfort": 5,
@@ -699,6 +692,15 @@
     "mastery": 5.0,
     "misconception": false,
     "step": 2
+   },
+   "RENAL-06": {
+    "calibration": "aligned",
+    "comfort": 5,
+    "due": "2026-11-27",
+    "interval_days": 7,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 2
    }
   },
   "warnings": []
@@ -708,10 +710,10 @@
   "performance": 3,
   "solid": "Example: what felt solid in round 5",
   "topic_comfort": {
-   "GI-06": 5,
    "PULM-04": 5,
    "PULM-06": 2,
-   "PULM-07": 2
+   "PULM-07": 2,
+   "RENAL-06": 5
   }
  },
  "round": {
@@ -763,9 +765,8 @@
     },
     "confidence": "sure",
     "mastery": 5,
-    "retests": "GI-06",
     "stem_summary": "Example focused stem 5.1",
-    "topic": "GI-06",
+    "topic": "RENAL-06",
     "type": "focused"
    },
    {
@@ -800,10 +801,10 @@
   "log_id": "S0005",
   "minutes": 26,
   "selection_reasons": {
-   "GI-06": "due",
    "PULM-04": "new",
    "PULM-06": "new",
-   "PULM-07": "due"
+   "PULM-07": "due",
+   "RENAL-06": "due"
   },
   "summary": "Synthetic round 5 of an example ledger.",
   "tags": [

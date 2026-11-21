@@ -241,6 +241,24 @@ what will be kept and adds little to it, and a topic stuck at 3/5 filled every r
 applies the same rest to ledgers written before this rule (a topic tested in the last two days
 is not chosen, even if its stored due date has passed); only `--allow-repeat` overrides it.
 
+**Drill-down limit.** Coming back to a topic round after round because it was missed is limited,
+so that a block stays on its theme and one weak point does not fill the rounds:
+
+- `plan` never puts a topic in a third round in a row: a topic that was in both of the last two
+  recorded rounds is left out of the next one, due or not, with an open gap or not (again only
+  `--allow-repeat` overrides it). It is eligible again the round after.
+- In the block's theme a missed topic comes back after the three-day rest. Missed again in the
+  round straight after (two rounds in a row), it waits at least seven days.
+- Outside the theme a miss gets one targeted retest (its gap, after the rest). If the topic is
+  not answered well then either, it waits at least seven days, and so after every further miss
+  until its domain is the theme: no short returns outside the theme.
+
+"Not answered well" is the bar a retest must clear: below 4, or overconfident, or a confident
+error. A good answer is never delayed by this. Where the limit lengthened an interval, `record`
+and `reflect` report `"drilldown_limit": true` for the topic. The theme that counts is that of
+the block the round was recorded in (the session's `block`), also when the round is reflected
+on later.
+
 Self-assessment, with comfort *c* for the topic:
 
 | Condition | Label | Effect |
@@ -362,7 +380,9 @@ retires to `resolved` only when, in a later round, the items whose `retests` nam
 overconfident, and no new gap is logged on the topic. A good answer on another point of the same
 topic leaves the gap open and still waiting for its retest: the learner showed they know
 something else, not that the missed point is fixed. A retest that falls short sets
-`last_retested`; from then on the gap comes back with its topic's spacing.
+`last_retested`; from then on the gap comes back with its topic's spacing. That holds too when
+the examiner writes the gap again after the failed retest: the new text keeps the id and
+`last_retested`, so a gap gets one targeted retest, not one per rewrite.
 
 Review due: when `review_interval_days` has passed and at least three sessions were done, or
 the interval plus 21 days has passed regardless. A snooze always wins.

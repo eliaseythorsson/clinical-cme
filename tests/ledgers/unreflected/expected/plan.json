@@ -63,35 +63,28 @@
   {
    "already_used": [
     {
-     "date": "2026-10-16",
-     "diagnosis": "Example diagnosis: Pain management & opioid stewardship",
-     "id": "S0006",
-     "patient": "Example patient 6",
-     "presentation": "Example presentation 6",
-     "setting": "ward",
-     "topic": "GEN-04"
+     "date": "2026-10-07",
+     "id": "S0002",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 2.1",
+     "topic": "HEME-02"
     },
     {
-     "date": "2026-10-14",
-     "id": "S0005",
+     "date": "2026-10-09",
+     "id": "S0003",
      "kind": "mcq",
-     "stem": "Example MCQ stem 5.3",
-     "topic": "GEN-04"
+     "stem": "Example MCQ stem 3.1",
+     "topic": "HEME-02"
     }
    ],
-   "domain": "GEN",
-   "label": "Pain management & opioid stewardship",
-   "reason": "spaced review due 2026-10-17; last 1.0/5 on 2026-10-16; flagged confident error last time; open gap: Confident but incorrect answer on 2026-10-16; re-test the same decision point.",
+   "domain": "HEME",
+   "label": "Thrombocytopenia, HIT, TTP/HUS",
+   "reason": "spaced review due 2026-10-11; last 5.0/5 on 2026-10-09",
    "reason_code": "due",
-   "retest_gap": {
-    "gap": "Confident but incorrect answer on 2026-10-16; re-test the same decision point.",
-    "how": "Write this item on the gap's decision point, in a new clinical context, and put \"retests\": \"GEN-04\" on the item in the round JSON. Only an item that says so, answered well, closes the gap.",
-    "id": "GEN-04"
-   },
    "separation": "other domain",
    "share": "repeat",
    "slot": "mcq",
-   "topic": "GEN-04"
+   "topic": "HEME-02"
   },
   {
    "domain": "PULM",
@@ -120,7 +113,7 @@
  "pending_errata": [],
  "prepare_ahead": true,
  "presentation_order": [
-  "mcq GEN-04",
+  "mcq HEME-02",
   "mcq PULM-08",
   "mcq PULM-05",
   "case PULM-02"

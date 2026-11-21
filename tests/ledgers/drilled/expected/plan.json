@@ -1,0 +1,216 @@
+{
+ "block": {
+  "length": 12,
+  "line": "Block: Cardiology, round 8 of 12",
+  "mix": {
+   "repeat": 1,
+   "theme": 2,
+   "wildcard": 1
+  },
+  "name": "Cardiology",
+  "round": 8,
+  "starts": false,
+  "theme": "CARD"
+ },
+ "blood_gas_units": "mmHg",
+ "case_format": "unfolding",
+ "counts": {
+  "case": 1,
+  "focused": 0,
+  "mcqs": 4
+ },
+ "date": "2026-10-22",
+ "estimated_minutes": 27,
+ "feedback_depth": "detailed",
+ "guideline_region": "Iceland/Europe",
+ "helpers": true,
+ "item_order": "mcqs_first",
+ "items": [
+  {
+   "already_used": [
+    {
+     "date": "2026-10-01",
+     "id": "S0001",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 1.2",
+     "topic": "CARD-08"
+    }
+   ],
+   "domain": "CARD",
+   "label": "Venous thromboembolism — PE (see also PULM/HEME)",
+   "reason": "spaced review due 2026-10-04; last 5.0/5 on 2026-10-01",
+   "reason_code": "due",
+   "share": "theme",
+   "slot": "case",
+   "topic": "CARD-08"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-10-13",
+     "id": "S0005",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 5.4",
+     "topic": "GI-05"
+    },
+    {
+     "date": "2026-10-16",
+     "id": "S0006",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 6.1",
+     "topic": "GI-05"
+    }
+   ],
+   "domain": "GI",
+   "label": "Inflammatory bowel disease flare",
+   "reason": "spaced review due 2026-10-19; last 2.0/5 on 2026-10-16; open gap: Example gap: missed the decision point again in S0006",
+   "reason_code": "due",
+   "retest_gap": {
+    "gap": "Example gap: missed the decision point again in S0006",
+    "how": "Write this item on the gap's decision point, in a new clinical context, and put \"retests\": \"G0005\" on the item in the round JSON. Only an item that says so, answered well, closes the gap.",
+    "id": "G0005"
+   },
+   "separation": "other domain",
+   "share": "repeat",
+   "slot": "mcq",
+   "topic": "GI-05"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-10-04",
+     "id": "S0002",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 2.4",
+     "topic": "CARD-07"
+    }
+   ],
+   "domain": "CARD",
+   "label": "Pericardial disease, myocarditis",
+   "reason": "spaced review due 2026-10-07; last 5.0/5 on 2026-10-04",
+   "reason_code": "due",
+   "separation": "same domain as the case (the block's theme), unrelated topic",
+   "share": "theme",
+   "slot": "mcq",
+   "topic": "CARD-07"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-10-10",
+     "id": "S0004",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 4.4",
+     "topic": "CARD-06"
+    }
+   ],
+   "domain": "CARD",
+   "label": "Hypertensive emergency/urgency",
+   "reason": "spaced review due 2026-10-13; last 5.0/5 on 2026-10-10",
+   "reason_code": "due",
+   "separation": "same domain as the case (the block's theme), unrelated topic",
+   "share": "theme",
+   "slot": "mcq",
+   "topic": "CARD-06"
+  },
+  {
+   "domain": "NEURO",
+   "label": "Altered mental status / delirium",
+   "reason": "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)",
+   "reason_code": "new",
+   "separation": "other domain",
+   "share": "wildcard",
+   "slot": "mcq",
+   "topic": "NEURO-04"
+  }
+ ],
+ "lab_units": "SI",
+ "note": "Blind: do not reveal topics, reasons or the drill before all answers are in. The learner is told the block's theme and position (block.line) and nothing more specific: never which items are on the theme, nor the domain of any other item. Make every vignette and stem clearly different from already_used and recent_cases_any_topic (patient, setting, presentation, twist). MCQs and focused questions are presented together and get their feedback before the case is shown; neither they nor their feedback may cue the case.",
+ "ok": true,
+ "pending_errata": [],
+ "prepare_ahead": true,
+ "presentation_order": [
+  "mcq GI-05",
+  "mcq CARD-07",
+  "mcq CARD-06",
+  "mcq NEURO-04",
+  "case CARD-08"
+ ],
+ "profile": {
+  "notes": "",
+  "practice_setting": [],
+  "role": null,
+  "specialty": "Internal/hospital medicine",
+  "subspecialty": null
+ },
+ "recent_cases_any_topic": [
+  {
+   "date": "2026-10-01",
+   "diagnosis": "Example diagnosis: Atrial fibrillation & rate/rhythm control, anticoagulation",
+   "id": "S0001",
+   "patient": "Example patient 1",
+   "presentation": "Example presentation 1",
+   "setting": "ward",
+   "topic": "CARD-03"
+  },
+  {
+   "date": "2026-10-04",
+   "diagnosis": "Example diagnosis: Acute coronary syndrome (STEMI/NSTEMI/UA)",
+   "id": "S0002",
+   "patient": "Example patient 2",
+   "presentation": "Example presentation 2",
+   "setting": "ward",
+   "topic": "CARD-01"
+  },
+  {
+   "date": "2026-10-07",
+   "diagnosis": "Example diagnosis: Acute decompensated heart failure (HFrEF / HFpEF)",
+   "id": "S0003",
+   "patient": "Example patient 3",
+   "presentation": "Example presentation 3",
+   "setting": "ward",
+   "topic": "CARD-02"
+  },
+  {
+   "date": "2026-10-10",
+   "diagnosis": "Example diagnosis: Acute coronary syndrome (STEMI/NSTEMI/UA)",
+   "id": "S0004",
+   "patient": "Example patient 4",
+   "presentation": "Example presentation 4",
+   "setting": "ward",
+   "topic": "CARD-01"
+  },
+  {
+   "date": "2026-10-13",
+   "diagnosis": "Example diagnosis: Acute decompensated heart failure (HFrEF / HFpEF)",
+   "id": "S0005",
+   "patient": "Example patient 5",
+   "presentation": "Example presentation 5",
+   "setting": "ward",
+   "topic": "CARD-02"
+  },
+  {
+   "date": "2026-10-16",
+   "diagnosis": "Example diagnosis: Acute coronary syndrome (STEMI/NSTEMI/UA)",
+   "id": "S0006",
+   "patient": "Example patient 6",
+   "presentation": "Example presentation 6",
+   "setting": "ward",
+   "topic": "CARD-01"
+  },
+  {
+   "date": "2026-10-19",
+   "diagnosis": "Example diagnosis: Acute decompensated heart failure (HFrEF / HFpEF)",
+   "id": "S0007",
+   "patient": "Example patient 7",
+   "presentation": "Example presentation 7",
+   "setting": "ward",
+   "topic": "CARD-02"
+  }
+ ],
+ "session_id": "S0008",
+ "session_minutes": 20,
+ "show_coding": true,
+ "specialty": "Internal/hospital medicine",
+ "testing": false
+}

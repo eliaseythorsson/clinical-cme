@@ -1,34 +1,22 @@
 {
  "after_record": {
-  "NEURO-02": {
-   "attempts": 3,
-   "calibration": "not_rated",
+  "NEURO-04": {
+   "attempts": 1,
+   "calibration": "confident_error",
    "comfort": null,
    "domain": "NEURO",
    "due": "2026-11-23",
    "history": [
     [
-     "2026-08-13",
-     3.0,
-     5,
-     "overconfident"
-    ],
-    [
-     "2026-08-17",
-     1.0,
-     4,
-     "confident_error"
-    ],
-    [
      "2026-11-20",
-     3.0,
+     1.0,
      null,
-     "not_rated"
+     "confident_error"
     ]
    ],
-   "label": "Intracranial hemorrhage",
+   "label": "Altered mental status / delirium",
    "last": "2026-11-20",
-   "mastery": 3.0,
+   "mastery": 1.0,
    "step": 0
   },
   "NEURO-05": {
@@ -52,21 +40,21 @@
   },
   "NEURO-06": {
    "attempts": 1,
-   "calibration": "confident_error",
+   "calibration": "not_rated",
    "comfort": null,
    "domain": "NEURO",
    "due": "2026-11-23",
    "history": [
     [
      "2026-11-20",
-     1.0,
+     3.0,
      null,
-     "confident_error"
+     "not_rated"
     ]
    ],
    "label": "Headache — dangerous causes",
    "last": "2026-11-20",
-   "mastery": 1.0,
+   "mastery": 3.0,
    "step": 0
   },
   "TOX-02": {
@@ -102,35 +90,23 @@
   }
  },
  "after_reflect": {
-  "NEURO-02": {
-   "attempts": 3,
-   "calibration": "overconfident",
-   "comfort": 5,
+  "NEURO-04": {
+   "attempts": 1,
+   "calibration": "confident_error",
+   "comfort": 4,
    "domain": "NEURO",
    "due": "2026-11-23",
    "history": [
     [
-     "2026-08-13",
-     3.0,
-     5,
-     "overconfident"
-    ],
-    [
-     "2026-08-17",
+     "2026-11-20",
      1.0,
      4,
      "confident_error"
-    ],
-    [
-     "2026-11-20",
-     3.0,
-     5,
-     "overconfident"
     ]
    ],
-   "label": "Intracranial hemorrhage",
+   "label": "Altered mental status / delirium",
    "last": "2026-11-20",
-   "mastery": 3.0,
+   "mastery": 1.0,
    "step": 0
   },
   "NEURO-05": {
@@ -154,21 +130,21 @@
   },
   "NEURO-06": {
    "attempts": 1,
-   "calibration": "confident_error",
-   "comfort": 4,
+   "calibration": "overconfident",
+   "comfort": 5,
    "domain": "NEURO",
    "due": "2026-11-23",
    "history": [
     [
      "2026-11-20",
-     1.0,
-     4,
-     "confident_error"
+     3.0,
+     5,
+     "overconfident"
     ]
    ],
    "label": "Headache — dangerous causes",
    "last": "2026-11-20",
-   "mastery": 1.0,
+   "mastery": 3.0,
    "step": 0
   },
   "TOX-02": {

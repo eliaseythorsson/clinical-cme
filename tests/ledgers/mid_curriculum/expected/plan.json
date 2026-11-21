@@ -27,55 +27,13 @@
  "item_order": "mcqs_first",
  "items": [
   {
-   "already_used": [
-    {
-     "date": "2026-10-12",
-     "diagnosis": "Example diagnosis: Acute respiratory failure, ARDS, mechanical ventilation basi…",
-     "id": "S0004",
-     "patient": "Example patient 4",
-     "presentation": "Example presentation 4",
-     "setting": "ward",
-     "topic": "PULM-04"
-    },
-    {
-     "date": "2026-10-22",
-     "diagnosis": "Example diagnosis: Acute respiratory failure, ARDS, mechanical ventilation basi…",
-     "id": "S0009",
-     "patient": "Example patient 9",
-     "presentation": "Example presentation 9",
-     "setting": "ward",
-     "topic": "PULM-04"
-    },
-    {
-     "date": "2026-10-09",
-     "id": "S0003",
-     "kind": "mcq",
-     "stem": "Example MCQ stem 3.4",
-     "topic": "PULM-04"
-    },
-    {
-     "date": "2026-10-19",
-     "id": "S0007",
-     "kind": "mcq",
-     "stem": "Example MCQ stem 7.2",
-     "topic": "PULM-04"
-    },
-    {
-     "aspect": "management",
-     "date": "2026-10-23",
-     "id": "S0010",
-     "kind": "focused",
-     "stem": "Example focused stem 10.1",
-     "topic": "PULM-04"
-    }
-   ],
    "domain": "PULM",
-   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
-   "reason": "spaced review due 2026-10-25; last 5.0/5 on 2026-10-23",
-   "reason_code": "due",
+   "label": "Shock differentiation & resuscitation",
+   "reason": "not yet tested; in the block's theme",
+   "reason_code": "new",
    "share": "theme",
    "slot": "case",
-   "topic": "PULM-04"
+   "topic": "PULM-08"
   },
   {
    "already_used": [
@@ -100,16 +58,6 @@
   },
   {
    "domain": "PULM",
-   "label": "Shock differentiation & resuscitation",
-   "reason": "not yet tested; in the block's theme",
-   "reason_code": "new",
-   "separation": "same domain as the case (the block's theme), unrelated topic",
-   "share": "theme",
-   "slot": "mcq",
-   "topic": "PULM-08"
-  },
-  {
-   "domain": "PULM",
    "label": "Pulmonary embolism (management)",
    "reason": "not yet tested; in the block's theme",
    "reason_code": "new",
@@ -119,14 +67,24 @@
    "topic": "PULM-06"
   },
   {
+   "domain": "PULM",
+   "label": "Pleural effusion / empyema",
+   "reason": "not yet tested; in the block's theme",
+   "reason_code": "new",
+   "separation": "same domain as the case (the block's theme), unrelated topic",
+   "share": "theme",
+   "slot": "mcq",
+   "topic": "PULM-05"
+  },
+  {
    "domain": "GEN",
-   "label": "Pain management & opioid stewardship",
+   "label": "Perioperative anticoagulation / antiplatelet bridging",
    "reason": "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)",
    "reason_code": "new",
    "separation": "other domain",
    "share": "wildcard",
    "slot": "mcq",
-   "topic": "GEN-04"
+   "topic": "GEN-02"
   }
  ],
  "lab_units": "SI",
@@ -135,11 +93,11 @@
  "pending_errata": [],
  "prepare_ahead": true,
  "presentation_order": [
-  "mcq PULM-08",
   "mcq PULM-06",
-  "mcq GEN-04",
+  "mcq PULM-05",
+  "mcq GEN-02",
   "focused TOX-03",
-  "case PULM-04"
+  "case PULM-08"
  ],
  "profile": {
   "notes": "",

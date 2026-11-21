@@ -99,6 +99,10 @@ DEFAULT_PROFILE = {
 }
 SELF_RATING_FACTOR = {1: 1.6, 2: 1.3, 3: 1.0, 4: 0.8, 5: 0.6}
 MIN_RETURN_DAYS = 3      # no tested topic and no open gap comes back sooner than this (ADR 0003)
+# Drill-down limit (ADR 0003): no topic is in more than this many rounds in a row, and a topic
+# missed again once its drill-down is used up waits at least the pause before it comes back.
+DRILLDOWN_MAX_ROUNDS = 2
+DRILLDOWN_PAUSE_DAYS = 7
 # Themed blocks (ADR 0003): a run of rounds on one domain. Shares are of a round's short questions,
 # in percent; the case is always on the theme.
 BLOCK_LENGTH = 12
@@ -504,7 +508,24 @@ def number_gaps(state):
 def gap_awaits_retest(g):
     """True until an item has tested this gap since it was last written."""
     retested, written = parse_date(g.get("last_retested")), parse_date(g.get("date"))
-    return retested is None or written is None or retested <= written
+    return retested is None or written is None or retested < written
+
+
+def answered_well(mastery, calibration):
+    """The bar a retest must clear to close a gap; below it the topic counts as missed."""
+    return mastery is not None and mastery >= 4 and calibration not in ("overconfident", "confident_error")
+
+
+def drilldown_over(state, tid, theme):
+    """True when a miss on topic `tid` in the round being applied should not bring it straight
+    back. In the block's theme a topic may be drilled in two rounds in a row: over when the round
+    before was on it too. Outside the theme a miss gets one targeted retest: over when the topic
+    already had an open gap or was missed the last time it was tested."""
+    t = state["topics"].get(tid) or {}
+    if theme and t.get("domain") == theme:
+        return bool(state["sessions"]) and tid in (state["sessions"][-1].get("topics") or [])
+    prev = (t.get("history") or [None])[-1]
+    return any(g.get("topic") == tid for g in state["gaps"]) or bool(prev and not answered_well(prev[1], prev[3]))
 
 
 def ensure_topic(state, tid, domain=None, label=None):
@@ -858,13 +879,16 @@ def plan_round(st, args, today):
     # an older version can hold a topic due the day after a miss).
     resting = {tid for tid, t in topics.items()
                if parse_date(t.get("last")) and (today - parse_date(t["last"])).days < MIN_RETURN_DAYS}
+    # In each of the last two rounds: left out of this one, due or not (the drill-down limit).
+    last_rounds = [set(s.get("topics") or []) for s in ((st.get("previous") or []) + log)[-DRILLDOWN_MAX_ROUNDS:]]
+    drilled = set.intersection(*last_rounds) if len(last_rounds) == DRILLDOWN_MAX_ROUNDS else set()
     recent = set()
     for s in log[-3:]:
         recent.update(s.get("topics") or [])
     recent_domains = [domain_of(t) for s in log[-10:] for t in (s.get("topics") or [])]
 
     def allowed(tid):
-        if tid in resting and not args.allow_repeat:
+        if (tid in resting or tid in drilled) and not args.allow_repeat:
             return False
         if restrict and (topics.get(tid, {}).get("domain") or domain_of(tid)) != restrict:
             return False
@@ -1428,8 +1452,9 @@ def agg_add_session(agg, s):
         agg["reflection_skipped"] += 1
 
 
-def apply_round(state, rnd, today):
-    """Pure application of a graded round to the state. Returns (summary, warnings)."""
+def apply_round(state, rnd, today, theme=None):
+    """Pure application of a graded round to the state; `theme` is the theme of the block the
+    round was recorded in. Returns (entry, summary, warnings, errata_ids)."""
     if not rnd.get("items"):
         die("round JSON must contain a non-empty 'items' list")
     warnings = validate_round(rnd)
@@ -1477,6 +1502,10 @@ def apply_round(state, rnd, today):
             comfort = None
         step, due, calibration, interval = schedule_topic(t.get("step"), mastery, comfort, misconception,
                                                           tid in self_gap_topics, intervals, rdate)
+        limited = (not answered_well(mastery, calibration) and interval < DRILLDOWN_PAUSE_DAYS
+                   and drilldown_over(state, tid, theme))
+        if limited:      # the drill-down on this topic is used up: it comes back later, not next round
+            interval, due = DRILLDOWN_PAUSE_DAYS, rdate + dt.timedelta(days=DRILLDOWN_PAUSE_DAYS)
         t.update({"last": iso(rdate), "attempts": int(t.get("attempts") or 0) + 1, "mastery": mastery,
                   "step": step, "due": iso(due), "comfort": comfort, "calibration": calibration})
         t["history"].append([iso(rdate), mastery, comfort, calibration])
@@ -1487,6 +1516,8 @@ def apply_round(state, rnd, today):
                 "gap": "Confident but incorrect answer on %s; re-test the same decision point." % iso(rdate)})
         summary[tid] = {"mastery": mastery, "step": step, "due": iso(due), "interval_days": interval,
                         "calibration": calibration, "comfort": comfort, "misconception": misconception}
+        if limited:
+            summary[tid]["drilldown_limit"] = True
 
     for tid in [t for t in new_gaps_by_topic if t not in self_gap_topics and t not in by_topic]:
         g0 = new_gaps_by_topic[tid][0]   # e.g. a transfer gap on a topic not tested this round
@@ -1534,6 +1565,9 @@ def apply_round(state, rnd, today):
                      "opened": (existing or {}).get("opened") or (existing or {}).get("date") or iso(rdate)}
             if existing:
                 entry["id"] = existing["id"]
+                # a gap written again after its retest has had its one targeted retest
+                if tid in by_topic and (retests or not gap_awaits_retest(existing)):
+                    entry["last_retested"] = iso(rdate)
                 gaps.remove(existing)
             else:
                 entry["id"] = "G%04d" % (number_gaps(state) + 1)
@@ -1726,7 +1760,7 @@ def record_round(st, rnd, today):
     # The round counts in its block here, once: reflecting later re-applies the round, not this.
     in_block = advance_block(st, parse_date(rnd.get("date")) or today)
     snap = snapshot(st)
-    entry, summary, warnings, errata_ids = apply_round(st, rnd, today)
+    entry, summary, warnings, errata_ids = apply_round(st, rnd, today, (in_block or {}).get("theme"))
     if in_block:
         entry["block"] = in_block
     if rnd.get("reflection") is None:
@@ -1778,7 +1812,7 @@ def reflect_round(st, refl, today, session=None):
             it = by.get((ch.get("type"), ch.get("topic")))
             if it:
                 it.update({k: v for k, v in ch.items() if k not in ("type", "topic")})
-    entry, summary, warnings, errata_ids = apply_round(st, rnd, today)
+    entry, summary, warnings, errata_ids = apply_round(st, rnd, today, (sess.get("block") or {}).get("theme"))
     if sess.get("block"):
         entry["block"] = sess["block"]
     st["unreflected"] = None

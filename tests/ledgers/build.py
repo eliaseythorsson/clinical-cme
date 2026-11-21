@@ -51,6 +51,26 @@ def play_rounds(st, dates, reflect_last=True):
     return st
 
 
+def play_without_drilldown_limit(st, dates):
+    """Rounds as an engine from before the drill-down limit (issue #18) planned and scheduled
+    them, played by a learner who misses every repeat (examples.miss_repeats)."""
+    limits = cme.DRILLDOWN_MAX_ROUNDS, cme.DRILLDOWN_PAUSE_DAYS
+    cme.DRILLDOWN_MAX_ROUNDS, cme.DRILLDOWN_PAUSE_DAYS = 10 ** 6, 0
+    try:
+        for d in dates:
+            plan = cme.plan_round(st, examples.plan_options(), day(d))
+            rnd = examples.miss_repeats(examples.round_for(st, plan), plan)
+            cme.record_round(st, copy.deepcopy(rnd), day(d))
+            cme.reflect_round(st, {"performance": 2, "solid": "Example: little felt solid",
+                                   "gaps": "Example: the same points again"}, day(d))
+            for g in st["gaps"]:      # that engine did not carry a retest over to a gap written again
+                if g.get("last_retested") == g.get("date"):
+                    del g["last_retested"]
+    finally:
+        cme.DRILLDOWN_MAX_ROUNDS, cme.DRILLDOWN_PAUSE_DAYS = limits
+    return st
+
+
 def prepared_for(st, made):
     """data/prepared.json as `prepare` and `stash` write it on the day `made`."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -84,6 +104,10 @@ def build(name):
         st = play_rounds(new_ledger("2026-09-01", {"mcqs": 2, "focused": 1}),
                          ["2026-09-01", "2026-09-03", "2026-09-07", examples.PREPARED_MADE])
         prepared = prepared_for(st, examples.PREPARED_MADE)
+    elif name == "drilled":
+        st = play_without_drilldown_limit(new_ledger("2026-10-01", {"mcqs": 4}),
+                                          ["2026-10-01", "2026-10-04", "2026-10-07", "2026-10-10",
+                                           "2026-10-13", "2026-10-16", "2026-10-19"])
     else:
         raise SystemExit("unknown example ledger: %s" % name)
     os.makedirs(os.path.dirname(examples.ledger_path(name)), exist_ok=True)

@@ -124,9 +124,12 @@ def test_a_good_answer_on_the_topic_that_does_not_retest_the_gap_leaves_it_open(
     assert gap_of(st, "CARD-01")["id"] == gid and "last_retested" not in gap_of(st, "CARD-01")
     assert res["topics"]["CARD-01"]["gap_retested"] is False and "gap_resolved" not in res["topics"]["CARD-01"]
     assert any(gid in w and "retests" in w for w in res["warnings"])
-    # still waiting for its retest: it comes back after the rest, long before the topic is due
-    assert cme.parse_date(st["topics"]["CARD-01"]["due"]) > DAY + days(6)
-    assert "CARD-01" in planned_topics(st, DAY + days(6))
+    # still waiting for its retest: it comes back long before the topic is due, though not in a
+    # third round in a row (the drill-down limit, issue #18)
+    assert cme.parse_date(st["topics"]["CARD-01"]["due"]) > DAY + days(9)
+    assert "CARD-01" not in planned_topics(st, DAY + days(6))
+    play(st, DAY + days(6), [mcq("RENAL-02", 5, confidence="sure")])
+    assert "CARD-01" in planned_topics(st, DAY + days(9))
 
 
 def test_an_item_that_retests_the_gap_and_is_answered_well_closes_it(work):
@@ -141,9 +144,12 @@ def test_a_retest_answered_badly_keeps_the_gap_and_records_the_retest(work):
     st, gid = with_gap(work)
     play(st, DAY + days(3), [mcq("CARD-01", 3, correct=True, retests=gid)])
     assert gap_of(st, "CARD-01")["last_retested"] == cme.iso(DAY + days(3))
-    # after its one targeted retest the gap follows the topic's spacing
-    assert "CARD-01" in planned_topics(st, DAY + days(6))
-    assert st["topics"]["CARD-01"]["due"] == cme.iso(DAY + days(6))
+    # after its one targeted retest the gap follows the topic's spacing, and a second miss in a
+    # row does not bring the topic straight back (the drill-down limit, issue #18)
+    assert st["topics"]["CARD-01"]["due"] == cme.iso(DAY + days(3 + cme.DRILLDOWN_PAUSE_DAYS))
+    play(st, DAY + days(6), [mcq("RENAL-02", 5, confidence="sure")])
+    assert "CARD-01" not in planned_topics(st, DAY + days(9))
+    assert "CARD-01" in planned_topics(st, DAY + days(10))
 
 
 def test_the_retest_item_decides_not_the_topic_average(work):
