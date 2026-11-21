@@ -192,6 +192,99 @@ def test_the_files_can_be_named_instead_of_the_work_folder(nxt):
     assert r.returncode != 0 and "--work" in r.stdout
 
 
+# ---------------------------------------------------------------- finish-prepare checks the key headers (issue #36)
+
+def edit(nxt, name, old, new, count=1):
+    path = nxt.p("next", name)
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    assert old in text
+    nxt.write(os.path.join("next", name), text.replace(old, new, count))
+
+
+def refused(nxt, *extra):
+    r, out = nxt.finish(*extra, ok=False)
+    assert r.returncode != 0 and out["ok"] is False and "stashed" not in out
+    assert "Nothing was stashed" in out["error"] and "key headers" in out["error"]
+    assert not nxt.stashed() and not os.path.exists(nxt.p("out3"))
+    return out["error"]
+
+
+def test_the_example_round_has_a_header_for_every_item(nxt):
+    out = nxt.run_json("keys", nxt.p("next"), "--plan", nxt.p("next", "plan.json"))
+    assert out["ok"] is True and out["keys"]["sealed_case.md"] == ["case"]
+    assert out["keys"]["sealed_questions.md"][0] == "Q1"
+
+
+@pytest.mark.parametrize("name, old, new, expect", [
+    ("sealed_questions.md", "stem_summary: Example stem Q1\n", "", "sealed_questions.md, key Q1: 'stem_summary' is missing"),
+    ("sealed_questions.md", "topic: ", "topik: ", "sealed_questions.md, key Q1: 'topik' is not a field of a mcq header"),
+    ("sealed_questions.md", "type: mcq", "type: quiz", "sealed_questions.md, key Q1: 'type' must be one of"),
+    ("sealed_questions.md", "<!-- /key -->", "", "sealed_questions.md: a key header is not closed"),
+    ("sealed_questions.md", "<!-- key: Q2 -->", "<!-- key: Q1 -->", "key Q1: there are two headers with this id"),
+    ("sealed_case.md", "patient: 60F\n", "", "sealed_case.md, key case: 'patient' is missing"),
+    ("sealed_case.md", "setting: ward", "setting ward", "sealed_case.md, key case: line 6 is not 'field: value'"),
+])
+def test_a_malformed_header_stops_it_and_nothing_is_stashed(nxt, name, old, new, expect):
+    edit(nxt.check(), name, old, new)
+    assert expect in refused(nxt)
+
+
+@pytest.mark.parametrize("name", ["sealed_questions.md", "sealed_case.md"])
+def test_a_sealed_file_without_headers_stops_it(nxt, name):
+    nxt.check()
+    with open(nxt.p("next", name), encoding="utf-8") as fh:
+        text = fh.read()
+    nxt.write(os.path.join("next", name), cme.KEY_RE.sub("", text))
+    assert "%s: no key header" % name in refused(nxt)
+
+
+def test_a_header_missing_for_one_item_of_the_plan_stops_it(nxt):
+    nxt.check()
+    with open(nxt.p("next", "sealed_questions.md"), encoding="utf-8") as fh:
+        text = fh.read()
+    nxt.write(os.path.join("next", "sealed_questions.md"), cme.KEY_RE.sub("", text, count=1))
+    assert "sealed_questions.md: the plan has 3 MCQ item(s), the keys have 2 header(s)" in refused(nxt)
+
+
+def test_every_header_problem_is_named_at_once_without_content(nxt):
+    edit(nxt.check(), "sealed_questions.md", "stem_summary: Example stem Q1\n", "")
+    edit(nxt, "sealed_case.md", "setting: ward\n", "")
+    r, out = nxt.finish(ok=False)
+    assert "key Q1: 'stem_summary' is missing" in out["error"] and "key case: 'setting' is missing" in out["error"]
+    plan = nxt.read_json("next", "plan.json")
+    shown = (r.stdout + r.stderr).replace(nxt.path, "")
+    assert "SEALED" not in shown and "Example" not in shown
+    assert not any(it.get("topic") and it["topic"] in shown for it in plan["items"])
+
+
+def test_a_bad_header_stops_it_whatever_the_evidence_says(nxt):
+    edit(nxt, "sealed_questions.md", "stem_summary: Example stem Q1\n", "")
+    refused(nxt.check(), "--no-evidence")                   # no checker run
+    refused(nxt.check(questions=2))                         # keys contradicted: the header comes first
+    refused(nxt.check(questions=2), "--revised")
+    for part in ("questions", "case"):                      # evidence missing as well
+        os.remove(nxt.p("next", "evidence_%s.md" % part))
+    assert "evidence" not in refused(nxt)
+
+
+def test_once_the_header_is_corrected_the_same_command_stashes(nxt):
+    edit(nxt.check(), "sealed_questions.md", "reason: ", "reson: ")
+    refused(nxt)
+    edit(nxt, "sealed_questions.md", "reson: ", "reason: ")
+    _, out = nxt.finish()
+    assert out["stashed"] is True and nxt.stashed()
+    # and the round it stashed is one `save` can record: every header is there for it
+    files = nxt.payload()["files"]
+    assert cme.parse_key_headers(files["sealed_questions.md"])[1] == []
+
+
+def test_a_case_that_was_not_written_needs_no_header(nxt):
+    os.remove(nxt.p("next", "sealed_case.md"))
+    _, out = nxt.check(case=None).finish()
+    assert out["stashed"] is True
+
+
 # ---------------------------------------------------------------- settings in one command
 
 @pytest.fixture

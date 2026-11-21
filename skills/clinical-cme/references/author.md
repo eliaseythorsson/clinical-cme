@@ -52,8 +52,7 @@ Planning notes:
   examiner work to the same ones.
 - An item with `retest_gap` in the plan re-tests that gap: the same decision point in a new
   clinical context (transfer). Write `retests: <retest_gap.id>` in that item's key header
-  (§3); without it a good answer cannot close the gap. (The plan's `how` line still speaks
-  of the round JSON: the key header is where it goes.)
+  (§3), as the plan's `how` line says; without it a good answer cannot close the gap.
 - A `drill` is built into its item (`case_design.md` §9, §11.5).
 - Every vignette and stem is clearly different from `already_used` and
   `recent_cases_any_topic`: patient, setting, presentation, twist.
@@ -65,6 +64,9 @@ Planning notes:
   for it.
 - `Parts: case`: `sealed_case.md` and `kit_case.md`, and `kit_questions.md` if it is not in
   the output folder yet.
+- `Parts: headers`: the round is written and `cme.py finish-prepare` refused it for its key
+  headers. The problems are listed in your prompt by file, key and field. Correct those
+  headers (§3) and run the check of §4 until it prints `"ok": true`. Change nothing else.
 - `Parts: revise`: the round is written, its evidence has been checked, and the count of
   contradicted keys was above zero (`cme.py finish-prepare` printed `"revise": true`). Read
   `evidence_questions.md` and `evidence_case.md` in the output folder. Wherever a **Note**
@@ -189,5 +191,6 @@ contains a key, a topic word or a title, and that the bank block (if any) is clo
 holds no diagnosis or key. Check the key headers: `python3 <this file's folder>/../scripts/cme.py
 keys <output folder> --plan <plan>` (description "Prepare the round") prints which headers each
 file has and what is wrong with them, by field name only; correct the headers until it prints
-`"ok": true`. (With `Parts: questions` or `case` it checks the files written so far.) Then
-reply `done`.
+`"ok": true`. (With `Parts: questions` or `case` it checks the files written so far.) A
+round prepared ahead is not kept while this check fails (`cme.py finish-prepare` runs it
+again). Then reply `done`.
