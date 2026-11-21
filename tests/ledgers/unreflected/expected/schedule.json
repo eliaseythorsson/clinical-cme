@@ -1,23 +1,23 @@
 {
  "after_record": {
-  "GEN-04": {
+  "HEME-02": {
    "attempts": 3,
    "calibration": "not_rated",
    "comfort": null,
-   "domain": "GEN",
+   "domain": "HEME",
    "due": "2026-10-22",
    "history": [
     [
-     "2026-10-14",
+     "2026-10-07",
      3.0,
      5,
      "overconfident"
     ],
     [
-     "2026-10-16",
-     1.0,
-     null,
-     "confident_error"
+     "2026-10-09",
+     5.0,
+     2,
+     "underconfident"
     ],
     [
      "2026-10-19",
@@ -26,7 +26,7 @@
      "not_rated"
     ]
    ],
-   "label": "Pain management & opioid stewardship",
+   "label": "Thrombocytopenia, HIT, TTP/HUS",
    "last": "2026-10-19",
    "mastery": 2.0,
    "step": 0
@@ -108,24 +108,24 @@
   }
  },
  "after_reflect": {
-  "GEN-04": {
+  "HEME-02": {
    "attempts": 3,
    "calibration": "aligned",
    "comfort": 2,
-   "domain": "GEN",
+   "domain": "HEME",
    "due": "2026-10-22",
    "history": [
     [
-     "2026-10-14",
+     "2026-10-07",
      3.0,
      5,
      "overconfident"
     ],
     [
-     "2026-10-16",
-     1.0,
-     null,
-     "confident_error"
+     "2026-10-09",
+     5.0,
+     2,
+     "underconfident"
     ],
     [
      "2026-10-19",
@@ -134,7 +134,7 @@
      "aligned"
     ]
    ],
-   "label": "Pain management & opioid stewardship",
+   "label": "Thrombocytopenia, HIT, TTP/HUS",
    "last": "2026-10-19",
    "mastery": 2.0,
    "step": 0
@@ -221,7 +221,7 @@
    "calibration": "confident_error",
    "comfort": 4,
    "domain": "GEN",
-   "due": "2026-10-19",
+   "due": "2026-10-23",
    "history": [
     [
      "2026-10-14",

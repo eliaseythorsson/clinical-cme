@@ -134,20 +134,31 @@
   },
   "gaps": [
    {
-    "date": "2026-10-19",
-    "gap": "Example gap 7.1: missed the decision point",
+    "date": "2026-10-16",
+    "gap": "Confident but incorrect answer on 2026-10-16; re-test the same decision point.",
     "id": "G0001",
     "opened": "2026-10-16",
     "self": null,
     "source": [
-     "graded"
+     "misconception"
     ],
     "topic": "GEN-04"
    },
    {
     "date": "2026-10-19",
-    "gap": "Confident but incorrect answer on 2026-10-19; re-test the same decision point.",
+    "gap": "Example gap 7.1: missed the decision point",
     "id": "G0002",
+    "opened": "2026-10-19",
+    "self": null,
+    "source": [
+     "graded"
+    ],
+    "topic": "HEME-02"
+   },
+   {
+    "date": "2026-10-19",
+    "gap": "Confident but incorrect answer on 2026-10-19; re-test the same decision point.",
+    "id": "G0003",
     "opened": "2026-10-19",
     "self": null,
     "source": [
@@ -246,9 +257,8 @@
      "confidence": "unsure",
      "correct": false,
      "mastery": 2,
-     "retests": "GEN-04",
      "stem": "Example MCQ stem 7.1",
-     "topic": "GEN-04",
+     "topic": "HEME-02",
      "type": "mcq"
     },
     {
@@ -298,12 +308,12 @@
    "title": "Example round S0007",
    "topics": [
     "PULM-02",
-    "GEN-04",
+    "HEME-02",
     "PULM-08",
     "PULM-05"
    ],
    "why": {
-    "GEN-04": "due",
+    "HEME-02": "due",
     "PULM-02": "due",
     "PULM-05": "new",
     "PULM-08": "new"
@@ -446,9 +456,9 @@
   "domain_self_ratings": {
    "CARD": 4.0,
    "ENDO": 5.0,
-   "GEN": 3.1,
+   "GEN": 3.7,
    "GI": 4,
-   "HEME": 4.0,
+   "HEME": 3.3,
    "ID": 4,
    "NEURO": 3.3,
    "PULM": 3.9,
@@ -456,20 +466,31 @@
   },
   "gaps": [
    {
-    "date": "2026-10-19",
-    "gap": "Example gap 7.1: missed the decision point",
+    "date": "2026-10-16",
+    "gap": "Confident but incorrect answer on 2026-10-16; re-test the same decision point.",
     "id": "G0001",
     "opened": "2026-10-16",
     "self": null,
     "source": [
-     "graded"
+     "misconception"
     ],
     "topic": "GEN-04"
    },
    {
     "date": "2026-10-19",
-    "gap": "Confident but incorrect answer on 2026-10-19; re-test the same decision point.",
+    "gap": "Example gap 7.1: missed the decision point",
     "id": "G0002",
+    "opened": "2026-10-19",
+    "self": null,
+    "source": [
+     "graded"
+    ],
+    "topic": "HEME-02"
+   },
+   {
+    "date": "2026-10-19",
+    "gap": "Confident but incorrect answer on 2026-10-19; re-test the same decision point.",
+    "id": "G0003",
     "opened": "2026-10-19",
     "self": null,
     "source": [
@@ -568,9 +589,8 @@
      "confidence": "unsure",
      "correct": false,
      "mastery": 2,
-     "retests": "GEN-04",
      "stem": "Example MCQ stem 7.1",
-     "topic": "GEN-04",
+     "topic": "HEME-02",
      "type": "mcq"
     },
     {
@@ -615,7 +635,7 @@
    },
    "score": 2.75,
    "self_comfort": {
-    "GEN-04": 2,
+    "HEME-02": 2,
     "PULM-02": 5,
     "PULM-05": 4,
     "PULM-08": 5
@@ -629,12 +649,12 @@
    "title": "Example round S0007",
    "topics": [
     "PULM-02",
-    "GEN-04",
+    "HEME-02",
     "PULM-08",
     "PULM-05"
    ],
    "why": {
-    "GEN-04": "due",
+    "HEME-02": "due",
     "PULM-02": "due",
     "PULM-05": "new",
     "PULM-08": "new"
@@ -657,12 +677,12 @@
   "errata_to_log": [],
   "gen": 13,
   "next_id": "S0008",
-  "open_gaps": 2,
+  "open_gaps": 3,
   "reflection_pending": true,
   "score": 2.75,
   "session_id": "S0007",
   "topics": {
-   "GEN-04": {
+   "HEME-02": {
     "calibration": "not_rated",
     "comfort": null,
     "due": "2026-10-22",
@@ -705,10 +725,10 @@
   "errata_ids": [],
   "errata_to_log": [],
   "gen": 14,
-  "open_gaps": 2,
+  "open_gaps": 3,
   "session_id": "S0007",
   "topics": {
-   "GEN-04": {
+   "HEME-02": {
     "calibration": "aligned",
     "comfort": 2,
     "due": "2026-10-22",
@@ -752,7 +772,7 @@
   "performance": 3,
   "solid": "Example: what felt solid in round 7",
   "topic_comfort": {
-   "GEN-04": 2,
+   "HEME-02": 2,
    "PULM-02": 5,
    "PULM-05": 4,
    "PULM-08": 5
@@ -770,7 +790,7 @@
    {
     "gap": "Example gap 7.1: missed the decision point",
     "source": "graded",
-    "topic": "GEN-04"
+    "topic": "HEME-02"
    }
   ],
   "items": [
@@ -810,9 +830,8 @@
     "confidence": "unsure",
     "correct": false,
     "mastery": 2,
-    "retests": "GEN-04",
     "stem_summary": "Example MCQ stem 7.1",
-    "topic": "GEN-04",
+    "topic": "HEME-02",
     "type": "mcq"
    },
    {
@@ -847,7 +866,7 @@
   "log_id": "S0007",
   "minutes": 24,
   "selection_reasons": {
-   "GEN-04": "due",
+   "HEME-02": "due",
    "PULM-02": "due",
    "PULM-05": "new",
    "PULM-08": "new"
@@ -1172,8 +1191,9 @@
     "GEN-04": {
      "calibration": "confident_error",
      "comfort": 4,
-     "due": "2026-10-19",
-     "interval_days": 3,
+     "drilldown_limit": true,
+     "due": "2026-10-23",
+     "interval_days": 7,
      "mastery": 1.0,
      "misconception": true,
      "step": 0

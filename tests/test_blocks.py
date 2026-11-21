@@ -12,7 +12,8 @@ import pytest
 import examples
 from examples import LEDGERS, cme
 
-ledgers = pytest.mark.parametrize("name", list(LEDGERS))
+# the example ledgers written before blocks (`drilled`, issue #18, is in the middle of one)
+ledgers = pytest.mark.parametrize("name", [n for n in LEDGERS if "block" not in examples.load_ledger(n)])
 SHARES = dict(cme.BLOCK_SHARES)
 
 

@@ -110,7 +110,7 @@ A topic whose spacing date has come, or a gap ready for its retest, from any dom
 A short question on an untested topic outside the theme, so breadth is not lost during a block.
 
 **Drill-down**:
-Successive rounds probing deeper into one sub-topic after wrong answers; capped, and only within the theme.
+Successive rounds coming back to one topic after wrong answers. Limited: no topic is in more than two rounds in a row; outside the theme a miss gets one retest, then at least a week between returns.
 
 **Guideline region**:
 The learner's choice of whose guidelines items are written and graded against; asked at setup, default Iceland/Europe.
@@ -125,7 +125,7 @@ The learner's field of practice, which sets the pitch of items and which guideli
 A learner setting that adds a short feedback check and a store-integrity check at the end of each round.
 
 **Example ledger**:
-A synthetic ledger kept with the tests (fresh, mid-curriculum, overdue, unreflected, stale prepared round), with the expected plan, due dates and applied round saved beside it.
+A synthetic ledger kept with the tests (fresh, mid-curriculum, overdue, unreflected, stale prepared round, drilled), with the expected plan, due dates and applied round saved beside it.
 _Avoid_: fixture, golden file (in conversation)
 
 **Simulation**:

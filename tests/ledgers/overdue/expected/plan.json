@@ -62,39 +62,6 @@
    "topic": "TOX-02"
   },
   {
-   "already_used": [
-    {
-     "date": "2026-08-17",
-     "diagnosis": "Example diagnosis: Intracranial hemorrhage",
-     "id": "S0006",
-     "patient": "Example patient 6",
-     "presentation": "Example presentation 6",
-     "setting": "ward",
-     "topic": "NEURO-02"
-    },
-    {
-     "date": "2026-08-13",
-     "id": "S0005",
-     "kind": "mcq",
-     "stem": "Example MCQ stem 5.3",
-     "topic": "NEURO-02"
-    }
-   ],
-   "domain": "NEURO",
-   "label": "Intracranial hemorrhage",
-   "reason": "spaced review due 2026-08-18; last 1.0/5 on 2026-08-17; flagged confident error last time; open gap: Confident but incorrect answer on 2026-08-17; re-test the same decision point.",
-   "reason_code": "due",
-   "retest_gap": {
-    "gap": "Confident but incorrect answer on 2026-08-17; re-test the same decision point.",
-    "how": "Write this item on the gap's decision point, in a new clinical context, and put \"retests\": \"NEURO-02\" on the item in the round JSON. Only an item that says so, answered well, closes the gap.",
-    "id": "NEURO-02"
-   },
-   "separation": "same domain as the case (the block's theme), unrelated topic",
-   "share": "theme",
-   "slot": "mcq",
-   "topic": "NEURO-02"
-  },
-  {
    "domain": "NEURO",
    "label": "Headache — dangerous causes",
    "reason": "not yet tested; in the block's theme",
@@ -103,6 +70,16 @@
    "share": "theme",
    "slot": "mcq",
    "topic": "NEURO-06"
+  },
+  {
+   "domain": "NEURO",
+   "label": "Altered mental status / delirium",
+   "reason": "not yet tested; in the block's theme",
+   "reason_code": "new",
+   "separation": "same domain as the case (the block's theme), unrelated topic",
+   "share": "theme",
+   "slot": "mcq",
+   "topic": "NEURO-04"
   }
  ],
  "lab_units": "SI",
@@ -112,8 +89,8 @@
  "prepare_ahead": true,
  "presentation_order": [
   "mcq TOX-02",
-  "mcq NEURO-02",
   "mcq NEURO-06",
+  "mcq NEURO-04",
   "case NEURO-05"
  ],
  "profile": {

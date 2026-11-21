@@ -34,6 +34,7 @@ LEDGERS = {
     "overdue": "2026-11-20",           # six rounds in August, then three months away
     "unreflected": "2026-10-19",       # the last round was saved but never reflected on
     "stale_prepared": "2026-11-20",    # a round was prepared on 2026-09-10 and never taken
+    "drilled": "2026-10-22",           # seven rounds by an engine with no drill-down limit, every repeat missed
 }
 PREPARED_MADE = "2026-09-10"           # stale_prepared: the day its prepared round was made
 
@@ -137,6 +138,23 @@ def round_for(st, plan):
                                 "source": "graded"})
         rnd["items"].append(item)
         rnd["selection_reasons"][tid] = planned["reason_code"]
+    return rnd
+
+
+def miss_repeats(rnd, plan):
+    """The round of a learner who misses everything that comes back: every item the plan brought
+    as a repeat (due, an open gap, a revisit) is answered badly and the examiner writes its gap
+    again. With no drill-down limit the same topics then return round after round."""
+    for item, planned in zip(rnd["items"], plan["items"]):
+        if planned["reason_code"] not in ("due", "gap", "revisit"):
+            continue
+        item.update(mastery=2, confidence="unsure")
+        item["coding"]["errors"] = [{"category": "knowledge", "knowledge_type": "missing", "severity": "important"}]
+        if item["type"] == "mcq":
+            item["correct"] = False
+        if not any(g["topic"] == item["topic"] for g in rnd["gaps"]):
+            rnd["gaps"].append({"topic": item["topic"], "source": "graded",
+                                "gap": "Example gap: missed the decision point again in %s" % rnd["log_id"]})
     return rnd
 
 

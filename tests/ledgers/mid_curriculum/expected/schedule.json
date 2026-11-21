@@ -1,6 +1,6 @@
 {
  "after_record": {
-  "GEN-04": {
+  "GEN-02": {
    "attempts": 1,
    "calibration": "not_rated",
    "comfort": null,
@@ -14,61 +14,12 @@
      "not_rated"
     ]
    ],
-   "label": "Pain management & opioid stewardship",
+   "label": "Perioperative anticoagulation / antiplatelet bridging",
    "last": "2026-10-28",
    "mastery": 5.0,
    "step": 1
   },
-  "PULM-04": {
-   "attempts": 6,
-   "calibration": "not_rated",
-   "comfort": null,
-   "domain": "PULM",
-   "due": "2026-11-04",
-   "history": [
-    [
-     "2026-10-09",
-     3.0,
-     5,
-     "overconfident"
-    ],
-    [
-     "2026-10-12",
-     4.0,
-     5,
-     "aligned"
-    ],
-    [
-     "2026-10-19",
-     3.0,
-     5,
-     "overconfident"
-    ],
-    [
-     "2026-10-22",
-     2.0,
-     2,
-     "aligned"
-    ],
-    [
-     "2026-10-23",
-     5.0,
-     2,
-     "underconfident"
-    ],
-    [
-     "2026-10-28",
-     4.0,
-     null,
-     "not_rated"
-    ]
-   ],
-   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
-   "last": "2026-10-28",
-   "mastery": 4.0,
-   "step": 2
-  },
-  "PULM-06": {
+  "PULM-05": {
    "attempts": 1,
    "calibration": "not_rated",
    "comfort": null,
@@ -82,9 +33,28 @@
      "not_rated"
     ]
    ],
-   "label": "Pulmonary embolism (management)",
+   "label": "Pleural effusion / empyema",
    "last": "2026-10-28",
    "mastery": 5.0,
+   "step": 1
+  },
+  "PULM-06": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     4.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Pulmonary embolism (management)",
+   "last": "2026-10-28",
+   "mastery": 4.0,
    "step": 1
   },
   "PULM-08": {
@@ -111,7 +81,7 @@
    "calibration": "confident_error",
    "comfort": null,
    "domain": "TOX",
-   "due": "2026-10-31",
+   "due": "2026-11-04",
    "history": [
     [
      "2026-10-23",
@@ -133,7 +103,7 @@
   }
  },
  "after_reflect": {
-  "GEN-04": {
+  "GEN-02": {
    "attempts": 1,
    "calibration": "underconfident",
    "comfort": 2,
@@ -147,59 +117,29 @@
      "underconfident"
     ]
    ],
-   "label": "Pain management & opioid stewardship",
+   "label": "Perioperative anticoagulation / antiplatelet bridging",
    "last": "2026-10-28",
    "mastery": 5.0,
    "step": 1
   },
-  "PULM-04": {
-   "attempts": 6,
+  "PULM-05": {
+   "attempts": 1,
    "calibration": "aligned",
-   "comfort": 5,
+   "comfort": 4,
    "domain": "PULM",
-   "due": "2026-11-04",
+   "due": "2026-10-31",
    "history": [
     [
-     "2026-10-09",
-     3.0,
-     5,
-     "overconfident"
-    ],
-    [
-     "2026-10-12",
-     4.0,
-     5,
-     "aligned"
-    ],
-    [
-     "2026-10-19",
-     3.0,
-     5,
-     "overconfident"
-    ],
-    [
-     "2026-10-22",
-     2.0,
-     2,
-     "aligned"
-    ],
-    [
-     "2026-10-23",
-     5.0,
-     2,
-     "underconfident"
-    ],
-    [
      "2026-10-28",
-     4.0,
-     5,
+     5.0,
+     4,
      "aligned"
     ]
    ],
-   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
+   "label": "Pleural effusion / empyema",
    "last": "2026-10-28",
-   "mastery": 4.0,
-   "step": 2
+   "mastery": 5.0,
+   "step": 1
   },
   "PULM-06": {
    "attempts": 1,
@@ -210,27 +150,27 @@
    "history": [
     [
      "2026-10-28",
-     5.0,
+     4.0,
      4,
      "aligned"
     ]
    ],
    "label": "Pulmonary embolism (management)",
    "last": "2026-10-28",
-   "mastery": 5.0,
+   "mastery": 4.0,
    "step": 1
   },
   "PULM-08": {
    "attempts": 1,
    "calibration": "aligned",
-   "comfort": 4,
+   "comfort": 5,
    "domain": "PULM",
    "due": "2026-10-31",
    "history": [
     [
      "2026-10-28",
      4.0,
-     4,
+     5,
      "aligned"
     ]
    ],
@@ -244,7 +184,7 @@
    "calibration": "confident_error",
    "comfort": 4,
    "domain": "TOX",
-   "due": "2026-10-31",
+   "due": "2026-11-04",
    "history": [
     [
      "2026-10-23",
