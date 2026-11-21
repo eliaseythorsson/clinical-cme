@@ -117,5 +117,5 @@ context changes a finding.
 
 Recording a review changes the ledger, which sets aside any round prepared ahead. If the
 review ran at the end of a session, prepare the next round now, from the ledger the review
-wrote (SKILL.md, turn 5, "prepare the next round"), after your last message of the review.
+wrote (`preparing.md` §2), after your last message of the review.
 

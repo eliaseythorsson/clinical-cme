@@ -31,7 +31,7 @@ waiting for something to be generated.
   is ever played. The next session reads the store and presents (`start --prepared`,
   `present`); nothing is written or looked up before the learner starts, before the case
   appears, or before either feedback. An optional nightly scheduled task (`prepare_task`;
-  `SKILL.md`, "Prepare only") prepares a round whenever none is ready. A prepared round is used only if the ledger and the mix are
+  `references/preparing.md` §3–4) prepares a round whenever none is ready. A prepared round is used only if the ledger and the mix are
   unchanged (`state_schema.md` §8).
 - **Three roles, three models (the `helpers` setting, on by default).** Where the app has
   helper agents: an **author** on the most capable model writes the round
@@ -41,7 +41,7 @@ waiting for something to be generated.
   (`references/evidence_check.md`). Mechanical steps stay with the conversation. `helpers:
   false` makes one assistant do all three (`SKILL.md`, "Roles").
 - **Behind the scenes at every step** the remaining work (filing for the log, the save, the
-  next round) happens while the learner reads (`SKILL.md`, "Speed"; `feedback_guide.md` §9).
+  next round) happens while the learner reads (`SKILL.md`, "Session flow"; `references/preparing.md`; `feedback_guide.md` §9).
 - Leaner sealed drafts (one-line pre-flight record, keys before stems), so a round that could
   not be prepared still starts quickly.
 
@@ -96,7 +96,8 @@ own private store. Requires Python 3.8+ in the session (standard library only).
 ## Layout
 
 ```
-SKILL.md                      the protocol the assistant follows in a round
+SKILL.md                      the round protocol: what needs judgement (presenting, grading,
+                              feedback); the rest is in the references
 scripts/cme.py                the state engine (start, present, save, close, prepare, finish-prepare, stats …)
 references/store.md           the store: documents, tools, kinds of store, reading/writing,
                               setup, recovery, export
@@ -109,6 +110,9 @@ references/analysis_framework.md  coding vocabulary and the deep review
 references/session_log.md     the per-session document, errata, search, teaching export
 references/progress_review.md the periodic review
 references/onboarding.md      first run, FAQ
+references/preparing.md       preparing a round ahead: after the close, prepare-only sessions,
+                              overnight preparation, a round that was not prepared
+references/requests.md        requests other than a round, testing mode, round variants
 templates/page.html           the learner's page, published at setup
 templates/blueprint.json      default internal/hospital-medicine curriculum (also blueprint.md)
 templates/resource_library.md dependable sources by domain
