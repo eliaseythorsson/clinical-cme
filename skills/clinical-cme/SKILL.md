@@ -1,6 +1,6 @@
 ---
 name: clinical-cme
-description: "Blinded clinical self-assessment rounds for physicians: MCQs, focused questions (a mini-case with one free-text decision) and a full case, in the mix the learner chooses, with evidence-based feedback, reflection-informed spaced repetition, a full session log and periodic deep analysis of reasoning. The learner's ledger lives in a store they own (their own private artifact page where the app supports it, otherwise a folder or files they keep), so rounds work across devices and assistants. Use for 'quiz me', a CME round, CME setup/review, or finding or exporting past CME cases."
+description: "Blinded clinical self-assessment rounds for physicians: MCQs, focused questions (a mini-case with one free-text decision) and a full case, in the mix the learner chooses, with evidence-based feedback, reflection-informed spaced repetition, a full session log and periodic deep analysis of reasoning. The learner's ledger lives in a store they own (their own private artifact page in the Claude app, otherwise a folder or files they keep), so rounds work across devices. Use for 'quiz me', a CME round, CME setup/review, or finding or exporting past CME cases."
 ---
 
 # Clinical CME — continuous clinical self-evaluation (version 4.3.1)
@@ -27,7 +27,7 @@ Everything is graded against current evidence. Everything the learner builds up 
   full at the end of the last session (or by a scheduled task), so the next one has nothing to
   write or look up before the learner can start.
 
-Where the app supports it, the store is the learner's own private page, "Clinical CME", so a
+In the Claude app the store is the learner's own private page, "Clinical CME", so a
 round works on any device where they are signed in. The skill itself holds no learner data and
 can be shared as it is.
 
@@ -57,22 +57,20 @@ can be shared as it is.
 9. **Code every round** at grading time with the fixed vocabulary in
    `references/analysis_framework.md` §1.
 
-## Tools: find capabilities, not names
+## Tools
 
-This skill never relies on a tool's name: names differ between assistants, apps and versions.
-Find each capability by what the session's tools do (their descriptions). If tools can be loaded
-on demand (a tool-search facility), search **once**, early, with plain keywords for everything
-below that you will need, and load them together. Only then conclude something is missing.
+The skill runs in the Claude app. If the session loads tools on demand, search **once**,
+early, for everything below that you will need, and load it together.
 
-| Capability | Used for | If missing |
+| Tool | Used for | Without it |
 |---|---|---|
-| Run Python 3 with a scratch folder | `cme.py`, every step | The skill cannot run here; say so in one line. |
-| Reach the store file to file | reading and saving (`store.md` §2–3) | Another store kind (`store.md` §3); never copy the ledger through the chat. |
-| Read one document from the page's database | the round mix set on the page (`cme/prefs`) | Skip it; the ledger's mix is used. |
+| Python 3 in a shell with a scratch folder | `cme.py`, every step | The skill cannot run here; say so in one line. |
+| Artifact tools that work file to file, or a folder | reading and saving the store (`store.md` §2–3) | Files the learner carries (`store.md` §3); never copy the ledger through the chat. |
+| Read the page's settings document | the round mix set on the page (`cme/prefs`) | Skip it; the ledger's mix is used. |
 | Web search and page fetch | verifying evidence before grading | Grade from knowledge, say so once in the feedback, and give sources you are sure of. |
 | Send a message mid-turn and keep working | all behind-the-scenes work | "Without mid-turn messages" below (the learner waits longer). |
-| Start a helper agent (ideally choosing its model, and in the background) | the author and the checker ("Roles") | You take that role yourself. |
-| Ask structured multiple-choice questions | onboarding, review check-in | One compact message. |
+| Helper agents (ideally choosing their model, and in the background) | the author and the checker ("Roles") | You take that role yourself. |
+| Structured multiple-choice questions | onboarding, review check-in | One compact message. |
 | Current date and time | dating the round | `date` in the shell; else ask. |
 | Scheduled tasks | optional reminders | Say reminders cannot be set from here. |
 
@@ -85,7 +83,7 @@ into the skill's folder.
 
 | Path | Read when |
 |---|---|
-| `references/store.md` | Every session start (first time in a session: §2–4), setup, migration, recovery, export |
+| `references/store.md` | Every session start (first time in a session: §2–4), setup, recovery, export |
 | `references/feedback_guide.md` | Before grading; contains the reflection prompt |
 | `references/analysis_framework.md` | Before grading (§1 coding); for the deep review (§2) |
 | `references/author.md` | The author's brief. Read it, and `case_design.md`, only when you write items yourself |
@@ -98,7 +96,6 @@ into the skill's folder.
 | `scripts/cme.py` | Every session (start, present, save, close, prepare, stash, stats, review …) |
 | `templates/page.html` | The learner's page, published at setup |
 | `templates/blueprint.json` | Default internal/hospital-medicine blueprint |
-| `legacy/` | Version-3 scripts, used only by the version-3 migration |
 
 ## Roles: who writes, who grades, who checks
 
@@ -185,15 +182,13 @@ Five learner turns with an unfolding case; fewer with a one-step case or none.
 
 1. **In one parallel batch**: note the date and time; find and read the store (`store.md` §3–4:
    usually list artifacts → read `data/state.json`, `data/index.json`, `data/prepared.json` and
-   `index.html` into `<work>/store/` in one call, and in the same batch the page's database
+   `index.html` into `<work>/store/` in one call, and in the same batch the page's settings
    document `cme/prefs`). (Listing must precede reading the store when you do not yet know
    where it is; then batch the rest.) `cme/prefs` is a few bytes of settings with no content;
    if it or `data/prepared.json` does not exist or cannot be read, carry on without it
    (`store.md` §4.1).
    - No store found → ask once as in `store.md` §3. First-timers → setup
-     (`references/onboarding.md`). Version 3 → migration (`store.md` §7). Database store with an
-     app that can do files → move it (`store.md` §6) at the end of this round or now if the
-     learner prefers.
+     (`references/onboarding.md`).
 2. `python3 cme.py start <work>/store/state.json --out <work>/plan.json --prepared
    <work>/store/prepared.json` plus `--prefs '<the cme/prefs JSON>'` when it exists (add
    `--domain CODE`, `--mcqs N`, `--focused N`, `--no-case`, `--no-new` if the learner asked for
@@ -337,7 +332,7 @@ with the items answered; the case's topic stays due.
    and re-run into a fresh `--out-dir` from the unchanged inputs.
 6. **Save**: put back every file in its `files` list, in one write where the store allows
    (`store.md` §4). Keep the new version. If `files` includes `index.html` (`page_upgraded`),
-   the page is being updated to this version of the skill: follow `store.md` §4.6 once.
+   the page is being updated to this version of the skill: follow `store.md` §4.5 once.
 7. End the turn with one short line: "Saved so far; your reflection completes the record."
 
 ### Turn 5. Reflection → final save, close, next round prepared
@@ -366,10 +361,9 @@ with the items answered; the case's topic stays due.
   say 'prepare my rounds overnight'." With `testing` true, end the close message with the
   testing check ("Testing mode" below). End the session; do not start another round unless asked.
 - **Behind the scenes, after the close message**, first **save** the `files` that `close`
-  printed (database stores: update the session document from the `db_update` file instead of
-  replacing it). If that write fails, tell the learner at once (`store.md` §8); the close
-  message is otherwise all they hear.
-- Then **prepare the next round** (not for store D, and after the progress review instead if
+  printed. If that write fails, tell the learner at once (`store.md` §6); the close message is
+  otherwise all they hear.
+- Then **prepare the next round** (not for files the learner carries, and after the progress review instead if
   one follows now):
   1. `python3 cme.py prepare <work>/out2/data/state.json --out <work>/next/plan.json`
      (`mkdir -p <work>/next` first). If it prints `"prepare": false`, stop here.
@@ -389,8 +383,6 @@ with the items answered; the case's topic stays due.
 - With `testing` true, last of all run the store check ("Testing mode" below).
 - If the discussion continues afterwards, append it: write it to a file and run
   `cme.py addendum --doc <latest session file> --md <file> --out-dir <work>/out4`, then save.
-- If `config.mirror` is `"gdrive"` and a drive tool can create documents, also create the
-  session's Google Doc now (`store.md` §9). It is a copy; the store is the record.
 
 ### Testing mode
 
@@ -435,7 +427,7 @@ focused questions, the case is the first part: turn 1 sends it, and turns 3–5 
 
 A refused pinned write → re-read, re-run the same command, retry once. A tool or store error →
 say so plainly, do not report the round as saved, and hand over the files from the last output
-folder as downloads so the next session can save them (`store.md` §8). Never retype a ledger.
+folder as downloads so the next session can save them (`store.md` §6). Never retype a ledger.
 
 ## Other requests
 
@@ -478,9 +470,8 @@ folder as downloads so the next session can save them (`store.md` §8). Never re
   title). Read-only.
 - **Teaching export** ("turn S0042 into a teaching case"): `session_log.md` §6.
 - **Open my log / show the page**: give the page's link; offer to pin it where the app can.
-- **Move my data to files / to a folder**: `store.md` §6 or §3.
-- **Mirror to Google Drive** ("keep copies in my Drive"): `store.md` §9.
-- **Export everything** ("give me my data"): `store.md` §10.
+- **Move my data to a folder**: `store.md` §3 and §7.
+- **Export everything** ("give me my data"): `store.md` §7.
 - **FAQ or how it works**: `onboarding.md` §5, briefly.
 - **A specific topic by name**: allowed, but not blind; say so in one line and proceed. Run
   `start` without `--prepared` for that round.

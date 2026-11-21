@@ -6,7 +6,7 @@ document, and an index lists the sessions for the page. This script never talks 
 to any assistant tool: the assistant fetches the files from wherever the learner's store is
 (see references/store.md), runs a command here, and puts the files it writes back. Every
 command that writes takes --out or --out-dir and prints, for each file, its store path ("as",
-e.g. data/state.json) and its database path ("db_path", e.g. cme/state).
+e.g. data/state.json).
 
 Session (fast path):
   start   STATE --out PLAN [plan options] [--prefs J] [--prepared PREPARED.json]
@@ -32,11 +32,9 @@ Other:
   settings STATE [--config JSON] [--profile JSON] [--blueprint F] --out NEXT
   place   STATE [--index IDX] --out-dir D          put a state from review/settings/snooze/init in the layout
   init    --profile JSON --config JSON --blueprint FILE(.json|.md) --out STATE
-  import  EXPORT.json|FOLDER --out-dir D          page export {state, sessions, reviews}, or a folder of
-                                                  database documents (cme/, sessions/, reviews/) -> file layout
+  import  EXPORT.json --out-dir D                 page export {state, sessions, reviews} -> file layout
   reindex ROOT                                    rebuild ROOT/data/index.json
-  blueprint-md FILE --out BP.json | migrate-v3 LEDGER --blueprint F --out STATE [--sessions-dir D]
-  unescape FILE --out FILE | validate STATE
+  blueprint-md FILE --out BP.json | validate STATE
 
 Add `--today YYYY-MM-DD` before the command to fix the date.
 """
@@ -79,7 +77,6 @@ DEFAULT_CONFIG = {
     "testing": False,                    # testing mode: feedback check + store check at the end of each round               # a scheduled task also prepares the round when none is ready
     "show_coding": True,
     "reminders": False,
-    "mirror": None,                      # null | "gdrive": also create a Google Doc per session
     "resource_preferences": {"free_only": False, "formats": ["guidelines", "review articles"]},
 }
 DEFAULT_PROFILE = {
@@ -104,7 +101,7 @@ BIASES = ("anchoring", "premature_closure", "confirmation", "availability", "bas
           "representativeness", "search_satisficing", "framing", "overconfidence", "omission",
           "commission", "unpacking_failure")
 DRILL_RESULTS = ("avoided", "partial", "fell_for")
-ITEM_TYPES = ("case", "essay", "mcq", "focused")      # "essay" = version-3 name for a case
+ITEM_TYPES = ("case", "essay", "mcq", "focused")      # "essay" = the name older ledgers use for a case
 FOCUSED_ASPECTS = ("diagnosis", "interpretation", "testing", "management", "disposition",
                    "prevention", "prognosis")
 # Drills that can be built into a mini-case (used only when the round has no full case).
@@ -503,8 +500,7 @@ def cmd_status(args):
 
 def check_schema(st):
     if not isinstance(st, dict) or st.get("schema") != SCHEMA:
-        die("not a version-%d state file (schema=%r). A version-3 ledger must be converted with "
-            "migrate-v3 first." % (SCHEMA, (st or {}).get("schema")))
+        die("not a version-%d state file (schema=%r)." % (SCHEMA, (st or {}).get("schema")))
     for k in ("profile", "config", "topics", "gaps", "sessions", "blueprint"):
         if k not in st:
             die("state lacks '%s'" % k)
@@ -1673,7 +1669,7 @@ def cmd_settings(args):
                       "review": st["review"], **guideline_context(st)}, ensure_ascii=False))
 
 
-# ---------------------------------------------------------------- init, blueprint, migrate
+# ---------------------------------------------------------------- init, blueprint
 
 def cmd_init(args):
     today = today_from(args)
@@ -1697,151 +1693,6 @@ def cmd_blueprint_md(args):
     bp = blueprint_from_md(open(args.file, encoding="utf-8").read())
     save_json(bp, args.out)
     print(json.dumps({"ok": True, "out": args.out, "domains": list(bp), "topics": sum(len(v["topics"]) for v in bp.values())}))
-
-
-def unescape_drive_text(text):
-    """read_file_content escapes markdown characters in a Google Doc's text; undo it."""
-    return re.sub(r"\\([\\_\[\]<>~*#`+\-.!|{}()])", r"\1", text)
-
-
-def cmd_unescape(args):
-    raw = open(args.file, encoding="utf-8").read()
-    try:
-        obj = json.loads(raw)
-        if isinstance(obj, dict) and "fileContent" in obj:
-            raw = obj["fileContent"]
-    except json.JSONDecodeError:
-        pass
-    text = unescape_drive_text(raw)
-    with open(args.out, "w", encoding="utf-8") as fh:
-        fh.write(text)
-    print(json.dumps({"ok": True, "out": args.out, "chars": len(text)}))
-
-
-def cmd_migrate_v3(args):
-    today = today_from(args)
-    L = load_json(args.ledger)
-    st = new_state(today)
-    st["created"] = L.get("created") or iso(today)
-    cfg3, prof3 = L.get("config") or {}, L.get("profile") or {}
-    c = st["config"]
-    for k in ("session_minutes", "case_format", "feedback_depth", "target_sessions_per_week",
-              "review_interval_days", "intervals_days", "new_topics_per_round", "lab_units",
-              "blood_gas_units", "guideline_region", "item_order", "show_coding", "resource_preferences"):
-        if k in cfg3:
-            c[k] = cfg3[k]
-    c["reminders"] = bool(cfg3.get("reminders"))
-    ds = cfg3.get("default_session") or {}
-    c["mcqs"] = int(ds.get("mcqs", 3)); c["case"] = int(ds.get("essays", 1)) > 0
-    p = st["profile"]
-    for k in ("display_name", "role", "specialty", "subspecialty", "practice_setting", "goals",
-              "strengths", "weaknesses", "notes", "onboarded_at", "domain_emphasis"):
-        if prof3.get(k) is not None:
-            p[k] = prof3[k]
-    p["domain_self_ratings"] = {d: (r.get("rating") if isinstance(r, dict) else r)
-                                for d, r in (prof3.get("domain_self_ratings") or {}).items()}
-    if not p.get("onboarded_at"):
-        p["onboarded_at"] = st["created"]
-    text = open(args.blueprint, encoding="utf-8").read()
-    st["blueprint"] = json.loads(text) if args.blueprint.endswith(".json") else blueprint_from_md(text)
-    for tid, t in (L.get("topics") or {}).items():
-        if not isinstance(t, dict):
-            continue
-        st["topics"][tid] = {"domain": (t.get("domain") or domain_of(tid)).upper(), "label": t.get("label") or tid,
-                             "last": t.get("last_tested"), "attempts": t.get("attempts") or 0,
-                             "mastery": t.get("mastery"), "step": t.get("sr_step") or 0, "due": t.get("next_due"),
-                             "comfort": t.get("self_comfort"), "calibration": t.get("calibration"),
-                             "history": [[h.get("date"), h.get("mastery"), h.get("comfort"), h.get("calibration")]
-                                         for h in (t.get("history") or [])][-CAP_HISTORY:]}
-    for g in L.get("open_gaps") or []:
-        if isinstance(g, dict) and g.get("topic"):
-            src = g.get("source") or ["graded"]
-            st["gaps"].append({"topic": g["topic"], "gap": clip(g.get("gap"), CLIP_GAP),
-                               "self": clip(g.get("self_reported"), 200) or None,
-                               "source": [src] if isinstance(src, str) else src, "date": g.get("date"),
-                               "opened": g.get("opened") or g.get("date")})
-    for g in (L.get("resolved_gaps") or [])[-CAP_RESOLVED:]:
-        st["resolved"].append({"topic": g.get("topic"), "note": clip(g.get("gap") or g.get("note"), 200),
-                               "opened": g.get("opened"), "resolved": g.get("resolved"), "partial": bool(g.get("partial"))})
-    docs = ((L.get("gdocs") or {}).get("sessions") or {})
-    for s in L.get("session_log") or []:
-        sid = s.get("log_id")
-        refl = s.get("reflection") or {}
-        items = []
-        for it in s.get("items") or []:
-            raw = {"type": "mcq" if it.get("type") == "mcq" else "case", "topic": it.get("topic"),
-                   "mastery": it.get("mastery"), "correct": it.get("correct"), "confidence": it.get("confidence"),
-                   "coding": it.get("coding") or {"errors": []}}
-            items.append(compact_item(raw))
-        case = None
-        for x in L.get("case_index") or []:
-            if x.get("log_id") == sid and x.get("kind") != "mcq":
-                case = {k: clip(x.get(k), 80) for k in ("patient", "setting", "presentation", "diagnosis", "twist") if x.get(k)}
-                case["topic"] = x.get("topic")
-        for x in L.get("case_index") or []:
-            if x.get("log_id") == sid and x.get("kind") == "mcq":
-                for it in items:
-                    if it["type"] == "mcq" and it["topic"] == x.get("topic") and not it.get("stem"):
-                        it["stem"] = clip(x.get("stem"), 90)
-        entry = {"id": sid, "date": s.get("date"), "started_at": s.get("started_at"), "ended_at": s.get("ended_at"),
-                 "minutes": s.get("minutes"), "reading_minutes": s.get("reading_minutes"),
-                 "title": clip(s.get("title") or "Session %s" % sid, 120), "summary": clip(s.get("summary"), 300),
-                 "tags": s.get("tags") or [], "topics": s.get("topic_ids") or [], "format": s.get("case_format"),
-                 "mcqs": s.get("mcqs"), "mcq_correct": s.get("mcq_correct"), "score": s.get("mean_score"),
-                 "items": items, "why": s.get("selection_reasons") or {}, "self_performance": s.get("self_performance"),
-                 "self_comfort": s.get("self_comfort") if isinstance(s.get("self_comfort"), dict) else {},
-                 "reflection": {"solid": clip(refl.get("solid"), 300), "gaps": clip(refl.get("gaps"), 300),
-                                "skipped": bool(refl.get("skipped"))},
-                 "key_learning": [clip(k, 200) for k in s.get("key_learning") or []],
-                 "case": case, "grade_changes": s.get("grade_changes") or [], "drill": s.get("drill")}
-        d = docs.get(sid) or {}
-        if d.get("url"):
-            entry["url"] = d["url"]
-            entry["reconstructed"] = bool(d.get("reconstructed"))
-        if s.get("errata"):
-            entry["errata"] = s["errata"]
-        st["sessions"].append(entry)
-        agg_add_session(st["agg"], entry)
-    st["sessions"].sort(key=lambda s: id_num(s.get("id")))
-    st["next_id"] = "S%04d" % (max([id_num(s.get("id")) for s in st["sessions"]] + [0]) + 1)
-    for r in L.get("reviews") or []:
-        st["reviews"].append({"date": r.get("date"), "doc": r.get("report_file"),
-                              "headline": clip((r.get("analysis") or {}).get("headline"), 400),
-                              "change_plan": r.get("change_plan")})
-    st["drills"] = L.get("drill_targets") or []
-    st["errata"] = L.get("errata") or []
-    st["pending_errata"] = L.get("pending_errata") or []
-    st["teaching_point_checks"] = L.get("teaching_point_checks") or {}
-    last_review = prof3.get("last_review")
-    st["review"] = {"last": last_review,
-                    "next_due": prof3.get("next_review_due") or iso(today + dt.timedelta(days=int(c.get("review_interval_days") or 42))),
-                    "period_start": (iso(parse_date(last_review) + dt.timedelta(days=1)) if parse_date(last_review)
-                                     else p.get("onboarded_at") or st["created"])}
-    if last_review:   # sessions before the last review belong to the previous period
-        cut = parse_date(last_review)
-        prev = [s for s in st["sessions"] if parse_date(s.get("date")) and parse_date(s["date"]) <= cut]
-        st["previous"] = [to_previous(s) for s in prev]
-        st["sessions"] = [s for s in st["sessions"] if s not in prev]
-    st["migrated_from"] = {"schema": L.get("schema_version"), "date": iso(today),
-                           "sessions": len(L.get("session_log") or []), "gdocs": {k: v.get("url") for k, v in docs.items()}}
-    compact(st)
-    st["gen"] = 1
-    st["updated"] = iso(today)
-    size = save_json(st, args.out)
-    if args.sessions_dir:
-        os.makedirs(args.sessions_dir, exist_ok=True)
-        for s in st["sessions"] + st["previous"]:
-            d = docs.get(s["id"]) or {}
-            doc = {"id": s["id"], "date": s.get("date"), "title": s.get("title"), "summary": s.get("summary"),
-                   "tags": s.get("tags") or [], "topics": s.get("topics") or [], "score": s.get("score"),
-                   "format": s.get("format"), "drill": (s.get("drill") or {}).get("code") if isinstance(s.get("drill"), dict) else None,
-                   "transcript": None, "closing": None, "reflected": True, "url": d.get("url"),
-                   "reconstructed": bool(d.get("reconstructed")), "migrated": True}
-            save_json(doc, os.path.join(args.sessions_dir, "%s.json" % s["id"]))
-    print(json.dumps({"ok": True, "out": args.out, "bytes": size, "topics": len(st["topics"]),
-                      "sessions": len(st["sessions"]), "previous": len(st["previous"]), "gaps": len(st["gaps"]),
-                      "next_id": st["next_id"], "domains": list(st["blueprint"]),
-                      "session_docs": args.sessions_dir}, ensure_ascii=False))
 
 
 def cmd_validate(args):
@@ -1869,8 +1720,7 @@ def cmd_validate(args):
 
 # ---------------------------------------------------------------- store layout, fast path
 
-# Every store keeps the same documents. File stores use these relative paths; database stores
-# use the matching document paths (cme/state, sessions/<id>, reviews/<date>; no index needed).
+# Every store keeps the same documents, at these relative paths.
 STATE_PATH = "data/state.json"
 INDEX_PATH = "data/index.json"
 PREPARED_PATH = "data/prepared.json"     # the next round's short questions, drafted ahead (see cmd_prepare)
@@ -1888,18 +1738,7 @@ def write_out(out_dir, rel, obj):
     path = os.path.join(out_dir, rel)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     save_json(obj, path)
-    return {"as": rel, "path": os.path.abspath(path), "db_path": db_path_for(rel)}
-
-
-def db_path_for(rel):
-    if rel == STATE_PATH:
-        return "cme/state"
-    if rel == INDEX_PATH:
-        return None
-    if rel == PREPARED_PATH:
-        return "cme/prepared"
-    m = re.match(r"data/(sessions|reviews)/(.+)\.json$", rel)
-    return "%s/%s" % (m.group(1), m.group(2)) if m else None
+    return {"as": rel, "path": os.path.abspath(path)}
 
 
 INDEX_SESSION_KEYS = ("id", "date", "title", "summary", "tags", "topics", "score", "format", "drill", "reflected")
@@ -1909,8 +1748,6 @@ def index_entry(doc):
     e = {k: doc.get(k) for k in INDEX_SESSION_KEYS}
     if doc.get("url"):
         e["url"] = doc["url"]
-    if doc.get("migrated"):
-        e["migrated"] = True
     return e
 
 
@@ -2001,7 +1838,6 @@ def status_dict(st, path, today):
         "testing": bool(cfg.get("testing", False)),
         **guideline_context(st),             # what the examiner grades against
         "prepare_task": bool(cfg.get("prepare_task", False)),
-        "mirror": cfg.get("mirror"),
         "reminders": cfg.get("reminders"),
         "bytes": os.path.getsize(path),
         # true until the first save with version 4.3: tell the learner once about the speed settings
@@ -2347,7 +2183,7 @@ def page_upgrade(out_dir, live_page, warnings):
     path = os.path.join(out_dir, "index.html")
     with open(path, "w", encoding="utf-8") as fh:
         fh.write(html)
-    return {"as": "index.html", "path": os.path.abspath(path), "db_path": None,
+    return {"as": "index.html", "path": os.path.abspath(path),
             "page_upgrade": {"from": live, "to": PAGE_VERSION}}
 
 
@@ -2427,15 +2263,11 @@ def cmd_close(args):
         ref["page_upgraded"] = pf["page_upgrade"]
     if page_warn:
         ref["warnings"] = list(ref.get("warnings") or []) + page_warn
-    # for database stores, which merge part B into the existing document
-    save_json({"closing": md_b, "reflected": True, "score": doc.get("score")},
-              os.path.join(args.out_dir, "B.json"))
     ref["files"] = files
-    ref["db_update"] = os.path.abspath(os.path.join(args.out_dir, "B.json"))
     print(json.dumps(ref, indent=1, ensure_ascii=False))
 
 
-TESTING_SKIP = {"A.md", "B.json"}
+TESTING_SKIP = {"A.md"}
 
 
 def written_files(dirs):
@@ -2522,25 +2354,9 @@ def cmd_reindex(args):
 
 
 def cmd_import(args):
-    """Split a page export ({state, sessions, reviews}) or a folder of database documents into
-    the file layout, ready to publish or copy."""
-    if os.path.isdir(args.export):
-        # a folder of database documents saved to files: cme/state.json, sessions/*.json, reviews/*.json
-        root = args.export
-        def folder(name):
-            d = os.path.join(root, name)
-            out = []
-            for fn in sorted(os.listdir(d)) if os.path.isdir(d) else []:
-                if fn.endswith(".json"):
-                    doc = load_json(os.path.join(d, fn))
-                    doc.setdefault("id", fn[:-5])
-                    out.append(doc)
-            return out
-        sp = os.path.join(root, "cme", "state.json")
-        src = {"state": load_json(sp) if os.path.exists(sp) else None,
-               "sessions": folder("sessions"), "reviews": folder("reviews")}
-    else:
-        src = load_json(args.export)
+    """Split a page export ({state, sessions, reviews}) into the file layout, ready to publish
+    or copy."""
+    src = load_json(args.export)
     state = src.get("state") if isinstance(src, dict) else None
     if not state:
         die("the export has no 'state' (a Clinical CME page export is {state, sessions, reviews})")
@@ -2676,9 +2492,6 @@ def main(argv=None):
     s = sub.add_parser("init"); s.add_argument("--profile", default="{}"); s.add_argument("--config", default="{}")
     s.add_argument("--blueprint", required=True); s.add_argument("--out", required=True); s.set_defaults(fn=cmd_init)
     s = sub.add_parser("blueprint-md"); s.add_argument("file"); s.add_argument("--out", required=True); s.set_defaults(fn=cmd_blueprint_md)
-    s = sub.add_parser("unescape"); s.add_argument("file"); s.add_argument("--out", required=True); s.set_defaults(fn=cmd_unescape)
-    s = sub.add_parser("migrate-v3"); s.add_argument("ledger"); s.add_argument("--blueprint", required=True)
-    s.add_argument("--out", required=True); s.add_argument("--sessions-dir"); s.set_defaults(fn=cmd_migrate_v3)
     s = sub.add_parser("validate"); s.add_argument("state"); s.set_defaults(fn=cmd_validate)
 
     for p in sub.choices.values():

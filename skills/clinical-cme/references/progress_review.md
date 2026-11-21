@@ -23,17 +23,15 @@ Offer the two parts in one question (as structured choices where the app offers 
 > and critical feedback with a written report; it takes me 15–30 minutes and you about 10 to
 > read and discuss): **both** (recommended) · **check-in only** · **deep analysis later this week**.
 
-For a learner migrated from an earlier version, say that sessions before the migration may have
-no transcript (only scores, gaps and coding) unless transcripts were imported.
+If some of the period's older sessions have no transcript (only scores, gaps and coding), say so.
 
 ## 1. Gather
 
 1. Read the ledger into a file (`store.md` §4), then `python3 cme.py stats <state>`. Use only these figures and the
    state; never estimate numbers in prose. It lists the period's session IDs.
 2. With the deep analysis on: take the period's session IDs from `stats` (or the index), and
-   read those session documents into local files in `<work>/period` (store A: the read-files
-   tool with up to the allowed number of paths per call; B: get each document to a file; C:
-   copy) — no transcript enters the conversation unread. Read them in batches of about six
+   read those session documents into local files in `<work>/period` (the page: the read-files
+   tool with up to the allowed number of paths per call; a folder: copy) — no transcript enters the conversation unread. Read them in batches of about six
    (`transcript` and `closing` fields), take notes per batch in `<work>/review_notes.md`
    (patterns, quotations, session IDs) and rely on those notes rather than memory. Large periods
    (> 15 sessions) with parallel helper agents available: one batch per subagent with
@@ -86,8 +84,7 @@ context changes a finding.
    (for an appraisal or revalidation portfolio) if they want one.
 2. **Review JSON** → `python3 cme.py review <state> --review review.json --out next.json` →
    `python3 cme.py place next.json --index <work>/outR/data/index.json --out-dir <work>/outR` →
-   save every file in `<work>/outR` in one write (`store.md` §4; database stores: the report to
-   `reviews/<date>`, the ledger to `cme/state`):
+   save every file in `<work>/outR` in one write (`store.md` §4):
 
 ```json
 {

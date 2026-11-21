@@ -22,7 +22,7 @@ The skill holds no personal data; each learner's first run creates their own pri
 ## Repo layout
 
 ```
-skills/clinical-cme/   the skill (SKILL.md, scripts/, references/, templates/, legacy/)
+skills/clinical-cme/   the skill (SKILL.md, scripts/, references/, templates/)
 tests/                 pytest suite for cme.py and the simulation harness
 sim/                   simulation harness: examiner agent + learner persona in Claude Code (sim/README.md)
 docs/agents/           issue tracker, triage labels and domain-doc config for agent workflows

@@ -319,17 +319,16 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   let state = null, sessions = [], reviews = [];
   let prefs = null;           // cme/prefs in the page database: the round mix set on this page
   let dbRef = null;
-  let mode = null;            // "files" (data/*.json in this artifact) or "db" (artifact database, v4.0)
   let fullText = false;       // all session files fetched for full-text search
   const getJSON = async (path) => { const r = await fetch(path, {cache: "no-store"}); if (!r.ok) throw new Error(path + " " + r.status); return r.json(); };
   async function fullSession(s){
-    if (mode !== "files" || s._full) return s;
+    if (s._full) return s;
     try { const d = await getJSON("data/sessions/" + encodeURIComponent(s.id) + ".json"); Object.assign(s, d, {_full: true}); }
     catch (e) { s._full = true; s._missing = true; }
     return s;
   }
   async function loadAllSessions(){
-    if (fullText || mode !== "files") return;
+    if (fullText) return;
     fullText = true;
     const todo = sessions.filter(s => !s._full);
     for (let i = 0; i < todo.length; i += 6) await Promise.all(todo.slice(i, i + 6).map(fullSession));
@@ -404,7 +403,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     const flags = [];
     if (s.reflected === false) flags.push(`<span class="chip flag">Reflection pending</span>`);
     if (s.drill) flags.push(`<span class="chip note">Drill</span>`);
-    if (!s.transcript && s.url) flags.push(`<span class="chip note">In Google Drive</span>`);
+    if (!s.transcript && s.url) flags.push(`<span class="chip note">Linked document</span>`);
     const codes = (s.topics && s.topics.length ? s.topics : (s.tags || []).filter(isTopicCode)).slice(0, 5);
     b.innerHTML = `<span class="when"><b>${esc(shortDate(s.date))}</b><span>${esc(s.id)}</span></span>
       <span class="body"><span class="t">${esc(s.title || "Session " + s.id)}</span>
@@ -424,7 +423,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
       const hay = [s.id, s.title, s.summary, (s.tags || []).join(" "), (s.topics || []).join(" "), s.transcript, s.closing, s.addendum].join(" ").toLowerCase();
       return q.split(/\s+/).every(w => hay.includes(w));
     });
-    if (q && mode === "files" && !fullText) { loadAllSessions().then(renderList); }
+    if (q && !fullText) { loadAllSessions().then(renderList); }
     if (!hits.length) { list.innerHTML = `<div class="empty">${sessions.length ? "No session matches that search." : "No sessions yet. Start one with the clinical-cme skill."}</div>`; return; }
     hits.forEach(s => list.appendChild(sessionRow(s)));
   }
@@ -433,9 +432,9 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   async function openSession(s){
     const a = $("s-detail");
     listMode(false);
-    if (mode === "files" && !s._full) { a.innerHTML = `<div class="empty">Loading…</div>`; await fullSession(s); }
+    if (!s._full) { a.innerHTML = `<div class="empty">Loading…</div>`; await fullSession(s); }
     const body = s.transcript ? md(s.transcript) + (s.closing ? "<hr>" + md(s.closing) : "") + (s.addendum ? "<hr>" + md(s.addendum) : "")
-      : `<p>${s.url ? `This session's transcript is in Google Drive: <a href="${esc(s.url)}" target="_blank" rel="noopener">open the document</a>.` : "Only the summary of this session is stored."}</p>`;
+      : `<p>${s.url ? `This session's transcript is kept in a separate document: <a href="${esc(s.url)}" target="_blank" rel="noopener">open the document</a>.` : "Only the summary of this session is stored."}</p>`;
     a.innerHTML = `<h2>${esc(s.title || s.id)}</h2>
       <div class="meta"><span>${esc(s.id)}</span><span>${fmtDate(s.date)}</span>${s.format ? `<span>${esc(s.format)}</span>` : ""}${s.drill ? `<span>drill: ${esc(s.drill)}</span>` : ""}${scoreHTML(s.score, 2)}</div>
       ${s.summary ? `<p class="lede">${esc(s.summary)}</p>` : ""}
@@ -481,7 +480,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
         <span class="body"><span class="t">${esc(r.title || "Progress review")}</span>${r.headline ? `<span class="s">${esc(r.headline)}</span>` : ""}</span><span></span>`;
       b.addEventListener("click", async () => {
         const a = $("r-detail"); reviewMode(false); a.innerHTML = `<div class="empty">Loading…</div>`;
-        if (mode === "files" && !r.report) { try { Object.assign(r, await getJSON("data/reviews/" + encodeURIComponent(r.date) + ".json")); } catch (e) {} }
+        if (!r.report) { try { Object.assign(r, await getJSON("data/reviews/" + encodeURIComponent(r.date) + ".json")); } catch (e) {} }
         a.innerHTML = `<h2>${esc(r.title || "Progress review")}</h2><div class="meta"><span>${fmtDate(r.date)}</span></div><div class="md">${md(r.report || r.headline || "")}</div>`;
         $("r-back").scrollIntoView({block: "start"});
       });
@@ -498,7 +497,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
       ["Session length", c.session_minutes ? c.session_minutes + " min" : ""], ["Round", mixText(effectiveMix()) + (mixPending() ? " (from your next round)" : "") + (c.item_order ? ", " + String(c.item_order).replace(/_/g, " ") : "")], ["Case format", c.case_format],
       ["Feedback", (c.feedback_depth || "") + (c.show_coding ? ", with coding line" : "")], ["Target", c.target_sessions_per_week ? c.target_sessions_per_week + " sessions/week" : ""],
       ["Review interval", c.review_interval_days ? c.review_interval_days + " days" : ""], ["Units", (c.lab_units || "") + (c.blood_gas_units ? ", gases in " + c.blood_gas_units : "")], ["Guidelines", c.guideline_region],
-      ["Reminders", c.reminders ? "On" : "Off"], ["Mirror to Google Drive", c.mirror ? "On" : "Off"],
+      ["Reminders", c.reminders ? "On" : "Off"],
       ["Domain emphasis", Object.entries(p.domain_emphasis || {}).map(([k, v]) => k + " ×" + v).join(", ") || "None"],
       ["Self-ratings", Object.entries(p.domain_self_ratings || {}).map(([k, v]) => k + " " + v).join(", ")],
       ["Active drills", (state.drills || []).map(d => d.code).join(", ") || "None"],
@@ -611,38 +610,15 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     let idx = null;
     try { state = await getJSON("data/state.json"); } catch (e) { return false; }
     try { idx = await getJSON("data/index.json"); } catch (e) { idx = null; }
-    mode = "files";
     sessions = ((idx && idx.sessions) || (state.previous || []).concat(state.sessions || [])).map(s => Object.assign({}, s));
     sessions.sort(byDateDesc);
     reviews = ((idx && idx.reviews) || []).slice().sort((a, b) => (b.date || "") > (a.date || "") ? 1 : -1);
     return true;
   }
 
-  async function loadDb(){
-    const db = (window.claude && claude.use) ? await claude.use("db") : null;
-    if (!db) return false;
-    try {
-      const snap = await db.doc("cme/state").get();
-      const d = snap && snap.exists ? snap.data() : null;
-      if (!d || d.moved_to) return false;
-      state = d;
-    } catch (e) { return false; }
-    mode = "db";
-    try {
-      const qs = await db.collection("sessions").orderBy("date", "desc").limit(500).get();
-      sessions = qs.docs.map(d => Object.assign({id: d.id, _full: true}, d.data()));
-      sessions.sort(byDateDesc);
-    } catch (e) { sessions = []; }
-    try {
-      const rs = await db.collection("reviews").orderBy("date", "desc").limit(50).get();
-      reviews = rs.docs.map(d => Object.assign({id: d.id}, d.data()));
-    } catch (e) { reviews = []; }
-    return true;
-  }
-
   async function load(){
     let ok = false;
-    try { ok = (await loadFiles()) || (await loadDb()); } catch (e) { ok = false; }
+    try { ok = await loadFiles(); } catch (e) { ok = false; }
     if (!ok) { state = null; $("s-list").innerHTML = `<div class="empty">No ledger yet. Say “set up clinical CME” in a chat with your assistant to create it.</div>`; }
     renderTiles(); renderProgress(); renderSettings();
     if (ok) renderList();
@@ -655,7 +631,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
       $("export").addEventListener("click", async () => {
         try {
           await loadAllSessions();
-          if (mode === "files") { for (const r of reviews) { if (!r.report) { try { Object.assign(r, await getJSON("data/reviews/" + encodeURIComponent(r.date) + ".json")); } catch (e) {} } } }
+          for (const r of reviews) { if (!r.report) { try { Object.assign(r, await getJSON("data/reviews/" + encodeURIComponent(r.date) + ".json")); } catch (e) {} } }
           const clean = sessions.map(s => { const o = Object.assign({}, s); delete o._full; delete o._missing; return o; });
           await downloads.save({filename: "clinical-cme-export-" + today + ".json", data: JSON.stringify({state, sessions: clean, reviews}, null, 1)});
         } catch (e) { /* declined or unavailable */ }

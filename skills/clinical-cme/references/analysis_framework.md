@@ -1,6 +1,6 @@
 # Analysis framework: coding each round, and the deep review
 
-Version 3 analyses the learner's reasoning in two steps.
+The skill analyses the learner's reasoning in two steps.
 
 - **Code every round at grading time**, while the case, the answers and the evidence are in
   front of you. The codes go into the round JSON (and from there the ledger) and into the
