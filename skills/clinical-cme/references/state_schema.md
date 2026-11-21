@@ -85,7 +85,67 @@ them and marks the reflection skipped.
 
 Teaching points are the `key_learning` lines, identified as `<id>.<n>` (`S0021.2`).
 
-## 2. Round JSON (input to `record`)
+## 2. Round JSON (`round.json`) and the round record
+
+The examiner writes `round.json` with **the grading only**: each item names its key header
+(`author.md` §3) and carries the score, the confidence and the coding. `save` fills in
+everything the author already wrote down, and writes the result, the **round record**, to
+`record.json` in the work folder.
+
+```json
+{
+  "items": [
+    {"key": "Q1", "mastery": 1, "correct": false, "confidence": "guess",
+     "coding": {"errors": [{"element": "…", "category": "knowledge", "knowledge_type": "outdated", "severity": "important"}]}},
+    {"key": "Q2", "mastery": 3, "confidence": "unsure",
+     "coding": {"art": {"MGMT": 1}, "errors": [{"element": "…", "category": "knowledge", "knowledge_type": "numeric",
+                                                "art_domain": "MGMT", "severity": "important"}]}},
+    {"key": "case", "mastery": 3, "confidence": "unsure",
+     "coding": {"art": {"DG": 2, "PR": 1, "DDX": 1, "TEST": 2, "META": 0, "MGMT": 1}, "idea": {"I": 2, "D": 1, "E": 1, "A": 0},
+                "errors": [{"element": "…", "stage": 1, "category": "synthesis", "art_domain": "DDX",
+                            "bias": ["premature_closure"], "bias_evidence": "'clearly dry from the run'", "severity": "critical", "confidence": "sure"}]}}
+  ],
+  "gaps": [{"topic": "RENAL-02", "gap": "Precise description incl. still-unresolved prior parts", "source": "graded"}],
+  "resolved": [{"topic": "CARD-03", "note": "What was closed this time"}],
+  "key_learning": ["One-line teaching points"],
+  "summary": "One or two sentences on the main teaching.",
+  "grade_changes": [], "drill": {"code": "bias:premature_closure", "result": "fell_for"},
+  "errata": [{"corrects": "S0012", "point": "…", "correction": "…", "source": "…"}],
+  "pending_errata_logged": "all"
+}
+```
+
+What `save` fills in, and from where:
+
+| Field | From |
+|---|---|
+| per item: `type`, `topic`, `label`, `domain`, `stem_summary`, `aspect`, `retests` | the item's key header |
+| `case` (the compact description) | the header `<!-- key: case -->`, when the case was graded |
+| `selection_reasons` | each graded header's `reason` (`new_in_domain` is recorded as `new`) |
+| `case_format` | `plan.json` in the work folder |
+| `log_id`, `date` | the ledger's next session ID; today |
+| `title` | the case's "presentation — diagnosis"; without a case, the first stem summary |
+| `tags` | the topics tested |
+| `summary` | the first two `key_learning` lines |
+
+- Only items the learner answered go into `items`. A header without an item is listed under
+  `keys.not_graded` in the `save` output and is not recorded (a case the learner stopped
+  before stays due).
+- A field the examiner does write wins over the header and is listed under `keys.overridden`
+  ("Q2.aspect"). Use it only to correct the author: for example `"retests": null` on an item
+  that, as written, did not ask about the gap's decision point. A better `title`, `summary` or
+  `tags` can always be given.
+- **Missing or malformed headers.** If an item names a key that has no header, or its header
+  lacks a field, has a misspelt one, a line that is not `field: value`, an unknown `type` or
+  `aspect`, or an id used twice, `save` stops with `"ok": false` and one `error` that lists
+  every problem by file, key and field ("sealed_questions.md, key Q2: 'aspect' is missing").
+  Nothing is recorded. Correct the header in the sealed file and run `save` again. A problem
+  in a header that no item names is only a warning.
+- `python3 cme.py keys <folder> [--plan PLAN]` runs the same check on sealed files before a
+  round is played, and prints no content (§6).
+
+The round record, as `save` writes it to `record.json` and as `record` takes it. A
+`round.json` written out in full like this, with no `key` on its items, is recorded as it is:
 
 ```json
 {
@@ -120,10 +180,11 @@ Teaching points are the `key_learning` lines, identified as `<id>.<n>` (`S0021.2
 ```
 
 - `source` of a gap: `graded`, `transfer`, `misconception` or `self`.
-- `retests` on an item: the id of the open gap the item was written to test, copied from the
-  plan's `retest_gap.id` for that item. Put it only on an item that asked about the gap's
-  decision point. It is the only way a gap closes (§4); `record` warns when a topic with an open
-  gap was tested and no item carries it.
+- `retests` on an item: the id of the open gap the item was written to test. The author
+  copies it from the plan's `retest_gap.id` into the item's key header, and `save` carries it
+  into the record. It belongs only on an item that asked about the gap's decision point. It is
+  the only way a gap closes (§4); `record` warns when a topic with an open gap was tested and
+  no item carries it.
 - `mastery` per item: cases 0–5 from the rubric; focused questions 0–5 from their table
   (`feedback_guide.md` §2 B2); MCQs typically 4–5 if correct with sound reasoning, 3 if correct
   with flawed reasoning, 1–2 if wrong.
@@ -205,7 +266,7 @@ then lowest mastery), then open gaps that no item has tested since they were wri
 at least three days old (misconception > self > transfer > graded), then new topics by domain
 weight. A topic tested in the last two days is never chosen. Every chosen item whose topic has an
 open gap carries `retest_gap` (`id`, `gap`, `how`): the author writes the item on that decision
-point and the round JSON names the gap in the item's `retests`. Slots are filled case first, then focused questions,
+point and names the gap in the item's key header (`retests`), from where it reaches the round record. Slots are filled case first, then focused questions,
 then MCQs, so due topics and open gaps go to the formats that show reasoning. MCQs and focused
 questions come from other domains than the case and are unrelated to it and to each other
 (cross-references, shared significant words). In rounds of four or more items the last short
@@ -252,6 +313,7 @@ survive in `agg`. The verbatim detail is in the session documents, which are nev
 | `reindex ROOT` | Rebuild `ROOT/data/index.json` from the session and review files and the ledger. |
 | `status STATE` | Start of session: neutral JSON (next id, last session and whether its reflection is pending, due counts, review due, pending errata, round shape). No topic names. |
 | `plan STATE --out PLAN [--mcqs N --focused N --no-case --domain CODE --no-new --allow-repeat --no-drill --prefs J]` | Choose the round: topic IDs, labels, reasons, drill, `already_used`, recent cases, `aspect_hint` for focused items. Prints only counts. `--mcqs`, `--focused` and `--no-case` change this round only. |
+| `keys DIR\|SEALED… [--plan PLAN]` | Check the key headers of sealed files (`author.md` §3): prints the key ids each file has and `problems`, naming file, key and field only, never a topic or a value; with `--plan`, also whether the number of headers of each type matches the plan's counts. Exit code 1 when there is a problem. |
 | `record STATE --round ROUND.json --out NEXT` | Apply a graded round (reflection pending if absent). Prints per-topic next due, warnings, `errata_to_log`. |
 | `reflect STATE --reflection R.json --out NEXT [--session ID]` | Re-apply the last unreflected session with its reflection. |
 | `doc --part A --md A.md --round ROUND [--id S0042] --out A.json` / `doc --part B --md B.md --out B.json` | The session document, or its part B, as JSON (single steps of `save` and `close`). |
@@ -279,7 +341,8 @@ One round is worked on in one scratch folder, and every file has a fixed name th
 | `sealed_questions.md`, `sealed_case.md`, `kit_*.md`, `evidence_*.md` | the author and the checker, or `start` from a prepared round | `present`, the examiner once a part is answered, `save` (the `present` blocks) |
 | `answers.md` | `answer`, one block per part (`<!-- answers: questions -->` … `<!-- /answers -->`) | `save` (questions, case, final, notes), `close` (reflection) |
 | `feedback_questions.md`, `stage2.md`, `feedback.md` | the examiner: each message exactly as sent | `save` |
-| `round.json` (§2) | the examiner | `save` |
+| `round.json` (§2) | the examiner: the grading, each item naming its key | `save` |
+| `record.json` (§2) | `save`: the round record, built from the key headers and `round.json` | the simulation's checks; anyone who wants to see what was recorded |
 | `reflection.json` (§3), `B.md` (`session_log.md` §3) | the examiner | `close` |
 | `out1/`, `out2/` | `save`, `close`: the files to put into the store, each under its store path | `close` (from `out1`), `prepare`, `stash`, `verify` |
 

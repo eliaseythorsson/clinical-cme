@@ -45,9 +45,9 @@ Planning notes:
   region and specialty in one line above each verification list, so the checker and the
   examiner work to the same ones.
 - An item with `retest_gap` in the plan re-tests that gap: the same decision point in a new
-  clinical context (transfer). Write `retests: <retest_gap.id>` in that item's key, next to
-  its stem summary, so the examiner can copy it into the round JSON; without it a good answer
-  cannot close the gap.
+  clinical context (transfer). Write `retests: <retest_gap.id>` in that item's key header
+  (§3); without it a good answer cannot close the gap. (The plan's `how` line still speaks
+  of the round JSON: the key header is where it goes.)
 - A `drill` is built into its item (`case_design.md` §9, §11.5).
 - Every vignette and stem is clearly different from `already_used` and
   `recent_cases_any_topic`: patient, setting, presentation, twist.
@@ -77,12 +77,13 @@ files of a part the plan does not have (no case, or no short questions).
 
 In this order:
 
-1. **Keys**, one block per item, written before its stem:
-   - MCQ: topic ID and label; the correct option and a one-line reason; a few words per
-     distractor on the scenario in which it would be right; `stem_summary` (about ten words).
-   - Focused question: topic ID and label; best answer (two to four sentences); rubric (two to
-     four one-line elements); acceptable alternatives and how they score; unacceptable
-     answers; `aspect`; `stem_summary` (`case_design.md` §11.3).
+1. **Keys**, one block per item, written before its stem. Each starts with its **key header**
+   ("Key headers" below), then:
+   - MCQ: the correct option and a one-line reason; a few words per distractor on the
+     scenario in which it would be right.
+   - Focused question: best answer (two to four sentences); rubric (two to four one-line
+     elements); acceptable alternatives and how they score; unacceptable answers
+     (`case_design.md` §11.3).
 2. **Pre-flight**: one line (`case_design.md` §8, lines 6 and 10–13).
 3. **Verification list**: one precise search per claim the feedback will rest on (guideline
    and year, threshold or dose, trial), three to six lines.
@@ -93,9 +94,9 @@ In this order:
 
 ### `sealed_case.md`
 
-1. **Key**: topic ID and label; the diagnosis; the decisive tests; the two or three leading
-   alternatives; the expected elements of each stage (the rubric); the compact description for
-   the log (`patient`, `setting`, `presentation`, `diagnosis`, `twist`); the drill, if any.
+1. **Key**: its key header (`<!-- key: case -->`, below), which holds the diagnosis and the
+   compact description for the log; then the decisive tests; the two or three leading
+   alternatives; the expected elements of each stage (the rubric); the drill, if any.
 2. **Results bank** (unfolding cases), between `<!-- bank -->` and `<!-- /bank -->`: the result
    of every investigation a competent clinician might reasonably order here, each as it would
    be reported, typically ten to fifteen; one line "Add if not ordered: <decisive test>; with:
@@ -109,6 +110,63 @@ In this order:
    the answer-format prompt (`case_design.md` §5). Stage 2 is not written as a block: it is
    assembled from the bank after the learner's Stage 1 answer.
 
+### Key headers
+
+Every item's key starts with a small header in exactly this form. The state engine reads it
+and fills the round's record from it, so the examiner adds only the grading; a missing or
+misspelt field stops the round from being saved.
+
+```
+<!-- key: Q1 -->
+type: mcq
+topic: CARD-03
+label: Atrial fibrillation
+reason: due
+retests: G0004
+stem_summary: New AF after hip surgery, when to anticoagulate
+<!-- /key -->
+```
+
+- The first line names the item: `Q1`, `Q2`, … with the number the question has in the text
+  to present (MCQs first, then focused questions), and `case` for the case. One header per
+  item; one `field: value` per line, nothing else between the two markers.
+- Every header: `type` (`mcq`, `focused` or `case`); `topic` (the blueprint ID) and `label`
+  (for a `new_in_domain` item, the ones you chose); `reason` (the plan's `reason_code` for
+  the item, copied as it is).
+- `retests`: the plan's `retest_gap.id`, on an item written on that gap's decision point.
+  Leave the line out otherwise.
+- MCQ and focused question: `stem_summary`, about ten words on what the stem asks, for the
+  list of stems already used.
+- Focused question: `aspect`, one of `diagnosis`, `interpretation`, `testing`, `management`,
+  `disposition`, `prevention`, `prognosis`.
+- Case: `patient` (age and sex, "74F"), `setting`, `presentation`, `diagnosis`, and `twist`
+  (what makes this case different; may be left out). These five are the compact description
+  kept for the novelty check of later rounds.
+- `domain` may be given when the topic ID does not start with its domain code.
+
+```
+<!-- key: Q4 -->
+type: focused
+topic: HEME-04
+label: Anticoagulation reversal
+reason: gap
+aspect: management
+stem_summary: Warfarin, INR 9, minor gum bleeding, what now
+<!-- /key -->
+
+<!-- key: case -->
+type: case
+topic: RENAL-02
+label: Hyponatraemia / hypernatraemia
+reason: due
+patient: 34M
+setting: ED
+presentation: confusion after a marathon
+diagnosis: exercise-associated hyponatraemia
+twist: looked hypovolaemic
+<!-- /key -->
+```
+
 ### `kit_questions.md` and `kit_case.md`
 
 The notes the feedback will be written from, as `feedback_guide.md` §9 lists them. Terse:
@@ -120,4 +178,8 @@ the verification list is to confirm with `(verify)`.
 Fix anything the pre-flight found by editing the file, without restating content anywhere
 else. Check that each `present` block is complete and closed, and that no present block
 contains a key, a topic word or a title, and that the bank block (if any) is closed and
-holds no diagnosis or key. Then reply `done`.
+holds no diagnosis or key. Check the key headers: `python3 <this file's folder>/../scripts/cme.py
+keys <output folder> --plan <plan>` (description "Prepare the round") prints which headers each
+file has and what is wrong with them, by field name only; correct the headers until it prints
+`"ok": true`. (With `Parts: questions` or `case` it checks the files written so far.) Then
+reply `done`.

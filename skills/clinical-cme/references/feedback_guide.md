@@ -109,8 +109,8 @@ an answer only for not matching the wording of the key.
 - New gaps, written precisely enough to re-test: the decision point, the correct rule,
   and what the learner did instead.
 - Prior gaps re-tested: resolved, partly resolved or persisting. A gap counts as re-tested
-  only if an item asked about its decision point; that item carries `retests` in the round
-  JSON, and only then can the gap close (`state_schema.md` §2, §4).
+  only if an item asked about its decision point; that item carries `retests` in its key
+  header, and so in the round record, and only then can the gap close (`state_schema.md` §2, §4).
 - Transfer gaps: knowledge shown in one item but not applied in another.
 - Calibration notes: confident and wrong (a misconception, highest priority), correct
   but guessed (not yet mastered), unsure but correct (likely to be stronger than they

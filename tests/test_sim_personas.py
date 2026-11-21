@@ -114,7 +114,7 @@ class Stops(Script):
         if "case_recorded_anyway" in self.faults:
             rnd["items"][2].update(mastery=0, confidence=None)
         else:
-            del rnd["items"][2], rnd["case"], rnd["case_format"]
+            del rnd["items"][2]
         self.save(rnd, feedback=summary, answers={"notes": STOP}, parts=("questions", "notes"))
         self.close({"topic_comfort": {"HEME-01": 4}, "performance": 4, "solid": "a", "gaps": "b"})
         return self

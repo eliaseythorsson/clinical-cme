@@ -19,6 +19,14 @@ A mini-case ending in one free-text question on a single decision, graded on the
 The full clinical case of a round, usually unfolding in two stages.
 _Avoid_: vignette, scenario
 
+**Key**:
+What the author writes down as the right answer to an item and how to score it; the examiner grades with it as the author's view.
+_Avoid_: answer sheet, solution
+
+**Key header**:
+The few fixed lines at the top of a key (topic, stem summary, aspect, compact case, selection reason, the gap it retests) that the state engine reads.
+_Avoid_: metadata, front matter
+
 **Results bank**:
 The prepared results of tests the learner may order in Stage 1 of a case.
 
@@ -52,6 +60,10 @@ _Avoid_: state (in conversation with the learner)
 
 **Log**:
 The verbatim, append-only record of every round, one session document each.
+
+**Round record**:
+What the ledger keeps of one round: its items with topic, score, confidence and coding, the gaps and the compact case. The state engine builds it from the key headers and the examiner's grading.
+_Avoid_: round JSON (for the assembled record)
 
 **Page**:
 The learner's own view of their store: past sessions, scores, progress reviews, topics already tested and settings. It never names what a coming round will test (no open gaps, no due topics).

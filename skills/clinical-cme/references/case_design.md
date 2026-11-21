@@ -212,7 +212,7 @@ depth of feedback and the spacing of the topic.
   only on the correct one.
 - When re-testing an open gap (the plan's `retest_gap`), put the same decision point in a new
   clinical context; the aim is to test transfer, not recall of the earlier vignette. The key
-  names the gap (`retests: G0007`).
+  header names the gap (`retests: G0007`, `author.md` §3).
 - MCQs are presented first, on their own. Each stem must stand alone: no "the patient above",
   and no reference to the case.
 - Write the key before the stem (in the sealed file: the correct answer and its one-line
@@ -301,11 +301,11 @@ round JSON.
 `plan` lists, for each chosen topic, the cases and MCQ stems already used (`already_used`),
 plus the most recent cases on any topic. A re-test of the same topic must use a different
 patient, setting, presentation and twist; the decision point may be the same (§6). After the
-round, describe the case compactly in the round JSON so the index stays useful:
-`"case": {"patient": "74F", "setting": "ED", "presentation": "confusion after a marathon",
-"diagnosis": "exercise-associated hyponatraemia", "twist": "looked hypovolaemic"}`. Give each
-MCQ and focused question a `stem_summary` (about ten words), and each focused question its
-`aspect`.
+round, describe the case compactly in its key header so the index stays useful (`patient`
+"74F", `setting` "ED", `presentation` "confusion after a marathon", `diagnosis`
+"exercise-associated hyponatraemia", `twist` "looked hypovolaemic"). Give each MCQ and focused
+question a `stem_summary` (about ten words), and each focused question its `aspect`, in the
+same way (`author.md` §3, "Key headers").
 
 ## 11. Focused questions (mini-case, one free-text decision)
 
@@ -367,7 +367,8 @@ In `sealed_questions.md`, for each focused question:
 - **Acceptable alternatives** (defensible under current guidance or regional variation, and
   how they score) and **unacceptable answers** (unsafe, outdated) — decided now, not after
   reading the learner's answer.
-- `aspect`, `stem_summary`, and the separation check against the case and the other questions.
+- `aspect` and `stem_summary` (in the key header), and the separation check against the case
+  and the other questions.
 
 ### 11.4 Presentation
 
