@@ -98,7 +98,7 @@ round's files on a command line and never copy an earlier answer again.
 | `references/session_log.md` | Session-document layout, errata, search, teaching export |
 | `references/onboarding.md` | First run, FAQ, settings |
 | `references/progress_review.md` | When a review is due or requested |
-| `scripts/cme.py` | Every session (start, present, answer, save, close, prepare, stash, stats, review …) |
+| `scripts/cme.py` | Every session (start, present, answer, save, close, prepare, finish-prepare, stats, review …) |
 | `templates/page.html` | The learner's page, published at setup |
 | `templates/blueprint.json` | Default internal/hospital-medicine blueprint |
 
@@ -377,13 +377,19 @@ with the items answered; the case's topic stays due.
      next round").
   3. **Check**: start one checker per sealed file, together (`<work>/next/sealed_questions.md`
      → `<work>/next/evidence_questions.md`; `sealed_case.md` → `evidence_case.md`), and wait
-     for both. Then `grep -h "^Keys contradicted" <work>/next/evidence_*.md`: it prints counts
-     only. If any is above 0, start the author once more with Parts `revise` and wait. Without
-     helpers, skip this step: the evidence is then checked at the session, after the answers.
-  4. `python3 cme.py stash <work>/out2/data/state.json --plan <work>/next/plan.json --dir
-     <work>/next --out-dir <work>/out3` → save its one file (`store.md` §4).
-  Say nothing about it. If anything here fails, leave it: the next session writes or checks
-  what is missing, as in turn 1.
+     for both. Without helpers, skip this step: the evidence is then checked at the session,
+     after the answers.
+  4. **Finish**: `python3 cme.py finish-prepare <work>/out2/data/state.json --work <work>`
+     (add `--no-evidence` when step 3 was skipped). It reads the checkers' counts, prints
+     counts only, and stashes the round into `<work>/out3` when it is clean:
+     - `"stashed": true` → save its one file (`store.md` §4).
+     - `"revise": true` (a key is contradicted; nothing stashed yet) → start the author once
+       more with Parts `revise`, wait, then run the command again with `--revised` and save.
+     - an error naming an evidence file (missing, empty or unfinished) → start the checker
+       for that file once more and run the command again; never pass `--no-evidence` to get
+       past it.
+  Say nothing about it. If anything here still fails, leave it: the next session writes or
+  checks what is missing, as in turn 1.
 - With `testing` true, last of all run the store check ("Testing mode" below).
 - If the discussion continues afterwards, append it: write it to a file and run
   `cme.py addendum --doc <latest session file> --md <file> --out-dir <work>/out4`, then save.
@@ -395,7 +401,7 @@ On while the skill is being tested (`config.testing`; "testing mode on/off" unde
 - **Close message**: after everything else, a rule and four quick questions: "Testing check
   (about 30 seconds): 1. Waiting: fine / noticeable / annoying, and at which step? 2. The
   items, 1–5? 3. The feedback, 1–5? 4. Anything else, in a line?"
-- **Store check**, behind the scenes after every save and the stash of this turn: read the
+- **Store check**, behind the scenes after every save and the `finish-prepare` of this turn: read the
   store again as at the start, plus `data/sessions/<id>.json`, into `<work>/check/`; then
   `python3 cme.py verify --work <work> --store <work>/check` (it compares every output folder
   of this round, `out1` to `out3`, and writes `<work>/verify.json`). `"ok": false` → tell the
@@ -415,7 +421,7 @@ nothing, and never write anything about the round's content.
 2. `python3 cme.py prepare <work>/store/state.json --out <work>/next/plan.json --if-needed
    <work>/store/prepared.json --allow-unreflected`. `"prepare": false` → reply "A round is
    already prepared." (or the reason it gives) and stop.
-3. Write, check and stash as in turn 5 (steps 2–4, with `<work>/store/state.json` as the
+3. Write, check and finish as in turn 5 (steps 2–4, with `<work>/store/state.json` as the
    ledger), and save the one file, pinned to the version you read. If the store changed in
    between, stop: a round is being played.
 4. Reply in one line: "Next round prepared." Nothing else.
@@ -435,9 +441,8 @@ folder as downloads so the next session can save them (`store.md` §6). Never re
 ## Other requests
 
 - **Settings** ("make sessions 30 minutes", "more perioperative medicine", "use kPa"): read the
-  store → `cme.py settings <state> --config '{…}' --profile '{…}' --out <work>/s.json` →
-  `cme.py place <work>/s.json --index <work>/store/index.json --out-dir <work>/outS` → save;
-  confirm in one line. Emphasis is `profile.domain_emphasis`; a changed blueprint is
+  store → `cme.py settings <work>/store/state.json --config '{…}' --profile '{…}' --out-dir
+  <work>/outS` → save its `files`; confirm in one line. Emphasis is `profile.domain_emphasis`; a changed blueprint is
   `--blueprint <file>`. Any settings change sets aside the prepared round; offer nothing, the
   next round is simply written at its start.
 - **Region or specialty** ("use UK guidelines", "my specialty is geriatrics"): one `settings`

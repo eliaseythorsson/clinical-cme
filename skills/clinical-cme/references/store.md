@@ -14,7 +14,7 @@ data through the conversation.
 | One round: metadata, `transcript` (part A), `closing` (part B), `addendum` | `data/sessions/S0042.json` | `save`, `close`, `addendum` |
 | The page itself | `index.html` | setup; `save` when the page is out of date (§4.5) |
 | A progress-review report | `data/reviews/2026-11-20.json` | `review-doc` |
-| The next round, written ahead and packed: questions, case, feedback notes (`state_schema.md` §8) | `data/prepared.json` | `stash` after a close; emptied by `save` and `place` |
+| The next round, written ahead and packed: questions, case, feedback notes (`state_schema.md` §8) | `data/prepared.json` | `finish-prepare` after a close; emptied by `save`, `settings` and `place` |
 
 One more document lives outside the files: the round mix the learner sets on their page
 (`state_schema.md` §7) is kept by the page as its own settings document, `cme/prefs`. The page
@@ -128,7 +128,7 @@ the one you read; if it moved, re-read and re-run as for the page.
 - **One store per learner.** The store kind lives in the learner's head and the page, not in the
   ledger; never start a second one.
 - **Save once per step.** `save` after the final feedback, `close` after the reflection,
-  `stash` after the close (one small file, which does not touch the ledger). `save --work`
+  `finish-prepare` after the close (one small file, which does not touch the ledger). `save --work`
   always starts from the ledger as it was read, so it can be run again after fixing a
   warning; never run `save` on a ledger that `save` wrote.
 - **The prepared round is sealed.** Read `data/prepared.json` into a file and hand it to

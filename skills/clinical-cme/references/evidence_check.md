@@ -68,6 +68,12 @@ Checked: <date>, <n> claims, <n> not verified
 Keys contradicted: <n>
 ```
 
+`<n>` is a plain number, `0` when no key is contradicted. Write the line even then: the script
+(`cme.py finish-prepare`) stops when the output file is missing, empty or ends without this
+line, and the round is not kept until the check is run again. When more than zero, the author
+is started once more to revise those items before the round is kept (`author.md`, Parts
+`revise`).
+
 ## 4. When the assistant checks for itself
 
 Same steps, run only **after that part's answers are in** (a search names the topic, and the

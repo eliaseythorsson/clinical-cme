@@ -26,7 +26,7 @@ waiting for something to be generated.
 - **The whole round is prepared ahead.** After each close the next round is planned and
   written in full — short questions, the case's Stage 1 with a results bank (so Stage 2 goes
   out the moment Stage 1 is answered), and the notes for both feedbacks — and kept, packed, in
-  the store (`data/prepared.json`; `cme.py prepare`, `stash`), together with the checked
+  the store (`data/prepared.json`; `cme.py prepare`, `finish-prepare`), together with the checked
   evidence for it, so a key that current guidance contradicts is corrected before the round
   is ever played. The next session reads the store and presents (`start --prepared`,
   `present`); nothing is written or looked up before the learner starts, before the case
@@ -97,7 +97,7 @@ own private store. Requires Python 3.8+ in the session (standard library only).
 
 ```
 SKILL.md                      the protocol the assistant follows in a round
-scripts/cme.py                the state engine (start, present, save, close, prepare, stash, stats …)
+scripts/cme.py                the state engine (start, present, save, close, prepare, finish-prepare, stats …)
 references/store.md           the store: documents, tools, kinds of store, reading/writing,
                               setup, recovery, export
 references/state_schema.md    ledger layout, round and reflection JSON, spacing rules, commands

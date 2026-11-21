@@ -22,7 +22,10 @@ Session (fast path):
   addendum --doc SESSION.json --md ADD.md --out-dir D
   prepare STATE --out NEXT_PLAN [--if-needed PREPARED.json] [--allow-unreflected]
                                                   after the close: plan the NEXT round (prints counts only)
-  stash   STATE --plan NEXT_PLAN --dir DRAFTS --out-dir D   keep the round drafted for it for the next start
+  finish-prepare STATE --work W [--revised] [--no-evidence]
+                                                  after the checkers: count contradicted keys (a missing evidence
+                                                  file is an error), stash the round when it is clean
+  stash   STATE --plan NEXT_PLAN --dir DRAFTS --out-dir D   the stashing step of finish-prepare alone
   present SEALED.. --block questions|case|stage2  print only the text to show the learner
 
 Other:
@@ -31,8 +34,9 @@ Other:
   review  STATE --review REVIEW.json --out NEXT   record a completed review; starts a new period
   review-doc --md REPORT.md [--headline H] [--state S --index IDX] --out-dir D
   snooze  STATE --days N --out NEXT
-  settings STATE [--config JSON] [--profile JSON] [--blueprint F] --out NEXT
-  place   STATE [--index IDX] --out-dir D          put a state from review/settings/snooze/init in the layout
+  settings STATE [--config JSON] [--profile JSON] [--blueprint F] --out-dir D
+                                                  change settings and put the ledger in the layout, ready to save
+  place   STATE [--index IDX] --out-dir D          put a state from review/snooze/init in the layout
   init    --profile JSON --config JSON --blueprint FILE(.json|.md) --out STATE
   import  EXPORT.json --out-dir D                 page export {state, sessions, reviews} -> file layout
   reindex ROOT                                    rebuild ROOT/data/index.json
@@ -1725,6 +1729,10 @@ def cmd_snooze(args):
 
 
 def cmd_settings(args):
+    """Change settings. With --out-dir the changed ledger goes straight into the file layout
+    (what `place` does), so a settings change is one command."""
+    if not args.out and not args.out_dir:
+        die("settings needs --out-dir STORE_FILES (the changed ledger in the file layout, ready to save) or --out FILE")
     today = today_from(args)
     st = load_json(args.state)
     check_schema(st)
@@ -1745,9 +1753,18 @@ def cmd_settings(args):
         st["blueprint"] = bp
     st["gen"] = int(st.get("gen") or 0) + 1
     st["updated"] = iso(today)
-    save_json(st, args.out)
-    print(json.dumps({"ok": True, "out": args.out, "gen": st["gen"], "config": st["config"],
-                      "review": st["review"], **guideline_context(st)}, ensure_ascii=False))
+    out = {"ok": True, "gen": st["gen"], "config": st["config"], "review": st["review"], **guideline_context(st)}
+    if args.out:
+        save_json(st, args.out)
+        out["out"] = args.out
+    if args.out_dir:
+        # straight into the file layout, ready to save: the index and the page are the ones read
+        # with the ledger unless named
+        index = args.index or beside_ledger(args.state, "index.json")
+        page = args.page or beside_ledger(args.state, "index.html")
+        placed = place_state(st, args.out_dir, index=index, page=page)
+        out.update({k: v for k, v in placed.items() if k not in ("ok", "gen")})
+    print(json.dumps(out, ensure_ascii=False))
 
 
 # ---------------------------------------------------------------- init, blueprint
@@ -2018,7 +2035,8 @@ def cmd_prepare(args):
     summary.update({"prepare": True, "gen": st.get("gen"),
                     "note": "Sealed: have the whole round drafted for this plan into one folder "
                             "(sealed_questions.md, sealed_case.md, kit_questions.md, kit_case.md), "
-                            "then run stash --dir on it."})
+                            "have each sealed file checked (evidence_questions.md, evidence_case.md), "
+                            "then run finish-prepare on it."})
     print(json.dumps(summary, ensure_ascii=False))
 
 
@@ -2030,18 +2048,12 @@ def present_blocks(text):
     return {k: v.strip() for k, v in PRESENT_RE.findall(text or "") if v.strip()}
 
 
-def cmd_stash(args):
-    """Keep the round drafted for next time in the store (data/prepared.json): the plan, the
-    sealed short questions, the sealed case and the feedback notes, whichever were drafted."""
-    st = load_json(args.state)
-    check_schema(st)
-    plan = load_json(args.plan)
-    meta = plan.get("prepared") or {}
-    if meta.get("gen") != st.get("gen"):
-        die("this plan was not made by `prepare` from this ledger (gen %s, ledger %s)" % (meta.get("gen"), st.get("gen")))
+def prepared_round_files(plan, folder):
+    """The files drafted for a plan in `folder` that belong in the prepared round: (files, has,
+    warnings). Stops when the first part's sealed file is not usable."""
     files = {}
     for name in PREPARED_FILES:
-        path = os.path.join(args.dir, name)
+        path = os.path.join(folder, name)
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as fh:
                 text = fh.read()
@@ -2055,9 +2067,9 @@ def cmd_stash(args):
     if present_blocks(files.get("sealed_case.md")).get("case"):
         has.append("case")
     if short and "questions" not in has:
-        die("sealed_questions.md with a <!-- present: questions --> … <!-- /present --> block is missing in %s" % args.dir)
+        die("sealed_questions.md with a <!-- present: questions --> … <!-- /present --> block is missing in %s" % folder)
     if not short and "case" not in has:
-        die("sealed_case.md with a <!-- present: case --> … <!-- /present --> block is missing in %s" % args.dir)
+        die("sealed_case.md with a <!-- present: case --> … <!-- /present --> block is missing in %s" % folder)
     if counts.get("case") and "case" not in has:
         files.pop("sealed_case.md", None); files.pop("kit_case.md", None); files.pop("evidence_case.md", None)
         warnings.append("no usable sealed_case.md: the case will be drafted at the next session")
@@ -2066,13 +2078,110 @@ def cmd_stash(args):
     if "questions" not in has:
         files.pop("kit_questions.md", None); files.pop("evidence_questions.md", None)
     has += [n[:-3] for n in PREPARED_FILES[2:] if n in files]
-    os.makedirs(args.out_dir, exist_ok=True)
-    doc = {"v": 2, "gen": st.get("gen"), "made": meta.get("made"), "session_id": st.get("next_id"),
-           "counts": counts, "has": has, "payload": pack({"plan": plan, "files": files})}
-    f = write_out(args.out_dir, PREPARED_PATH, doc)
+    return files, has, warnings
+
+
+def plan_for_stash(st, plan_path):
+    plan = load_json(plan_path)
+    meta = plan.get("prepared") or {}
+    if meta.get("gen") != st.get("gen"):
+        die("this plan was not made by `prepare` from this ledger (gen %s, ledger %s)" % (meta.get("gen"), st.get("gen")))
+    return plan
+
+
+def stash_round(st, plan, files, has, warnings, out_dir):
+    """Write the prepared round (data/prepared.json) into out_dir; returns what to print."""
+    os.makedirs(out_dir, exist_ok=True)
+    doc = {"v": 2, "gen": st.get("gen"), "made": (plan.get("prepared") or {}).get("made"),
+           "session_id": st.get("next_id"), "counts": plan.get("counts") or {}, "has": has,
+           "payload": pack({"plan": plan, "files": files})}
+    f = write_out(out_dir, PREPARED_PATH, doc)
     out = {"ok": True, "gen": st.get("gen"), "has": has, "files": [f]}
     if warnings:
         out["warnings"] = warnings
+    return out
+
+
+def cmd_stash(args):
+    """Keep the round drafted for next time in the store (data/prepared.json): the plan, the
+    sealed short questions, the sealed case and the feedback notes, whichever were drafted.
+    A single step of `finish-prepare`, which also reads the evidence check first."""
+    st = load_json(args.state)
+    check_schema(st)
+    plan = plan_for_stash(st, args.plan)
+    files, has, warnings = prepared_round_files(plan, args.dir)
+    print(json.dumps(stash_round(st, plan, files, has, warnings, args.out_dir), ensure_ascii=False))
+
+
+# The last line of an evidence file, as references/evidence_check.md §3 prescribes it.
+CONTRADICTED_RE = re.compile(r"^[ \t>*_`-]*Keys contradicted[ \t*_`]*:[ \t*_`]*(\d+)[ \t*_`.]*$", re.M | re.I)
+EVIDENCE_FOR = {"sealed_questions.md": "evidence_questions.md", "sealed_case.md": "evidence_case.md"}
+NEXT_DIR = "next"                       # in the work folder: the next round's plan and drafts
+STASH_DIR = "out3"                      # what finish-prepare writes
+
+
+def contradicted_keys(text):
+    """The number on an evidence file's `Keys contradicted: <n>` line (the last one, if the
+    file was written twice), or None when the file has no such line."""
+    found = CONTRADICTED_RE.findall(text or "")
+    return int(found[-1]) if found else None
+
+
+def cmd_finish_prepare(args):
+    """After the checkers: read the evidence files' counts of contradicted keys and, when the
+    round is clean (or was revised), stash it. An evidence file that is missing, empty or
+    without its count line stops the command: it is never read as "nothing contradicted".
+    Prints counts and file names only."""
+    work = args.work
+    plan_path = args.plan or (os.path.join(work, NEXT_DIR, "plan.json") if work else None)
+    folder = args.dir or (os.path.join(work, NEXT_DIR) if work else None)
+    out_dir = args.out_dir or (os.path.join(work, STASH_DIR) if work else None)
+    if not (plan_path and folder and out_dir):
+        die("finish-prepare needs --work WORK_FOLDER (or --plan, --dir and --out-dir)")
+    st = load_json(args.state)
+    check_schema(st)
+    plan = plan_for_stash(st, plan_path)
+    files, has, warnings = prepared_round_files(plan, folder)
+    out = {"ok": True}
+    if args.no_evidence:
+        # no checker was run (no helpers): the evidence is checked at the session, after the answers
+        for name in EVIDENCE_FOR.values():
+            files.pop(name, None)
+        has = [h for h in has if not h.startswith("evidence_")]
+        out.update({"evidence": "not checked", "contradicted": None, "revise": False})
+    else:
+        per_file, problems = {}, []
+        for sealed, evidence in EVIDENCE_FOR.items():
+            if sealed not in files:
+                continue
+            path = os.path.join(folder, evidence)
+            if evidence not in files:
+                problems.append("%s is %s" % (evidence, "empty" if os.path.exists(path) else "missing"))
+                continue
+            n = contradicted_keys(files[evidence])
+            if n is None:
+                problems.append("%s has no `Keys contradicted: <n>` line" % evidence)
+            else:
+                per_file[evidence] = n
+        if problems:
+            die("the evidence check is not complete in %s: %s. Nothing was stashed. Run the checker for it "
+                "again (references/evidence_check.md), or pass --no-evidence if no checker is run in this session"
+                % (folder, "; ".join(problems)))
+        total = sum(per_file.values())
+        out.update({"evidence": per_file, "contradicted": total, "revise": bool(total) and not args.revised})
+        if args.revised:
+            out["revised"] = True
+    if out["revise"]:
+        out.update({"stashed": False,
+                    "next": "start the author once more with Parts `revise` on this folder, wait for it, "
+                            "then run this command again with --revised"})
+        if warnings:
+            out["warnings"] = warnings
+        print(json.dumps(out, ensure_ascii=False))
+        return
+    stashed = stash_round(st, plan, files, has, warnings, out_dir)
+    out.update(stashed)
+    out["stashed"] = True
     print(json.dumps(out, ensure_ascii=False))
 
 
@@ -2695,25 +2804,32 @@ def cmd_review_doc(args):
     print(json.dumps({"ok": True, "doc": "reviews/%s" % date, "files": files}, ensure_ascii=False))
 
 
-def cmd_place(args):
-    """Copy a state file produced by settings/review/snooze/init into the file layout, plus the index."""
-    st = load_json(args.state)
-    check_schema(st)
-    os.makedirs(args.out_dir, exist_ok=True)
-    files = [write_out(args.out_dir, STATE_PATH, st)]
-    if not args.no_index:
-        idx = load_index(args.index, st)
-        files.append(write_out(args.out_dir, INDEX_PATH, finish_index(idx, st)))
-        files.append(write_out(args.out_dir, PREPARED_PATH, {"v": 1, "empty": True}))
+def place_state(st, out_dir, index=None, no_index=False, page=None):
+    """Write a ledger into the file layout, with the index, an emptied prepared round and the
+    page if it is out of date. Returns what to print."""
+    os.makedirs(out_dir, exist_ok=True)
+    files = [write_out(out_dir, STATE_PATH, st)]
+    if not no_index:
+        idx = load_index(index, st)
+        files.append(write_out(out_dir, INDEX_PATH, finish_index(idx, st)))
+        files.append(write_out(out_dir, PREPARED_PATH, {"v": 1, "empty": True}))
     out = {"ok": True, "gen": st.get("gen"), "files": files}
     warnings = []
-    pf = page_upgrade(args.out_dir, args.page, warnings)
+    pf = page_upgrade(out_dir, page, warnings)
     if pf:
         files.append(pf)
         out["page_upgraded"] = pf["page_upgrade"]
     if warnings:
         out["warnings"] = warnings
-    print(json.dumps(out, ensure_ascii=False))
+    return out
+
+
+def cmd_place(args):
+    """Copy a state file produced by review/snooze/init into the file layout, plus the index."""
+    st = load_json(args.state)
+    check_schema(st)
+    print(json.dumps(place_state(st, args.out_dir, index=args.index, no_index=args.no_index, page=args.page),
+                     ensure_ascii=False))
 
 
 # ---------------------------------------------------------------- main
@@ -2749,6 +2865,9 @@ def main(argv=None):
     s.add_argument("--if-needed"); s.add_argument("--allow-unreflected", action="store_true"); s.set_defaults(fn=cmd_prepare)
     s = sub.add_parser("stash"); s.add_argument("state"); s.add_argument("--plan", required=True)
     s.add_argument("--dir", required=True); s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_stash)
+    s = sub.add_parser("finish-prepare"); s.add_argument("state"); s.add_argument("--work"); s.add_argument("--plan")
+    s.add_argument("--dir"); s.add_argument("--out-dir"); s.add_argument("--revised", action="store_true")
+    s.add_argument("--no-evidence", action="store_true"); s.set_defaults(fn=cmd_finish_prepare)
     s = sub.add_parser("present"); s.add_argument("files", nargs="+"); s.add_argument("--block", required=True)
     s.set_defaults(fn=cmd_present)
     s = sub.add_parser("verify"); s.add_argument("--written", nargs="+"); s.add_argument("--work")
@@ -2783,7 +2902,8 @@ def main(argv=None):
     s = sub.add_parser("snooze"); s.add_argument("state"); s.add_argument("--days", type=int, default=7)
     s.add_argument("--out", required=True); s.set_defaults(fn=cmd_snooze)
     s = sub.add_parser("settings"); s.add_argument("state"); s.add_argument("--config"); s.add_argument("--profile")
-    s.add_argument("--blueprint"); s.add_argument("--out", required=True); s.set_defaults(fn=cmd_settings)
+    s.add_argument("--blueprint"); s.add_argument("--out"); s.add_argument("--out-dir"); s.add_argument("--index")
+    s.add_argument("--page"); s.set_defaults(fn=cmd_settings)
     s = sub.add_parser("init"); s.add_argument("--profile", default="{}"); s.add_argument("--config", default="{}")
     s.add_argument("--blueprint", required=True); s.add_argument("--out", required=True); s.set_defaults(fn=cmd_init)
     s = sub.add_parser("blueprint-md"); s.add_argument("file"); s.add_argument("--out", required=True); s.set_defaults(fn=cmd_blueprint_md)
