@@ -19,7 +19,7 @@ itself. This file holds no content of any round, so anyone may read it at any ti
 | 5 | Abbreviations | lint, judgement call; the simulation's standards check |
 | 6 | One time anchor per case | lint, judgement call; the simulation's standards check |
 | 7 | Crux tests are requested, not given | – (pre-flight line 16; the simulation's quality scorer) |
-| 8 | What a kit contains | lint, blocking |
+| 8 | What a kit contains | lint, blocking; the listening candidates' form, judgement call |
 | 9 | Key headers | lint, blocking |
 
 Numbers are never reused or renumbered: a new rule gets the next number, a withdrawn one
@@ -178,9 +178,46 @@ two for the round, in the form of `feedback_guide.md` §2 E (the exact section, 
 a reading time), each marked `(verify)` until the checker has confirmed that the section
 exists.
 
-<!-- slot: issue #50. Podcast candidates: a "## Listening" section, three sealed candidates
-per topic (link, show, title, length, what it covers, which failure point it matches). Not
-required and not linted yet. -->
+**Listening** (`## Listening`, the last section of both kits; left out only when the plan
+has `listening` false): the candidate podcast episodes from which each topic of the round
+gets one pick in the final feedback (`feedback_guide.md` §2 E2). Three candidates per topic,
+sealed with the kit. Two hands write the section:
+
+- the **author** writes the heading, one `Sources` line copied from the plan's
+  `podcast_sources`, and one line per topic of that kit, headed with its key id (`Q1`, `Q2`,
+  …; `case` in `kit_case.md`): the point the item tests and its likely failure points (the
+  tempting wrong turn, the rubric elements a learner may miss). The author searches for
+  nothing (rule 1.3);
+- the **checker** finds the episodes (`evidence_check.md` §6) and writes them under each
+  topic's line, one line per candidate, six fields separated by ` | `: the link
+  (`https://open.spotify.com/episode/<id>`, nothing after the id), the show, the title, the
+  length in minutes, what it covers, and which failure point it matches.
+
+```
+## Listening
+Sources | trusted: Example Show, Another Show | avoid: none
+Q1 | points: when to anticoagulate new AF after surgery; tempting: starting at once
+- https://open.spotify.com/episode/<22 letters and digits> | Example Show | <the episode's title> | 52 min | covers: stroke risk and timing after surgery | matches: starting at once
+- …
+- …
+Q2 | points: …
+- none: only one episode of 15 to 90 minutes was found
+- …
+```
+
+1. An episode is one a physician would learn the point from, 15 to 90 minutes long, as
+   specific to the topic's failure points as can be found. Shows on the learner's `trusted`
+   list come first where they fit; a show on the `avoid` list is never kept.
+2. Only an episode whose own Spotify page was reached is kept, with the title and the length
+   read from that page. A link that was not reached is not kept (`evidence_check.md` §6).
+3. Fewer than three is honest when no more exist: the topic then carries a line `- none:
+   <why>`, alone when nothing suitable was found.
+4. No search for an episode is run where the learner could see it before the part's last
+   answer (rule 1.3): the checker searches out of the conversation, the examiner only once
+   the answers are in.
+5. Spotify has no link that saves an episode to the learner's library: the link opens the
+   episode in the app, and one tap there saves it. Nothing in a kit or in the feedback
+   promises more.
 
 ## Rule 9. Key headers
 
@@ -257,8 +294,9 @@ section names and counts only.
 
 | Category | What | Then |
 |---|---|---|
-| **Blocking** (definite) | a key header that is missing or malformed (rule 9); a kit that is missing, a question without its section in `kit_questions.md`, or a missing section of `kit_case.md` (rule 8) | Nothing is stashed until it is corrected. |
+| **Blocking** (definite) | a key header that is missing or malformed (rule 9); a kit that is missing, a question without its section in `kit_questions.md`, a missing section of `kit_case.md`, or, with listening on, a kit without `## Listening` or a topic without its line there (rule 8) | Nothing is stashed until it is corrected. |
 | **Judgement call** (heuristic) | an abbreviation in the presented text that is not spelled out where the session first shows it (rule 5); a case or short question that counts time both from now and from a numbered day (rule 6) | The author revises once (`author.md` §2, Parts `revise`); what the lint still finds is accepted, and listed as a warning. A round is never left unprepared over a heuristic. |
+| **Judgement call** (form) | once a checker has run: a topic's listening candidates that are not three episodes in form (rule 8) | That kit's checker is started once more (`evidence_check.md` §6); what the lint still finds is accepted, and listed as a warning. |
 
 What the heuristics look at, so that a finding can be judged:
 
@@ -272,6 +310,13 @@ What the heuristics look at, so that a finding can be judged:
   "hospital day", "the third postoperative day", "POD 2"), within one short question, or
   within the case and its bank together. Periods of months or years ("stopped smoking ten
   years ago") are not counted.
+
+- **Listening candidates**: under each topic's line, every line with a link or with fields
+  is a candidate. It is in form when it has its six fields, a link to one Spotify episode
+  (`https://open.spotify.com/episode/` and an id of 22 letters and digits), a length of 15 to
+  90 minutes ("52 min") and a show that is not on the plan's `avoid` list. A topic is flagged
+  for a candidate out of form, for fewer than three in form without a `none:` line, and for
+  more than three. Whether the episode exists and fits is the checker's work, not the lint's.
 
 The findings themselves name content, so they are written to `lint.md` beside the sealed
 files, for the author only; the examiner never opens it.

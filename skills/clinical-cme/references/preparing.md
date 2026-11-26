@@ -42,8 +42,9 @@ review is saved"); the same commands then plan from the ledger the review wrote.
    (description "Prepare the next round").
 3. **Check**: start one checker per sealed file, together (`<work>/next/sealed_questions.md` →
    `<work>/next/evidence_questions.md`; `sealed_case.md` → `evidence_case.md`), and wait for
-   both. Without helpers, skip this step: the evidence is then checked at the session, after
-   the answers.
+   both. Each also finds the listening candidates for its kit (`evidence_check.md` §6).
+   Without helpers, skip this step: the evidence is then checked at the session, after the
+   answers, and episodes are searched for after grading (`feedback_guide.md` §2 E2).
 4. **Finish**: `python3 cme.py finish-prepare --work <work>` (add `--no-evidence` when step 3
    was skipped). It lints the round against the rulebook (`standards.md`, "The lint"), reads
    the checkers' counts (keys contradicted; claims and claims not verified, per file under
@@ -55,11 +56,13 @@ review is saved"); the same commands then plan from the ledger the review wrote.
    - `"recheck"` lists evidence files, or `"revise": true` (nothing stashed yet; its `next`
      line says the same) → one pass back, in this order, then the command again with
      `--revised`, which stashes whatever is still found, and publish:
-     1. for each file in `recheck` (more than a third of its claims not verified, or a claim
-        given up with no other route tried), start its checker once more with the same prompt,
-        together, and wait: it retries only those claims, by other routes;
-     2. start the author once more with Parts `revise` and wait: it corrects a contradicted
-        key and what the lint named, and carries what the retry confirmed into the kits.
+     1. for each file in `recheck` (more than a third of its claims not verified, a claim
+        given up with no other route tried, or listening candidates that are not three
+        episodes in form), start its checker once more with the same prompt, together, and
+        wait: it retries only those claims, by other routes, and completes the candidates;
+     2. unless `next` names the checker alone: start the author once more with Parts
+        `revise` and wait: it corrects a contradicted key and what the lint named, and
+        carries what the retry confirmed into the kits.
 
      One pass only, never a second retry. Never open `<work>/next/lint.md`: it names content.
    - an error naming key headers or kits (the lint's blocking problems; nothing stashed) →
@@ -131,3 +134,5 @@ learner answers. If `prepared.ready` lists some files, only what is missing is w
 - **Evidence**: a checker is started in the background for every sealed file without an
   evidence file. Without helpers, the examiner runs each part's verification list only after
   that part's answers are in (`evidence_check.md` §5).
+- **Listening**: a checker fills in the candidates only when the kit is there when it
+  starts; otherwise the examiner searches after grading (`feedback_guide.md` §2 E2).

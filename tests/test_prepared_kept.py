@@ -28,12 +28,14 @@ CONTENT_CONFIG = {
     "feedback_depth": "standard", "intervals_days": [2, 5, 9, 20, 40, 90], "new_topics_per_round": 0,
     "lab_units": "conventional", "blood_gas_units": "kPa", "guideline_region": "UK",
     "item_order": "case_first", "resource_preferences": {"free_only": True},
+    "listening": False,                                 # no "## Listening" in the kits (issue #50)
 }
 NEUTRAL_PROFILE = {"display_name": "Dr Example", "onboarded_at": "2026-10-01"}
 CONTENT_PROFILE = {
     "role": "Senior registrar", "specialty": "Geriatrics", "subspecialty": "Orthogeriatrics",
     "practice_setting": ["ward"], "goals": ["exam"], "strengths": ["cardiology"], "weaknesses": ["renal"],
     "domain_self_ratings": {"CARD": 2}, "domain_emphasis": {"CARD": 2}, "notes": "prefers short stems",
+    "podcast_sources": {"trusted": ["Example Show"], "avoid": []},     # whose episodes the kits hold (issue #50)
 }
 
 

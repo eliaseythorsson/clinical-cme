@@ -67,3 +67,24 @@ def test_section_pointers_into_the_new_references_exist():
         for name, first, last in re.findall(r"`(preparing\.md|requests\.md)`\s+§(\d+)(?:–(\d+))?", flat(read(path))):
             for n in range(int(first), int(last or first) + 1):
                 assert str(n) in sections[name], "%s points at %s §%d" % (os.path.basename(path), name, n)
+
+
+def test_listening_is_described_where_each_reader_looks_for_it():
+    """Issue #50: the kit section in the rulebook, the search in the checker's brief, the
+    selection rule in the feedback guide, the settings and the limits of Spotify."""
+    refs = os.path.join(os.path.dirname(SKILL_MD), "references")
+    doc = lambda name: read(os.path.join(refs, name))
+    rule8 = doc("standards.md").split("## Rule 8.")[1].split("## Rule 9.")[0]
+    assert "Three candidates per topic" in rule8 and "https://open.spotify.com/episode/<id>" in rule8
+    assert "no link that saves an episode" in rule8 and "A link that was not reached is not kept" in rule8
+    checker = doc("evidence_check.md")
+    assert "## 6. Listening: candidate podcast episodes" in checker and "rule 8 of `standards.md`" in checker
+    assert "Podcast Index" in checker and "the episode is not kept" in checker
+    guide = doc("feedback_guide.md")
+    assert "### E2. Listening" in guide and "with no new search" in guide and "No suitable episode found" in guide
+    assert "`listening.ask_sources` true" in guide
+    assert "## Listening" in doc("author.md") and "podcast_sources" in doc("onboarding.md")
+    assert '"listening": false' in doc("requests.md") and "podcast_sources" in doc("requests.md")
+    assert "`listening`" in doc("session_log.md")
+    skill = read(SKILL_MD)
+    assert "`listening.on`" in skill and "`podcast_sources`" in skill

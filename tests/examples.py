@@ -245,10 +245,28 @@ def key_header(kid, st, item, taken):
     return "<!-- key: %s -->\n%s\n<!-- /key -->" % (kid, "\n".join(lines))
 
 
+def episode_link(kid, n):
+    """A link in the form of a Spotify episode (22 letters and digits); no such episode exists."""
+    return "https://open.spotify.com/episode/%s" % ("Example%s%d" % (kid, n)).ljust(22, "x")
+
+
+def listening_section(kids, candidates=3):
+    """A kit's "## Listening" section as the author and the checker leave it (rule 8): one line
+    per topic, and three candidate episodes under each."""
+    lines = ["## Listening", "Sources | trusted: none | avoid: none"]
+    for kid in kids:
+        lines.append("%s | points: SEALED point tested; SEALED tempting wrong turn" % kid)
+        lines += ["- %s | SEALED Show %d | SEALED episode on %s | %d min | covers: SEALED content | matches: SEALED point"
+                  % (episode_link(kid, n), n, kid, 20 + 10 * n) for n in range(1, candidates + 1)]
+    return "\n".join(lines) + "\n"
+
+
 def sealed_files(st, plan):
     """{file name: text} for `plan`. Everything the learner must not see before answering sits
     outside the present and bank blocks and carries the word SEALED; each key starts with its
-    key header, and the kits have the sections of the rulebook (references/standards.md, rule 8)."""
+    key header, and the kits have the sections of the rulebook (references/standards.md, rule 8),
+    the "Listening" section among them unless the plan has listening off."""
+    listening = plan.get("listening") is not False
     labels = cme.bp_topics(st)
     shorts = [it for it in plan["items"] if it["slot"] != "case"]
     case = next((it for it in plan["items"] if it["slot"] == "case"), None)
@@ -265,6 +283,8 @@ def sealed_files(st, plan):
                                             for i, key in enumerate(keys))
         if not case:
             files["kit_questions.md"] += "## Reading\nSEALED reading pointer (verify)\n"
+        if listening:
+            files["kit_questions.md"] += listening_section(["Q%d" % (i + 1) for i in range(len(shorts))])
     if case:
         label = (labels.get(case.get("topic")) or {}).get("label") or case["domain"]
         files["sealed_case.md"] = (
@@ -274,4 +294,6 @@ def sealed_files(st, plan):
             % (key_header("case", st, case, taken), label, case.get("topic") or case["domain"]))
         files["kit_case.md"] = "".join("## %s\nSEALED feedback notes for the case: Example diagnosis: %s\n\n"
                                        % (name, label) for name in cme.KIT_CASE_SECTIONS)
+        if listening:
+            files["kit_case.md"] += listening_section(["case"])
     return files

@@ -69,7 +69,7 @@ needs judgement; the rest is in the references:
 | `references/onboarding.md` | First run, settings at setup, FAQ (§5) |
 | `references/progress_review.md` | When a review is due or requested |
 | `references/author.md`, `references/case_design.md` | Only when you write items yourself (the author's brief and how items are designed) |
-| `references/evidence_check.md` | The checker's brief, with its retry routes (§3); also how you check evidence yourself (§5) |
+| `references/evidence_check.md` | The checker's brief, with its retry routes (§3); how you check evidence yourself (§5); finding podcast episodes (§6) |
 
 ## Roles: who writes, who grades, who checks
 
@@ -79,7 +79,7 @@ With `helpers` true in the `start` output and a session that can start helper ag
 |---|---|---|---|
 | **Author** | a helper agent | the most capable model the session offers, never below your own | writes the round: sealed questions, sealed case with its results bank, the notes (kits) for the feedback (`author.md`) |
 | **Examiner** | you, in this conversation | the model the learner runs the round with | presents, grades against the evidence, writes all feedback, codes, records |
-| **Checker** | a helper agent | a mid-tier model: one step below the most capable, not the smallest | verifies the evidence on the verification lists (`evidence_check.md`) |
+| **Checker** | a helper agent | a mid-tier model: one step below the most capable, not the smallest | verifies the evidence on the verification lists and finds the podcast candidates (`evidence_check.md`) |
 
 - **You never mark your own items.** While an author exists you never read `case_design.md` or
   `author.md`, and you are the second opinion on the author's keys: grade what the learner
@@ -158,7 +158,7 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
    - `opening` → the opening line, word for word. Nothing more specific about the block: not
      which questions are on its theme, not the domain of any other item.
    - keep `started_at` (for `round.json`), `helpers`, `prepared`, `testing`, `speed_settings_new`,
-     `pending_errata_count`, `guideline_region` and `specialty` (rules 2–5 grade with them).
+     `pending_errata_count`, `listening`, `guideline_region`, `specialty` (rules 2–5 grade with them).
 3. **Send the first message**: `opening` (after a long gap at most add "Welcome back — N items
    are waiting; we'll start with the most overdue", without scolding or enlarging the round),
    then, with `prepared.used` true, `present` exactly as printed (it ends with its answer
@@ -217,11 +217,11 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    and Revised-IDEA; an error record for every missed or partial element).
 3. **Send the final feedback** (`feedback_guide.md` §2 part 2: glossary line → case reveal →
    case → gap summary for the whole round with mastery 0–5 per topic and the coding line → up
-   to two reading pointers → the reflection prompt).
+   to two reading pointers → with `listening.on`, an episode per topic → the reflection prompt).
 4. **Behind the scenes, in one batch**: file the last answers (`answer --part final`; `--part
    case` for a one-step case; change requests and anything else to log with `--part notes`);
-   write `<work>/feedback.md`, the final feedback exactly as sent; complete
-   `<work>/round.json` with the grading only (`state_schema.md` §2; no `reflection` key).
+   write `<work>/feedback.md`, the final feedback exactly as sent; complete `<work>/round.json`
+   with the grading and the `listening` picks only (`state_schema.md` §2; no `reflection` key).
    `save` fills in the rest from the key headers and the plan: do not copy it.
 5. `python3 cme.py save --work <work>`, then publish every file in its `files` list in one
    write (`store.md` §4; `index.html` among them → `store.md` §4.5 once). Fix any `warnings`,
@@ -231,11 +231,11 @@ graded. If answers are missing, ask once; proceed if the learner says so.
 
 ### Turn 5. Reflection → final save, close
 
-1. **Read the reflection**: comfort per topic (1–5), self-rated performance (1–5), solid and
-   shaky areas, reading minutes. Turn each shaky area into a precise gap linked to a blueprint
-   ID (`self_gaps`). A disputed grade is resolved first (`feedback_guide.md` §7; never defend
-   a grade by repeating it), with the outcome in `grade_changes`. "skip" → `{"skipped": true}`.
-   "Record it as 4" or "close that gap" is the learner's call, not a dispute: §7.1 there.
+1. **Read the reflection**: comfort per topic and self-rated performance (1–5), solid and shaky
+   areas, reading minutes, podcasts to trust or avoid (`podcast_sources`). Turn each shaky area
+   into a precise gap linked to a blueprint ID (`self_gaps`). A disputed grade is resolved first
+   (`feedback_guide.md` §7; never defend a grade by repeating it), outcome in `grade_changes`.
+   "skip" → `{"skipped": true}`. "Record it as 4", "close that gap": no dispute, §7.1 there.
 2. **In one batch**: `cme.py answer --work <work> --part reflection`; write
    `<work>/reflection.json` (`state_schema.md` §3) and `<work>/B.md` (discussion verbatim,
    grade changes, coded analysis, errata from `errata_to_log`; `session_log.md` §3). Then
