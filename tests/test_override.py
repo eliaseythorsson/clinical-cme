@@ -127,6 +127,8 @@ def test_override_after_the_close_gives_the_schedule_the_reflection_path_gives(w
     work.publish()
     st = work.read_ledger()
     assert st["gen"] == before["gen"] + 1
+    # never content-neutral: the prepared round was planned on the old score and the open gap
+    assert "content_gen" not in st and work.read_json("store", "data", "prepared.json").get("empty") is True
     assert st["topics"]["GEN-11"] == want["topics"]["GEN-11"]
     assert [g["topic"] for g in st["gaps"]] == [g["topic"] for g in want["gaps"]]
     it = item(st, "GEN-11")

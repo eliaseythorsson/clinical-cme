@@ -16,6 +16,13 @@ The theme is shown to the learner ("Block: gastroenterology, round 4 of 12"). Th
 - A round prepared ahead is used only for the round of the block it was planned for. A round prepared by a version without blocks is set aside once.
 - The learner changing the theme (issue #17) builds on `propose_theme` (theme, one-line reason, ranking) and `start_block` (a chosen theme, filing the block it replaces).
 
+## When a prepared round is kept (issues #41, #42)
+
+- A settings change that cannot alter a round (testing mode, reminders, helpers, the overnight task, showing the coding, the review interval, the weekly target) keeps the prepared round; every other setting, including one the engine does not know, sets it aside and the command says which. The list is short on purpose: a wrongly kept round is worse than one written again.
+- The ledger's `gen` counts every write, so a prepared round is tied to `content_gen`, the generation of the last change that could alter a round, kept in the ledger only while it differs from `gen`. Rejected: restamping the prepared round at each neutral change (it is not always in the store copy that was read, and it would be one more file to publish) and a fingerprint of the ledger's content (every new ledger field would have to be sorted into it).
+- When the mix in force differs from the mix a prepared round was written for, the learner's latest choice wins: the prepared round is set aside and `start` says which mix is used and why. Rejected: playing the prepared round and applying the mix a round later, which shows the learner a round they had just switched away from.
+- A page mix written against an older ledger (`base` stale) is applied when its time is later than the time the mix was last set; this compares the page's clock with the engine's, which the first design avoided. A clock that is wrong can let a page setting override a chat change made shortly after it; the opening line says which mix is used, so it does not pass unnoticed.
+
 ## Changing the theme as built (issue #17)
 
 - The proposal is said, not stored. The last round of a block prints the next theme with its reason in one line (`next_block.line`, from `save` and `close`); the ledger is only written if the learner changes it. A learner who says nothing gets the proposed block, as before.

@@ -213,7 +213,7 @@ depth, so it runs on a cheaper model to keep usage down. With helpers off, one a
 all three.
 
 **Why did my round start with a pause this time?** The prepared round is used only if nothing
-changed since it was written (your settings, the round mix, a review) and you did not ask for
+changed since it was written (the round mix, a setting that changes the questions, a review) and you did not ask for
 a special round; otherwise it is written at the start.
 
 **Whose guidelines does it use, and for which specialty?** The ones you chose at setup

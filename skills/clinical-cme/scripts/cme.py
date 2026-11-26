@@ -37,10 +37,18 @@ A job (one work folder):
   prepare --work W [--if-needed] [--allow-unreflected]
                                                   plan the NEXT round into W/next/plan.json (counts only)
   finish-prepare --work W [--revised] [--no-evidence]
-                                                  after the checkers: check the key headers in W/next, count
-                                                  contradicted keys (a bad header or a missing evidence file
-                                                  is an error), pack the round as data/prepared.json
-  keys    DIR|SEALED.. [--plan PLAN]              the author's check of key headers (no content printed)
+                                                  after the checkers: lint the round in W/next against the
+                                                  rulebook (references/standards.md) and count contradicted
+                                                  keys. A bad key header, a missing kit section or a missing
+                                                  evidence file is an error; an abbreviation that looks
+                                                  undefined or mixed time anchors send the round back to the
+                                                  author once (details in W/next/lint.md), then are accepted
+                                                  with a warning (--revised). Packs the round as
+                                                  data/prepared.json
+  keys    DIR|SEALED.. [--plan PLAN]              the author's check: key headers, kit sections and the same
+                                                  lint (no content printed; details in DIR/lint.md)
+  key-table                                       the key-header table of references/standards.md (rule 9),
+                                                  as generated from the KEY_* definitions
   addendum --work W --md ADD.md [--session ID]    append to a session document (default: the last session)
   override --work W [--scores J] [--close-gaps J] [--session ID]
                                                   after the close: a score the learner sets themselves, a gap
@@ -115,6 +123,13 @@ DEFAULT_PROFILE = {
     "practice_setting": [], "goals": [], "strengths": [], "weaknesses": [],
     "domain_self_ratings": {}, "domain_emphasis": {}, "notes": "", "onboarded_at": None,
 }
+# Settings that cannot change what a round contains (its plan, its items, its keys, its feedback
+# notes): changing only these keeps the round prepared ahead. Every other setting, including one
+# this list has never heard of, sets it aside. `round_set_at` is here because it only dates the
+# mix: the mix itself (mcqs, focused, case) is not. See state_schema.md §8.
+CONTENT_NEUTRAL_CONFIG = ("testing", "reminders", "prepare_task", "prepare_ahead", "helpers", "show_coding",
+                          "target_sessions_per_week", "review_interval_days", "round_set_at")
+CONTENT_NEUTRAL_PROFILE = ("display_name", "onboarded_at")
 SELF_RATING_FACTOR = {1: 1.6, 2: 1.3, 3: 1.0, 4: 0.8, 5: 0.6}
 MIN_RETURN_DAYS = 3      # no tested topic and no open gap comes back sooner than this (ADR 0003)
 # Drill-down limit (ADR 0003): no topic is in more than this many rounds in a row, and a topic
@@ -296,14 +311,45 @@ def check_round_mix(cfg):
         die("a round needs at least one item: MCQs, focused questions or the case")
 
 
+def parse_stamp(v):
+    """An ISO time as written by the page (`...Z`, with milliseconds) or by now_ts(), as an aware
+    datetime; None when it is not one."""
+    if not isinstance(v, str) or not v.strip():
+        return None
+    try:
+        t = dt.datetime.fromisoformat(v.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return t if t.tzinfo else t.replace(tzinfo=dt.timezone.utc)
+
+
+def mix_text(counts):
+    """A round mix in words: "3 MCQs + 1 focused question + the case"."""
+    c = counts or {}
+    m, f = int(c.get("mcqs") or 0), int(c.get("focused") or 0)
+    parts = []
+    if m:
+        parts.append("%d MCQ%s" % (m, "" if m == 1 else "s"))
+    if f:
+        parts.append("%d focused question%s" % (f, "" if f == 1 else "s"))
+    if c.get("case"):
+        parts.append("the case")
+    return " + ".join(parts) or "no items"
+
+
 def apply_prefs(state, prefs, warnings=None):
     """Apply the round mix the learner set on their page (database document cme/prefs).
 
     prefs = {"round": {"mcqs": 2, "focused": 1, "case": true}, "base": <config.round_set_at the
-    page saw>, "updated": "<ISO time of the change>"}. Applied only when `base` still equals the
-    ledger's round_set_at: a change made later in a chat (settings) moves round_set_at, so an older
-    page setting is then ignored, and an applied one is not applied twice. No clocks are compared.
-    An invalid page setting is ignored with a warning, never fatal. Returns the changes applied."""
+    page saw>, "updated": "<ISO time of the change>"}. The learner's latest explicit choice wins:
+    - `base` equals the ledger's round_set_at: nothing changed the mix since the page saw it, so
+      the page's mix is applied;
+    - `updated` equals round_set_at: this document was applied before, nothing to do;
+    - otherwise the mix was set elsewhere (in a chat, or by an earlier page document) after the
+      page loaded: the document is applied only if its `updated` is later than round_set_at,
+      and an older one is ignored.
+    Applying sets round_set_at to `updated`, so a document is applied once. An invalid page
+    setting is ignored with a warning, never fatal. Returns the changes applied."""
     if not prefs:
         return {}
     warnings = warnings if warnings is not None else []
@@ -311,8 +357,13 @@ def apply_prefs(state, prefs, warnings=None):
         warnings.append("page settings ignored: expected {round: {...}, base, updated}")
         return {}
     cfg = state["config"]
-    if prefs.get("base") != cfg.get("round_set_at"):
-        return {}     # already applied, or overtaken by a later change in a chat
+    set_at = cfg.get("round_set_at")
+    if prefs.get("base") != set_at:
+        if str(prefs["updated"]) == set_at:
+            return {}     # applied before
+        mine, theirs = parse_stamp(str(prefs["updated"])), parse_stamp(set_at)
+        if set_at is not None and not (mine and theirs and mine > theirs):
+            return {}     # overtaken by a later change in a chat
     trial = {k: cfg.get(k, DEFAULT_CONFIG[k]) for k in ("mcqs", "focused", "case")}
     for k in ("mcqs", "focused", "case"):
         if k in prefs["round"]:
@@ -332,6 +383,28 @@ def apply_prefs(state, prefs, warnings=None):
     cfg.update(trial)
     cfg["round_set_at"] = str(prefs["updated"])
     return changes or {"unchanged": True}
+
+
+def content_gen(st):
+    """The ledger generation a prepared round is tied to: that of the last change that could
+    alter what a round contains. `gen` itself counts every write; `content_gen` is kept in the
+    ledger only while the two differ (after a content-neutral change), so a ledger without it
+    needs no migration."""
+    g = st.get("content_gen")
+    return int(g) if g is not None else st.get("gen")
+
+
+def bump_gen(st, content=True):
+    """Count one more write of the ledger. `content=False`: a change that cannot alter what a
+    round contains (CONTENT_NEUTRAL_*, postponing a review); the generation a prepared round
+    is tied to stays where it was."""
+    was = content_gen(st)
+    st["gen"] = int(st.get("gen") or 0) + 1
+    if content:
+        st.pop("content_gen", None)
+    else:
+        st["content_gen"] = int(was or 0)
+    return st["gen"]
 
 
 def deep_merge(target, changes):
@@ -1259,8 +1332,8 @@ def plan_round(st, args, today):
             c["retest_gap"] = {
                 "id": gap_ref(g), "gap": clip(g.get("gap"), CLIP_GAP),
                 "how": "Write this item on the gap's decision point, in a new clinical context, and "
-                       "write the line 'retests: %s' in the item's key header (references/author.md, "
-                       "section 3). Only an item that says so, answered well, closes the gap." % gap_ref(g)}
+                       "write the line 'retests: %s' in the item's key header (references/standards.md, "
+                       "rule 9). Only an item that says so, answered well, closes the gap." % gap_ref(g)}
     used_cases, used_stems = all_sessions_for_novelty(st)
     for c in chosen:
         same = [x for x in used_cases if x.get("topic") == c.get("topic")]
@@ -1805,7 +1878,7 @@ def record_round(st, rnd, today):
         entry["_round"] = rnd
         st["unreflected"] = entry["id"]
     compact(st)
-    st["gen"] = int(st.get("gen") or 0) + 1
+    bump_gen(st)
     return {"gen": st["gen"], "session_id": entry["id"],
             "next_id": st["next_id"], "score": entry["score"], "topics": summary,
             "errata_ids": errata_ids,
@@ -1856,7 +1929,7 @@ def reflect_round(st, refl, today, session=None):
         changes.append(ch)
     st["unreflected"] = None
     compact(st)
-    st["gen"] = int(st.get("gen") or 0) + 1
+    bump_gen(st)
     out = {"gen": st["gen"], "session_id": entry["id"],
            "topics": summary, "open_gaps": len(st["gaps"]), "errata_ids": errata_ids,
            "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
@@ -2026,7 +2099,9 @@ def cmd_override(args):
     doc["addendum"] = ((doc.get("addendum") or "").rstrip() + "\n\n"
                        + learner_changes_md(changes, "## Set by the learner · %s" % iso(today))).strip() + "\n"
     compact(st)
-    st["gen"] = int(st.get("gen") or 0) + 1
+    # never content-neutral: a learner-set score moves the topic's step and due date, a closed gap
+    # takes its retest out of the plan, so a round prepared before this was planned on other facts
+    bump_gen(st)
     st["updated"] = iso(today)
     out = {"ok": True, "gen": st["gen"], "session": sid, "learner_changes": changes, "topics": topics,
            "open_gaps": len(st["gaps"]), "warnings": warnings}
@@ -2299,7 +2374,7 @@ def cmd_review(args):
     st["unreflected"] = None
     st["review"] = {"last": iso(today), "next_due": iso(next_due), "period_start": iso(today + dt.timedelta(days=1))}
     compact(st)
-    st["gen"] = int(st.get("gen") or 0) + 1
+    bump_gen(st)
     st["updated"] = iso(today)
     out = {"ok": True, "gen": st["gen"], "reviews": len(st["reviews"]),
            "next_review_due": iso(next_due), "drills": st["drills"],
@@ -2314,19 +2389,26 @@ def cmd_snooze(args):
     work, info = job(args)
     st, _ = current_ledger(work, info)
     st["review"]["next_due"] = iso(today + dt.timedelta(days=args.days))
-    st["gen"] = int(st.get("gen") or 0) + 1
+    bump_gen(st, content=False)     # when the review is due does not change a round: the prepared one stays
     st["updated"] = iso(today)
     out = {"ok": True, "gen": st["gen"], "next_review_due": st["review"]["next_due"]}
-    publish_ledger(work, info, st, out, empty_prepared=True)
+    publish_ledger(work, info, st, out)
     print(json.dumps(published(work, info, out), ensure_ascii=False))
 
 
+def changed_keys(before, after):
+    return sorted(k for k in set(before) | set(after) if before.get(k) != after.get(k))
+
+
 def cmd_settings(args):
-    """Change settings: the changed ledger goes into the publish set, with the index, an emptied
-    prepared round and the page if it is out of date, so a settings change is one command."""
+    """Change settings: the changed ledger goes into the publish set, with the index and the
+    page if it is out of date, so a settings change is one command. A change that can alter
+    what a round contains also empties the prepared round; one that cannot (CONTENT_NEUTRAL_*)
+    keeps it. `prepared` in the output says which, and why."""
     today = today_from(args)
     work, info = job(args)
     st, _ = current_ledger(work, info)
+    was = copy.deepcopy({k: st.get(k) for k in ("config", "profile", "blueprint")})
     cfg_changes = load_json_arg(args.config) if args.config else {}
     prof_changes = load_json_arg(args.profile) if args.profile else {}
     deep_merge(st["config"], cfg_changes or {})
@@ -2340,10 +2422,22 @@ def cmd_settings(args):
         st["review"]["next_due"] = iso(anchor + dt.timedelta(days=int(st["config"]["review_interval_days"])))
     if args.blueprint:
         st["blueprint"] = read_blueprint(args.blueprint)
-    st["gen"] = int(st.get("gen") or 0) + 1
+    # what changed decides whether the round prepared ahead still stands: the values, not the
+    # keys that were sent (setting a value it already has changes nothing)
+    affects = [k for k in changed_keys(was["config"] or {}, st["config"]) if k not in CONTENT_NEUTRAL_CONFIG]
+    affects += ["profile." + k for k in changed_keys(was["profile"] or {}, st["profile"])
+                if k not in CONTENT_NEUTRAL_PROFILE]
+    if args.blueprint and st["blueprint"] != was["blueprint"]:
+        affects.append("blueprint")
+    bump_gen(st, content=bool(affects))
     st["updated"] = iso(today)
     out = {"ok": True, "gen": st["gen"], "config": st["config"], "review": st["review"], **guideline_context(st)}
-    publish_ledger(work, info, st, out, empty_prepared=True)
+    out["prepared"] = ({"kept": False, "changed": affects,
+                        "why": "set aside: %s can change what a round contains, so the next round is "
+                               "planned and written at its start" % ", ".join(affects)}
+                       if affects else
+                       {"kept": True, "why": "kept: nothing that changes what a round contains was changed"})
+    publish_ledger(work, info, st, out, empty_prepared=bool(affects))
     print(json.dumps(published(work, info, out), ensure_ascii=False))
 
 
@@ -2374,7 +2468,7 @@ def cmd_theme(args):
     if res["warnings"]:
         out["warnings"] = list(res["warnings"])
     if res["changed"]:
-        st["gen"] = int(st.get("gen") or 0) + 1
+        bump_gen(st)
         st["updated"] = iso(today)
         out["gen"] = st["gen"]
         publish_ledger(work, info, st, out, empty_prepared=True)
@@ -2418,6 +2512,7 @@ def cmd_init(args):
     iv = int(st["config"].get("review_interval_days") or 42)
     st["review"] = {"last": None, "next_due": iso(today + dt.timedelta(days=iv)), "period_start": iso(today)}
     st["gen"] = 1
+    st.pop("content_gen", None)
     if not info:
         info = {"store": None, "state": None, "version": None, "prefs": None}
     info.update({"session_id": st["next_id"], "started": iso(today)})
@@ -2662,6 +2757,17 @@ def cmd_start(args):
         prepared = take_prepared(args, st, today, store_file(work, info, PREPARED_PATH), work, plan_path)
     status["prepared"] = {k: v for k, v in prepared.items()
                           if k in ("used", "why", "made", "ready", "present_block")}
+    if prepared.get("mix") is not None:
+        # the prepared round was written for another mix than the one in force: the learner's
+        # latest choice wins, the prepared round is set aside, and the round says so
+        used, source = plan_counts(st), ("page" if prefs_changes and "unchanged" not in prefs_changes
+                                         else "settings")
+        status["round_mix"] = {
+            "used": used, "prepared": prepared["mix"], "source": source,
+            "say": "Using the mix %s: %s. The round prepared ahead was written for %s and is set aside, "
+                   "so this round is written now." % (
+                       "you set on your page" if source == "page" else "in your settings",
+                       mix_text(used), mix_text(prepared["mix"]))}
     if prepared["used"]:
         plan_out = prepared["summary"]
         status["present"] = prepared["present"]
@@ -2698,6 +2804,9 @@ def cmd_prepare(args):
     today = today_from(args)
     work, info = job(args)
     st, _ = current_ledger(work, info)
+    # the round is written for the mix the next `start` will use: a mix set on the page and not
+    # yet in the ledger counts here too (in memory only; `start` and `save` apply it for good)
+    apply_prefs(st, info.get("prefs"))
     cfg = st["config"]
     why = None
     if not cfg.get("prepare_ahead", True):
@@ -2716,9 +2825,9 @@ def cmd_prepare(args):
     os.makedirs(folder, exist_ok=True)
     out = os.path.join(folder, PLAN_FILE)
     summary = plan_summary(plan, out)
-    plan["prepared"] = {"gen": st.get("gen"), "made": iso(today), "session_id": st.get("next_id")}
+    plan["prepared"] = {"gen": content_gen(st), "made": iso(today), "session_id": st.get("next_id")}
     save_json(plan, out)
-    summary.update({"prepare": True, "gen": st.get("gen"), "folder": os.path.abspath(folder),
+    summary.update({"prepare": True, "gen": content_gen(st), "folder": os.path.abspath(folder),
                     "note": "Sealed: have the whole round drafted for this plan into this folder "
                             "(sealed_questions.md, sealed_case.md, kit_questions.md, kit_case.md), "
                             "have each sealed file checked (evidence_questions.md, evidence_case.md), "
@@ -2770,15 +2879,15 @@ def prepared_round_files(plan, folder):
 def plan_for_prepared(st, plan_path):
     plan = load_json(plan_path)
     meta = plan.get("prepared") or {}
-    if meta.get("gen") != st.get("gen"):
+    if meta.get("gen") != content_gen(st):
         die("this plan was not made by `prepare` from this ledger (gen %s, ledger %s): run `prepare` again"
-            % (meta.get("gen"), st.get("gen")))
+            % (meta.get("gen"), content_gen(st)))
     return plan
 
 
 def prepared_doc(st, plan, files, has):
     """The prepared round as it is kept in the store (data/prepared.json), packed."""
-    return {"v": 2, "gen": st.get("gen"), "made": (plan.get("prepared") or {}).get("made"),
+    return {"v": 2, "gen": content_gen(st), "made": (plan.get("prepared") or {}).get("made"),
             "session_id": st.get("next_id"), "counts": plan.get("counts") or {}, "has": has,
             "payload": pack({"plan": plan, "files": files})}
 
@@ -2795,13 +2904,19 @@ def contradicted_keys(text):
 
 
 def cmd_finish_prepare(args):
-    """After the checkers: check the key headers of the sealed files in <work>/next, read the
-    evidence files' counts of contradicted keys and, when the round is clean (or was revised),
-    pack it and add it to the publish set as data/prepared.json. A missing or malformed key
-    header stops the command, so that it is not found only at `save`, in the middle of the
-    round. An evidence file that is missing, empty or without its count line stops it too: it
-    is never read as "nothing contradicted".
-    Prints counts, file names and the names of keys and fields only."""
+    """After the checkers: lint the round drafted in <work>/next against the rulebook
+    (references/standards.md), read the evidence files' counts of contradicted keys and, when the
+    round is clean (or was revised), pack it and add it to the publish set as data/prepared.json.
+
+    Definite problems stop the command and nothing is stashed: a missing or malformed key header
+    (so that it is not found only at `save`, in the middle of the round), a missing kit or kit
+    section, and an evidence file that is missing, empty or without its count line (never read
+    as "nothing contradicted").
+    Judgement calls (an abbreviation that looks undefined, time anchors that look mixed) go back
+    to the author once, like a contradicted key: `"revise": true`; with --revised whatever is
+    still found is accepted and listed under `warnings`.
+    Prints counts, file names and the names of keys, fields and kit sections only; what the lint
+    found is written to <work>/next/lint.md, which only the author reads."""
     work, info = job(args)
     folder = os.path.join(work, NEXT_DIR)
     plan_path = os.path.join(folder, PLAN_FILE)
@@ -2811,17 +2926,24 @@ def cmd_finish_prepare(args):
     plan = plan_for_prepared(st, plan_path)
     files, has, warnings = prepared_round_files(plan, folder)
     _, key_problems = check_key_headers([os.path.join(folder, n) for n in SEALED_FILES if n in files], plan)
-    if key_problems:
-        die("the key headers are not complete in %s: %s. Nothing was stashed. Have the headers corrected in "
-            "the sealed files (references/author.md, section 3; `keys` runs this check alone), then run this "
-            "command again" % (folder, "; ".join(key_problems)))
+    lint = lint_round(files, plan, kits_required=True)
+    if key_problems or lint["blocking"]:
+        stops = []
+        if key_problems:
+            stops.append("the key headers are not complete in %s: %s" % (folder, "; ".join(key_problems)))
+        if lint["blocking"]:
+            stops.append("the kits are not complete in %s: %s" % (folder, "; ".join(lint["blocking"])))
+        die("%s. Nothing was stashed. Have them corrected in the files (references/standards.md, rule 9 for "
+            "key headers, rule 8 for kits; `keys` runs this check alone), then run this command again"
+            % ". Also, ".join(stops))
     out = {"ok": True}
     if args.no_evidence:
         # no checker was run (no helpers): the evidence is checked at the session, after the answers
         for name in EVIDENCE_FOR.values():
             files.pop(name, None)
         has = [h for h in has if not h.startswith("evidence_")]
-        out.update({"evidence": "not checked", "contradicted": None, "revise": False})
+        out.update({"evidence": "not checked", "contradicted": None})
+        total = 0
     else:
         per_file, problems = {}, []
         for sealed, evidence in EVIDENCE_FOR.items():
@@ -2841,19 +2963,24 @@ def cmd_finish_prepare(args):
                 "again (references/evidence_check.md), or pass --no-evidence if no checker is run in this session"
                 % (folder, "; ".join(problems)))
         total = sum(per_file.values())
-        out.update({"evidence": per_file, "contradicted": total, "revise": bool(total) and not args.revised})
-        if args.revised:
-            out["revised"] = True
+        out.update({"evidence": per_file, "contradicted": total})
+    out["lint"] = lint_summary(lint, write_lint_details(folder, lint))
+    out["revise"] = bool(total or lint["review"]) and not args.revised
+    if args.revised:
+        out["revised"] = True
+        warnings = warnings + ["accepted after one revision: %s" % line for line in lint_lines(lint)]
+    warnings = warnings + lint["notes"]
     if warnings:
         out["warnings"] = warnings
     if out["revise"]:
         out.update({"stashed": False,
-                    "next": "start the author once more with Parts `revise` on this folder, wait for it, "
-                            "then run this command again with --revised"})
+                    "next": "start the author once more with Parts `revise` on this folder (it reads the "
+                            "evidence files and lint.md there), wait for it, then run this command again "
+                            "with --revised"})
         print(json.dumps(out, ensure_ascii=False))
         return
     publish_json(work, PREPARED_PATH, prepared_doc(st, plan, files, has))
-    out.update({"gen": st.get("gen"), "has": has, "stashed": True})
+    out.update({"gen": content_gen(st), "has": has, "stashed": True})
     print(json.dumps(published(work, info, out), ensure_ascii=False))
 
 
@@ -2886,17 +3013,19 @@ def prepared_fits(path, st, today):
     except (ValueError, OSError):
         return False
     made = parse_date(doc.get("made")) if isinstance(doc, dict) else None
-    return bool(isinstance(doc, dict) and doc.get("payload") and doc.get("gen") == st.get("gen")
+    return bool(isinstance(doc, dict) and doc.get("payload") and doc.get("gen") == content_gen(st)
                 and doc.get("session_id") == st.get("next_id") and doc.get("counts") == plan_counts(st)
                 and made and 0 <= (today - made).days <= PREPARED_MAX_AGE_DAYS)
 
 
 def take_prepared(args, st, today, path, work, plan_path):
     """Use the round prepared at the last close (`path`, the store's data/prepared.json) if it
-    still fits: same ledger generation, same mix, no one-off options, not too old, none of its
-    topics tested today. Its plan goes to `plan_path`, its files into the work folder."""
-    def no(why):
-        return {"used": False, "why": why}
+    still fits: same mix, nothing that changes a round written to the ledger since
+    (content_gen), no one-off options, not too old, none of its topics tested today. Its plan
+    goes to `plan_path`, its files into the work folder. When it was written for another mix
+    than the ledger now asks for, `mix` in the answer is the mix it was written for."""
+    def no(why, **more):
+        return dict({"used": False, "why": why}, **more)
     if not path or not os.path.exists(path):
         return no("no prepared round")
     try:
@@ -2908,10 +3037,10 @@ def take_prepared(args, st, today, path, work, plan_path):
         return no("no prepared round")
     if plan_options_given(args):
         return no("one-off options were given for this round")
-    if doc.get("gen") != st.get("gen") or doc.get("session_id") != st.get("next_id"):
+    if doc.get("counts") != plan_counts(st):       # before the generation: the more telling reason
+        return no("the round mix changed", mix=doc.get("counts") or {})
+    if doc.get("gen") != content_gen(st) or doc.get("session_id") != st.get("next_id"):
         return no("the ledger changed since it was prepared")
-    if doc.get("counts") != plan_counts(st):
-        return no("the round mix changed")
     made = parse_date(doc.get("made"))
     if not made or (today - made).days > PREPARED_MAX_AGE_DAYS or made > today:
         return no("too old")
@@ -2921,6 +3050,8 @@ def take_prepared(args, st, today, path, work, plan_path):
         files = inner.get("files") or {"sealed_questions.md": inner["sealed"]}
     except Exception:
         return no("unreadable")
+    if (plan.get("counts") or {}) != plan_counts(st):      # the plan itself, not only the label on the pack
+        return no("the round mix changed", mix=plan.get("counts") or {})
     now, was = block_status(st) or {}, plan.get("block") or {}
     if (now.get("theme"), now.get("round")) != (was.get("theme"), was.get("round")):
         return no("it was not prepared for this round of the block")
@@ -2934,6 +3065,10 @@ def take_prepared(args, st, today, path, work, plan_path):
         if t and parse_date(t.get("last")) == today:
             return no("one of its topics was tested today")
     plan["date"] = iso(today)
+    # settings that do not change the round may have changed since: the plan carries today's
+    cfg = st["config"]
+    plan.update({"show_coding": cfg.get("show_coding", True), "helpers": bool(cfg.get("helpers", True)),
+                 "prepare_ahead": bool(cfg.get("prepare_ahead", True)), "testing": bool(cfg.get("testing", False))})
     plan["prepared"] = dict(plan.get("prepared") or {}, used=True)
     save_json(plan, plan_path)
     written = []
@@ -3248,7 +3383,7 @@ def fill_round_from_keys(rnd, sealed, plan=None):
         filled.append(kid)
     if problems:
         die("the round record cannot be built from the keys: " + "; ".join(problems)
-            + ". Correct the header in the sealed file (references/author.md, section 3), or the "
+            + ". Correct the header in the sealed file (references/standards.md, rule 9), or the "
               "\"key\" in round.json, and run save again. Nothing was recorded.")
     if not rnd.get("case_format") and any(is_case(it) for it in items) and (plan or {}).get("case_format"):
         rnd["case_format"] = plan["case_format"]
@@ -3279,7 +3414,7 @@ def check_key_headers(paths, plan=None):
     for name, ids in by_file.items():
         if not ids and present_blocks(read_text(next(p for p in paths if os.path.basename(p) == name))):
             problems.append("%s: no key header; each item needs one ('<!-- key: Q1 -->' … '<!-- /key -->', "
-                            "references/author.md section 3)" % name)
+                            "references/standards.md rule 9)" % name)
     if plan:
         want = plan.get("counts") or {}
         have = {"mcqs": 0, "focused": 0, "case": 0}
@@ -3296,13 +3431,289 @@ def check_key_headers(paths, plan=None):
     return by_file, problems
 
 
+# What each field holds, for the table of references/standards.md (rule 9). The table there is
+# printed by `key-table` from the KEY_* definitions above and these notes; tests/test_standards.py
+# fails when the two differ, so the rulebook cannot drift from what the engine reads.
+KEY_FIELD_NOTES = {
+    "type": "`mcq`, `focused` or `case`",
+    "topic": "the blueprint ID (for a `new_in_domain` item, the one you chose)",
+    "label": "the topic's label in the blueprint",
+    "reason": "the plan's `reason_code` for the item, copied as it is",
+    "stem_summary": "about ten words on what the stem asks, for the list of stems already used",
+    "aspect": "one of " + ", ".join("`%s`" % a for a in FOCUSED_ASPECTS),
+    "patient": "age and sex (\"74F\")",
+    "setting": "where the case takes place (\"ED\")",
+    "presentation": "the presenting problem (\"confusion after a marathon\")",
+    "diagnosis": "the final diagnosis",
+    "twist": "what makes this case different from others on the topic",
+    "domain": "the domain code, only when the topic ID does not start with it",
+    "retests": "the plan's `retest_gap.id`, on an item written on that gap's decision point; "
+               "otherwise leave the line out",
+}
+KEY_TABLE_OPEN = "<!-- key-header-table: generated by `cme.py key-table`; do not edit by hand -->"
+KEY_TABLE_CLOSE = "<!-- /key-header-table -->"
+
+
+def key_header_fields():
+    """Every field a key header can have, in the order of the table."""
+    seen = []
+    for f in (KEY_COMMON + tuple(f for t in KEY_TYPES for f in KEY_REQUIRED[t])
+              + tuple(f for t in KEY_TYPES for f in KEY_OPTIONAL[t]) + KEY_ANY):
+        if f not in seen:
+            seen.append(f)
+    return seen
+
+
+def key_header_table():
+    """The key-header table of the rulebook, as Markdown, from the KEY_* definitions."""
+    def cell(field, typ):
+        if field in KEY_COMMON or field in KEY_REQUIRED[typ]:
+            return "required"
+        if field in KEY_OPTIONAL[typ] or field in KEY_ANY:
+            return "optional"
+        return "–"
+    lines = ["| Field | MCQ | Focused question | Case | What to write |", "|---|---|---|---|---|"]
+    for f in key_header_fields():
+        lines.append("| `%s` | %s | %s | %s | %s |" % (f, cell(f, "mcq"), cell(f, "focused"), cell(f, "case"),
+                                                       KEY_FIELD_NOTES[f]))
+    return "\n".join(lines)
+
+
+def cmd_key_table(args):
+    """Print the key-header table for references/standards.md (between its two markers)."""
+    sys.stdout.write("%s\n%s\n%s\n" % (KEY_TABLE_OPEN, key_header_table(), KEY_TABLE_CLOSE))
+
+
+# ---------------------------------------------------------------- the lint of a written round
+#
+# The rulebook (references/standards.md) holds the rules for writing items. What can be checked
+# mechanically is checked here, by `finish-prepare` (a round prepared ahead) and by `keys` (the
+# author's own check), in two categories:
+#
+#   blocking   definite problems: a malformed key header (rule 9, check_key_headers) and a kit
+#              or kit section that is missing (rule 8). Nothing is stashed.
+#   review     judgement calls, found by heuristics: an abbreviation in the presented text that
+#              is not spelled out at first use (rule 5) and time anchors that look mixed
+#              (rule 6). The author revises once; what is still found is accepted with a warning.
+#
+# The lint prints file names, key ids, section names and counts only. What it found (the
+# abbreviations, the phrases) names content, so it goes to lint.md beside the sealed files.
+
+STANDARDS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                              "references", "standards.md")
+LINT_FILE = "lint.md"
+KIT_FOR = {"sealed_questions.md": "kit_questions.md", "sealed_case.md": "kit_case.md"}
+# Rule 8: the sections a kit must have, each under a Markdown heading that starts with the name.
+# kit_questions.md has one heading per question ("## Q1") instead, and "Reading" only in a round
+# without a case. Reserved for issue #50 (podcast candidates): a "Listening" section, not yet required.
+KIT_CASE_SECTIONS = ("Reveal", "Model answer", "Rubric", "Differential", "Briefing", "Pearls", "Reading")
+KIT_READING = "Reading"
+HEADING_RE = re.compile(r"^[ \t]{0,3}#{1,6}[ \t]*(.+?)[ \t#:]*$", re.M)
+
+# Rule 5: the abbreviations that need no spelling out are listed in the rulebook, between these
+# two markers. That list is the only source: there is no copy of it here.
+ABBREVIATIONS_RE = re.compile(r"<!--\s*common-abbreviations\s*-->(.*?)<!--\s*/common-abbreviations\s*-->", re.S)
+ABBREVIATION_RE = re.compile(r"(?<![A-Za-z0-9])([A-Z]{2,6})s?(?![A-Za-z0-9])")
+ROMAN_RE = re.compile(r"^[IVX]+$")
+
+# Rule 6: phrases that count from now, and phrases that count from a numbered day.
+_NUM = r"(?:\d+|an?|one|two|three|four|five|six|seven|eight|nine|ten|twelve|few|several|couple of)"
+_ORD = r"(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)"
+TIME_NOW_RE = re.compile(
+    r"\b" + _NUM + r"\s+(?:minutes?|mins?|hours?|hrs?|days?|nights?|weeks?)\s+ago\b"
+    r"|\bsince\s+(?:this\s+morning|yesterday|last\s+night|last\s+week)\b"
+    r"|\b(?:this\s+morning|yesterday|last\s+night|earlier\s+today)\b", re.I)
+TIME_DAY_RE = re.compile(
+    r"\bday\s*\d+\b|\bday\s+(?:zero|one|two|three|four|five|six|seven|eight|nine|ten)\b"
+    r"|\b(?:hospital|admission|post-?operative|post-?op|treatment|ICU)\s+day\b"
+    r"|\b" + _ORD + r"\s+(?:hospital\s+|admission\s+|post-?operative\s+)?day\b|\bPOD\s*\d+\b", re.I)
+QUESTION_START_RE = re.compile(r"(?m)^(?=[ \t>*_#]{0,6}(?:Question|Q)[ \t]*\d+)")
+
+
+def common_abbreviations(path=None):
+    """The abbreviations the rulebook lists as needing no spelling out (rule 5), or None when the
+    rulebook or its list cannot be read."""
+    try:
+        m = ABBREVIATIONS_RE.search(read_text(path or STANDARDS_FILE))
+    except OSError:
+        return None
+    if not m:
+        return None
+    return {w for w in re.split(r"[\s,;]+", m.group(1).strip()) if w}
+
+
+def kit_headings(text):
+    return [h.strip().strip("*_`").strip().lower() for h in HEADING_RE.findall(text or "")]
+
+
+def kit_problems(files, plan=None, kits_required=True):
+    """Rule 8, the mechanical part: every kit is there and has its sections. Names files, key ids
+    and section names only."""
+    problems = []
+    for sealed, kit in KIT_FOR.items():
+        if sealed not in files or not present_blocks(files[sealed]):
+            continue
+        if kit not in files:
+            if kits_required:
+                problems.append("%s is missing" % kit)
+            continue
+        heads = kit_headings(files[kit])
+        if kit == "kit_case.md":
+            want = list(KIT_CASE_SECTIONS)
+        else:
+            ids = [k for k in parse_key_headers(files[sealed], sealed)[0] if k != "case"]
+            missing = [k for k in ids if not any(re.match(r"%s\b" % re.escape(k.lower()), h) for h in heads)]
+            if missing:
+                problems.append("%s: no section for %s (one heading per question, '## Q1')"
+                                % (kit, ", ".join(missing)))
+            counts = (plan or {}).get("counts") or {}
+            want = [KIT_READING] if plan and not counts.get("case") else []
+        missing = [name for name in want if not any(h.startswith(name.lower().rstrip("s")) for h in heads)]
+        if missing:
+            problems.append("%s: section%s %s missing (a heading for each: %s)"
+                            % (kit, "" if len(missing) == 1 else "s", ", ".join("'%s'" % m for m in missing),
+                               ", ".join("'## %s'" % m for m in missing)))
+    return problems
+
+
+def presented_text(files):
+    """The text the learner is shown, in the order of a session: [(file, block, text)]. The
+    results bank counts: Stage 2 is assembled from it."""
+    out = []
+    q = present_blocks(files.get("sealed_questions.md")).get("questions")
+    if q:
+        out.append(("sealed_questions.md", "questions", q))
+    case = files.get("sealed_case.md")
+    c = present_blocks(case).get("case")
+    if c:
+        out.append(("sealed_case.md", "case", c))
+        bank = "\n".join(v for _, v in BANK_RE.findall(case or "")).strip()
+        if bank:
+            out.append(("sealed_case.md", "bank", bank))
+    return out
+
+
+def undefined_abbreviations(blocks_in_order, common):
+    """Rule 5 as a heuristic: all-caps tokens of two to six letters (a plural s allowed) that are
+    not on the rulebook's list and, where the session first shows them, have neither an expansion
+    in brackets after them ("ABC (…)") nor stand in brackets after one ("… (ABC)").
+    [(file, block, token)], each token once."""
+    seen, found = set(), []
+    for name, block, text in blocks_in_order:
+        for m in ABBREVIATION_RE.finditer(text):
+            token = m.group(1)
+            if token in seen:
+                continue
+            seen.add(token)
+            if token in common or ROMAN_RE.match(token):
+                continue
+            if re.match(r"s?[ \t]*\(", text[m.end(1):]) or re.search(r"\([ \t]*$", text[:m.start(1)]):
+                continue
+            found.append((name, block, token))
+    return found
+
+
+def mixed_time_anchors(blocks_in_order):
+    """Rule 6 as a heuristic: one case (or one short question) that counts time both from now
+    ("3 hours ago", "since this morning") and from a numbered day ("day 3", "hospital day").
+    [(file, where, [phrases from now], [phrases by day])]."""
+    units = []
+    case = [(n, t) for n, b, t in blocks_in_order if n == "sealed_case.md"]
+    for name, block, text in blocks_in_order:
+        if block == "questions":
+            for i, part in enumerate([p for p in QUESTION_START_RE.split(text) if p.strip()], 1):
+                m = re.match(r"[ \t>*_#]*(?:Question|Q)[ \t]*(\d+)", part)
+                units.append((name, "question %s" % (m.group(1) if m else i), part))
+    if case:
+        units.append(("sealed_case.md", "the case (present block and bank)", "\n".join(t for _, t in case)))
+    found = []
+    for name, where, text in units:
+        now = sorted({m.group(0).lower() for m in TIME_NOW_RE.finditer(text)})
+        day = sorted({m.group(0).lower() for m in TIME_DAY_RE.finditer(text)})
+        if now and day:
+            found.append((name, where, now, day))
+    return found
+
+
+def lint_round(files, plan=None, kits_required=True, standards=None):
+    """Lint a written round ({file name: text}) against the rulebook: {"blocking": [...],
+    "review": [...], "notes": [...]}. Key headers are checked separately (check_key_headers)."""
+    lint = {"blocking": kit_problems(files, plan, kits_required), "review": [], "notes": []}
+    shown = presented_text(files)
+    common = common_abbreviations(standards)
+    if common is None:
+        lint["notes"].append("the abbreviation list of references/standards.md (rule 5) could not be read: "
+                             "abbreviations were not checked")
+    else:
+        for name, block, token in undefined_abbreviations(shown, common):
+            lint["review"].append({"rule": 5, "file": name, "where": "%s block" % block, "detail": token})
+    for name, where, now, day in mixed_time_anchors(shown):
+        lint["review"].append({"rule": 6, "file": name, "where": where,
+                               "detail": "from now: %s; by numbered day: %s"
+                                         % (", ".join('"%s"' % x for x in now), ", ".join('"%s"' % x for x in day))})
+    return lint
+
+
+def lint_lines(lint):
+    """The judgement calls as lines that name no content: file, rule and a count."""
+    lines = []
+    for name in sorted({r["file"] for r in lint["review"]}):
+        n5 = sum(1 for r in lint["review"] if r["file"] == name and r["rule"] == 5)
+        n6 = sum(1 for r in lint["review"] if r["file"] == name and r["rule"] == 6)
+        if n5:
+            lines.append("%s: %d abbreviation%s not spelled out at first use (references/standards.md, rule 5)"
+                         % (name, n5, "" if n5 == 1 else "s"))
+        if n6:
+            lines.append("%s: time anchors look mixed in %d place%s (references/standards.md, rule 6)"
+                         % (name, n6, "" if n6 == 1 else "s"))
+    return lines
+
+
+def lint_summary(lint, details=None):
+    out = {"abbreviations": sum(1 for r in lint["review"] if r["rule"] == 5),
+           "time_anchors": sum(1 for r in lint["review"] if r["rule"] == 6)}
+    if lint["review"]:
+        out["where"] = lint_lines(lint)
+        if details:
+            out["details"] = details
+    return out
+
+
+def write_lint_details(folder, lint):
+    """Write what the lint found to <folder>/lint.md for the author (it names content, so it is
+    never printed), or remove an earlier one when nothing is found. Returns the path or None."""
+    path = os.path.join(folder, LINT_FILE)
+    if not lint["review"]:
+        if os.path.exists(path):
+            os.remove(path)
+        return None
+    titles = {5: "Rule 5: abbreviations not spelled out at first use in the presented text",
+              6: "Rule 6: more than one time anchor in one case or question"}
+    lines = ["# Lint: judgement calls (references/standards.md)", "",
+             "Sealed like the keys: this file names content. Only the author reads it.",
+             "Each line is a heuristic's finding: correct the text where the rule is broken, leave it "
+             "where the finding is wrong.", ""]
+    for rule in (5, 6):
+        rows = [r for r in lint["review"] if r["rule"] == rule]
+        if rows:
+            lines += ["## %s" % titles[rule], ""]
+            lines += ["- %s, %s: %s" % (r["file"], r["where"], r["detail"]) for r in rows]
+            lines.append("")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines))
+    return os.path.abspath(path)
+
+
 def cmd_keys(args):
-    """Check the key headers of sealed files (the author's last step; `finish-prepare` runs the
-    same check before it stashes). Prints which keys each file has and what is wrong with them;
-    never a topic or any other value."""
-    paths = []
+    """The author's last step (`finish-prepare` runs the same checks before it stashes): check the
+    key headers of sealed files and, for a folder, the kits' sections and the lint's judgement
+    calls. Prints which keys each file has, `problems` (what would stop `finish-prepare`) and
+    `review` (counts of what the lint would send back; the findings themselves go to lint.md in
+    the folder); never a topic or any other value."""
+    paths, folder = [], None
     for p in args.paths:
         if os.path.isdir(p):
+            folder = folder or p
             paths += [os.path.join(p, n) for n in SEALED_FILES if os.path.isfile(os.path.join(p, n))]
         elif os.path.isfile(p):
             paths.append(p)
@@ -3310,8 +3721,24 @@ def cmd_keys(args):
             die("not found: %s" % p)
     if not paths:
         die("no sealed files (%s) in %s" % (", ".join(SEALED_FILES), ", ".join(args.paths)))
-    by_file, problems = check_key_headers(paths, load_json(args.plan) if args.plan else None)
-    print(json.dumps({"ok": not problems, "keys": by_file, "problems": problems}, indent=1, ensure_ascii=False))
+    plan = load_json(args.plan) if args.plan else None
+    by_file, problems = check_key_headers(paths, plan)
+    files = {os.path.basename(p): read_text(p) for p in paths}
+    if folder:
+        for kit in KIT_FOR.values():
+            if os.path.isfile(os.path.join(folder, kit)):
+                files[kit] = read_text(os.path.join(folder, kit))
+    # a kit not written yet (Parts: questions) is no problem here; finish-prepare requires it
+    lint = lint_round(files, plan, kits_required=False)
+    problems = problems + lint["blocking"]
+    out = {"ok": not problems, "keys": by_file, "problems": problems, "review": lint_lines(lint)}
+    if folder:
+        details = write_lint_details(folder, lint)
+        if details:
+            out["details"] = details
+    if lint["notes"]:
+        out["warnings"] = lint["notes"]
+    print(json.dumps(out, indent=1, ensure_ascii=False))
     return 0 if not problems else 1
 
 
@@ -3960,6 +4387,7 @@ def main(argv=None):
     s = command("finish-prepare", cmd_finish_prepare); s.add_argument("--revised", action="store_true")
     s.add_argument("--no-evidence", action="store_true")
     s = command("keys", cmd_keys, work=False); s.add_argument("paths", nargs="+"); s.add_argument("--plan")
+    s = command("key-table", cmd_key_table, work=False)
     s = command("verify", cmd_verify); s.add_argument("--store", required=True)
     s = command("testing-note", cmd_testing_note); s.add_argument("--feedback", required=True); s.add_argument("--session")
     s = command("stats", cmd_stats); s.add_argument("--all", action="store_true")

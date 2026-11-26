@@ -110,7 +110,7 @@ def test_open_notes_the_store_copy_in_either_layout_and_prints_neutral_status(tm
     assert rnd.manifest() == {"version": "41", "files": []}             # nothing to publish yet
     # the ledger is found the same way by whatever comes next
     changed = rnd.run_json("settings", "--work", rnd.path, "--config", '{"testing": true}')
-    assert names(changed) == [INDEX, PREPARED, STATE] and rnd.manifest()["version"] == "41"
+    assert names(changed) == [INDEX, STATE] and rnd.manifest()["version"] == "41"
 
 
 def test_open_prints_no_topic_and_refuses_a_folder_without_a_ledger(rnd, tmp_path_factory):

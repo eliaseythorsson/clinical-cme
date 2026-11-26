@@ -11,8 +11,10 @@ Every request that changes something has the same path: read the store (SKILL.md
 step 1) → `python3 cme.py open --work <work> --store <work>/store --version <version read>` →
 the command for the request, with `--work <work>` → publish its `files` (`store.md` §4) →
 confirm in one line. A change of settings is `python3 cme.py settings --work <work> --config
-'{…}' --profile '{…}'`. Any settings change sets aside the prepared round; offer nothing, the
-next round is simply written at its start. If a round follows in the same conversation, start
+'{…}' --profile '{…}'`. The output's `prepared` says whether the round prepared ahead was
+kept (`state_schema.md` §8: testing mode, reminders, helpers and the like keep it; anything that
+changes the plan or the items sets it aside). When `prepared.kept` is false, add half a line
+("your next round will be written when it starts"); offer nothing. If a round follows in the same conversation, start
 it with `start --work <work>` (no `--store`): it continues from the changed ledger.
 
 | The learner asks | Do |

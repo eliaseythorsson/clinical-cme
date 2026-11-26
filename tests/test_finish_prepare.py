@@ -201,7 +201,7 @@ def test_a_case_that_was_not_written_needs_no_evidence(nxt):
 
 def test_a_missing_first_part_or_a_plan_for_another_ledger_stops_it(nxt):
     nxt.check()
-    nxt.run("--today", DAY, "settings", "--work", nxt.path, "--config", '{"testing": true}')   # the ledger moved on
+    nxt.run("--today", DAY, "settings", "--work", nxt.path, "--config", '{"lab_units": "conventional"}')   # the ledger moved on
     r, out = nxt.finish(ok=False)
     assert r.returncode != 0 and "not made by `prepare` from this ledger" in out["error"]
     assert not nxt.stashed() or nxt.read_json("publish", "data", "prepared.json") == {"v": 1, "empty": True}
@@ -364,7 +364,7 @@ def test_settings_upgrades_an_old_page_read_with_the_ledger(store):
         fh.write('<meta name="cme-page-version" content="1.0.0">')
     out = settings(store, "--config", '{"testing": true}')
     assert out["page_upgraded"] == {"from": "1.0.0", "to": cme.PAGE_VERSION}
-    assert [f["as"] for f in out["files"]] == ["data/index.json", "index.html", "data/prepared.json", "data/state.json"]
+    assert [f["as"] for f in out["files"]] == ["data/index.json", "index.html", "data/state.json"]
     assert os.path.isfile(store.pub("index.html"))
     again = settings(store, "--config", '{"testing": false}')
     assert "page_upgraded" not in again and "index.html" in [f["as"] for f in again["files"]]   # still to publish
