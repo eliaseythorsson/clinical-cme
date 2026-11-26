@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Clinical CME</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="cme-page-version" content="5.1.0">
+<meta name="cme-page-version" content="5.2.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
@@ -546,8 +546,10 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   function estimate(m){
     if (same(m, fileMix()) && R().minutes != null) return R().minutes;
     const per = R().minutes_per;
-    return per ? per.mcq * m.mcqs + per.focused * m.focused + (m.case ? per.case : 0) : null;
+    return per ? Math.round(per.mcq * m.mcqs + per.focused * m.focused + (m.case ? per.case : 0)) : null;
   }
+  // the estimate is at the learner's own pace once their rounds are timed: say what it rests on
+  const basis = () => { const n = +R().timed_rounds || 0; return n ? ", based on your last " + (n === 1 ? "round" : n + " rounds") : ""; };
   const counts = {mcqs: 3, focused: 1};   // the stepper values, kept while a switch is off
   let saved = null;                        // the mix as last saved or loaded, to enable Save only on change
   const readMix = () => ({mcqs: $("sw-mcq").checked ? counts.mcqs : 0, focused: $("sw-foc").checked ? counts.focused : 0, case: $("sw-case").checked});
@@ -572,7 +574,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     const empty = !m.mcqs && !m.focused && !m.case;
     const sm = page && page.settings && page.settings.session_length, est = estimate(m);
     $("mix-est").textContent = empty ? "Choose at least one question type." :
-      (est != null ? "About " + est + " minutes with feedback" : "") + (sm ? (est != null ? " · " : "") + "your session length is " + sm + " min" : "") + "." +
+      (est != null ? "About " + est + " minutes with feedback" + basis() : "") + (sm ? (est != null ? " · " : "") + "your session length is " + sm + " min" : "") + "." +
       (R().time_hint ? " " + R().time_hint : "");
     $("mix-save").disabled = !dbRef || empty || same(m, saved);
     if (dbRef && !same(m, saved) && !empty) status("Not saved yet", "pending");

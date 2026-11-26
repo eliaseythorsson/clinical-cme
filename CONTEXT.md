@@ -160,6 +160,19 @@ The one line "Abbreviations: …" that opens a feedback message and explains the
 **Time anchor**:
 The single point a case counts all its timings from: a named event (admission as day 0) or now, never both (rule 6).
 
+**Active time**:
+The minutes of a round in which something happened: the learner answering, waiting for the examiner or reading feedback, with idle stretches cut. Measured by the engine from the steps of the round; nobody types a time.
+_Avoid_: duration, session length (that is the budget)
+
+**Timed round**:
+A round whose active time was measured. Rounds of older versions are not timed (their minutes were capped at 180) and count in no median or estimate.
+
+**Pace**:
+The learner's active time per round against the default estimate for the same items; estimates move to it over ten timed rounds.
+
+**Time hint**:
+The one sentence, from five timed rounds, comparing the learner's median round with their budget and naming the change to the mix that would fit it best.
+
 **Specialty**:
 The learner's field of practice, which sets the pitch of items and which guideline applies; asked at setup, default internal/hospital medicine.
 

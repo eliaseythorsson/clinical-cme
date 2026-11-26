@@ -150,7 +150,8 @@ def test_page_file_has_the_documented_shape_and_empty_slots_for_what_is_to_come(
     st = work.read_ledger()
     assert page["round"] == {"mix": {"mcqs": 2, "focused": 1, "case": True}, "set_at": st["config"]["round_set_at"],
                              "minutes": 45, "minutes_per": {"mcq": 5, "focused": 10, "case": 25},
-                             "limits": {"mcqs": [0, 10], "focused": [0, 6]}, "time_hint": None}
+                             "limits": {"mcqs": [0, 10], "focused": [0, 6]}, "timed_rounds": 0,
+                             "time_hint": None}
     assert page["next_review"] == st["review"]["next_due"]
     s = page["settings"]
     assert (s["session_length"], s["per_week"], s["region"], s["units"]) == (30, 3, "Iceland/Europe", {"labs": "SI", "gases": "mmHg"})
