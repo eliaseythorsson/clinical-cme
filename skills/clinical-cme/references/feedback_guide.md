@@ -111,6 +111,10 @@ an answer only for not matching the wording of the key.
    ✗ missed, with a short note on what was right or what was missing. Grade the Stage 1
    reasoning (differential, discriminating tests, predicted results, interim
    management) separately from Stage 2 (final diagnosis, management, disposition).
+   A test the learner did not order is graded and taught as rule 10 of `standards.md`
+   says: say it was not ordered and why it should have been, give the result marked as
+   unseen, and what it would have changed. Write for a clinician (rule 11): no rule numbers
+   or names of the skill's own files and steps.
 3. **How the differential separates**: a compact table, typically 3–4 rows:
    diagnosis | features for | features against | test that separates | expected result.
    Include the incidental findings and say why they were noise.

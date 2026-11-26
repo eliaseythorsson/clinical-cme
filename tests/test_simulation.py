@@ -235,7 +235,7 @@ class Script:
             fh.write(json.dumps(first) + "\n")
         questions = SEALED_QUESTIONS
         if "abbreviation_in_stem" in self.faults:
-            questions = questions.replace("is tired.", "is tired; her ALT is raised, her ECG and her "
+            questions = questions.replace("is tired.", "is tired; her AKI is worsening, her ECG and her "
                                           "thyroid-stimulating hormone (TSH) are normal.")
         if "mixed_anchors_in_question" in self.faults:
             questions = questions.replace("has the worst headache of his life.", "has had the worst headache of "
@@ -260,8 +260,10 @@ class Script:
         fbq = FEEDBACK_Q
         if "leak_diagnosis" in self.faults:
             fbq = fbq.replace("The case follows.", "The case follows (it is fictitious  secretitis).")
+        if "jargon_in_feedback" in self.faults:
+            fbq = fbq.replace("Q2: image first.", "Q2: image first (rule 7 of standards.md; see the kit).")
         if "feedback_abbreviations" in self.faults:
-            fbq = fbq.replace("Q2: image first.", "Q2 (NEURO-04): image first with CT, then LP if it is negative, as ESC advises.")
+            fbq = fbq.replace("Q2: image first.", "Q2 (NEURO-04): image first with CT, then LP if it is negative, and keep SBP below 160.")
         if "feedback_glossary" in self.faults:
             fbq = fbq.replace("Feedback on the questions\n", "Feedback on the questions\n\n"
                               "**Abbreviations:** LP lumbar puncture\n")
@@ -278,7 +280,7 @@ class Script:
         self.turn_end("learner")
         stage2 = STAGE2
         if "mixed_anchors_in_stage2" in self.faults:
-            stage2 = stage2.replace("stable overnight.", "on day 2 he is worse than he was yesterday; INR 1.4.")
+            stage2 = stage2.replace("stable overnight.", "on day 2 he is worse than he was yesterday; PEA arrest was averted.")
         self.send("examiner", stage2, 12)
         self.answer("case", "Differential: infection, malignancy, inflammatory. Tests: special scan and a blood count."
                     if "retyped_answer" in self.faults else None)

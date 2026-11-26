@@ -21,7 +21,7 @@ STANDARDS = os.path.join(REFERENCES, "standards.md")
 BRIEFS = ["author.md", "case_design.md", "evidence_check.md", "feedback_guide.md", "preparing.md"]
 RULES = ["Blinding", "Guideline region", "Units and drug names", "Pitch", "Abbreviations",
          "One time anchor per case", "Crux tests are requested, not given", "What a kit contains",
-         "Key headers"]
+         "Key headers", "Results the learner did not see", "Text for the learner speaks plainly"]
 
 
 def read(path):
@@ -115,7 +115,7 @@ def test_the_pre_flight_has_a_line_for_each_of_rules_5_to_7():
     author = flat(read(os.path.join(REFERENCES, "author.md")))
     assert "lines 6 and 10–16" in author and "lines 1–5, 7–9 and 14–16" in author
     # the rules are cited, not restated
-    assert "alanine aminotransferase" not in preflight and "valproate" not in design
+    assert "acute kidney injury" not in preflight and "valproate" not in design
 
 
 def test_the_glossary_line_opens_every_feedback_message():
@@ -249,7 +249,7 @@ def test_headings_may_be_of_any_level_and_longer_than_the_name(nxt):
 
 # ---------------------------------------------------------------- the lint: judgement calls, one revision
 
-ABBREV = "Q1. A man on DOAC therapy with raised ALT has an ECG. A) one B) two C) three"
+ABBREV = "Q1. A man on DOAC therapy with raised AKI has an ECG. A) one B) two C) three"
 MIXED = ("A woman was admitted with fever. On day 3 she became confused; her last dose was 6 hours ago. "
          "What do you do first?")
 
@@ -268,21 +268,21 @@ def test_an_undefined_abbreviation_goes_back_to_the_author_once(nxt):
     _, out = with_abbreviations(nxt).finish()
     assert out["ok"] and out["revise"] is True and out["stashed"] is False and not nxt.stashed()
     assert out["contradicted"] == 0
-    assert out["lint"]["abbreviations"] == 2 and out["lint"]["time_anchors"] == 0     # DOAC and ALT, not ECG
+    assert out["lint"]["abbreviations"] == 2 and out["lint"]["time_anchors"] == 0     # DOAC and AKI, not ECG
     assert out["lint"]["where"] == ["sealed_questions.md: 2 abbreviations not spelled out at first use "
                                     "(references/standards.md, rule 5)"]
     assert "revise" in out["next"] and "lint.md" in out["next"] and "--revised" in out["next"]
     # what was found is in the author's file, not in the output
     details = read(nxt.p("next", "lint.md"))
     assert out["lint"]["details"] == nxt.p("next", "lint.md")
-    assert "sealed_questions.md, questions block: DOAC" in details and ": ALT" in details and "ECG" not in details
-    assert "DOAC" not in json.dumps(out) and "ALT" not in json.dumps(out)
+    assert "sealed_questions.md, questions block: DOAC" in details and ": AKI" in details and "ECG" not in details
+    assert "DOAC" not in json.dumps(out) and "AKI" not in json.dumps(out)
 
 
 def test_the_author_corrects_it_and_the_round_is_stashed_clean(nxt):
     with_abbreviations(nxt).finish()
-    edit(nxt, "sealed_questions.md", "on DOAC therapy with raised ALT",
-         "on direct oral anticoagulant (DOAC) therapy with raised ALT (alanine aminotransferase); DOAC and ALT again")
+    edit(nxt, "sealed_questions.md", "on DOAC therapy with raised AKI",
+         "on direct oral anticoagulant (DOAC) therapy with raised AKI (acute kidney injury); DOAC and AKI again")
     _, out = nxt.finish("--revised")
     assert out["stashed"] is True and out["revised"] is True and out["revise"] is False
     assert out["lint"] == {"abbreviations": 0, "time_anchors": 0} and "warnings" not in out
@@ -330,7 +330,7 @@ def test_the_lint_prints_nothing_of_the_content(nxt):
     for extra in ((), ("--revised",)):
         r, _ = nxt.finish(*extra)
         shown = (r.stdout + r.stderr).replace(nxt.path, "")
-        for word in ("DOAC", "ALT", "hours ago", "day 3", "SEALED", "Example"):
+        for word in ("DOAC", "AKI", "hours ago", "day 3", "SEALED", "Example"):
             assert word not in shown, word
 
 
@@ -369,9 +369,9 @@ def abbreviations(common=("ECG", "CT"), **blocks):
 
 
 @pytest.mark.parametrize("text, found", [
-    ("Raised ALT and AST.", ["ALT", "AST"]),
-    ("Raised ALT (alanine aminotransferase).", []),                     # expansion in brackets after it
-    ("Raised alanine aminotransferase (ALT).", []),                     # in brackets after its expansion
+    ("Raised AKI and MDT.", ["AKI", "MDT"]),
+    ("Raised AKI (acute kidney injury).", []),                     # expansion in brackets after it
+    ("Raised acute kidney injury (AKI).", []),                     # in brackets after its expansion
     ("Two ECGs and a CT were normal.", []),                             # on the list; a plural s is allowed
     ("Two DOACs were stopped.", ["DOAC"]),
     ("NYHA class III, stage IV disease.", ["NYHA"]),                    # Roman numerals are not abbreviations
@@ -386,10 +386,10 @@ def test_what_counts_as_an_undefined_abbreviation(text, found):
 
 def test_an_abbreviation_is_defined_once_per_session_in_the_order_presented():
     # defined in the questions: fine in the case and the bank
-    assert abbreviations(questions="Raised alanine aminotransferase (ALT).", case="ALT again.", bank="ALT 80.") == []
+    assert abbreviations(questions="Raised acute kidney injury (AKI).", case="AKI again.", bank="AKI 80.") == []
     # defined only later: the first use is the one that counts
-    assert abbreviations(questions="ALT raised.", case="alanine aminotransferase (ALT)") == [
-        ("sealed_questions.md", "questions", "ALT")]
+    assert abbreviations(questions="AKI raised.", case="acute kidney injury (AKI)") == [
+        ("sealed_questions.md", "questions", "AKI")]
     # the results bank is presented text too
     assert abbreviations(case="A man presents.", bank="INR 1.1; APTT 30 s") == [
         ("sealed_case.md", "bank", "INR"), ("sealed_case.md", "bank", "APTT")]
@@ -432,7 +432,9 @@ def test_time_anchors_are_judged_per_question_and_per_case():
 # ---------------------------------------------------------------- the editable list
 
 def test_the_list_of_common_abbreviations_is_read_from_the_rulebook():
-    assert cme.common_abbreviations() == {"IV", "ECG", "CT", "MRI", "HIV", "BP", "HR", "CRP", "ICU"}
+    common = cme.common_abbreviations()
+    assert {"IV", "ECG", "CT", "MRI", "HIV", "BP", "HR", "CRP", "ICU", "PR", "QRS", "ST", "ESC"} <= common
+    assert not {"DOAC", "AKI", "ARNI"} & common
     assert cme.STANDARDS_FILE == STANDARDS
     # the engine keeps no second copy of the list
     source = read(cme.__file__)
@@ -442,10 +444,11 @@ def test_the_list_of_common_abbreviations_is_read_from_the_rulebook():
 def test_editing_the_list_in_the_rulebook_changes_what_the_lint_flags(tmp_path):
     rulebook = str(tmp_path / "standards.md")
     with open(rulebook, "w", encoding="utf-8") as fh:
-        fh.write(read(STANDARDS).replace("IV, ECG, CT,", "IV, CT, ALT,"))
-    assert cme.common_abbreviations(rulebook) == {"IV", "CT", "ALT", "MRI", "HIV", "BP", "HR", "CRP", "ICU"}
-    files = {"sealed_questions.md": "<!-- present: questions -->\nQ1. ALT raised; ECG normal.\n<!-- /present -->\n"}
-    assert [r["detail"] for r in cme.lint_round(files, kits_required=False)["review"]] == ["ALT"]
+        fh.write(read(STANDARDS).replace("ECG, EEG, CT,", "AKI, EEG, CT,"))
+    edited = cme.common_abbreviations(rulebook)
+    assert "AKI" in edited and "ECG" not in edited
+    files = {"sealed_questions.md": "<!-- present: questions -->\nQ1. AKI raised; ECG normal.\n<!-- /present -->\n"}
+    assert [r["detail"] for r in cme.lint_round(files, kits_required=False)["review"]] == ["AKI"]
     assert [r["detail"] for r in cme.lint_round(files, kits_required=False, standards=rulebook)["review"]] == ["ECG"]
 
 
@@ -455,7 +458,7 @@ def test_an_installed_skill_with_an_edited_list_lints_with_it(tmp_path):
     shutil.copytree(SKILL, skill, ignore=shutil.ignore_patterns("__pycache__"))
     path = os.path.join(skill, "references", "standards.md")
     with open(path, "w", encoding="utf-8") as fh:
-        fh.write(read(STANDARDS).replace("IV, ECG, CT,", "IV, ECG, CT, DOAC, ALT,"))
+        fh.write(read(STANDARDS).replace("ECG, EEG, CT,", "ECG, EEG, CT, DOAC, AKI,"))
     os.mkdir(str(tmp_path / "work"))
     nxt = with_abbreviations(Next(tmp_path / "work").setup().check())
     assert nxt.finish()[1]["lint"]["abbreviations"] == 2
@@ -470,6 +473,34 @@ def test_a_rulebook_without_its_list_is_reported_not_guessed(tmp_path):
     with open(rulebook, "w", encoding="utf-8") as fh:
         fh.write("# no list here\n")
     assert cme.common_abbreviations(rulebook) is None and cme.common_abbreviations(str(tmp_path / "none.md")) is None
-    files = {"sealed_questions.md": "<!-- present: questions -->\nQ1. ALT raised.\n<!-- /present -->\n"}
+    files = {"sealed_questions.md": "<!-- present: questions -->\nQ1. AKI raised.\n<!-- /present -->\n"}
     lint = cme.lint_round(files, kits_required=False, standards=rulebook)
     assert lint["review"] == [] and "could not be read" in lint["notes"][0]
+
+
+def test_rules_10_and_11_in_rulebook():
+    text = open(os.path.join(SKILL, "references", "standards.md"), encoding="utf-8").read()
+    assert "## Rule 10. Results the learner did not see" in text
+    assert "## Rule 11. Text for the learner speaks plainly" in text
+    assert text.index("## Rule 9.") < text.index("## Rule 10.") < text.index("## Rule 11.") < text.index("## The lint")
+
+
+def test_ecg_terms_and_societies_need_no_spelling_out():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("cme_std", os.path.join(SKILL, "scripts", "cme.py"))
+    cme = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cme)
+    common = cme.common_abbreviations()
+    for token in ("PR", "QRS", "ST", "QT", "ESC", "NICE", "INR", "ALT", "MCQ", "IV", "ECG"):
+        assert token in common
+    for token in ("DOAC", "ARNI"):
+        assert token not in common
+
+
+def test_internal_terms_found_and_clinical_text_passes():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("cme_std2", os.path.join(SKILL, "scripts", "cme.py"))
+    cme = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cme)
+    assert cme.internal_terms("As rule 7 says, see standards.md and the kit.") == ["rule 7", "standards.md", "kit"]
+    assert cme.internal_terms("The authors of ADVOR found less congestion; follow ESC 2021 section 11.") == []

@@ -46,10 +46,10 @@ def test_a_clean_round_passes_with_nothing_to_review(played):
 def test_an_abbreviation_not_spelled_out_in_a_stem_is_listed_for_review_without_failing(played):
     _, out, rep, st = played("abbreviation_in_stem")
     assert out["ok"] is True and st["ok"] is True and st["abbreviations"] == 1 and st["to_review"] == 1
-    # ALT; not ECG (on the rulebook's list) and not TSH (spelled out where it is first used)
-    assert st["findings"] == [{"rule": "5.1", "where": "the questions as presented", "detail": "ALT"}]
+    # AKI; not ECG (on the rulebook's list) and not TSH (spelled out where it is first used)
+    assert st["findings"] == [{"rule": "5.1", "where": "the questions as presented", "detail": "AKI"}]
     md = open(out["report"], encoding="utf-8").read()
-    assert "### Writing standards: to review" in md and "| 5.1 | the questions as presented | ALT |" in md
+    assert "### Writing standards: to review" in md and "| 5.1 | the questions as presented | AKI |" in md
 
 
 def test_mixed_time_anchors_in_a_question_are_listed_for_review(played):
@@ -63,7 +63,7 @@ def test_stage_2_is_checked_as_it_was_sent(played):
     # the case's opening is clean; Stage 2, assembled when the Stage 1 answer came in, is not
     _, out, _, st = played("mixed_anchors_in_stage2")
     assert out["ok"] is True and st["time_anchors"] == 1 and st["abbreviations"] == 1
-    assert {"rule": "5.1", "where": "Stage 2 as presented", "detail": "INR"} in st["findings"]
+    assert {"rule": "5.1", "where": "Stage 2 as presented", "detail": "PEA"} in st["findings"]
     assert {"rule": "6", "where": "the case and Stage 2", "detail": "from now: yesterday; by numbered day: day 2"} in st["findings"]
 
 
@@ -72,8 +72,8 @@ def test_feedback_that_uses_abbreviations_without_the_glossary_line_fails(played
     assert out["ok"] is False and out["checks"] == {"blinding": True, "saved": True, "log": True, "standards": False, "listening": True}
     assert st["problems"] == ["the questions feedback uses 2 abbreviations and does not open with the glossary line "
                               "\"Abbreviations: …\" (references/standards.md, rule 5.3)"]
-    # LP and ESC; CT is on the list, and the blueprint ID in the reveal is not an abbreviation
-    assert st["feedback"][0] == {"id": "questions", "glossary": False, "abbreviations": 2, "not_in_glossary": ["LP", "ESC"]}
+    # LP and SBP; CT is on the list, and the blueprint ID in the reveal is not an abbreviation
+    assert st["feedback"][0] == {"id": "questions", "glossary": False, "abbreviations": 2, "not_in_glossary": ["LP", "SBP"]}
     assert st["feedback"][1]["abbreviations"] == 0          # the final feedback uses none: no line needed
     md = open(out["report"], encoding="utf-8").read()
     assert "### Writing standards: problems" in md and "**FAIL**" in md
@@ -83,8 +83,8 @@ def test_feedback_that_uses_abbreviations_without_the_glossary_line_fails(played
 def test_the_glossary_line_passes_and_what_it_leaves_out_is_listed_for_review(played):
     _, out, _, st = played("feedback_abbreviations", "feedback_glossary")
     assert out["ok"] is True and st["ok"] is True and st["problems"] == []
-    assert st["feedback"][0] == {"id": "questions", "glossary": True, "abbreviations": 2, "not_in_glossary": ["ESC"]}
-    assert st["findings"] == [{"rule": "5.3", "where": "the questions feedback", "detail": "ESC"}]
+    assert st["feedback"][0] == {"id": "questions", "glossary": True, "abbreviations": 2, "not_in_glossary": ["SBP"]}
+    assert st["findings"] == [{"rule": "5.3", "where": "the questions feedback", "detail": "SBP"}]
     assert "questions: 2 abbreviation(s), glossary line present, 1 not in it" in open(out["report"], encoding="utf-8").read()
 
 
@@ -97,11 +97,11 @@ def test_a_glossary_line_on_feedback_without_abbreviations_is_no_problem(played)
 def test_a_round_stopped_before_the_case_is_checked_on_what_it_had(played):
     _, out, _, st = played("abbreviation_in_stem", cls=Stops)
     assert out["checks"]["standards"] is True and [f["id"] for f in st["feedback"]] == ["questions", "final"]
-    assert [f["detail"] for f in st["findings"]] == ["ALT"]
+    assert [f["detail"] for f in st["findings"]] == ["AKI"]
 
 
 @pytest.mark.parametrize("text, found", [
-    ("Abbreviations: ALT alanine aminotransferase\n\nReveal …", True),
+    ("Abbreviations: AKI acute kidney injury\n\nReveal …", True),
     ("## Feedback: questions\n\n**Abbreviations:** DOAC direct oral anticoagulant\n\nQ1 …", True),
     ("Feedback\n\n_Abbreviations: LP lumbar puncture_\n", True),
     ("Feedback\n\nQ1 was right.\n\nQ2 too.\n\nAbbreviations: LP lumbar puncture\n", False),     # not at the top
@@ -129,7 +129,7 @@ def test_a_skill_copy_with_an_edited_list_is_checked_with_its_own_list(tmp_path)
     path = os.path.join(skill, "references", "standards.md")
     text = open(path, encoding="utf-8").read()
     with open(path, "w", encoding="utf-8") as fh:
-        fh.write(text.replace("IV, ECG, CT,", "IV, ECG, CT, ALT,"))
+        fh.write(text.replace("IV, IM, SC,", "IV, IM, SC, AKI,"))
     s = Script(tmp_path, ["abbreviation_in_stem"]).play()
     meta_path = os.path.join(s.run, "run.json")
     meta = json.load(open(meta_path, encoding="utf-8"))
@@ -147,3 +147,10 @@ def test_an_engine_without_the_lint_is_a_problem_not_a_crash(tmp_path):
         fh.write("VERSION = 'old'\n")
     with pytest.raises(simulate.SimError, match="older than the rulebook's lint"):
         simulate.load_engine(skill)
+
+
+def test_feedback_naming_the_skills_machinery_fails_the_run(played):
+    _, out, _, st = played("jargon_in_feedback")
+    assert out["ok"] is False and out["checks"]["standards"] is False
+    assert st["problems"] == ["the questions feedback names the skill's own machinery (rule 7, standards.md, kit): "
+                              "references/standards.md rule 11"]

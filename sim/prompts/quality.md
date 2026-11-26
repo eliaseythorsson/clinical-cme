@@ -48,6 +48,10 @@ nothing else in it except as said below.
 - Is every clinical claim correct, current and attributed to the right source?
 - Is each grade fair to what the learner actually wrote: nothing right marked wrong, nothing
   wrong let through?
+- Results the learner never ordered (rule 10 of `{skill}/references/standards.md`): are they
+  quoted only marked as unseen, with the feedback saying they were not ordered and what they
+  would have changed? A result quoted as if it had been shown goes under `concerns`, starting
+  the line "Rule 10:".
 - Does it teach the point the decision turns on?
 - `dispute`, when listed: the examiner's replies to the learner's challenge. Did it re-check
   the source and argue from it? Did it concede what the learner had right, and hold what the

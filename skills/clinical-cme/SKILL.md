@@ -59,7 +59,7 @@ needs judgement; the rest is in the references:
 | Reference | Read when |
 |---|---|
 | `references/store.md` | After the first message (§4, before publishing); before it only when turn 1 says so; setup, a failed save, recovery, export |
-| `references/standards.md` | Before grading: the numbered rules for items and feedback (rules 1–5 bind your feedback); all of it when you write items |
+| `references/standards.md` | Before grading: the numbered rules for items and feedback (rules 1–5, 10, 11 bind your feedback); all of it when you write items |
 | `references/feedback_guide.md` | Before grading; contains the reflection prompt |
 | `references/analysis_framework.md` | Before grading (§1 coding); for the deep review (§2) |
 | `references/state_schema.md` | Writing `round.json` (§2) and `reflection.json` (§3); commands (§6); spacing and blocks (§4) |
