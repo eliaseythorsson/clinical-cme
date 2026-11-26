@@ -200,7 +200,9 @@ depth of feedback and the spacing of the topic.
 
 ## 7. Difficulty and conventions
 
-- Pitch: rule 4. Guidelines: rule 2. Units and drug names: rule 3.
+- Pitch: rule 4, from the learner's own paragraphs in the plan's profile (which decisions are
+  tested, and for an exam aim which sources key them). Guidelines: rule 2. Units and drug
+  names: rule 3.
 - Abbreviations: rule 5. Timings: rule 6, one anchor per case. The decisive test: rule 7.
 - Cases are fictional. Never request or include identifiable patient information.
 

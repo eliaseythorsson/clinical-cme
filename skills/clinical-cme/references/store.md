@@ -25,8 +25,8 @@ The page renders `data/page.json` and nothing else of the store (it opens a sess
 document when the learner clicks one; only its Export button reads the ledger). A store last
 saved before version 5.1 has `data/index.json` in its place: §6.
 
-One more document lives outside the files: the round mix the learner sets on their page
-(`state_schema.md` §7.1) is kept by the page as its own settings document, `cme/prefs`. The page
+One more document lives outside the files: the round mix the learner sets on their page, and
+either of their two paragraphs when they rewrite it there (`state_schema.md` §7.1), is kept by the page as its own settings document, `cme/prefs`. The page
 writes it; the skill only reads it.
 
 `cme.py` never touches the store. You read the store's files into a local folder, the **store
@@ -46,7 +46,7 @@ everything below that the session will need, and load it together.
 | List the learner's artifacts | finding "Clinical CME" |
 | Read an artifact's files into local files (it returns paths, not the content) | reading the page store |
 | Publish local files to an artifact, keeping the files not named ("patch"), pinned to the version you read | writing the page store |
-| Read one document of the page's settings | `cme/prefs`, the round mix set on the page |
+| Read one document of the page's settings | `cme/prefs`, the round mix and the paragraphs set on the page |
 | The file system, or a connected folder on the learner's computer | the folder store |
 | Attachments and downloads | files carried by the learner; recovery |
 

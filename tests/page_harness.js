@@ -2,16 +2,31 @@
 // learner's store, and prints what happened as JSON:
 //   {text: <all rendered text and HTML>, ids: {<element id>: <its text/HTML>}, styles, hidden,
 //    fetched: [<every path the page asked for>], saved: [<downloads the page made>]}
-// Usage: node page_harness.js <page.html> <store folder> [--downloads] [--click id,id,…]
+//    db: [<every document the page wrote to its database, as {path, data}>]}
+// Usage: node page_harness.js <page.html> <store folder> [--downloads] [--db [file]] [--set id=text,…] [--click id,id,…]
 // --downloads: the page is given the downloads capability (its Export button);
-// --click: after the page has loaded, click these elements in turn.
+// --db: the page is given its database (where it keeps cme/prefs); with a JSON file, that is
+//   the cme/prefs document it finds there;
+// --click: after the page has loaded, click these elements in turn;
+// --set: before a click on an element <name>-save, the input <name>-input is given this text
+//   (--set lvl=…), as if the learner had typed it. The text is URI-encoded.
 const fs = require("fs");
 const path = require("path");
 const [pagePath, storeDir, ...opts] = process.argv.slice(2);
 const html = fs.readFileSync(pagePath, "utf8");
 const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
 const withDownloads = opts.includes("--downloads");
-const clicks = opts.includes("--click") ? (opts[opts.indexOf("--click") + 1] || "").split(",").filter(Boolean) : [];
+const optValue = (name) => opts.includes(name) ? (opts[opts.indexOf(name) + 1] || "") : "";
+const clicks = optValue("--click").split(",").filter(Boolean);
+const typed = Object.fromEntries(optValue("--set").split(",").filter(Boolean).map(x => [x.split("=")[0], decodeURIComponent(x.split("=").slice(1).join("="))]));
+const withDb = opts.includes("--db");
+const dbFile = withDb && optValue("--db") && !optValue("--db").startsWith("--") ? optValue("--db") : null;
+let dbDoc = dbFile ? JSON.parse(fs.readFileSync(dbFile, "utf8")) : null;
+const dbWrites = [];
+const db = {doc: (p) => ({
+  get: async () => ({exists: dbDoc != null, data: () => dbDoc}),
+  set: async (data) => { dbDoc = JSON.parse(JSON.stringify(data)); dbWrites.push({path: p, data: dbDoc}); },
+})};
 
 // elements the markup hides from the start (<… id="x" … hidden>)
 const hiddenAtStart = new Set([...html.matchAll(/<[a-z][^>]*\bid="([^"]+)"[^>]*>/g)].filter(m => /\shidden[\s>=]/.test(m[0])).map(m => m[1]));
@@ -53,7 +68,8 @@ const fetch = async (url) => {
   const body = fs.readFileSync(file, "utf8");
   return {ok: true, status: 200, json: async () => JSON.parse(body), text: async () => body};
 };
-const claude = withDownloads ? {use: async (what) => what === "downloads" ? {save: async (x) => { saved.push(x); }} : null} : undefined;
+const claude = (withDownloads || withDb) ? {use: async (what) =>
+  what === "downloads" && withDownloads ? {save: async (x) => { saved.push(x); }} : what === "db" && withDb ? db : null} : undefined;
 const window = {document, fetch, claude, addEventListener: () => undefined, matchMedia: () => ({matches: false, addEventListener: () => undefined})};
 const location = {hash: ""};
 const requestAnimationFrame = (f) => f();
@@ -66,6 +82,8 @@ const wait = (ms) => new Promise((res) => setTimeout(res, ms));
   await wait(200);
   const loaded = fetched.slice();
   for (const id of clicks) {
+    const name = id.replace(/-save$/, "");
+    if (id.endsWith("-save") && name in typed) document.getElementById(name + "-input").value = typed[name];
     for (const fn of ((byId[id] || {})._on || {}).click || []) await fn({});
     await wait(50);
   }
@@ -76,6 +94,6 @@ const wait = (ms) => new Promise((res) => setTimeout(res, ms));
     if (Object.keys(e.style).length) styles[id] = e.style;
   }
   const text = all.map(e => String(e.textContent || "") + "\n" + String(e.innerHTML || "")).join("\n");
-  process.stdout.write(JSON.stringify({text, ids, styles, hidden, fetched, fetched_on_load: loaded, saved}));
+  process.stdout.write(JSON.stringify({text, ids, styles, hidden, fetched, fetched_on_load: loaded, saved, db: dbWrites}));
   process.exit(0);
 })();

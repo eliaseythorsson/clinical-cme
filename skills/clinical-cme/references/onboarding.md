@@ -15,12 +15,15 @@ are in, or attach your `state.json`."
 
 > **Clinical CME — how it works**
 >
-> - **Short rounds, in the mix you choose.** Single-best-answer questions; **focused questions**
->   (a short case ending in one free-text question on a single decision — a diagnosis, the next
->   test, the management — graded on your reasoning); and a full clinical case. Short questions
->   come first, on unrelated topics, with their feedback as soon as you answer; then the case
->   and its feedback. Sized to the time you set (typically 15–30 minutes including feedback).
->   You can change the mix at any time.
+> - **Pitched to you, in your own words.** You say in a few sentences where you are in your
+>   training or career and what you want the rounds to do for you; the questions and the
+>   feedback are written for that, and you can rewrite either at any time.
+> - **Short rounds, in the mix you choose.** **Focused questions** (a short case ending in one
+>   free-text question on a single decision — a diagnosis, the next test, the management —
+>   graded on your reasoning); a full clinical case; and, if you want them, single-best-answer
+>   questions. Short questions come first, on unrelated topics, with their feedback as soon as
+>   you answer; then the case and its feedback. Sized to the time you set (typically 15–45
+>   minutes including feedback). You can change the mix at any time.
 > - **No waiting.** Each round is written at the end of the one before, so it starts at once;
 >   the sources are checked while you answer; and your answers are graded by a different
 >   assistant than the one that wrote the questions.
@@ -57,9 +60,30 @@ Ask in at most two or three batches. Use structured multiple-choice questions wh
 offers them; otherwise one compact message. Offer defaults so the learner can accept
 and move on.
 
-**Batch 1 — who you are**: role (resident · fellow · attending/consultant · other); main setting
-(inpatient · outpatient · ED/ICU · mixed); and, always, these two questions, each with its
-default offered so the learner can simply accept it:
+**Batch 1 — who you are**, in the learner's own words. Ask these two open questions word for
+word (free text, never multiple choice; the page asks the same two under Settings):
+
+- **Where you are** → `profile.journey`:
+  > In a few sentences, describe where you are in your training or career and how you'd rate
+  > your own knowledge and clinical skills: for example your stage, your specialty, how
+  > independently you work, and what kinds of decisions you're comfortable making.
+- **Where you're aiming** → `profile.aim`:
+  > What do you want these rounds to help you achieve? For example an exam you're preparing
+  > for, the level you want to reach, where you want to be stronger, or anything else.
+
+Store each answer as the learner wrote it: no summary, no tidying, their language. These
+paragraphs are what every item is pitched to and every feedback written for (`standards.md`
+rule 4). A learner who skips one leaves it empty; they can write it later, in a chat or on
+the page. From each paragraph derive, without asking, a display label for the page:
+
+- `profile.journey_label`, one of: medical student · intern · resident · fellow · attending · senior attending;
+- `profile.aim_tags`, any that fit (an empty list when none does): exam · independent practice · specialist-level decisions outside own specialty · keep up to date · teach.
+
+The labels are shown on the page and nowhere used to write items; pass them to `init` with
+the paragraphs. If the paragraph does not say which specialty or setting, ask those in the
+same batch: main setting (inpatient · outpatient · ED/ICU · mixed) → `profile.practice_setting`.
+And, always, these two questions, each with its default offered so the learner can simply
+accept it:
 
 - **Whose guidelines should the questions and the grading follow?** Iceland/Europe (default:
   Icelandic national guidance where it exists, otherwise the European societies; SI units) ·
@@ -69,18 +93,22 @@ default offered so the learner can simply accept it:
 - **Which specialty?** Internal/hospital medicine (default) · other (free text), plus a
   subspecialty if any. → `profile.specialty`, `profile.subspecialty`.
 
-Say in one line that both can be changed later just by asking ("use UK guidelines", "my
-specialty is geriatrics"). An answer of "defaults" or no answer keeps the defaults; `cme.py
+Say in one line that all of it can be changed later just by asking ("use UK guidelines", "my
+specialty is geriatrics", "I've started as a fellow") or, for the two paragraphs and the
+round mix, on the page. An answer of "defaults" or no answer keeps the defaults; `cme.py
 init` fills them in when they are left out.
 
-**Batch 2 — how you want to work**: what a round should contain (several may be chosen; default
-MCQs + full case):
-- **Single-best-answer questions (MCQs)** — quick knowledge and recognition checks;
+**Batch 2 — how you want to work**: what a round should contain. Recommend **one focused
+question and the full case** (the default, about 35 minutes): free-text answers show the
+reasoning, which is what the feedback and the reviews work from. MCQs are there for whoever
+asks for them (quick recognition checks, exam practice); do not add them unasked. The three
+kinds, several may be chosen:
 - **Focused questions** — a short case ending in one free-text question on a single decision,
   graded on your reasoning (about 10 minutes each);
-- **Full case** — history and work-up; differential, tests and management in your own words.
+- **Full case** — history and work-up; differential, tests and management in your own words;
+- **Single-best-answer questions (MCQs)** — quick knowledge and recognition checks.
 
-Then: time per session (about 10 · 15–20 · 25–30 min); how often (workdays · three times a week ·
+Then: time per session (about 15 · 25 · 35 · 45 min); how often (workdays · three times a week ·
 twice · weekly); case style (unfolding · one step · alternate; only if the full case is chosen);
 feedback depth (detailed · standard); review with deep analysis every 1 · 2 · 3 months.
 Where the app offers structured questions, ask the mix as one multiple-choice question
@@ -97,42 +125,47 @@ grading is only as good as the model the round is run with, so rounds are best r
 most capable model they have.
 
 **Batch 3 — where you stand** (free text is fine): the domain list with a 1–5 self-rating per
-domain, or the two or three strongest and weakest areas; goals; resource preferences (free
-only?); anything else to know. And one line on listening: "Each round ends with a podcast
+domain, or the two or three strongest and weakest areas; resource preferences (free only?);
+anything else to know. And one line on listening: "Each round ends with a podcast
 episode per topic, as a Spotify link. Any shows you trust, or want me to avoid? (Or say you'd
 rather not have it.)" → `profile.podcast_sources`, always written at setup, with two empty
 lists when none are named, so that it is not asked again; "rather not" → `config.listening`
 false. The link opens the episode in Spotify, where one tap saves it; no link can save it to
 the library by itself.
 
+The mix sets `mcqs`, `focused` and `case`; the time sets `session_minutes` (15, 25, 35 or 45).
+`cme.py` estimates a round at about 5 minutes per MCQ, 10 per focused question, 15 for a
+one-step case and 25 for an unfolding one, feedback included (`MINUTES_PER`; `init` and
+`settings` print the estimate for the mix as `round`, the opening line of every round gives
+it, and the page shows it). Size the mix to the time the learner names, so that the estimate
+(in brackets) fits it:
+
+| Mix chosen | ~15 min | ~25 min | ~35 min | ~45 min |
+|---|---|---|---|---|
+| Focused + full case (recommended) | one-step case, `focused` 0 (15) | 1 focused + one-step case (25) | 1 focused + unfolding case (35) | 2 focused + unfolding case (45) |
+| MCQs + full case | one-step case, `mcqs` 0 (15) | 2 MCQs + one-step case (25) | 2 MCQs + unfolding case (35) | 4 MCQs + unfolding case (45) |
+| MCQs + focused + full case | one-step case, `mcqs` 0, `focused` 0 (15) | 1 focused + one-step case, `mcqs` 0 (25) | 2 MCQs + 1 focused + one-step case (35) | 2 MCQs + 1 focused + unfolding case (45) |
+| Focused only | 1 focused (10) | 2 focused (20) | 3 focused (30) | 4 focused (40) |
+| MCQs + focused | 1 MCQ + 1 focused (15) | 3 MCQs + 1 focused (25) | 3 MCQs + 2 focused (35) | 3 MCQs + 3 focused (45) |
+| MCQs only | 3 MCQs (15) | 5 MCQs (25) | 7 MCQs (35) | 9 MCQs (45) |
+| Full case only | one-step case (15) | unfolding case (25) | unfolding case (25) | unfolding case (25) |
+
+A cell with a one-step case sets `case_format` discriminate; an unfolding case is the learner's
+case style (unfolding unless they chose otherwise; "alternate" takes 15 or 25 minutes for the
+case in turn). An unfolding case alone is 25 minutes, so a session of 15 gets a one-step case
+or short questions only, and a cell that had to drop a kind the learner chose says so: offer
+it ("in 15 minutes there is room for a one-step case, or for one focused question and an MCQ:
+which would you rather have?"). Say the estimate when you confirm the mix ("one focused
+question and the case: about 35 minutes with feedback"). The learner chooses; they can always
+pick other numbers, here or on the page.
+
 | Answer | Setting |
 |---|---|
-| ~10 min | `session_minutes` 10, `case_format` discriminate |
-| 15–20 min | 20, unfolding |
-| 25–30 min | 30, unfolding, `feedback_depth` detailed |
-
-The mix sets `mcqs`, `focused` and `case`. `cme.py` estimates a round at about 5 minutes per
-MCQ, 10 per focused question, 15 for a one-step case and 25 for an unfolding one, feedback
-included (`MINUTES_PER`; `init` and `settings` print the estimate for the mix as `round`, the
-opening line of every round gives it, and the page shows it). The estimate in each cell:
-
-| Mix chosen | ~10 min | 15–20 min | 25–30 min |
-|---|---|---|---|
-| MCQs + full case (default) | 1 MCQ + case (20) | 3 MCQs + case (40) | 3 MCQs + case (40) |
-| MCQs + focused + full case | 1 focused + case, `mcqs` 0 (25) | 1 MCQ + 1 focused + case (40) | 2 MCQs + 1 focused + case (45) |
-| Focused + full case | 1 focused + case (25) | 1 focused + case (35) | 2 focused + case (45) |
-| MCQs + focused | 1 MCQ + 1 focused (15) | 2 MCQs + 2 focused (30) | 3 MCQs + 3 focused (45) |
-| Focused only | 2 focused (20) | 3 focused (30) | 5 focused (50) |
-| MCQs only | 3 MCQs (15) | 5 MCQs (25) | 8 MCQs (40) |
-| Full case only | case (15) | case (25) | case (25) |
-
-A full case takes most of half an hour with its feedback, so most of these run longer than the
-time the learner named. Say the estimate when you confirm the mix ("3 MCQs and the case:
-about 40 minutes with feedback") and offer what fits their time instead: fewer short
-questions, short questions only (2 MCQs ≈ 10 minutes, 4 MCQs or 2 focused ≈ 20), or the case
-alone. The learner chooses; they can always pick other numbers, here or on the page.
+| Where you are / where you're aiming | `profile.journey` / `profile.aim`, the learner's words; `profile.journey_label`, `profile.aim_tags` derived |
 | Guidelines: Iceland/Europe / UK / North America / other | `guideline_region` "Iceland/Europe" / "UK" / "North America" / the learner's words |
 | Specialty | `profile.specialty` (default "Internal/hospital medicine") |
+| Time per session | `session_minutes` 15 / 25 / 35 / 45, and the mix from the table above |
+| Feedback depth | `feedback_depth` detailed (default) / standard |
 | Frequency | `target_sessions_per_week` 5 / 3 / 2 / 1 |
 | Self-ratings | `profile.domain_self_ratings` {CODE: n} |
 | Podcasts trusted / avoided | `profile.podcast_sources` {"trusted": […], "avoid": […]} |
@@ -142,7 +175,8 @@ alone. The learner chooses; they can always pick other numbers, here or on the p
 
 ## 3. Create the ledger and the page
 
-`store.md` §5: `cme.py init --work <work>` with the answers (the config holds `mcqs`, `focused`, `case`), then create the store from the `files` it prints: where the
+`store.md` §5: `cme.py init --work <work>` with the answers (the profile holds `journey`, `aim`
+and their labels; the config holds `mcqs`, `focused`, `case`), then create the store from the `files` it prints: where the
 app can host a private page with files, publish `templates/page.html` with the ledger
 files as the page "Clinical CME" and pin it; otherwise a folder the learner names or files
 they keep. Ask which only if more than one is possible and the learner has a preference;
@@ -171,7 +205,9 @@ Tell the learner (show this):
   (days and time the learner names, their time zone) with the prompt "Run a clinical-cme round";
   confirm in one line. No scheduling here: say so, keep `reminders` true for a later session.
 - Offer the first round now. After its feedback, ask whether it felt too easy, about right or
-  too hard, and record any change with `settings`.
+  too hard. Too easy or too hard: ask what they would add to "where you are", and save their
+  words with `settings --profile '{"journey": "…"}'` (`requests.md` §1). The difficulty is
+  never adjusted from scores on its own.
 
 ## 5. FAQ (answer on request)
 
@@ -182,7 +218,13 @@ Tell the learner (show this):
 have at that moment — that ends in one open question on a single decision: the most likely
 diagnosis, the next test, what to do now, where the patient should go. You answer in a few lines
 and say why; the grading is on that reasoning (the right answer without a reason scores at most
-3 of 5). It takes about five minutes with its feedback.
+3 of 5). It takes about ten minutes with its feedback.
+
+**Can I make the questions harder, easier or aimed at an exam?** Yes: say so in your own words
+("I'm a fellow now", "I'm sitting the exam in May, aim at that"), or rewrite the paragraph under
+Settings on your Clinical CME page ("Where you are", "Where you're aiming" → Update). The next
+round is written for what you wrote. Nothing changes the level behind your back: your scores
+decide when a topic comes back, not how hard the questions are.
 
 **Can I change what a round contains?** Yes, any time: in your Clinical CME page (Settings → "What
 goes into a round": switch MCQs, focused questions and the full case on or off and set how many),

@@ -88,11 +88,12 @@ nothing, and never write anything about the round's content.
 1. Read the store as at the start of a round (SKILL.md, turn 1, step 1: `state.json`,
    `page.json`, `prepared.json`, and `cme/prefs` when it exists), then `python3 cme.py open
    --work <work> --store <work>/store --version <version read>` (plus `--prefs '<the cme/prefs
-   JSON>'`, so the round is written for the mix set on the page).
+   JSON>'`, so the round is written for the mix and the paragraphs set on the page).
 2. `python3 cme.py prepare --work <work> --if-needed --allow-unreflected`. `"prepare": false`
    → reply "A round is already prepared." (or the reason it gives) and stop.
 3. Write, check and finish as in §2, steps 2–4, and publish the `files` (here the one file,
-   `data/prepared.json`), pinned to the version you read. If the store changed in between,
+   `data/prepared.json`; with it the ledger and the page file when `prepare` took over a
+   paragraph the learner wrote on the page), pinned to the version you read. If the store changed in between,
    stop: a round is being played.
 4. Reply in one line: "Next round prepared." Nothing else.
 

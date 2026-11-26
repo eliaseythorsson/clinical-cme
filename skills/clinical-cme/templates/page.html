@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Clinical CME</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="cme-page-version" content="5.2.0">
+<meta name="cme-page-version" content="5.3.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
@@ -193,6 +193,18 @@ table.plain td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
 .mix-foot .est{color:var(--muted);font-size:.85rem;flex:1 1 220px}
 .mix-status{font-size:.84rem}
 .mix-status.ok{color:var(--good)}.mix-status.err{color:var(--crit)}.mix-status.pending{color:var(--warn)}
+.para{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-top:1px solid var(--line)}
+.para-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.para-head .lbl{font-weight:500}
+.para-head .chips{margin:0;flex:1 1 auto}
+.para-head .chip{font-family:var(--sans)}
+.para-text{margin:0;font-size:.9rem;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.para-box{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.para-box label{color:var(--muted);font-size:.85rem;line-height:1.5}
+.para-box textarea{font:inherit;font-size:.9rem;line-height:1.5;color:var(--ink,inherit);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 11px;resize:vertical;min-height:110px}
+.para-box textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.para-foot{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:flex-end}
+.para-foot .mix-status{flex:1 1 200px}
 dl.kv{display:grid;grid-template-columns:minmax(120px,34%) minmax(0,1fr);margin:0;font-size:.9rem}
 dl.kv dt,dl.kv dd{margin:0;padding:9px 0;border-top:1px solid var(--line)}
 dl.kv dt{color:var(--muted)}
@@ -300,6 +312,28 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
         <button class="btn primary" id="mix-save" type="button" disabled>Save</button>
       </div>
     </section>
+    <section class="card" id="about" aria-labelledby="about-h" hidden>
+      <h2 id="about-h">Where you are and where you’re aiming</h2>
+      <p class="lead" id="about-lead"></p>
+      <div class="para">
+        <div class="para-head"><span class="lbl">Where you are</span><span class="chips" id="lvl-label"></span><button class="btn" id="lvl-edit" type="button" aria-controls="lvl-box" hidden>Update</button></div>
+        <p class="para-text" id="lvl-text"></p>
+        <div class="para-box" id="lvl-box" hidden>
+          <label for="lvl-input" id="lvl-q">In a few sentences, describe where you are in your training or career and how you'd rate your own knowledge and clinical skills: for example your stage, your specialty, how independently you work, and what kinds of decisions you're comfortable making.</label>
+          <textarea id="lvl-input" rows="5" maxlength="4000"></textarea>
+          <div class="para-foot"><span class="mix-status" id="lvl-status" role="status" aria-live="polite"></span><button class="btn primary" id="lvl-save" type="button">Save</button></div>
+        </div>
+      </div>
+      <div class="para">
+        <div class="para-head"><span class="lbl">Where you’re aiming</span><span class="chips" id="aim-label"></span><button class="btn" id="aim-edit" type="button" aria-controls="aim-box" hidden>Update</button></div>
+        <p class="para-text" id="aim-text"></p>
+        <div class="para-box" id="aim-box" hidden>
+          <label for="aim-input" id="aim-q">What do you want these rounds to help you achieve? For example an exam you're preparing for, the level you want to reach, where you want to be stronger, or anything else.</label>
+          <textarea id="aim-input" rows="5" maxlength="4000"></textarea>
+          <div class="para-foot"><span class="mix-status" id="aim-status" role="status" aria-live="polite"></span><button class="btn primary" id="aim-save" type="button">Save</button></div>
+        </div>
+      </div>
+    </section>
     <section class="card" aria-labelledby="set-h">
       <h2 id="set-h">Current settings</h2>
       <p class="lead">Change these in a session with your assistant, for example “make sessions 30 minutes” or “more perioperative medicine”.</p>
@@ -331,7 +365,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   // Everything shown comes from one file the engine writes, data/page.json (already blinded),
   // plus the session and review documents opened on demand. The ledger is read by Export only.
   let page = null, sessions = [], reviews = [];
-  let prefs = null;           // cme/prefs in the page database: the round mix set on this page
+  let prefs = null;           // cme/prefs in the page database: the round mix and the paragraphs set on this page
   let dbRef = null;
   let fullText = false;       // all session files fetched for full-text search
   const getJSON = async (path) => { const r = await fetch(path, {cache: "no-store"}); if (!r.ok) throw new Error(path + " " + r.status); return r.json(); };
@@ -511,19 +545,66 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     if (!page || !page.settings) { $("settings").innerHTML = ""; return; }
     const c = page.settings, w = page.who || {}, u = c.units || {};
     const labelled = (x) => x ? [x.label, x.text].filter(Boolean).join(": ") : "";
-    const rows = [["Role", w.role], ["Specialty", [w.specialty, w.subspecialty].filter(Boolean).join(" · ")], ["Setting", (w.practice || []).join(", ")],
+    const rows = [["Specialty", [w.specialty, w.subspecialty].filter(Boolean).join(" · ")], ["Setting", (w.practice || []).join(", ")],
       ["Session length", c.session_length ? c.session_length + " min" : ""], ["Round", mixText(effectiveMix()) + (mixPending() ? " (from your next round)" : "") + (c.order ? ", " + words(c.order) : "")], ["Case format", c.case_style],
       ["Feedback", (c.feedback || "") + (c.coding_line ? ", with coding line" : "")], ["Target", c.per_week ? c.per_week + " sessions/week" : ""],
       ["Review interval", c.review_every_days ? c.review_every_days + " days" : ""], ["Units", (u.labs || "") + (u.gases ? ", gases in " + u.gases : "")], ["Guidelines", c.region],
       ["Reminders", c.reminders ? "On" : "Off"],
       ["Domain emphasis", Object.entries(c.emphasis || {}).map(([k, v]) => k + " ×" + v).join(", ") || "None"],
       ["Self-ratings", Object.entries(c.self_ratings || {}).map(([k, v]) => k + " " + v).join(", ")]];
-    // shown once the engine fills them in: where you are, where you're aiming, reading, listening
-    [["Where you are", labelled(c.level)], ["Where you're aiming", labelled(c.aim)], ["Reading", labelled(c.reading)], ["Listening", labelled(c.listening)]]
+    // shown once the engine fills them in: reading, listening
+    [["Reading", labelled(c.reading)], ["Listening", labelled(c.listening)]]
       .forEach((r) => { if (r[1]) rows.push(r); });
     rows.push(["Last saved", page.updated ? fmtDate(page.updated) : ""]);
     $("settings").innerHTML = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v || "–")}</dd>`).join("");
   }
+
+  // ---- where you are, where you're aiming ----------------------------------------------------
+  // The learner's own paragraphs with the labels derived from them. "Update" asks the same open
+  // question as setup; what is written goes to cme/prefs as {text, updated}, the next round takes
+  // it over and derives the labels again. [prefs key, element ids, name in the page file]
+  const PARAS = [["journey", "lvl", "level"], ["aim", "aim", "aim"]];
+  const fileText = (f) => { const x = page && page.settings && page.settings[f]; return (x && x.text) || ""; };
+  // saved here and not yet in the file (a file written on a later day has overtaken it)
+  const paraPending = (k, f) => { const d = prefs && prefs[k]; return !!(d && d.text && d.text !== fileText(f) && String(d.updated || "").slice(0, 10) >= String((page && page.updated) || "")); };
+  function paraStatus(id, text, cls){ const el = $(id + "-status"); el.textContent = text || ""; el.className = "mix-status" + (cls ? " " + cls : ""); }
+  function renderAbout(){
+    if (!page || !page.settings) { $("about").hidden = true; return; }
+    $("about").hidden = false;
+    $("about-lead").textContent = "Your rounds are written for what you say here, in your own words. " + (dbRef
+      ? "A change applies from your next round."
+      : "To change either, tell your assistant; this view of the page cannot save settings.");
+    PARAS.forEach(([k, id, f]) => {
+      const x = page.settings[f] || {}, pending = paraPending(k, f);
+      const labels = pending ? [] : (f === "level" ? [x.label] : (x.tags || [])).filter(Boolean);
+      $(id + "-label").innerHTML = labels.map(l => `<span class="chip">${esc(l)}</span>`).join("") + (pending ? `<span class="chip note">From your next round</span>` : "");
+      $(id + "-text").textContent = pending ? prefs[k].text : (x.text || "Not described yet.");
+      $(id + "-edit").hidden = !dbRef;
+      if (!dbRef) $(id + "-box").hidden = true;
+    });
+  }
+  let savingPara = false;
+  PARAS.forEach(([k, id, f]) => {
+    $(id + "-edit").addEventListener("click", () => {
+      const box = $(id + "-box");
+      box.hidden = !box.hidden;
+      if (!box.hidden) { $(id + "-input").value = paraPending(k, f) ? prefs[k].text : fileText(f); paraStatus(id, ""); }
+    });
+    $(id + "-save").addEventListener("click", async () => {
+      if (!dbRef || savingPara) return;
+      const text = String($(id + "-input").value || "").trim();
+      if (!text) { paraStatus(id, "Write a few sentences first.", "err"); return; }
+      savingPara = true; paraStatus(id, "Saving…");
+      const doc = Object.assign({}, prefs || {}, {[k]: {text, updated: new Date().toISOString()}});
+      try {
+        await dbRef.doc("cme/prefs").set(doc);
+        prefs = doc; $(id + "-box").hidden = true;
+        renderAbout();
+      } catch (e) {
+        paraStatus(id, "Could not save. Try again, or tell your assistant instead.", "err");
+      } finally { savingPara = false; }
+    });
+  });
 
   // ---- round mix: MCQs, focused questions, full case ----------------------------------------
   // The page cannot rewrite the ledger; it stores the learner's choice in cme/prefs with the
@@ -604,7 +685,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     const m = readMix();
     if (!m.mcqs && !m.focused && !m.case) return;
     saving = true; $("mix-save").disabled = true; status("Saving…");
-    const doc = {round: m, base: baseOf(), updated: new Date().toISOString()};
+    const doc = Object.assign({}, prefs || {}, {round: m, base: baseOf(), updated: new Date().toISOString()});
     try {
       await dbRef.doc("cme/prefs").set(doc);
       prefs = doc; saved = m;
@@ -625,7 +706,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
         prefs = snap && snap.exists ? snap.data() : null;
       }
     } catch (e) { prefs = null; }
-    initMix(); renderSettings();
+    initMix(); renderSettings(); renderAbout();
   }
 
   // ---- loading -------------------------------------------------------------------------------
@@ -659,7 +740,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     let ok = false;
     try { ok = await loadFiles(); } catch (e) { ok = false; }
     if (!ok) { page = null; $("s-list").innerHTML = `<div class="empty">No ledger yet. Say “set up clinical CME” in a chat with your assistant to create it.</div>`; }
-    renderTiles(); renderProgress(); renderSettings();
+    renderTiles(); renderProgress(); renderSettings(); renderAbout();
     if (ok) renderList();
     renderReviews();
     loadPrefs();

@@ -33,7 +33,7 @@ the conversation, and the keys must be good enough for another clinician to grad
 4. The plan (JSON). It gives, per item: slot (`mcq`, `focused`, `case`), topic and blueprint
    ID, the reason it was chosen, any open gap to re-test, `aspect_hint` for focused items, a
    `drill` if one applies, `separation` notes, and `already_used` stems and cases; and for the
-   round: `case_format`, units, `guideline_region`, `specialty`, `feedback_depth`, the learner's profile,
+   round: `case_format`, units, `guideline_region`, `specialty`, `feedback_depth`, the learner's profile (their own two paragraphs: rule 4),
    `recent_cases_any_topic`, `listening` and `podcast_sources`.
 
 Planning notes:
@@ -45,7 +45,9 @@ Planning notes:
   from the case and from the others, so that none cues another. An item with `reason_code`
   `revisit` is a theme topic tested before and not yet due: write it on another decision point
   of the topic than the stems in `already_used`. The theme stays out of the items (rule 1.1).
-- The plan's `guideline_region`, `specialty`, units and profile are applied as rules 2–4 say.
+- The plan's `guideline_region`, `specialty`, units and profile are applied as rules 2–4 say:
+  the pitch of every item, and the background, evidence depth and sources its kit holds, come
+  from the profile's paragraphs by rule 4.
 - An item with `retest_gap` in the plan re-tests that gap: the same decision point in a new
   clinical context (transfer). Write `retests: <retest_gap.id>` in that item's key header
   (rule 9), as the plan's `how` line says; without it a good answer cannot close the gap.
