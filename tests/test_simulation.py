@@ -223,7 +223,14 @@ class Script:
         first = json.loads(lines[0]); first["ts"] = self.clock
         with open(os.path.join(self.run, "transcript.jsonl"), "w") as fh:
             fh.write(json.dumps(first) + "\n")
-        self.put("sealed_questions.md", SEALED_QUESTIONS)
+        questions = SEALED_QUESTIONS
+        if "abbreviation_in_stem" in self.faults:
+            questions = questions.replace("is tired.", "is tired; her ALT is raised, her ECG and her "
+                                          "thyroid-stimulating hormone (TSH) are normal.")
+        if "mixed_anchors_in_question" in self.faults:
+            questions = questions.replace("has the worst headache of his life.", "has had the worst headache of "
+                                          "his life since this morning, on day 3 of an admission.")
+        self.put("sealed_questions.md", questions)
         self.put("sealed_case.md", SEALED_CASE)
         # turn 1: questions out
         opening = "Today's round: two questions, then one case."
@@ -243,6 +250,11 @@ class Script:
         fbq = FEEDBACK_Q
         if "leak_diagnosis" in self.faults:
             fbq = fbq.replace("The case follows.", "The case follows (it is fictitious  secretitis).")
+        if "feedback_abbreviations" in self.faults:
+            fbq = fbq.replace("Q2: image first.", "Q2 (NEURO-04): image first with CT, then LP if it is negative, as ESC advises.")
+        if "feedback_glossary" in self.faults:
+            fbq = fbq.replace("Feedback on the questions\n", "Feedback on the questions\n\n"
+                              "**Abbreviations:** LP lumbar puncture\n")
         self.send("examiner", fbq, 30)
         self.send("examiner", cme("present", "--work", self.work, "--block", "case"), 1)
         self.answer("questions")
@@ -254,10 +266,13 @@ class Script:
         # turn 3: Stage 1 answer -> Stage 2
         self.send("learner", ANSWERS["case"], 90)
         self.turn_end("learner")
-        self.send("examiner", STAGE2, 12)
+        stage2 = STAGE2
+        if "mixed_anchors_in_stage2" in self.faults:
+            stage2 = stage2.replace("stable overnight.", "on day 2 he is worse than he was yesterday; INR 1.4.")
+        self.send("examiner", stage2, 12)
         self.answer("case", "Differential: infection, malignancy, inflammatory. Tests: special scan and a blood count."
                     if "retyped_answer" in self.faults else None)
-        self.put("stage2.md", STAGE2)          # as sent; the sealed case is not touched
+        self.put("stage2.md", stage2)          # as sent; the sealed case is not touched
         self.turn_end("examiner", 2)
         # turn 4: final answers -> feedback, first save
         self.send("learner", ANSWERS["final"], 45)
@@ -361,7 +376,7 @@ def test_clean_round_passes_every_check_and_the_report_is_written(script):
     out, rep = s.report("--examiner-model", "model-a", "--learner-model", "model-b", "--quality", "4",
                         "--quality-note", "sound")
     assert out["ok"] is True and rep["ok"] is True
-    assert out["checks"] == {"blinding": True, "saved": True, "log": True}
+    assert out["checks"] == {"blinding": True, "saved": True, "log": True, "standards": True}
     assert rep["checks"]["blinding"]["leaks"] == 0
     assert rep["checks"]["blinding"]["seal_lifted_at"] == {"questions": 3, "case": 8}
     assert rep["checks"]["saved"]["publish_set"] == ["data/sessions/S0001.json", "data/index.json",

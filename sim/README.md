@@ -71,7 +71,7 @@ starting a fresh examiner each turn.
    `why` says the round is not converging), still write the report and add `--note '<what
    happened>'`: a failed run is a result.
 8. **Tell the owner** the result in a few lines: which checks passed, the longest wait and at
-   which step, any blinding findings to review, the quality means and any concern the scorer
+   which step, any blinding or writing-standards findings to review, the quality means and any concern the scorer
    listed, and the report's path. Commit the two report
    files (never the run folder: `sim/runs/` is ignored by git).
 
@@ -85,6 +85,7 @@ If an agent returns an error or asks you a question instead of working, continue
 | **Blinding** | nothing the examiner sent before a part's answers holds that part's topic, diagnosis or key | Every examiner message sent before the learner message that completed the part's answers is searched for: the blueprint ID and label of each item of that part, the case's diagnosis and the session title, and every line of the keys and feedback notes (`sealed_*.md` outside the `present` and `bank` blocks, `kit_*.md`). A hit is a **leak**. Single significant words of a topic label and the domain's name are listed **to review** without failing the check: a stem may fairly contain a word of its topic's label, and a person has to judge it. |
 | **Every file saved** | the store holds what `cme.py` wrote, and the round in it is whole | `cme.py verify --work` compares the work folder's publish set with the store; then the ledger must hold the round with its reflection, the session document must exist and be closed, and the index must list it at the ledger's generation. |
 | **Log complete and verbatim** | the session document has every section the round's shape calls for; what it says was presented, answered and sent is word for word what was sent; every learner message is in it | Section bodies of part A and the reflection in part B are matched against the recorded messages, ignoring only runs of whitespace. |
+| **Writing standards** | every feedback message that uses abbreviations opens with the glossary line (rule 5.3 of `references/standards.md`) | The questions, the case and Stage 2 as they were sent go through the engine's own lint for rules 5 and 6 (`cme.py`'s functions, imported, so the heuristics exist once; the list of common abbreviations is the rulebook's). An abbreviation not spelled out where the session first shows it, and a question or case that counts time from two anchors, are listed **to review** without failing the check: they are heuristics, as in the lint. Each feedback message (the questions' and the final one) is searched for abbreviations the same way, blueprint IDs aside: if it uses any and "Abbreviations: …" is not among its first three lines, the check **fails**; an abbreviation it uses that the line leaves out is listed to review. |
 
 The seal on the short questions lifts with the learner message matching the
 `<!-- answers: questions -->` block of `answers.md` (written by `cme.py answer`); the seal on the case with the message matching
@@ -92,6 +93,9 @@ its last answers block (`final`, or `case` for a one-step case). If no message m
 fails as undetermined. A case the learner never answered (the round was stopped before it) stays
 sealed to the end: every examiner message of the round is searched for its topic, its diagnosis
 and its key.
+
+Rule 7 (a crux test is requested, not given) cannot be checked mechanically: the quality scorer
+is asked to look for it and lists a breach among its concerns (see Clinical-quality score).
 
 Two personas must also produce something, and their runs are checked for it. The check is named
 in the persona's file (`"expect"`) and fails the run like the others:
@@ -124,7 +128,7 @@ learner's guideline region, one defensible key, right pitch) and **each feedback
 sent (claims correct and sourced, grades fair to what the learner wrote, the deciding point
 taught): the feedback on the short questions, the final feedback, and the examiner's replies to
 a dispute when there was one. Each score has a one-line note; the scorer also lists concerns for
-a clinician to look at. Its brief is `prompts/quality.md`.
+a clinician to look at, among them any item that hands over the result of a crux test (rule 7). Its brief is `prompts/quality.md`.
 
 The scores go into the report (`quality.items[]`, `quality.feedback[]`, `quality.item_mean`,
 `quality.feedback_mean`, `quality.score` for the round overall) and nowhere else. They are kept
@@ -141,8 +145,8 @@ checks, the round's score, the quality means and the longest wait.
 
 `sim/reports/<date>-<persona>[-n].md` is for reading; the `.json` beside it has the same content
 with stable keys (`checks`, `timings.steps[].wait_s`, `quality`, …) for comparing runs. Reports
-hold check results, timings, quality scores with their one-line notes and short excerpts around
-any blinding finding; transcripts stay in the run folder, which is not committed.
+hold check results, timings, quality scores with their one-line notes, short excerpts around
+any blinding finding and the abbreviations and time phrases the standards check lists to review; transcripts stay in the run folder, which is not committed.
 `round.confident_misses` counts the items answered `sure` and wrong, which shows whether the
 weak, overconfident persona played its part.
 
