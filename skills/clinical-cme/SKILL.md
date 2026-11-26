@@ -69,7 +69,7 @@ needs judgement; the rest is in the references:
 | `references/onboarding.md` | First run, settings at setup, FAQ (§5) |
 | `references/progress_review.md` | When a review is due or requested |
 | `references/author.md`, `references/case_design.md` | Only when you write items yourself (the author's brief and how items are designed) |
-| `references/evidence_check.md` | The checker's brief; also how you check evidence yourself (§4) |
+| `references/evidence_check.md` | The checker's brief, with its retry routes (§3); also how you check evidence yourself (§5) |
 
 ## Roles: who writes, who grades, who checks
 
@@ -177,7 +177,7 @@ graded. If answers are missing, ask once; proceed if the learner says so.
 1. **In one batch**: read `<work>/sealed_questions.md`, `kit_questions.md` and
    `evidence_questions.md`, and run `cme.py present --work <work> --block case` (the
    case file itself stays unopened). No evidence file → run the questions' verification list
-   now (`evidence_check.md` §4). Add a search only for something the answers raise.
+   now (`evidence_check.md` §5). With one, search only for something the answers raise.
 2. **Grade and code** the short questions against the evidence, using the key and the kit as
    the author's view (`feedback_guide.md` §2 part 1; `analysis_framework.md` §1).
 3. **Send the questions' feedback** (reveal of these items → MCQs → focused questions; no gap
@@ -210,8 +210,8 @@ graded. If answers are missing, ask once; proceed if the learner says so.
 
 ### Turn 4. Final answers in → case feedback, first save
 
-1. **In one batch** read `sealed_case.md`, `kit_case.md` and `evidence_case.md` now (no
-   evidence file → run the case's verification list); the round is no longer sealed.
+1. **In one batch** read `sealed_case.md`, `kit_case.md` and `evidence_case.md` now (only
+   with no evidence file: run the case's verification list); the round is no longer sealed.
 2. **Grade** against current guidance for the learner's region and specialty (rule 2);
    watch for transfer gaps and calibration across the whole round; code the case (ART steps
    and Revised-IDEA; an error record for every missed or partial element).

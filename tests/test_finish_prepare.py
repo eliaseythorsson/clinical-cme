@@ -14,12 +14,20 @@ DAY = "2026-11-02"
 CLAIM = "SECRET-CLAIM about SECRET-DRUG 40 mg"
 
 
-def evidence(contradicted=0, claims=3, tail=None):
-    """An evidence file as references/evidence_check.md §3 has it."""
-    blocks = ["### %d. %s\n**Status:** confirmed\n**What the source says:** %s.\n**Source:** SECRET-SOCIETY 2025.\n"
-              "**Note:** the key is contradicted: %s.\n" % (i + 1, CLAIM, CLAIM, CLAIM) for i in range(claims)]
-    end = tail if tail is not None else "Checked: %s, %d claims, 0 not verified\nKeys contradicted: %d\n" % (
-        DAY, claims, contradicted)
+def evidence(contradicted=0, claims=3, tail=None, not_verified=0, tried=True, says=None):
+    """An evidence file as references/evidence_check.md §4 has it: the last `not_verified` of its
+    claims are not verified (with their `Tried:` line unless `tried` is false); `says` is the
+    number its `Checked:` line gives, when that is not the number of such blocks."""
+    blocks = []
+    for i in range(claims):
+        failed = i >= claims - not_verified
+        blocks.append("### %d. %s\n**Status:** %s\n**What the source says:** %s.\n**Source:** SECRET-SOCIETY 2025.\n"
+                      "%s**Note:** the key is contradicted: %s.\n"
+                      % (i + 1, CLAIM, "not verified" if failed else "confirmed", CLAIM,
+                         "**Tried:** PMC (browser check); PubMed abstract (no figure); SECRET-ROUTE\n"
+                         if failed and tried else "", CLAIM))
+    end = tail if tail is not None else "Checked: %s, %d claims, %d not verified\nKeys contradicted: %d\n" % (
+        DAY, claims, not_verified if says is None else says, contradicted)
     return "\n".join(blocks) + "\n" + end
 
 
@@ -133,6 +141,138 @@ def test_an_empty_or_unfinished_evidence_file_is_reported(nxt):
     assert "evidence_questions.md is empty" in out["error"]
     assert "evidence_case.md has no `Keys contradicted: <n>` line" in out["error"]
     assert not nxt.stashed()
+
+
+# ---------------------------------------------------------------- claims not verified (issue #44)
+
+def test_not_verified_counts_are_reported_per_file(nxt):
+    nxt.write(os.path.join("next", "evidence_questions.md"), evidence(claims=5, not_verified=1))
+    nxt.write(os.path.join("next", "evidence_case.md"), evidence(claims=6, not_verified=2))
+    _, out = nxt.finish()
+    assert out["not_verified"] == {"evidence_questions.md": {"claims": 5, "not_verified": 1, "untried": 0},
+                                   "evidence_case.md": {"claims": 6, "not_verified": 2, "untried": 0}}
+    assert out["not_verified_total"] == 3 and out["claims_total"] == 11
+    # a third or less of a file's claims: kept as it is, nothing to do
+    assert out["recheck"] == [] and out["revise"] is False and out["stashed"] is True
+    assert not any("retry" in w for w in out.get("warnings", []))
+
+
+def test_more_than_a_third_not_verified_goes_back_to_the_checker_once_then_is_accepted_with_a_warning(nxt):
+    """The S0037 baseline: 4 of 5 and 6 of 6."""
+    nxt.write(os.path.join("next", "evidence_questions.md"), evidence(claims=5, not_verified=4))
+    nxt.write(os.path.join("next", "evidence_case.md"), evidence(claims=6, not_verified=6))
+    r, out = nxt.finish()
+    assert out["ok"] and out["stashed"] is False and not nxt.stashed()
+    assert out["recheck"] == ["evidence_questions.md", "evidence_case.md"] and out["revise"] is False
+    assert out["not_verified_total"] == 10 and out["claims_total"] == 11
+    assert "checker" in out["next"] and "evidence_case.md" in out["next"] and "--revised" in out["next"]
+    assert out["next"].index("checker") < out["next"].index("author")
+    # the retry reached the case's sources; the questions' are still above the threshold
+    nxt.write(os.path.join("next", "evidence_case.md"), evidence(claims=6, not_verified=1))
+    r, out = nxt.finish("--revised")
+    assert out["stashed"] is True and nxt.stashed() and out["revised"] is True
+    assert out["recheck"] == [] and out["revise"] is False and "next" not in out
+    assert out["not_verified"]["evidence_questions.md"]["not_verified"] == 4
+    retry = [w for w in out["warnings"] if w.startswith("accepted after one retry")]
+    assert len(retry) == 1 and "evidence_questions.md: 4 of 5 claims not verified" in retry[0]
+    assert "SECRET" not in r.stdout + r.stderr
+    assert set(nxt.payload()["files"]) == set(cme.PREPARED_FILES)
+
+
+def test_only_the_file_above_the_threshold_is_rechecked(nxt):
+    nxt.write(os.path.join("next", "evidence_questions.md"), evidence(claims=3, not_verified=1))
+    nxt.write(os.path.join("next", "evidence_case.md"), evidence(claims=5, not_verified=2))
+    _, out = nxt.finish()
+    assert out["recheck"] == ["evidence_case.md"] and out["stashed"] is False
+
+
+def test_a_retry_and_a_contradicted_key_are_one_pass(nxt):
+    nxt.write(os.path.join("next", "evidence_questions.md"), evidence(contradicted=1, claims=4, not_verified=2))
+    nxt.check(questions=None)
+    _, out = nxt.finish()
+    assert out["recheck"] == ["evidence_questions.md"] and out["revise"] is True and out["stashed"] is False
+    _, out = nxt.finish("--revised")
+    assert out["stashed"] is True and out["contradicted"] == 1
+
+
+def test_a_claim_given_up_without_another_route_goes_back_whatever_the_share(nxt):
+    nxt.write(os.path.join("next", "evidence_case.md"), evidence(claims=6, not_verified=1, tried=False))
+    _, out = nxt.check(case=None).finish()
+    assert out["not_verified"]["evidence_case.md"] == {"claims": 6, "not_verified": 1, "untried": 1}
+    assert out["recheck"] == ["evidence_case.md"] and out["stashed"] is False
+    _, out = nxt.finish("--revised")
+    assert out["stashed"] is True
+    assert any("1 of 6 claims not verified, 1 without a `Tried:` line" in w for w in out["warnings"])
+
+
+def test_a_count_line_that_undercounts_its_blocks_is_not_believed(nxt):
+    nxt.write(os.path.join("next", "evidence_case.md"), evidence(claims=6, not_verified=4, says=0))
+    _, out = nxt.check(case=None).finish()
+    assert out["not_verified"]["evidence_case.md"]["not_verified"] == 4 and out["recheck"] == ["evidence_case.md"]
+
+
+@pytest.mark.parametrize("line", [
+    "",                                             # no line at all
+    "Checked: 2026-11-02",                          # no counts
+    "Checked: 2026-11-02, all claims, none not verified",
+    "Checked: 2026-11-02, 3 claims",
+    "Checked: 2026-11-02, 3 claims, <n> not verified",
+    "Checked: 2026-11-02, 3 claims, 4 not verified",    # more than there are
+    "Checked: 2026-11-02, 0 claims, 0 not verified",    # nothing was checked
+    "Checked 2026-11-02, 3 claims, 0 not verified",
+])
+def test_a_missing_or_unreadable_checked_line_stops_it(nxt, line):
+    nxt.check()
+    nxt.write(os.path.join("next", "evidence_case.md"), evidence(tail=line + "\nKeys contradicted: 0\n"))
+    for extra in ((), ("--revised",)):
+        r, out = nxt.finish(*extra, ok=False)
+        assert r.returncode != 0 and out["ok"] is False and not nxt.stashed()
+        assert "evidence_case.md has no readable `Checked: <date>, <n> claims, <n> not verified` line" in out["error"]
+        assert "evidence_questions.md" not in out["error"] and "Nothing was stashed" in out["error"]
+        assert "SECRET" not in r.stdout + r.stderr
+    # without a checker the files are not read at all
+    _, out = nxt.finish("--no-evidence")
+    assert out["stashed"] is True and out["evidence"] == "not checked"
+    assert "not_verified" not in out and "recheck" not in out
+
+
+@pytest.mark.parametrize("line, counts", [
+    ("Checked: 2026-11-02, 5 claims, 2 not verified", (5, 2)),
+    ("Checked: 2026-11-02, 1 claim, 0 not verified", (1, 0)),
+    ("**Checked:** 2 November 2026, 6 claims, 6 not verified", (6, 6)),
+    ("checked: Nov 2, 2026, 4 claims, 1 not verified.", (4, 1)),
+    ("`Checked: 2026-11-02,  3 claims,  0 not verified`", (3, 0)),
+    ("Checked: <date>, <n> claims, <n> not verified", None),
+    ("Not checked: 2026-11-02, 3 claims, 0 not verified", None),
+    ("Checked: 2026-11-02, 3 claims, 0 not verified (two more pending)", None),
+])
+def test_reading_the_checked_line(line, counts):
+    found = cme.checked_counts("### 1. claim\n**Status:** confirmed\n\n%s\nKeys contradicted: 0\n" % line)
+    assert (found and (found["claims"], found["not_verified"])) == counts
+
+
+def test_a_file_written_twice_counts_its_last_check():
+    first = evidence(claims=4, not_verified=3, tried=False)
+    again = evidence(claims=4, not_verified=1)
+    assert cme.checked_counts(first + "\n" + again) == {"claims": 4, "not_verified": 1, "untried": 0}
+
+
+@pytest.mark.parametrize("claims, not_verified, back", [
+    (3, 1, False), (6, 2, False), (5, 1, False), (5, 2, True), (4, 2, True), (6, 3, True), (1, 1, True), (3, 0, False),
+])
+def test_the_threshold_is_more_than_a_third(claims, not_verified, back):
+    assert cme.needs_recheck({"claims": claims, "not_verified": not_verified, "untried": 0}) is back
+
+
+def test_the_checker_brief_requires_other_routes_before_not_verified():
+    """The acceptance criterion of issue #44 that is about the brief."""
+    with open(os.path.join(os.path.dirname(cme.__file__), "..", "references", "evidence_check.md"),
+              encoding="utf-8") as fh:
+        brief = fh.read()
+    for route in ("pubmed.ncbi.nlm.nih.gov", "europepmc.org", "HAL", "doi.org", "medicines.org.uk", "EMA", "DailyMed"):
+        assert route in brief, route
+    assert "**Tried:**" in brief and "not reached" in brief and "browser check" in brief
+    assert "Checked: <date>, <n> claims, <n> not verified\nKeys contradicted: <n>" in brief
 
 
 def test_contradicted_keys_are_counted_and_the_author_must_revise(nxt):

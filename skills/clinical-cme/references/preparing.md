@@ -17,7 +17,10 @@ Contents: 1. What is made ready, and when · 2. After the close · 3. Prepare on
 - **Evidence is never looked up while the learner waits.** Searches would show the topic, so
   the examiner may run them only after a part's answers are in. Checkers run them out of the
   conversation instead: when the round is prepared, or, for a round that was not, from the
-  first minute of the session.
+  first minute of the session. A claim the checker's first pass did not reach is retried by
+  other routes as part of preparation (`evidence_check.md` §3; step 4 below), so that the
+  session is left with no list to run: at grading the examiner searches only for what the
+  answers raise (`feedback_guide.md` §1).
 - **The next round is sealed from the start.** With an author you never see it: do not read
   the plan, the sealed files, the kits or the evidence files in `<work>/next`.
 - Quality of the items and completeness of the check are fixed; only the learner's waiting is
@@ -43,21 +46,29 @@ review is saved"); the same commands then plan from the ledger the review wrote.
    the answers.
 4. **Finish**: `python3 cme.py finish-prepare --work <work>` (add `--no-evidence` when step 3
    was skipped). It lints the round against the rulebook (`standards.md`, "The lint"), reads
-   the checkers' counts, prints counts and the names of files, keys, fields and kit sections
+   the checkers' counts (keys contradicted; claims and claims not verified, per file under
+   `not_verified`), prints counts and the names of files, keys, fields and kit sections
    only, and, when the round is clean, packs it and adds `data/prepared.json` to the publish
    set:
    - `"stashed": true` → publish its `files` (`store.md` §4). `warnings` that begin "accepted
-     after one revision" need nothing done.
-   - `"revise": true` (a key is contradicted, or the lint made a judgement call; nothing
-     stashed yet) → start the author once more with Parts `revise`, wait, then run the
-     command again with `--revised`, which stashes whatever the lint still finds, and publish.
-     Never open `<work>/next/lint.md`: it names content.
+     after one revision" or "accepted after one retry" need nothing done.
+   - `"recheck"` lists evidence files, or `"revise": true` (nothing stashed yet; its `next`
+     line says the same) → one pass back, in this order, then the command again with
+     `--revised`, which stashes whatever is still found, and publish:
+     1. for each file in `recheck` (more than a third of its claims not verified, or a claim
+        given up with no other route tried), start its checker once more with the same prompt,
+        together, and wait: it retries only those claims, by other routes;
+     2. start the author once more with Parts `revise` and wait: it corrects a contradicted
+        key and what the lint named, and carries what the retry confirmed into the kits.
+
+     One pass only, never a second retry. Never open `<work>/next/lint.md`: it names content.
    - an error naming key headers or kits (the lint's blocking problems; nothing stashed) →
      start the author once more with Parts `headers` and the error's list of problems in its
      prompt (it names no content), wait, then run the command again. Without an author,
      correct them yourself (rules 8 and 9).
-   - an error naming an evidence file (missing, empty or unfinished) → start the checker for
-     that file once more and run the command again; never pass `--no-evidence` to get past it.
+   - an error naming an evidence file (missing, empty, or without its `Checked:` or `Keys
+     contradicted:` line) → start the checker for that file once more and run the command
+     again; never pass `--no-evidence` to get past it.
 
 Say nothing about any of it. If anything here still fails, leave it: the next session writes or
 checks what is missing (SKILL.md, turn 1). With `testing` true, run the store check last of all
@@ -119,4 +130,4 @@ learner answers. If `prepared.ready` lists some files, only what is missing is w
   (`author.md` §3; `standards.md` rule 8), the case first.
 - **Evidence**: a checker is started in the background for every sealed file without an
   evidence file. Without helpers, the examiner runs each part's verification list only after
-  that part's answers are in (`evidence_check.md` §4).
+  that part's answers are in (`evidence_check.md` §5).
