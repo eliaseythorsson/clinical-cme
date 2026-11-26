@@ -74,7 +74,11 @@ The learner's own view of their store: past sessions, scores, progress reviews, 
 _Avoid_: dashboard
 
 **Gap**:
-A specific point the learner got wrong or flagged as shaky, linked to a blueprint topic, open until an item tests that point and it is answered well.
+A specific point the learner got wrong or flagged as shaky, linked to a blueprint topic, open until an item tests that point and it is answered well, or until the learner closes it themselves.
+
+**Learner-set score**:
+A score the learner asks to have recorded in place of the examiner's ("record it as 4"). The record keeps both; scheduling uses the learner's. Not a dispute: the grading did not change.
+_Avoid_: override (fine for the command), dispute
 
 **Retest**:
 An item written on an open gap's decision point, in a new clinical context; it names the gap, and only a retest answered well closes it.

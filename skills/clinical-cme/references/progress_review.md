@@ -49,10 +49,17 @@ If some of the period's older sessions have no transcript (only scores, gaps and
 - Items: cases, focused questions (mean score) and MCQs (accuracy), from `stats` `items`.
 - Coverage: domains practised with mean latest score; blueprint domains not yet touched.
 - **What you learned**: gaps resolved in the period, one plain line each, plus key learning
-  points. The most useful part; keep it concrete.
+  points. The most useful part; keep it concrete. `gaps_resolved` holds only gaps closed by a
+  retest; those the learner closed are in `gaps_closed_by_learner` and are not "learned".
 - Still open: persisting gaps, grouped by domain, shortest description each.
 - Calibration: how often comfort matched performance; confident-but-low and good-but-unsure topics.
 - Trend: topics that clearly improved or declined.
+- Set by you: scores the learner set themselves and gaps they closed by request
+  (`analysis.period.learner_overrides`: `scores`, `mean_change`, `gaps_closed`), one neutral
+  line, only when there are any ("You set 2 scores yourself, on average 1.5 above my grading,
+  and closed 1 gap without a retest"). Counted apart from disputes (`grade_disputes`): a
+  dispute changed the grading, these did not. The mean score includes the learner's scores;
+  calibration uses the grading.
 - With the deep analysis: its three-line headline, the reasoning-step profile in one line, the
   number of critical errors.
 

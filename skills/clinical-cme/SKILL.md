@@ -235,6 +235,7 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    shaky areas, reading minutes. Turn each shaky area into a precise gap linked to a blueprint
    ID (`self_gaps`). A disputed grade is resolved first (`feedback_guide.md` §7; never defend
    a grade by repeating it), with the outcome in `grade_changes`. "skip" → `{"skipped": true}`.
+   "Record it as 4" or "close that gap" is the learner's call, not a dispute: §7.1 there.
 2. **In one batch**: `cme.py answer --work <work> --part reflection`; write
    `<work>/reflection.json` (`state_schema.md` §3) and `<work>/B.md` (discussion verbatim,
    grade changes, coded analysis, errata from `errata_to_log`; `session_log.md` §3). Then

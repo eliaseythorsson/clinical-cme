@@ -42,6 +42,9 @@ A job (one work folder):
                                                   is an error), pack the round as data/prepared.json
   keys    DIR|SEALED.. [--plan PLAN]              the author's check of key headers (no content printed)
   addendum --work W --md ADD.md [--session ID]    append to a session document (default: the last session)
+  override --work W [--scores J] [--close-gaps J] [--session ID]
+                                                  after the close: a score the learner sets themselves, a gap
+                                                  closed at the learner's request (before it: reflection JSON)
   verify  --work W --store CHECK_DIR              testing mode: the publish set against a fresh re-read
   testing-note --work W --feedback J              testing mode: the learner's feedback + the store check
 
@@ -140,6 +143,11 @@ BIASES = ("anchoring", "premature_closure", "confirmation", "availability", "bas
           "representativeness", "search_satisficing", "framing", "overconfidence", "omission",
           "commission", "unpacking_failure")
 DRILL_RESULTS = ("avoided", "partial", "fell_for")
+DISPUTE_OUTCOMES = ("learner_right", "both_defensible", "upheld")
+# A score the learner set themselves ("record it as 4") is not a dispute: the examiner did not
+# change its grading. `learner_override` is what rounds recorded by hand before 5.0 used.
+LEARNER_SET = "learner_set"
+LEARNER_SET_OUTCOMES = (LEARNER_SET, "learner_override")
 ITEM_TYPES = ("case", "essay", "mcq", "focused")      # "essay" = the name older ledgers use for a case
 FOCUSED_ASPECTS = ("diagnosis", "interpretation", "testing", "management", "disposition",
                    "prevention", "prognosis")
@@ -369,8 +377,14 @@ def empty_agg():
                        "bias": {}},
             "calibration": {k: [0, 0.0] for k in CONF_PROB}, "brier": [0.0, 0],
             "drills": {k: 0 for k in DRILL_RESULTS},
-            "disputes": {"learner_right": 0, "both_defensible": 0, "upheld": 0},
+            "disputes": {k: 0 for k in DISPUTE_OUTCOMES},
+            "overrides": {"scores": 0, "gaps": 0},
             "reflection_skipped": 0}
+
+
+def agg_overrides(agg):
+    """The all-time counters of what the learner set themselves (ledgers before 5.0 have none)."""
+    return agg.setdefault("overrides", {"scores": 0, "gaps": 0})
 
 
 # ---------------------------------------------------------------- blueprint
@@ -488,6 +502,9 @@ def adjusted_item_mastery(item):
     conf = (item.get("confidence") or "").lower() or None
     correct = item.get("correct")
     misconception = False
+    if item.get("set_by") == "learner":
+        # the learner's own score is taken as given: no confidence rule is laid over it
+        return m, False
     if item.get("type") == "mcq":
         if correct is True and conf == "guess":
             m = min(m, 3.0)
@@ -501,7 +518,9 @@ def adjusted_item_mastery(item):
 def item_outcome(it):
     if it.get("type") == "mcq":
         return None if it.get("correct") is None else (1.0 if it.get("correct") else 0.0)
-    m = it.get("mastery")
+    # calibration compares the confidence with what the examiner graded, also where the learner
+    # set the recorded score
+    m = it.get("graded") if it.get("set_by") == "learner" and it.get("graded") is not None else it.get("mastery")
     return None if m is None else max(0.0, min(1.0, float(m) / 5.0))
 
 
@@ -1381,6 +1400,8 @@ def compact_item(it):
            "mastery": it.get("mastery"), "confidence": it.get("confidence")}
     if typ == "mcq":
         out["correct"] = it.get("correct")
+    if it.get("set_by") == "learner":      # `mastery` is the learner's score, `graded` the examiner's
+        out["graded"], out["set_by"] = it.get("graded"), "learner"
     if typ == "focused" and it.get("aspect"):
         out["aspect"] = it["aspect"]
     if it.get("retests"):
@@ -1454,6 +1475,8 @@ def agg_add_session(agg, s):
     for g in s.get("grade_changes") or []:
         if g.get("outcome") in agg["disputes"]:
             agg["disputes"][g["outcome"]] += 1
+        elif g.get("outcome") in LEARNER_SET_OUTCOMES:
+            agg_overrides(agg)["scores"] += 1
     if (s.get("reflection") or {}).get("skipped"):
         agg["reflection_skipped"] += 1
 
@@ -1489,6 +1512,7 @@ def apply_round(state, rnd, today, theme=None):
     self_gap_topics = {g["topic"] for g in gaps_in if g.get("source") == "self"}
 
     summary = {}
+    steps_before = {}       # each topic's step before this round: `override` reschedules from it
     number_gaps(state)
     gap_index = {g.get("topic"): g for g in state["gaps"]}
     for it in rnd["items"]:
@@ -1501,6 +1525,7 @@ def apply_round(state, rnd, today, theme=None):
         adj = [adjusted_item_mastery(i) for i in items]
         mastery = round_half(sum(m for m, _ in adj) / len(adj))
         misconception = any(mc for _, mc in adj)
+        steps_before[tid] = int(t.get("step") or 0)
         comfort = comfort_map.get(tid)
         try:
             comfort = None if comfort is None else max(1, min(5, int(round(float(comfort)))))
@@ -1648,6 +1673,7 @@ def apply_round(state, rnd, today, theme=None):
                  if rnd["case"].get(k)} if rnd.get("case") and has_case else None,
         "grade_changes": rnd.get("grade_changes") or [],
         "drill": rnd.get("drill"),
+        "steps_before": steps_before,
     }
     if entry["case"] is not None:
         entry["case"]["topic"] = next((it["topic"] for it in rnd["items"] if is_case(it)), None)
@@ -1721,6 +1747,8 @@ def to_previous(sess):
               "confidence": it.get("confidence")}
         if it.get("type") == "mcq":
             ci["correct"] = it.get("correct")
+        if it.get("set_by") == "learner":
+            ci["graded"], ci["set_by"] = it.get("graded"), "learner"
         if it.get("type") == "focused" and it.get("aspect"):
             ci["aspect"] = it["aspect"]
         cc = {}
@@ -1736,7 +1764,8 @@ def to_previous(sess):
            "topics": sess.get("topics"), "score": sess.get("score"), "minutes": sess.get("minutes"),
            "mcqs": sess.get("mcqs"), "mcq_correct": sess.get("mcq_correct"), "focused": sess.get("focused") or 0,
            "format": sess.get("format"), "items": items,
-           "drill": sess.get("drill"), "grade_changes": [{"outcome": g.get("outcome")} for g in sess.get("grade_changes") or []],
+           "drill": sess.get("drill"), "grade_changes": [{k: g.get(k) for k in ("outcome", "from", "to") if g.get(k) is not None}
+                             for g in sess.get("grade_changes") or []],
            "reflection": {"skipped": bool((sess.get("reflection") or {}).get("skipped"))}}
     if sess.get("case"):
         out["case"] = {k: sess["case"].get(k) for k in ("topic", "presentation", "diagnosis") if sess["case"].get(k)}
@@ -1744,6 +1773,8 @@ def to_previous(sess):
         out["url"] = sess["url"]
     if sess.get("block"):
         out["block"] = sess["block"]
+    if sess.get("learner_closed_gaps"):
+        out["learner_closed_gaps"] = sess["learner_closed_gaps"]
     return out
 
 
@@ -1809,16 +1840,204 @@ def reflect_round(st, refl, today, session=None):
             it = by.get((ch.get("type"), ch.get("topic")))
             if it:
                 it.update({k: v for k, v in ch.items() if k not in ("type", "topic")})
+    # what the learner set themselves: after any dispute, so `graded` is the examiner's last word
+    rdate = iso(parse_date(rnd.get("date")) or today)
+    changes = []
+    for req in refl.get("learner_scores") or []:
+        ch = learner_score(find_item(rnd["items"], req, sid), req, rdate)
+        rnd["grade_changes"] = list(rnd.get("grade_changes") or []) + [ch.pop("grade_change")]
+        changes.append(ch)
     entry, summary, warnings, errata_ids = apply_round(st, rnd, today, (sess.get("block") or {}).get("theme"))
     if sess.get("block"):
         entry["block"] = sess["block"]
+    for req in refl.get("learner_closed_gaps") or []:      # after the round: a gap it opened can be closed too
+        ch = learner_close_gap(st, req, rdate, entry)
+        summary.setdefault(ch["topic"], {})["gap_closed_by_learner"] = True
+        changes.append(ch)
     st["unreflected"] = None
     compact(st)
     st["gen"] = int(st.get("gen") or 0) + 1
-    return {"gen": st["gen"], "session_id": entry["id"],
-            "topics": summary, "open_gaps": len(st["gaps"]), "errata_ids": errata_ids,
-            "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
-            "warnings": warnings}
+    out = {"gen": st["gen"], "session_id": entry["id"],
+           "topics": summary, "open_gaps": len(st["gaps"]), "errata_ids": errata_ids,
+           "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
+           "warnings": warnings}
+    if changes:
+        out["learner_changes"] = changes
+    return out
+
+
+# ---------------------------------------------------------------- what the learner sets themselves
+
+def find_item(items, req, sid):
+    """The item of a round a learner-set score names: by topic, and by type where the round has
+    more than one item on that topic."""
+    if not isinstance(req, dict) or not req.get("topic"):
+        die("a learner-set score needs 'topic' (and 'type' when the round has two items on it) and 'score'")
+    typ = "case" if req.get("type") == "essay" else req.get("type")
+    hits = [i for i in items if i.get("topic") == req["topic"]
+            and (not typ or ("case" if is_case(i) else i.get("type")) == typ)]
+    if len(hits) != 1:
+        die("learner-set score: %s in round %s (items: %s)"
+            % ("no item %s%s" % (typ + " " if typ else "", req["topic"]) if not hits
+               else "%d items on %s, name the 'type'" % (len(hits), req["topic"]), sid,
+               ", ".join("%s %s" % (i.get("type"), i.get("topic")) for i in items)))
+    return hits[0]
+
+
+def learner_score(it, req, date):
+    """Set the score of item `it` to the learner's own. `mastery` becomes the learner's score
+    (the one scheduling uses), `graded` keeps the examiner's, `set_by` says whose `mastery` is.
+    Returns the change for the log, with the `grade_change` entry for the ledger."""
+    try:
+        score = float(req.get("score"))
+    except (TypeError, ValueError):
+        score = -1.0
+    if not 0 <= score <= 5:
+        die("learner-set score for %s: 'score' must be a number from 0 to 5" % req.get("topic"))
+    score = int(score) if score == int(score) else score
+    graded = it.get("graded") if it.get("set_by") == "learner" else it.get("mastery")
+    it.update({"mastery": score, "graded": graded, "set_by": "learner"})
+    label = req.get("item") or "%s %s" % ("case" if is_case(it) else it.get("type"), it.get("topic"))
+    note = clip(req.get("note"), 200)
+    gc = {"item": label, "topic": it.get("topic"), "from": graded, "to": score, "outcome": LEARNER_SET,
+          "examiner": graded, "learner": score, "date": date}
+    if note:
+        gc["note"] = note
+    return {"kind": "score", "item": label, "topic": it.get("topic"), "examiner": graded, "learner": score,
+            "set_by": "learner", "date": date, "note": note, "grade_change": gc}
+
+
+def learner_close_gap(st, req, date, sess=None, sid=None):
+    """Close an open gap because the learner asked: it moves to `resolved` marked
+    `closed_by: learner`, and no retest follows (the topic keeps the due date its score gave
+    it). `req` names the gap by id or by topic. Returns the change for the log."""
+    if isinstance(req, str):
+        req = {"gap": req}
+    ref = (req or {}).get("gap") or (req or {}).get("id") or (req or {}).get("topic")
+    g = next((x for x in st["gaps"] if ref and ref in (x.get("id"), x.get("topic"))), None)
+    if not g:
+        die("no open gap %s to close (open: %s)"
+            % (ref, ", ".join("%s %s" % (x.get("id"), x.get("topic")) for x in st["gaps"]) or "none"))
+    st["gaps"].remove(g)
+    note = clip(req.get("note"), 200)
+    sid = (sess or {}).get("id") or sid
+    st["resolved"].append({"id": g.get("id"), "topic": g.get("topic"), "note": clip(g.get("gap"), 200),
+                           "opened": g.get("opened") or g.get("date"), "resolved": date, "partial": False,
+                           "closed_by": "learner", "learner_note": note, "session": sid})
+    agg_overrides(st["agg"])["gaps"] += 1
+    if sess is not None:
+        sess.setdefault("learner_closed_gaps", []).append({"id": g.get("id"), "topic": g.get("topic")})
+    return {"kind": "gap", "gap": g.get("id"), "topic": g.get("topic"), "text": clip(g.get("gap"), 200),
+            "closed_by": "learner", "date": date, "note": note}
+
+
+def reschedule_topic(st, sess, tid):
+    """After a score of the closed round `sess` changed: schedule topic `tid` again from that
+    round, as `close` would have with the new score. Returns the topic's new line for the
+    report, or None when the topic has been tested again since (its schedule is then left as
+    that later round set it)."""
+    t = st["topics"].get(tid)
+    hist = (t or {}).get("history") or []
+    if not t or t.get("last") != sess.get("date") or not hist or hist[-1][0] != sess.get("date"):
+        return None
+    adj = [adjusted_item_mastery(i) for i in sess.get("items") or [] if i.get("topic") == tid]
+    mastery = round_half(sum(m for m, _ in adj) / len(adj))
+    misconception = any(mc for _, mc in adj)
+    intervals = [int(x) for x in st["config"].get("intervals_days") or DEFAULT_CONFIG["intervals_days"]]
+    comfort = hist[-1][2]
+    before = (sess.get("steps_before") or {}).get(tid)
+    self_gap = any(g.get("topic") == tid and "self" in (g.get("source") or []) for g in st["gaps"])
+    step, due, calibration, interval = schedule_topic(t.get("step") if before is None else before, mastery, comfort,
+                                                      misconception, self_gap, intervals, parse_date(sess["date"]))
+    t.update({"mastery": mastery, "step": step, "due": iso(due), "calibration": calibration})
+    hist[-1] = [sess["date"], mastery, comfort, calibration]
+    return {"mastery": mastery, "step": step, "due": iso(due), "interval_days": interval, "calibration": calibration}
+
+
+def learner_changes_md(changes, heading):
+    """The learner's own changes as they are written into the session document."""
+    lines = []
+    for c in changes:
+        if c["kind"] == "score":
+            line = ("- %s (%s): the examiner's score %s, the learner's score %s. Recorded and scheduled with "
+                    "the learner's score, at the learner's request."
+                    % (c["item"], c["topic"], c["examiner"], c["learner"]))
+        else:
+            line = ("- Gap %s (%s) closed by the learner, not by a retest: %s"
+                    % (c["gap"], c["topic"], c.get("text") or ""))
+        lines.append(line + (" Learner's note: %s" % c["note"] if c.get("note") else ""))
+    return "%s\n\n%s\n" % (heading, "\n".join(lines))
+
+
+def cmd_override(args):
+    """After the close: the learner sets a score of a closed round themselves (--scores) or
+    closes a gap by request (--close-gaps). The ledger, the session document (its
+    `learner_changes` and a line in the addendum) and the index go into the publish set.
+    Before the close both belong in the reflection JSON (`learner_scores`,
+    `learner_closed_gaps`), which `close` handles the same way."""
+    today = today_from(args)
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
+    scores = (load_json_arg(args.scores) if args.scores else None) or []
+    closes = (load_json_arg(args.close_gaps) if args.close_gaps else None) or []
+    scores, closes = ([x] if isinstance(x, (dict, str)) else list(x) for x in (scores, closes))
+    if not scores and not closes:
+        die("override needs --scores '[{\"topic\": …, \"score\": N}]' or --close-gaps '[{\"gap\": \"G0007\"}]'")
+    if st.get("unreflected"):
+        die("round %s is not closed yet: put `learner_scores` and `learner_closed_gaps` in its reflection "
+            "JSON and run close (`{\"skipped\": true}` with them when there is no reflection)" % st["unreflected"])
+    sid = job_session(work, info, st, args.session)
+    sess = next((x for x in st["sessions"] if x.get("id") == sid), None)
+    if not sess and scores:
+        die("round %s is %s: its scores can no longer be changed (a note can still be added with addendum)"
+            % (sid, "from before the last progress review" if has_session(st, sid) else "not in the ledger"))
+    doc_path = store_file(work, info, session_path(sid))
+    if not doc_path:
+        die("the session file of %s was not found: read %s from the store into the store copy "
+            "(%s) first" % (sid, session_path(sid), info.get("store")))
+    doc = load_json(doc_path)
+    changes, topics, warnings = [], {}, []
+    for req in scores:
+        it = find_item(sess["items"], req, sid)
+        old = adjusted_item_mastery(it)[0]
+        ch = learner_score(it, req, iso(today))
+        sess["grade_changes"] = list(sess.get("grade_changes") or []) + [ch.pop("grade_change")]
+        agg_overrides(st["agg"])["scores"] += 1
+        if it.get("type") == "focused":
+            st["agg"]["focused_mastery_sum"] = st["agg"].get("focused_mastery_sum", 0.0) + float(it["mastery"]) - float(old)
+        changes.append(ch)
+        line = reschedule_topic(st, sess, it["topic"])
+        if line:
+            topics[it["topic"]] = line
+        else:
+            warnings.append("%s has been tested again since %s: the score is recorded, its schedule is "
+                            "left as the later round set it" % (it["topic"], sid))
+    if scores:
+        all_m = [adjusted_item_mastery(i)[0] for i in sess["items"]]
+        new = round(sum(all_m) / len(all_m), 2)
+        if isinstance(sess.get("score"), (int, float)):
+            st["agg"]["score_sum"] += new - float(sess["score"])
+        sess["score"] = doc["score"] = new
+    for req in closes:
+        ch = learner_close_gap(st, req, iso(today), sess, sid)
+        topics.setdefault(ch["topic"], {})["gap_closed_by_learner"] = True
+        changes.append(ch)
+    doc["learner_changes"] = list(doc.get("learner_changes") or []) + changes
+    doc["addendum"] = ((doc.get("addendum") or "").rstrip() + "\n\n"
+                       + learner_changes_md(changes, "## Set by the learner · %s" % iso(today))).strip() + "\n"
+    compact(st)
+    st["gen"] = int(st.get("gen") or 0) + 1
+    st["updated"] = iso(today)
+    out = {"ok": True, "gen": st["gen"], "session": sid, "learner_changes": changes, "topics": topics,
+           "open_gaps": len(st["gaps"]), "warnings": warnings}
+    if scores:
+        out["score"] = sess["score"]
+    # the prepared round was planned with the gap open and the old due date
+    publish_ledger(work, info, st, out, session=doc, empty_prepared=True)
+    # close cannot be run again from the ledger it started from: that would drop this change
+    if os.path.isfile(os.path.join(work, BEFORE_CLOSE_FILE)):
+        os.remove(os.path.join(work, BEFORE_CLOSE_FILE))
+    print(json.dumps(published(work, info, out), indent=1, ensure_ascii=False))
 
 
 # ---------------------------------------------------------------- stats
@@ -1866,6 +2085,9 @@ def coding_analytics(log):
         row["gap"] = round(row["expected"] - row["observed"], 2)
     drills = [s.get("drill") for s in log if isinstance(s.get("drill"), dict)]
     gch = [g for s in log for g in (s.get("grade_changes") or [])]
+    own = [g for g in gch if g.get("outcome") in LEARNER_SET_OUTCOMES]
+    disputes = [g for g in gch if g.get("outcome") not in LEARNER_SET_OUTCOMES]
+    shifts = [g for g in own if all(isinstance(g.get(k), (int, float)) for k in ("from", "to"))]
     scores = [s.get("score") for s in log if isinstance(s.get("score"), (int, float))]
     return {
         "sessions": len(log), "items": len(items), "items_coded": len(coded),
@@ -1897,8 +2119,13 @@ def coding_analytics(log):
         "drills": {"n": len(drills), "results": {r: sum(1 for d in drills if d.get("result") == r) for r in DRILL_RESULTS},
                    "by_code": {c: [d.get("result") for d in drills if d.get("code") == c]
                                for c in sorted({d.get("code") for d in drills if d.get("code")})}},
-        "grade_disputes": {"n": len(gch), "outcomes": {o: sum(1 for g in gch if g.get("outcome") == o)
-                                                       for o in ("learner_right", "both_defensible", "upheld")}},
+        "grade_disputes": {"n": len(disputes), "outcomes": {o: sum(1 for g in disputes if g.get("outcome") == o)
+                                                            for o in DISPUTE_OUTCOMES}},
+        # what the learner set themselves: not disputes, the examiner's grading did not change
+        "learner_overrides": {
+            "scores": len(own),
+            "mean_change": round(sum(g["to"] - g["from"] for g in shifts) / len(shifts), 2) if shifts else None,
+            "gaps_closed": sum(len(s.get("learner_closed_gaps") or []) for s in log)},
     }
 
 
@@ -1922,6 +2149,7 @@ def agg_analytics(agg):
         "confidence_calibration": {"table": cal, "brier_score": round(agg["brier"][0] / agg["brier"][1], 3) if agg["brier"][1] else None,
                                    "items_with_confidence": agg["brier"][1]},
         "drills": agg["drills"], "grade_disputes": agg["disputes"],
+        "learner_overrides": {"scores": agg_overrides(agg)["scores"], "gaps_closed": agg_overrides(agg)["gaps"]},
         "reflection_skipped": agg["reflection_skipped"],
     }
 
@@ -1974,6 +2202,7 @@ def cmd_stats(args):
         lbl = (st["topics"].get(g["topic"]) or {}).get("label") or ""
         if "self" not in (g.get("source") or []) and not (significant_tokens(lbl) & set(re.findall(r"[a-z]{5,}", named))):
             blind.append({"topic": g["topic"], "label": lbl, "gap": g.get("gap")})
+    in_period = [g for g in st["resolved"] if parse_date(g.get("resolved")) and start and parse_date(g["resolved"]) >= start]
     out = {
         "ok": True, "period_start": iso(start), "period_end": iso(today), "sessions": len(log),
         "sessions_per_week": round(len(log) / weeks, 2) if weeks else None,
@@ -1991,7 +2220,8 @@ def cmd_stats(args):
         "per_domain": per_domain,
         "domains_not_covered": sorted(d for d in bp_weights(st) if d not in per_domain),
         "calibration_counts": calib, "topics_improved": improved, "topics_declined": declined,
-        "gaps_resolved": [g for g in st["resolved"] if parse_date(g.get("resolved")) and start and parse_date(g["resolved"]) >= start],
+        "gaps_resolved": [g for g in in_period if g.get("closed_by") != "learner"],
+        "gaps_closed_by_learner": [g for g in in_period if g.get("closed_by") == "learner"],
         "open_gaps": st["gaps"], "gaps_open_60_days_or_more": long_open,
         "topics_with_repeated_confident_errors": conf_err,
         "graded_gaps_never_self_reported": blind,
@@ -3513,6 +3743,10 @@ def cmd_close(args):
         die("session document %s does not match the reflected session %s" % (doc.get("id"), sid))
     doc["closing"] = md_b
     doc["reflected"] = True
+    doc.pop("learner_changes", None)        # close can run again: only this run's count
+    if res.get("learner_changes"):          # in the log whoever wrote part B: both scores, who closed the gap
+        doc["learner_changes"] = res["learner_changes"]
+        doc["closing"] = md_b.rstrip() + "\n\n" + learner_changes_md(res["learner_changes"], "### Set by the learner")
     sess = next((s for s in st["sessions"] if s.get("id") == sid), None)
     if sess and isinstance(sess.get("score"), (int, float)):
         doc["score"] = sess["score"]
@@ -3719,6 +3953,8 @@ def main(argv=None):
     s = command("save", cmd_save)
     s = command("close", cmd_close); s.add_argument("--reflection"); s.add_argument("--session")
     s = command("addendum", cmd_addendum); s.add_argument("--md", required=True); s.add_argument("--session")
+    s = command("override", cmd_override); s.add_argument("--scores"); s.add_argument("--close-gaps")
+    s.add_argument("--session")
     s = command("prepare", cmd_prepare); s.add_argument("--if-needed", action="store_true")
     s.add_argument("--allow-unreflected", action="store_true")
     s = command("finish-prepare", cmd_finish_prepare); s.add_argument("--revised", action="store_true")

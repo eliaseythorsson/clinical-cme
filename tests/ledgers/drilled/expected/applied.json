@@ -298,6 +298,13 @@
    "self_comfort": {},
    "self_performance": null,
    "started_at": null,
+   "steps_before": {
+    "CARD-06": 1,
+    "CARD-07": 1,
+    "CARD-08": 1,
+    "GI-05": 0,
+    "NEURO-04": 0
+   },
    "summary": "Synthetic round 8 of an example ledger.",
    "tags": [
     "example"
@@ -644,6 +651,13 @@
    },
    "self_performance": 3,
    "started_at": null,
+   "steps_before": {
+    "CARD-06": 1,
+    "CARD-07": 1,
+    "CARD-08": 1,
+    "GI-05": 0,
+    "NEURO-04": 0
+   },
    "summary": "Synthetic round 8 of an example ledger.",
    "tags": [
     "example"

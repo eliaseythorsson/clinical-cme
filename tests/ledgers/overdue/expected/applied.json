@@ -303,6 +303,12 @@
    "self_comfort": {},
    "self_performance": null,
    "started_at": null,
+   "steps_before": {
+    "NEURO-04": 0,
+    "NEURO-05": 0,
+    "NEURO-06": 0,
+    "TOX-02": 1
+   },
    "summary": "Synthetic round 7 of an example ledger.",
    "tags": [
     "example"
@@ -646,6 +652,12 @@
    },
    "self_performance": 3,
    "started_at": null,
+   "steps_before": {
+    "NEURO-04": 0,
+    "NEURO-05": 0,
+    "NEURO-06": 0,
+    "TOX-02": 1
+   },
    "summary": "Synthetic round 7 of an example ledger.",
    "tags": [
     "example"

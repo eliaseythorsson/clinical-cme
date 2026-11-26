@@ -208,6 +208,12 @@
    "self_comfort": {},
    "self_performance": null,
    "started_at": null,
+   "steps_before": {
+    "CARD-01": 0,
+    "CARD-02": 0,
+    "CARD-06": 0,
+    "CARD-08": 0
+   },
    "summary": "Synthetic round 1 of an example ledger.",
    "tags": [
     "example"
@@ -452,6 +458,12 @@
    },
    "self_performance": 3,
    "started_at": null,
+   "steps_before": {
+    "CARD-01": 0,
+    "CARD-02": 0,
+    "CARD-06": 0,
+    "CARD-08": 0
+   },
    "summary": "Synthetic round 1 of an example ledger.",
    "tags": [
     "example"
