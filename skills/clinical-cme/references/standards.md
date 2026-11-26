@@ -16,9 +16,9 @@ itself. This file holds no content of any round, so anyone may read it at any ti
 | 2 | Guideline region | – |
 | 3 | Units and drug names | – |
 | 4 | Pitch | – |
-| 5 | Abbreviations | lint, judgement call |
-| 6 | One time anchor per case | lint, judgement call |
-| 7 | Crux tests are requested, not given | – |
+| 5 | Abbreviations | lint, judgement call; the simulation's standards check |
+| 6 | One time anchor per case | lint, judgement call; the simulation's standards check |
+| 7 | Crux tests are requested, not given | – (pre-flight line 16; the simulation's quality scorer) |
 | 8 | What a kit contains | lint, blocking |
 | 9 | Key headers | lint, blocking |
 
@@ -100,7 +100,9 @@ standard of the key.
 
 3. Each feedback message opens with a one-line glossary of the abbreviations it uses, the
    listed ones excepted ("Abbreviations: ALT alanine aminotransferase; DOAC direct oral
-   anticoagulant").
+   anticoagulant"). The line starts with the word "Abbreviations:" and comes before the
+   reveal; a message that uses none has no line. Presented items get no glossary: there the
+   rule is 5.1, in the text itself.
 
 ## Rule 6. One time anchor per case
 
@@ -118,8 +120,29 @@ either tests that step (a focused question with aspect `testing`) or does not tu
 result. The exception is an `interpretation` question, where the result to interpret is the
 question (`case_design.md` §11.1).
 
-<!-- slot: issue #45. The pre-flight lines and the simulation check for rules 5–7 are added
-there; rules from later testing notes take numbers 10 and up. -->
+1. **What counts as a crux test.** A test is the crux of an item when all three hold:
+   - its result settles the diagnosis or the decision: with it in hand, the alternatives no
+     longer have to be weighed;
+   - it is outside the routine set for the setting (`case_design.md` §3), so somebody has to
+     think of it;
+   - thinking of it is the step that goes wrong in practice: the test is known for being
+     forgotten, ordered late or ordered only once the diagnosis has been suggested.
+
+   A routine result that happens to be decisive (a potassium, an ECG) is not a crux test: it
+   is given with the rest. A specialised test that is not the crux falls under the rarity
+   budget alone (`case_design.md` §4).
+2. **How to decide.** Read the draft with the result deleted. If the item is now harder
+   mainly because the learner has to think of the test, it is a crux test and the result
+   stays out. If the learner would order it as a matter of course and the difficulty lies in
+   what to do with it, it is not.
+3. **The example this rule comes from** (round S0037). A short question on a drowsy patient
+   taking valproate gave the plasma ammonia in the stem. The ammonia was correctly drawn and
+   correctly reported, and it gave the diagnosis away: in practice the forgotten step is
+   asking for it. Written to this rule, the stem stops before the test and asks what to
+   request and why (aspect `testing`), or the patient becomes a case and the ammonia waits
+   in the results bank.
+4. **In the feedback** the examiner says whether the learner asked for the crux test, and
+   grades that step: a result supplied through "Add if not ordered" was not requested.
 
 ## Rule 8. What a kit contains
 

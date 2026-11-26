@@ -8,17 +8,21 @@ session relays between them (see sim/README.md). This script is everything that 
   init     make a run folder: a seeded folder store, a scratch folder, the two agents' briefs
   send     an agent sends a message to the other side; the time is recorded
   next     the session asks what to hand to the other agent, and whether to stop
-  check    the automatic checks: blinding, saved files, log complete and verbatim, and what the
+  check    the automatic checks: blinding, saved files, log complete and verbatim, the writing
+           standards (abbreviations, time anchors, the feedback's glossary line), and what the
            persona is expected to produce (a settled dispute; a round saved without its case)
   quality  the form a separate scorer agent fills in: clinical quality per item and per feedback
   report   checks + waiting time per step + the quality scores (logged only, never a pass bar),
            written to sim/reports/ for comparison with later runs
   history  one line per saved report, to compare runs over time
 
-It talks to cme.py only through its command line, as the assistant does.
+It talks to cme.py through its command line, as the assistant does. The one exception is the
+standards check, which imports the engine's lint functions so that the heuristics for rules 5
+and 6 exist once (load_engine).
 """
 import argparse
 import datetime as dt
+import importlib.util
 import json
 import os
 import re
@@ -44,6 +48,11 @@ SIM_CONFIG = {"helpers": False, "prepare_ahead": False, "testing": False, "remin
 
 PRESENT_RE = re.compile(r"<!--\s*present:\s*([a-z0-9_]+)\s*-->\s*\n(.*?)\n?\s*<!--\s*/present\s*-->", re.S)
 BANK_RE = re.compile(r"<!--\s*bank\s*-->\s*\n(.*?)\n?\s*<!--\s*/bank\s*-->", re.S)
+BLUEPRINT_ID_RE = re.compile(r"\b[A-Z]{2,8}-\d{1,3}\b")
+# Rule 5.3: a feedback message opens with "Abbreviations: …". A title may stand above it, so the
+# line is looked for among the first GLOSSARY_WITHIN lines that are not empty.
+GLOSSARY_RE = re.compile(r"^[\s>*_#-]*Abbreviations?[*_]*\s*:", re.I)
+GLOSSARY_WITHIN = 3
 ANSWER_RE = re.compile(r"<!--\s*answers:\s*([a-z0-9_]+)\s*-->\s*\n(.*?)\n?\s*<!--\s*/answers\s*-->", re.S)
 
 # Section headings of the session document (references/session_log.md §2–3).
@@ -408,7 +417,7 @@ class Round:
         known = {tid for dom in (self.state.get("blueprint") or {}).values()
                  for tid in ((dom or {}).get("topics") or {})}
         hidden = BANK_RE.sub("", PRESENT_RE.sub("", self.sealed.get("sealed_case.md", "")))
-        named = sorted({t for t in re.findall(r"\b[A-Z]{2,8}-\d{1,3}\b", hidden) if t in known})
+        named = sorted({t for t in BLUEPRINT_ID_RE.findall(hidden) if t in known})
         return {"topic": named[0]} if len(named) == 1 else None
 
     def _label_parts(self):
@@ -790,11 +799,115 @@ def check_stopped(rnd):
 EXPECTED_CHECKS = {"dispute": check_dispute, "stopped": check_stopped}
 
 
+# ---------------------------------------------------------------- check 4: the writing standards
+
+def load_engine(skill):
+    """The skill's cme.py as a module, for its lint functions (rules 5 and 6 of
+    references/standards.md): the heuristics are written there once and not copied here. Nothing
+    is written into the skill's folder."""
+    path = os.path.join(skill, "scripts", "cme.py")
+    keep, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+    try:
+        spec = importlib.util.spec_from_file_location("cme_engine_for_simulation", path)
+        engine = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(engine)
+    except Exception as e:                # an unreadable or broken engine is a finding, not a crash
+        raise SimError("cannot load %s for its lint functions: %s" % (path, e))
+    finally:
+        sys.dont_write_bytecode = keep
+    missing = [n for n in ("common_abbreviations", "undefined_abbreviations", "mixed_time_anchors",
+                           "presented_text", "ABBREVIATION_RE") if not hasattr(engine, n)]
+    if missing:
+        raise SimError("%s has no %s: this copy of the skill is older than the rulebook's lint"
+                       % (path, ", ".join(missing)))
+    return engine
+
+
+def glossary_line(text):
+    """The feedback's glossary line (rule 5.3) if the message opens with one, else None."""
+    lines = [ln for ln in (text or "").splitlines() if ln.strip()]
+    return next((ln for ln in lines[:GLOSSARY_WITHIN] if GLOSSARY_RE.match(ln)), None)
+
+
+def presented_blocks(rnd, engine):
+    """What the learner was shown, in the order of the session, in the form the engine's lint
+    takes: [(file, block, text)]. The text is the one that was sent (the log's "as presented"
+    sections, which the log check holds to the messages word for word): Stage 2 as assembled, not
+    the whole results bank. A part the log does not hold is taken from its sealed file."""
+    sealed = {(name, block): text for name, block, text in engine.presented_text(rnd.sealed)}
+    blocks = []
+    for key, name, block in (("questions", "sealed_questions.md", "questions"),
+                             ("case", "sealed_case.md", "case"), ("stage2", "sealed_case.md", "bank")):
+        text = rnd.a.get(key)
+        if empty_section(text):
+            text = None if block == "bank" else sealed.get((name, block))
+        if text:
+            blocks.append((name, block, text))
+    return blocks
+
+
+def check_standards(rnd):
+    """Rules 5 and 6 of the rulebook on the round as it was played, with the engine's own lint.
+
+    To review (heuristics, as in the lint; they never fail a run): an abbreviation in the
+    presented text that is not spelled out where the session first shows it (rule 5.1), a
+    question or case that counts time from two anchors (rule 6), and an abbreviation a feedback
+    message uses without having it in its glossary line.
+    Fails: a feedback message that uses abbreviations and does not open with the glossary line
+    (rule 5.3)."""
+    out = {"ok": False, "abbreviations": 0, "time_anchors": 0, "to_review": 0, "feedback": [],
+           "findings": [], "problems": []}
+    try:
+        engine = load_engine(rnd.meta.get("skill") or DEFAULT_SKILL)
+    except SimError as e:
+        out["problems"].append(str(e))
+        return out
+    common = engine.common_abbreviations()
+    if common is None:
+        out["problems"].append("the abbreviation list of references/standards.md (rule 5.2) could not be read: "
+                               "abbreviations were not checked")
+    blocks = presented_blocks(rnd, engine)
+    feedback = [(fid, rnd.a.get(key)) for fid, key in (("questions", "fb_questions"), ("final", "feedback"))
+                if not empty_section(rnd.a.get(key))]
+    if not blocks and not feedback:
+        out["problems"].append("no presented text and no feedback to check (no session document, no sealed files)")
+    where = {"questions": "the questions as presented", "case": "the case as presented", "bank": "Stage 2 as presented"}
+    if common is not None:
+        for _, block, token in engine.undefined_abbreviations(blocks, common):
+            out["findings"].append({"rule": "5.1", "where": where[block], "detail": token})
+            out["abbreviations"] += 1
+    for name, place, now, day in engine.mixed_time_anchors(blocks):
+        out["findings"].append({"rule": "6", "where": "the case and Stage 2" if name == "sealed_case.md" else place,
+                                "detail": "from now: %s; by numbered day: %s" % (", ".join(now), ", ".join(day))})
+        out["time_anchors"] += 1
+    for fid, text in feedback:
+        line = glossary_line(text)
+        row = {"id": fid, "glossary": bool(line), "abbreviations": None, "not_in_glossary": []}
+        if common is not None:
+            # blueprint IDs ("CARD-03") are named in the reveal: they are not abbreviations
+            body = BLUEPRINT_ID_RE.sub(" ", text.replace(line, " ", 1) if line else text)
+            used = [token for _, _, token in engine.undefined_abbreviations([("feedback", fid, body)], common)]
+            listed = set(engine.ABBREVIATION_RE.findall(line or ""))
+            row["abbreviations"] = len(used)
+            row["not_in_glossary"] = [token for token in used if token not in listed]
+            if used and not line:
+                out["problems"].append("the %s feedback uses %d abbreviation%s and does not open with the glossary "
+                                       "line \"Abbreviations: …\" (references/standards.md, rule 5.3)"
+                                       % (fid, len(used), "" if len(used) == 1 else "s"))
+            for token in row["not_in_glossary"]:
+                out["findings"].append({"rule": "5.3", "where": "the %s feedback" % fid, "detail": token})
+        out["feedback"].append(row)
+    out["to_review"] = len(out["findings"])
+    out["ok"] = not out["problems"]
+    return out
+
+
 # ---------------------------------------------------------------- check, report
 
 def run_checks(run):
     rnd = Round(run)
-    checks = {"blinding": check_blinding(rnd), "saved": check_saved(rnd), "log": check_log(rnd)}
+    checks = {"blinding": check_blinding(rnd), "saved": check_saved(rnd), "log": check_log(rnd),
+              "standards": check_standards(rnd)}
     for name in rnd.meta.get("expect") or []:
         checks[name] = EXPECTED_CHECKS[name](rnd)
     return rnd, {"ok": all(c["ok"] for c in checks.values()), "checks": checks}
@@ -900,7 +1013,8 @@ def cmd_quality(args):
         write_json(path, quality_form(rnd))
         write(prompt, fill(read(os.path.join(HERE, "prompts", "quality.md")), {
             "run": os.path.abspath(args.run), "form": os.path.abspath(path), "messages": rp(os.path.abspath(args.run), "messages"),
-            "work": os.path.abspath(rnd.work), "store": os.path.abspath(rnd.store)}))
+            "work": os.path.abspath(rnd.work), "store": os.path.abspath(rnd.store),
+            "skill": os.path.abspath(rnd.meta.get("skill") or DEFAULT_SKILL)}))
         print(json.dumps({"ok": True, "form": path, "quality_prompt": prompt,
                           "then": "start a new agent (not the examiner, not the learner) with the quality prompt; "
                                   "when it returns, run this command again, then report"}, indent=1))
@@ -945,6 +1059,16 @@ def report_markdown(rep):
            ", ".join(c["saved"].get("publish_set") or c["saved"].get("output_folders") or []) or "no publish set"),
         "| Log complete and verbatim | %s | sections: %s |" % (mark(c["log"]["ok"]), ", ".join(c["log"]["sections"]) or "none"),
     ]
+    if "standards" in c:                  # reports written before this check have no such entry
+        d = c["standards"]
+        lines.append("| Writing standards: abbreviations, one time anchor, the feedback's glossary line (rules 5–6) | %s | "
+                     "to review: %d abbreviation(s) not spelled out at first use, %d mixed time anchor(s); feedback: %s |" % (
+                         mark(d["ok"]), d["abbreviations"], d["time_anchors"],
+                         "; ".join("%s: %s abbreviation(s), glossary line %s%s" % (
+                             f["id"], "?" if f["abbreviations"] is None else f["abbreviations"],
+                             "present" if f["glossary"] else "absent",
+                             ", %d not in it" % len(f["not_in_glossary"]) if f["not_in_glossary"] else "")
+                             for f in d["feedback"]) or "none"))
     if "dispute" in c:
         d = c["dispute"]
         lines.append("| Persona: a settled dispute, in the log and in the grade changes | %s | %s; exchange logged under: %s |" % (
@@ -957,6 +1081,7 @@ def report_markdown(rep):
             json.dumps(d["case_topic_schedule"]) if d.get("case_topic_schedule") else "unknown"))
     lines.append("")
     for name, title in (("blinding", "Blinding"), ("saved", "Saved files"), ("log", "Log"),
+                        ("standards", "Writing standards"),
                         ("dispute", "Dispute"), ("stopped", "Stopped before the case")):
         if name in c and c[name]["problems"]:
             lines += ["### %s: problems" % title, ""] + ["- %s" % p for p in c[name]["problems"]] + [""]
@@ -966,6 +1091,13 @@ def report_markdown(rep):
         for f in c["blinding"]["findings"]:
             lines.append("| %s | %s | %s | %s | %d | %s |" % ("leak" if f["level"] == "fail" else "review", f["part"], f["kind"],
                                                              f["term"].replace("|", "/"), f["message"], f["excerpt"].replace("|", "/")))
+        lines.append("")
+    if (c.get("standards") or {}).get("findings"):
+        lines += ["### Writing standards: to review", "",
+                  "Found by the lint's heuristics (`references/standards.md`, \"The lint\"): each is for a person to "
+                  "judge and none fails the run.", "",
+                  "| Rule | Where | What |", "|---|---|---|"]
+        lines += ["| %s | %s | %s |" % (f["rule"], f["where"], f["detail"].replace("|", "/")) for f in c["standards"]["findings"]]
         lines.append("")
     if c["log"]["examiner_text_not_logged"]:
         lines += ["### Examiner text that is not in the log", "",

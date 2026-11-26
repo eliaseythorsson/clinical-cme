@@ -44,18 +44,23 @@ do you check for yourself, now that its answers are committed:
 
 ## 2. Structure of the feedback
 
-Two messages, each sent the moment its part is graded. Each opens with the one-line
-glossary of the abbreviations it uses (rule 5.3).
+Two messages, each sent the moment its part is graded. **Every feedback message starts with
+the glossary line** of rule 5.3: one line, "Abbreviations: …", above the reveal, listing the
+abbreviations that message uses, those on the rule's list excepted. Each message's line is
+complete on its own: an abbreviation explained in the first message is explained again in the
+second if it is used there. The line is part of the message as sent, so it is logged with it
+(§8). A message that uses no abbreviation has no line.
 
-- **Part 1, after the short questions are answered**: A (for these items only), B, B2. It
-  closes with one line on the score so far and "The case follows." No gap summary, no reading
-  list, no reflection prompt, and nothing about the case (rule 1.5). The case is
-  sent straight after it.
-- **Part 2, after the case's last answer**: A (for the case), C, D for the **whole round**
-  (short questions included), E, F.
+- **Part 1, after the short questions are answered**: glossary line, A (for these items
+  only), B, B2. It closes with one line on the score so far and "The case follows." No gap
+  summary, no reading list, no reflection prompt, and nothing about the case (rule 1.5). The
+  case is sent straight after it.
+- **Part 2, after the case's last answer**: glossary line, A (for the case), C, D for the
+  **whole round** (short questions included), E, F.
 
 A round without a case has one message: A, B, B2, D, E, F. With `case_first`, one message at
-the end: A, C, B, B2, D, E, F. Leave out any section the round did not have.
+the end: A, C, B, B2, D, E, F. Either starts with its glossary line. Leave out any section the
+round did not have.
 
 ### A. Reveal
 For each item of the part: the topic (blueprint ID and label), and why it was chosen in plain words,

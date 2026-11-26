@@ -140,6 +140,16 @@ _Avoid_: goals list
 The numbered standards for writing items (`references/standards.md`), the same for every learner; briefs cite its rule numbers. Contrast with settings, which are per learner.
 _Avoid_: guidelines (means clinical guidelines here)
 
+**Crux test**:
+The decisive test of an item when it is one clinicians often fail to order; its result is requested by the learner, never given in the stem (rule 7 of the rulebook).
+_Avoid_: key test, special test
+
+**Glossary line**:
+The one line "Abbreviations: …" that opens a feedback message and explains the abbreviations it uses (rule 5.3). Presented items have none: there an abbreviation is spelled out at first use.
+
+**Time anchor**:
+The single point a case counts all its timings from: a named event (admission as day 0) or now, never both (rule 6).
+
 **Specialty**:
 The learner's field of practice, which sets the pitch of items and which guideline applies; asked at setup, default internal/hospital medicine.
 

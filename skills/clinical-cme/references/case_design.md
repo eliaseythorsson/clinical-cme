@@ -201,7 +201,7 @@ depth of feedback and the spacing of the topic.
 ## 7. Difficulty and conventions
 
 - Pitch: rule 4. Guidelines: rule 2. Units and drug names: rule 3.
-- Abbreviations: rule 5. Timings: rule 6, one anchor per case.
+- Abbreviations: rule 5. Timings: rule 6, one anchor per case. The decisive test: rule 7.
 - Cases are fictional. Never request or include identifiable patient information.
 
 ## 8. Pre-flight check (in the sealed draft, before sending)
@@ -209,7 +209,8 @@ depth of feedback and the spacing of the topic.
 Check every line that applies and record the outcome in the sealed file as one line: the
 numbers that pass, and for each that fails the fix you made ("pre-flight 6, 10–13 pass" or
 "pre-flight 1–5, 7–9 pass; 4: added the family history"). `sealed_questions.md` carries lines 6
-and 10–13, `sealed_case.md` the rest; with no case in the round, only the lines that apply. The
+and 10–16, `sealed_case.md` lines 1–5, 7–9 and 14–16; with no case in the round, only the lines
+that apply. The
 text the learner will see goes between `<!-- present: questions|case -->` and
 `<!-- /present -->` exactly as it will be sent: `cme.py save` copies it into the log. Do not
 work through the list in your thinking: there it would expose the content it checks.
@@ -238,6 +239,11 @@ work through the list in your thinking: there it would expose the content it che
     any datum that is there only because it is the answer (§4)?
 13. Is each focused question different from every `already_used` stem for its topic, and from
     the other short questions (§2)?
+14. Rule 5: is every abbreviation spelled out where the session first shows it (the questions,
+    then the case, then the bank)?
+15. Rule 6: does each short question, and the case with its bank, count time from one anchor?
+16. Rule 7: is the result of a crux test out of every stem and out of the case's opening: in
+    the bank and on its "Add if not ordered" line, or the question's aspect is `testing`?
 
 Fix anything that fails before presenting the round.
 

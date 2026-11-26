@@ -36,6 +36,10 @@ nothing else in it except as said below.
   only defensible one? For a case: is it realistic and coherent, do the results fit the
   diagnosis, does the key ask for what a good clinician would do?
 - Is it pitched right for the specialty, and does it test a decision that matters?
+- Does a stem, or the opening of the case, hand over the result of the decisive test when
+  that test is one clinicians often forget to order (`{skill}/references/standards.md`,
+  rule 7: such a result is requested by the learner, or the question asks for the test)? If
+  so, lower the item's score and name the item under `concerns`, starting the line "Rule 7:".
 - An entry marked `"answered": false` is a case the learner did not answer. Rate it as written
   if it was presented (it is in the messages); if it never was, leave its `score` as `null`.
 
