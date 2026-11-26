@@ -902,7 +902,7 @@ def check_standards(rnd):
     question or case that counts time from two anchors (rule 6), and an abbreviation a feedback
     message uses without having it in its glossary line.
     Fails: a feedback message that uses abbreviations and does not open with the glossary line
-    (rule 5.3)."""
+    (rule 5.3), and any text sent to the learner that names the skill's own machinery (rule 11)."""
     out = {"ok": False, "abbreviations": 0, "time_anchors": 0, "to_review": 0, "feedback": [],
            "findings": [], "problems": []}
     try:
@@ -928,6 +928,13 @@ def check_standards(rnd):
         out["findings"].append({"rule": "6", "where": "the case and Stage 2" if name == "sealed_case.md" else place,
                                 "detail": "from now: %s; by numbered day: %s" % (", ".join(now), ", ".join(day))})
         out["time_anchors"] += 1
+    learner_texts = [("the %s feedback" % fid, text) for fid, text in feedback] + \
+        [(where.get(block, block), text) for _, block, text in blocks]
+    for place, text in learner_texts:
+        found = engine.internal_terms(text)
+        if found:
+            out["problems"].append("%s names the skill's own machinery (%s): references/standards.md rule 11"
+                                   % (place, ", ".join(found)))
     for fid, text in feedback:
         line = glossary_line(text)
         row = {"id": fid, "glossary": bool(line), "abbreviations": None, "not_in_glossary": []}

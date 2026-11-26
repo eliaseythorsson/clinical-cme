@@ -4390,6 +4390,24 @@ TIME_DAY_RE = re.compile(
 QUESTION_START_RE = re.compile(r"(?m)^(?=[ \t>*_#]{0,6}(?:Question|Q)[ \t]*\d+)")
 
 
+# Rule 11: words that belong to the skill's own machinery and never reach the learner.
+INTERNAL_TERMS_RE = re.compile(
+    r"\brule\s+\d+(?:\.\d+)?\b|\b[\w-]+\.(?:md|json|py)\b|\bcme\.py\b|\bkey[ -]headers?\b"
+    r"|\bkits?\b|\bkit_(?:questions|case)\b|\bsealed(?:_\w+)?\b|\blint\b|\bresults bank\b"
+    r"|\bverification list\b|\bpublish set\b|\bwork folder\b|\bthe (?:author|checker)\b", re.I)
+
+
+def internal_terms(text):
+    """The words of the skill's own machinery in a text meant for the learner (rule 11), in
+    order of appearance, each once."""
+    seen = []
+    for m in INTERNAL_TERMS_RE.finditer(text or ""):
+        w = m.group(0)
+        if w.lower() not in [x.lower() for x in seen]:
+            seen.append(w)
+    return seen
+
+
 def common_abbreviations(path=None):
     """The abbreviations the rulebook lists as needing no spelling out (rule 5), or None when the
     rulebook or its list cannot be read."""
@@ -5207,6 +5225,12 @@ def cmd_save(args):
     md = assemble_part_a(sealed, answers, feedback,
                          rnd.get("item_order") or st["config"].get("item_order"), warnings,
                          feedback_questions, read_text(stage2) if stage2 else None)
+    for label, path in (("questions' feedback", feedback_questions), ("final feedback", feedback),
+                        ("Stage 2", stage2)):
+        found = internal_terms(read_text(path)) if path else []
+        if found:                   # rule 11: logged as sent; next time, write it for the learner
+            warnings.append("the %s as sent names the skill's own machinery (%s): references/standards.md "
+                            "rule 11" % (label, ", ".join(found)))
     res = record_round(st, copy.deepcopy(rnd), today)
     if first_run:                   # nothing failed: keep the ledger this round started from
         save_json(st_in, before)

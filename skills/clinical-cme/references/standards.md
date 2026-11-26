@@ -7,8 +7,8 @@ settings, and reaches the author through the plan. Each rule is written here onc
 SKILL.md) cite it by number ("rule 5") and do not restate it.
 
 Who reads what: the **author** all of it; the **checker** rules 2 and 8; the **examiner**
-rules 1–5 before grading (they bind the feedback too), and all of it when it writes items
-itself. This file holds no content of any round, so anyone may read it at any time.
+rules 1–5, 10 and 11 before grading (they bind the feedback too), and all of it when it
+writes items itself. This file holds no content of any round, so anyone may read it at any time.
 
 | Rule | Title | Checked by `cme.py` |
 |---|---|---|
@@ -21,6 +21,8 @@ itself. This file holds no content of any round, so anyone may read it at any ti
 | 7 | Crux tests are requested, not given | – (pre-flight line 16; the simulation's quality scorer) |
 | 8 | What a kit contains | lint, blocking; the listening candidates' form, judgement call |
 | 9 | Key headers | lint, blocking |
+| 10 | Results the learner did not see | – (the simulation's quality scorer) |
+| 11 | Text for the learner speaks plainly | `save` warns; the simulation's standards check fails the run |
 
 Numbers are never reused or renumbered: a new rule gets the next number, a withdrawn one
 keeps its number with the word "withdrawn". How the lint works: last section.
@@ -117,8 +119,20 @@ with the `specialty`, before writing or grading.
    else: the lint reads it from this file.
 
    <!-- common-abbreviations -->
-   IV, ECG, CT, MRI, HIV, BP, HR, CRP, ICU
+   IV, IM, SC, ED, ICU, HDU, BP, HR, RR, GCS, BMI,
+   ECG, EEG, CT, MRI, CXR, CSF, ABG,
+   PR, QRS, QT, QTc, ST, AV, RBBB, LBBB,
+   CRP, ESR, INR, APTT, WBC, WCC, RBC, MCV, ALT, AST, ALP, GGT, LDH, CK, TSH, PTH, BNP, NT,
+   HIV, DNA, RNA, PCR, COVID, NSAID, ACE, ARB, MCQ,
+   WHO, ESC, NICE, AHA, ACC, IDSA, KDIGO, EULAR, ACR, ADA, BTS, ERS, ASCO, NCCN
    <!-- /common-abbreviations -->
+
+   The list holds what every clinical reader meets daily: routes and care settings, vital
+   signs and scores, the routine tests and their parts (ECG intervals and segments, routine
+   blood tests), and the names of the major guideline societies. Drug classes beyond the
+   commonest (DOAC, SGLT2i, ARNI) and anything specialised are spelled out. Words written with
+   lower-case letters (eGFR, HbA1c, SpO₂, NT-proBNP's "pro") are not caught by the lint and
+   need no entry.
 
 3. Each feedback message opens with a one-line glossary of the abbreviations it uses, the
    listed ones excepted ("Abbreviations: ALT alanine aminotransferase; DOAC direct oral
@@ -307,6 +321,35 @@ diagnosis: exercise-associated hyponatraemia
 twist: looked hypovolaemic
 <!-- /key -->
 ```
+
+## Rule 10. Results the learner did not see
+
+The feedback teaches with every result the case was written with, including those the
+learner never ordered. A result the learner did not see is never quoted as if it had been
+shown; instead the feedback says so and uses it:
+
+1. **Say it was not ordered.** Name the test, say plainly that it should have been requested
+   and why at that point ("You did not request a D-dimer; with a Wells score of 2 it was the
+   next step."). A result supplied through "Add if not ordered" counts as not requested
+   (rule 7.4). This is a missed element in the rubric (data gathering), graded as such.
+2. **Give the result and what it would have changed.** Quote it marked as unseen ("not
+   ordered: the result was …") and say what it would have done to the diagnosis, the
+   management or the disposition, in one or two sentences.
+3. **Not every unseen result is a miss.** A test the learner reasonably left out (it would
+   not have changed management in their plan) may be quoted for completeness, marked as
+   unseen, without grading down.
+
+The differential table and the model answer follow the same marking: a value the learner did
+not see carries "(not ordered)" beside it.
+
+## Rule 11. Text for the learner speaks plainly
+
+Everything the learner reads (items, results, feedback, the close) is written for a
+clinician, in clinical language. It never names the skill's own machinery: no rule numbers,
+file or command names, the key, its headers or the kit, the sealed files, the results bank,
+the lint, the author or the checker, the work folder or the publish set. Cite the guideline or
+paper, not this rulebook. `save` warns when the feedback as sent does, and the simulation
+fails a run for it.
 
 ## The lint
 
