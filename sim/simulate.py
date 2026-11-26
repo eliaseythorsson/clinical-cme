@@ -8,8 +8,8 @@ session relays between them (see sim/README.md). This script is everything that 
   init     make a run folder: a seeded folder store, a scratch folder, the two agents' briefs
   send     an agent sends a message to the other side; the time is recorded
   next     the session asks what to hand to the other agent, and whether to stop
-  check    the automatic checks: blinding, saved files, log complete and verbatim, and what the
-           persona is expected to produce (a settled dispute; a round saved without its case)
+  check    the automatic checks: blinding, saved files, log complete and verbatim, the Listening
+           section and its picks, and what the persona is expected to produce (a settled dispute; a round saved without its case)
   quality  the form a separate scorer agent fills in: clinical quality per item and per feedback
   report   checks + waiting time per step + the quality scores (logged only, never a pass bar),
            written to sim/reports/ for comparison with later runs
@@ -612,6 +612,53 @@ def check_saved(rnd):
             "files_compared": (verify or {}).get("checked"), "problems": problems}
 
 
+# ---------------------------------------------------------------- check 4: listening
+
+SPOTIFY_RE = re.compile(r"open\.spotify\.com", re.I)
+EPISODE_RE = re.compile(r"^https://open\.spotify\.com/episode/[A-Za-z0-9]{22}$")
+LISTENING_HEAD_RE = re.compile(r"(?im)^[ \t>#*_]*Listening\b")
+
+
+def check_listening(rnd):
+    """The round ends with its Listening section (standards.md, rule 8; feedback_guide.md §2 E2):
+    the final feedback has it, the session document has the `listening` list, every pick is one
+    Spotify episode whose link is in the feedback as sent, and no Spotify link was sent before
+    the last answer. A topic for which nothing suitable was found has no pick: that passes, and
+    is counted. With listening turned off, nothing is expected."""
+    on = (rnd.plan.get("listening") is not False
+          and ((rnd.start_state or rnd.state).get("config") or {}).get("listening", True) is not False)
+    out = {"ok": True, "on": on, "picks": 0, "topics": len({it.get("topic") for it in rnd.items if it.get("topic")}),
+           "from_kit": 0, "from_search": 0, "problems": []}
+    if not on:
+        return out
+    problems = out["problems"]
+    picks = (rnd.doc or {}).get("listening")
+    if rnd.doc is None:
+        problems.append("no session document to check")
+    elif not isinstance(picks, list):
+        problems.append("the session document has no `listening` list (round.json `listening`, state_schema.md §2)")
+    feedback = rnd.a.get("feedback") or ""
+    if rnd.doc is not None and not LISTENING_HEAD_RE.search(feedback):
+        problems.append("the final feedback has no Listening section")
+    for p in picks if isinstance(picks, list) else []:
+        out["picks"] += 1
+        out["from_kit"] += p.get("source") == "kit"
+        out["from_search"] += p.get("source") == "search"
+        if not EPISODE_RE.match(str(p.get("link") or "")):
+            problems.append("the pick for %s is not a link to one Spotify episode" % p.get("topic"))
+        elif p["link"] not in feedback:
+            problems.append("the pick for %s is not in the final feedback as sent" % p.get("topic"))
+    # the section belongs to the final feedback: after the last answer the round got (a case never
+    # answered stays sealed, and the questions' picks say nothing about it)
+    lifts = list(rnd.lift.values())
+    if lifts and all(lifts):
+        for m in rnd.messages:
+            if m["role"] == "examiner" and m["n"] < max(lifts) and SPOTIFY_RE.search(m["text"]):
+                problems.append("examiner message %d holds a Spotify link before the last answer" % m["n"])
+    out["ok"] = not problems
+    return out
+
+
 # ---------------------------------------------------------------- check 3: log complete and verbatim
 
 def check_log(rnd):
@@ -794,7 +841,8 @@ EXPECTED_CHECKS = {"dispute": check_dispute, "stopped": check_stopped}
 
 def run_checks(run):
     rnd = Round(run)
-    checks = {"blinding": check_blinding(rnd), "saved": check_saved(rnd), "log": check_log(rnd)}
+    checks = {"blinding": check_blinding(rnd), "saved": check_saved(rnd), "log": check_log(rnd),
+              "listening": check_listening(rnd)}
     for name in rnd.meta.get("expect") or []:
         checks[name] = EXPECTED_CHECKS[name](rnd)
     return rnd, {"ok": all(c["ok"] for c in checks.values()), "checks": checks}
@@ -945,6 +993,11 @@ def report_markdown(rep):
            ", ".join(c["saved"].get("publish_set") or c["saved"].get("output_folders") or []) or "no publish set"),
         "| Log complete and verbatim | %s | sections: %s |" % (mark(c["log"]["ok"]), ", ".join(c["log"]["sections"]) or "none"),
     ]
+    if "listening" in c:            # reports made before issue #50 have no such check
+        d = c["listening"]
+        lines.append("| Listening: a section in the final feedback, the picks in the session document | %s | %s |" % (
+            mark(d["ok"]), "%d pick(s) for %d topic(s): %d from the kit, %d found after grading"
+            % (d["picks"], d["topics"], d["from_kit"], d["from_search"]) if d["on"] else "turned off"))
     if "dispute" in c:
         d = c["dispute"]
         lines.append("| Persona: a settled dispute, in the log and in the grade changes | %s | %s; exchange logged under: %s |" % (
@@ -957,7 +1010,7 @@ def report_markdown(rep):
             json.dumps(d["case_topic_schedule"]) if d.get("case_topic_schedule") else "unknown"))
     lines.append("")
     for name, title in (("blinding", "Blinding"), ("saved", "Saved files"), ("log", "Log"),
-                        ("dispute", "Dispute"), ("stopped", "Stopped before the case")):
+                        ("listening", "Listening"), ("dispute", "Dispute"), ("stopped", "Stopped before the case")):
         if name in c and c[name]["problems"]:
             lines += ["### %s: problems" % title, ""] + ["- %s" % p for p in c[name]["problems"]] + [""]
     if c["blinding"]["findings"]:

@@ -33,6 +33,8 @@ are in, or attach your `state.json`."
 >   have. Anything more specialised, you ask for, and you say what result you expect.
 > - **Self-contained feedback.** Grading against current guidelines, with the key evidence
 >   summarised in the feedback itself and precise pointers to the source.
+> - **Something to listen to.** Each round ends with one podcast episode per topic, chosen for
+>   what you missed, as a Spotify link; you can name shows you trust, or turn it off.
 > - **One-minute reflection.** You rate your comfort and name what feels shaky; with your score,
 >   this decides when each topic comes back and which areas get more weight.
 > - **A full, searchable log.** Every session is saved word for word in your own private
@@ -96,7 +98,12 @@ most capable model they have.
 
 **Batch 3 — where you stand** (free text is fine): the domain list with a 1–5 self-rating per
 domain, or the two or three strongest and weakest areas; goals; resource preferences (free
-only?); anything else to know.
+only?); anything else to know. And one line on listening: "Each round ends with a podcast
+episode per topic, as a Spotify link. Any shows you trust, or want me to avoid? (Or say you'd
+rather not have it.)" → `profile.podcast_sources`, always written at setup, with two empty
+lists when none are named, so that it is not asked again; "rather not" → `config.listening`
+false. The link opens the episode in Spotify, where one tap saves it; no link can save it to
+the library by itself.
 
 | Answer | Setting |
 |---|---|
@@ -124,6 +131,8 @@ alternate instead. The learner can always pick other numbers.
 | Specialty | `profile.specialty` (default "Internal/hospital medicine") |
 | Frequency | `target_sessions_per_week` 5 / 3 / 2 / 1 |
 | Self-ratings | `profile.domain_self_ratings` {CODE: n} |
+| Podcasts trusted / avoided | `profile.podcast_sources` {"trusted": […], "avoid": […]} |
+| No listening section | `listening` false |
 | Weakest areas named without ratings | 2 for those domains; strongest → 4 |
 | Review every 1 / 2 / 3 months | `review_interval_days` 30 / 60 / 90 |
 
@@ -215,6 +224,12 @@ all three.
 **Why did my round start with a pause this time?** The prepared round is used only if nothing
 changed since it was written (the round mix, a setting that changes the questions, a review) and you did not ask for
 a special round; otherwise it is written at the start.
+
+**What is the Listening section?** One podcast episode per topic of the round, 15 to 90 minutes,
+picked for what you missed, as a Spotify link. Candidates are found when the round is prepared,
+so nothing is searched while you answer. The link opens the episode in Spotify and one tap
+there saves it (no link can save it for you). Name shows you trust or want avoided at any
+time, or say "listening off".
 
 **Whose guidelines does it use, and for which specialty?** The ones you chose at setup
 (Iceland/Europe and internal/hospital medicine unless you said otherwise). Change either any

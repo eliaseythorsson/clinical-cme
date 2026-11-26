@@ -102,6 +102,12 @@ This was Fictitious secretitis. The special scan is the decisive test, and you o
 
 Gap summary: one point on treatment duration.
 
+Listening
+
+- Fictitious secretitis: Example Show, "How long to treat" (35 min), on the treatment duration you
+  were unsure of. https://open.spotify.com/episode/ExampleCase1xxxxxxxxxx
+- No suitable episode was found for the anaemia work-up or the headache question.
+
 Reflection: comfort per topic 1-5, your own rating 1-5, what felt solid, what felt shaky?
 """
 CLOSE = "Saved as S0001. Two items come back over the next days. Next session fits on Tuesday.\n"
@@ -123,6 +129,10 @@ ROUND = {
          "coding": {"art": {"DG": 2}, "idea": {"I": 3, "D": 2, "E": 1, "A": 1}, "errors": []}},
     ],
     "gaps": [{"topic": "GEN-11", "gap": "treatment duration", "source": "graded"}],
+    # the one pick of the Listening section (issue #50); `save` moves it into the session document
+    "listening": [{"topic": "GEN-11", "link": "https://open.spotify.com/episode/ExampleCase1xxxxxxxxxx",
+                   "show": "Example Show", "title": "How long to treat", "minutes": 35,
+                   "why": "the treatment duration you were unsure of", "source": "kit"}],
 }
 PART_B = """### Reflection (verbatim)
 
@@ -361,7 +371,7 @@ def test_clean_round_passes_every_check_and_the_report_is_written(script):
     out, rep = s.report("--examiner-model", "model-a", "--learner-model", "model-b", "--quality", "4",
                         "--quality-note", "sound")
     assert out["ok"] is True and rep["ok"] is True
-    assert out["checks"] == {"blinding": True, "saved": True, "log": True}
+    assert out["checks"] == {"blinding": True, "saved": True, "log": True, "listening": True}
     assert rep["checks"]["blinding"]["leaks"] == 0
     assert rep["checks"]["blinding"]["seal_lifted_at"] == {"questions": 3, "case": 8}
     assert rep["checks"]["saved"]["publish_set"] == ["data/sessions/S0001.json", "data/index.json",
@@ -480,3 +490,81 @@ def test_second_round_continues_on_the_first_runs_store(script, tmp_path):
     assert os.path.isfile(os.path.join(run2, "store", "data", "sessions", "S0001.json"))
     # the earlier round does not count as this run's round
     assert sim_json("next", "--run", run2, "--after", "learner")["round_closed"] is False
+
+
+# ---- the Listening section and its picks (issue #50)
+
+def test_listening_check_counts_the_picks_and_where_they_came_from(script):
+    out, rep = script().report()
+    assert rep["checks"]["listening"] == {"ok": True, "on": True, "picks": 1, "topics": 3, "from_kit": 1,
+                                          "from_search": 0, "problems": []}
+    md = open(out["report"], encoding="utf-8").read()
+    assert "| Listening: a section in the final feedback, the picks in the session document | pass | 1 pick(s) for 3 topic(s)" in md
+    assert "open.spotify.com" not in md
+
+
+def test_round_without_its_listening_list_or_section_fails_the_listening_check(tmp_path):
+    s = Script(tmp_path)
+    s.open_round()
+    s.case()
+    s.save(rnd={k: v for k, v in ROUND.items() if k != "listening"})
+    s.close()
+    out, rep = s.report()
+    assert out["checks"]["listening"] is False and out["ok"] is False
+    assert rep["checks"]["listening"]["problems"] == [
+        "the session document has no `listening` list (round.json `listening`, state_schema.md §2)"]
+
+
+def test_a_pick_that_was_never_sent_and_a_link_sent_too_early_fail_the_listening_check(tmp_path):
+    s = Script(tmp_path)
+    s.open_round()
+    s.send("learner", ANSWERS["case"], 90)
+    s.turn_end("learner")
+    early = STAGE2 + "\nMeanwhile: https://open.spotify.com/episode/ExampleCase1xxxxxxxxxx\n"
+    s.send("examiner", early, 12)
+    s.answer("case")
+    s.put("stage2.md", early)
+    s.turn_end("examiner", 2)
+    s.send("learner", ANSWERS["final"], 45)
+    s.turn_end("learner")
+    feedback = FEEDBACK.replace("ExampleCase1xxxxxxxxxx", "AnotherEpisodexxxxxxxx")
+    s.send("examiner", feedback, 40)
+    s.answer("final")
+    s.save(feedback=feedback)
+    s.close()
+    out, rep = s.report()
+    assert out["checks"]["listening"] is False
+    assert rep["checks"]["listening"]["problems"] == [
+        "the pick for GEN-11 is not in the final feedback as sent",
+        "examiner message 7 holds a Spotify link before the last answer"]
+
+
+def test_with_listening_off_nothing_is_expected(tmp_path):
+    s = Script(tmp_path)
+    st_path = os.path.join(s.store, "data", "state.json")
+    # the learner turned listening off before this round
+    with open(st_path, encoding="utf-8") as fh:
+        st = json.load(fh)
+    st["config"]["listening"] = False
+    with open(st_path, "w", encoding="utf-8") as fh:
+        json.dump(st, fh)
+    with open(os.path.join(s.run, "ledger_at_start.json"), "w", encoding="utf-8") as fh:
+        json.dump(st, fh)
+    s.put("start.json", cme("--today", TODAY, "start", "--work", s.work, "--store", s.store))
+    plain = FEEDBACK.split("Listening")[0] + "Reflection:" + FEEDBACK.split("Reflection:")[1]
+    s.open_round()
+    s.send("learner", ANSWERS["case"], 90)
+    s.turn_end("learner")
+    s.send("examiner", STAGE2, 12)
+    s.answer("case")
+    s.put("stage2.md", STAGE2)
+    s.turn_end("examiner", 2)
+    s.send("learner", ANSWERS["final"], 45)
+    s.turn_end("learner")
+    s.send("examiner", plain, 40)
+    s.answer("final")
+    s.save(rnd={k: v for k, v in ROUND.items() if k != "listening"}, feedback=plain)
+    s.close()
+    out, rep = s.report()
+    assert out["ok"] is True and rep["checks"]["listening"]["on"] is False
+    assert "| pass | turned off |" in open(out["report"], encoding="utf-8").read()

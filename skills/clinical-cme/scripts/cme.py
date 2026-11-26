@@ -119,12 +119,14 @@ DEFAULT_CONFIG = {
     "testing": False,                    # testing mode: feedback check + store check at the end of each round               # a scheduled task also prepares the round when none is ready
     "show_coding": True,
     "reminders": False,
+    "listening": True,                   # one podcast episode per topic at the end of a round (issue #50)
     "resource_preferences": {"free_only": False, "formats": ["guidelines", "review articles"]},
 }
 DEFAULT_PROFILE = {
     "display_name": None, "role": None, "specialty": "Internal/hospital medicine", "subspecialty": None,
     "practice_setting": [], "goals": [], "strengths": [], "weaknesses": [],
     "domain_self_ratings": {}, "domain_emphasis": {}, "notes": "", "onboarded_at": None,
+    "podcast_sources": None,             # {"trusted": [shows], "avoid": [shows]}; None until the learner was asked
 }
 # Settings that cannot change what a round contains (its plan, its items, its keys, its feedback
 # notes): changing only these keeps the round prepared ahead. Every other setting, including one
@@ -133,6 +135,12 @@ DEFAULT_PROFILE = {
 CONTENT_NEUTRAL_CONFIG = ("testing", "reminders", "prepare_task", "prepare_ahead", "helpers", "show_coding",
                           "target_sessions_per_week", "review_interval_days", "round_set_at")
 CONTENT_NEUTRAL_PROFILE = ("display_name", "onboarded_at")
+# Listening (issue #50; references/standards.md, rule 8): a pick is one Spotify episode of
+# 15 to 90 minutes; a kit keeps three candidates per topic.
+SPOTIFY_EPISODE_RE = re.compile(r"^https://open\.spotify\.com/episode/[A-Za-z0-9]{22}$")
+LISTEN_MINUTES = (15, 90)
+LISTEN_CANDIDATES = 3
+LISTEN_SOURCES = ("kit", "search")
 SELF_RATING_FACTOR = {1: 1.6, 2: 1.3, 3: 1.0, 4: 0.8, 5: 0.6}
 MIN_RETURN_DAYS = 3      # no tested topic and no open gap comes back sooner than this (ADR 0003)
 # Drill-down limit (ADR 0003): no topic is in more than this many rounds in a row, and a topic
@@ -416,6 +424,42 @@ def deep_merge(target, changes):
             deep_merge(target[k], v)
         else:
             target[k] = v
+
+
+def listening_on(st):
+    """Listening is on unless the learner turned it off; a ledger older than the setting has it on."""
+    return (st.get("config") or {}).get("listening", True) is not False
+
+
+def podcast_sources(value, where="podcast_sources"):
+    """The learner's podcast sources in their one form: {"trusted": [shows], "avoid": [shows]},
+    each a list of names without blanks or repeats. None (never asked) reads as two empty lists.
+    Stops on anything else, so a mistyped setting is never stored."""
+    if value is None:
+        return {"trusted": [], "avoid": []}
+    if not isinstance(value, dict) or set(value) - {"trusted", "avoid"}:
+        die('%s must be {"trusted": [shows], "avoid": [shows]}' % where)
+    out = {}
+    for k in ("trusted", "avoid"):
+        v = value.get(k)
+        v = [] if v is None else [v] if isinstance(v, str) else v
+        if not isinstance(v, list) or not all(isinstance(x, str) for x in v):
+            die("%s.%s must be a list of show names" % (where, k))
+        names = []
+        for x in v:
+            x = " ".join(x.split())
+            if x and x.casefold() not in [n.casefold() for n in names]:
+                names.append(x)
+        out[k] = names
+    return out
+
+
+def listening_status(st):
+    """What `start` and the plan say about listening: whether it is on, the shows to prefer and
+    to avoid, and whether the learner is still to be asked for them (once)."""
+    on = listening_on(st)
+    return dict(podcast_sources((st.get("profile") or {}).get("podcast_sources"), "profile.podcast_sources"),
+                on=on, ask_sources=on and (st.get("profile") or {}).get("podcast_sources") is None)
 
 
 def guideline_context(st):
@@ -1377,6 +1421,9 @@ def plan_round(st, args, today):
         "feedback_depth": cfg.get("feedback_depth"), "show_coding": cfg.get("show_coding", True),
         "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
         "testing": bool(cfg.get("testing", False)),
+        # listening (rule 8): whether the kits get a "## Listening" section, and whose shows
+        "listening": listening_on(st),
+        "podcast_sources": podcast_sources(st["profile"].get("podcast_sources"), "profile.podcast_sources"),
         "profile": dict({k: st["profile"].get(k) for k in ("role", "subspecialty", "practice_setting", "notes")},
                         specialty=guideline_context(st)["specialty"]),
         "recent_cases_any_topic": used_cases[-15:],
@@ -2403,6 +2450,17 @@ def changed_keys(before, after):
     return sorted(k for k in set(before) | set(after) if before.get(k) != after.get(k))
 
 
+def settings_in_effect(st, section):
+    """The config or the profile of a ledger with listening and the podcast sources in the
+    form they take effect in, for comparing two versions of the settings."""
+    out = dict(st.get(section) or {})
+    if section == "config":
+        out["listening"] = listening_on(st)
+    else:
+        out["podcast_sources"] = podcast_sources(out.get("podcast_sources"), "profile.podcast_sources")
+    return out
+
+
 def cmd_settings(args):
     """Change settings: the changed ledger goes into the publish set, with the index and the
     page if it is out of date, so a settings change is one command. A change that can alter
@@ -2416,6 +2474,10 @@ def cmd_settings(args):
     prof_changes = load_json_arg(args.profile) if args.profile else {}
     deep_merge(st["config"], cfg_changes or {})
     deep_merge(st["profile"], prof_changes or {})
+    if "podcast_sources" in (prof_changes or {}):
+        st["profile"]["podcast_sources"] = podcast_sources(st["profile"]["podcast_sources"], "profile.podcast_sources")
+    if "listening" in (cfg_changes or {}) and not isinstance(st["config"]["listening"], bool):
+        die("config.listening must be true or false")
     if any(k in (cfg_changes or {}) for k in ("mcqs", "focused", "case")):
         check_round_mix(st["config"])
         if "round_set_at" not in cfg_changes:
@@ -2426,15 +2488,19 @@ def cmd_settings(args):
     if args.blueprint:
         st["blueprint"] = read_blueprint(args.blueprint)
     # what changed decides whether the round prepared ahead still stands: the values, not the
-    # keys that were sent (setting a value it already has changes nothing)
-    affects = [k for k in changed_keys(was["config"] or {}, st["config"]) if k not in CONTENT_NEUTRAL_CONFIG]
-    affects += ["profile." + k for k in changed_keys(was["profile"] or {}, st["profile"])
+    # keys that were sent (setting a value it already has changes nothing). Listening and the
+    # podcast sources are compared as they take effect: a ledger without them has listening on
+    # and no sources, so saying so again changes nothing.
+    affects = [k for k in changed_keys(settings_in_effect(was, "config"), settings_in_effect(st, "config"))
+               if k not in CONTENT_NEUTRAL_CONFIG]
+    affects += ["profile." + k for k in changed_keys(settings_in_effect(was, "profile"), settings_in_effect(st, "profile"))
                 if k not in CONTENT_NEUTRAL_PROFILE]
     if args.blueprint and st["blueprint"] != was["blueprint"]:
         affects.append("blueprint")
     bump_gen(st, content=bool(affects))
     st["updated"] = iso(today)
-    out = {"ok": True, "gen": st["gen"], "config": st["config"], "review": st["review"], **guideline_context(st)}
+    out = {"ok": True, "gen": st["gen"], "config": st["config"], "review": st["review"], **guideline_context(st),
+           "listening": listening_status(st)}
     out["prepared"] = ({"kept": False, "changed": affects,
                         "why": "set aside: %s can change what a round contains, so the next round is "
                                "planned and written at its start" % ", ".join(affects)}
@@ -2508,6 +2574,8 @@ def cmd_init(args):
     st = new_state(today)
     deep_merge(st["profile"], load_json_arg(args.profile) or {})
     deep_merge(st["config"], load_json_arg(args.config) or {})
+    if st["profile"].get("podcast_sources") is not None:
+        st["profile"]["podcast_sources"] = podcast_sources(st["profile"]["podcast_sources"], "profile.podcast_sources")
     st["profile"]["onboarded_at"] = iso(today)
     check_round_mix(st["config"])
     st["config"]["round_set_at"] = st["config"].get("round_set_at") or now_ts()
@@ -2682,6 +2750,9 @@ def status_dict(st, path, today):
         "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
         "testing": bool(cfg.get("testing", False)),
         **guideline_context(st),             # what the examiner grades against
+        # one podcast episode per topic in the final feedback: on or off, the shows to prefer and
+        # to avoid, and `ask_sources` while the learner has not been asked for them yet
+        "listening": listening_status(st),
         "prepare_task": bool(cfg.get("prepare_task", False)),
         "reminders": cfg.get("reminders"),
         "bytes": os.path.getsize(path),
@@ -2992,8 +3063,8 @@ def cmd_finish_prepare(args):
     Judgement calls go back once: an abbreviation that looks undefined, time anchors that look
     mixed and a contradicted key to the author (`"revise": true`); a part with more than a third
     of its claims not verified, or a claim given up without another route tried, to its checker
-    (`"recheck": [files]`). With --revised whatever is still found is accepted and listed under
-    `warnings`.
+    (`"recheck": [files]`), as are a kit's listening candidates that are not three episodes in
+    form. With --revised whatever is still found is accepted and listed under `warnings`.
     Prints counts, file names and the names of keys, fields and kit sections only; what the lint
     found is written to <work>/next/lint.md, which only the author reads."""
     work, info = job(args)
@@ -3005,7 +3076,7 @@ def cmd_finish_prepare(args):
     plan = plan_for_prepared(st, plan_path)
     files, has, warnings = prepared_round_files(plan, folder)
     _, key_problems = check_key_headers([os.path.join(folder, n) for n in SEALED_FILES if n in files], plan)
-    lint = lint_round(files, plan, kits_required=True)
+    lint = lint_round(files, plan, kits_required=True, candidates=not args.no_evidence)
     if key_problems or lint["blocking"]:
         stops = []
         if key_problems:
@@ -3049,9 +3120,13 @@ def cmd_finish_prepare(args):
                     "not_verified_total": sum(c["not_verified"] for c in checked.values()),
                     "claims_total": sum(c["claims"] for c in checked.values())})
     flagged = [name for name, counts in checked.items() if needs_recheck(counts)]
+    # listening candidates are the checker's (it searched for them): a kit whose candidates are
+    # not three episodes in form sends its checker back once, not the author
+    relisten = [EVIDENCE_FOR[sealed] for sealed, kit in KIT_FOR.items()
+                if any(r["rule"] == 8 and r["file"] == kit for r in lint["review"])]
     out["lint"] = lint_summary(lint, write_lint_details(folder, lint))
-    out["revise"] = bool(total or lint["review"]) and not args.revised
-    recheck = [] if args.revised else flagged
+    out["revise"] = bool(total or any(r["rule"] != 8 for r in lint["review"])) and not args.revised
+    recheck = [] if args.revised else [n for n in EVIDENCE_FOR.values() if n in flagged or n in relisten]
     if not args.no_evidence:
         out["recheck"] = recheck
     if args.revised:
@@ -3067,10 +3142,11 @@ def cmd_finish_prepare(args):
         steps = []
         if recheck:
             steps.append("start the checker once more for %s (same prompt; it finds its own file and retries "
-                         "only what is not verified, references/evidence_check.md §3) and wait for it"
-                         % " and ".join(recheck))
-        steps.append("start the author once more with Parts `revise` on this folder (it reads the evidence "
-                     "files and lint.md there) and wait for it")
+                         "only what is not verified and the listening candidates that are not complete, "
+                         "references/evidence_check.md §3 and §6) and wait for it" % " and ".join(recheck))
+        if out["revise"] or flagged:
+            steps.append("start the author once more with Parts `revise` on this folder (it reads the evidence "
+                         "files and lint.md there) and wait for it")
         out.update({"stashed": False,
                     "next": "%s, then run this command again with --revised" % "; then ".join(steps)})
         print(json.dumps(out, ensure_ascii=False))
@@ -3268,6 +3344,53 @@ def session_doc_a(rnd, sid, md):
         ms = [adjusted_item_mastery(it)[0] for it in rnd["items"]]
         doc["score"] = round(sum(ms) / len(ms), 2)
     return doc
+
+
+def listening_picks(rnd, warnings):
+    """Take the examiner's `listening` list out of the round (it belongs to the session document,
+    not to the ledger) and return it as the document keeps it: one pick per topic of the round,
+    each {topic, link, show, title, minutes, why} and, when given, `source` ("kit": a candidate
+    prepared with the round; "search": found after grading). None when the round has no such
+    list (listening is off). A pick that is not complete is left out, with a warning that names
+    its place in the list and what is missing."""
+    raw = rnd.pop("listening", None)
+    if raw is None:
+        return None
+    if not isinstance(raw, list):
+        warnings.append("round 'listening' must be a list of picks; it was left out of the session document")
+        return None
+    topics = [it.get("topic") for it in rnd.get("items") or [] if isinstance(it, dict)]
+    picks, seen = [], set()
+    for n, p in enumerate(raw, 1):
+        tag = "listening pick %d" % n
+        if not isinstance(p, dict):
+            warnings.append("%s: not an object; left out" % tag)
+            continue
+        topic = p.get("topic")
+        link = str(p.get("link") or "").strip().split("?")[0]
+        try:
+            minutes = int(round(float(p.get("minutes"))))
+        except (TypeError, ValueError):
+            minutes = None
+        wrong = [k for k in ("show", "title", "why") if not (isinstance(p.get(k), str) and p[k].strip())]
+        if topic not in topics:
+            wrong.append("topic (one of this round's: %s)" % ", ".join(str(t) for t in topics))
+        elif topic in seen:
+            wrong.append("topic (one pick per topic)")
+        if not SPOTIFY_EPISODE_RE.match(link):
+            wrong.append("link (https://open.spotify.com/episode/<id>)")
+        if minutes is None or minutes < 1:
+            wrong.append("minutes")
+        if wrong:
+            warnings.append("%s: left out of the session document; correct %s" % (tag, ", ".join(wrong)))
+            continue
+        seen.add(topic)
+        pick = {"topic": topic, "link": link, "show": p["show"].strip(), "title": p["title"].strip(),
+                "minutes": minutes, "why": p["why"].strip()}
+        if p.get("source") in LISTEN_SOURCES:
+            pick["source"] = p["source"]
+        picks.append(pick)
+    return picks
 
 
 def round_format(rnd):
@@ -3601,9 +3724,17 @@ LINT_FILE = "lint.md"
 KIT_FOR = {"sealed_questions.md": "kit_questions.md", "sealed_case.md": "kit_case.md"}
 # Rule 8: the sections a kit must have, each under a Markdown heading that starts with the name.
 # kit_questions.md has one heading per question ("## Q1") instead, and "Reading" only in a round
-# without a case. Reserved for issue #50 (podcast candidates): a "Listening" section, not yet required.
+# without a case. Both kits end with "Listening" unless the learner turned listening off: one
+# line per topic of the kit ("Q1 | points: …", written by the author), and under it the
+# candidate episodes (found by the checker), one line each:
+#   - <link> | <show> | <title> | <n> min | covers: … | matches: …
 KIT_CASE_SECTIONS = ("Reveal", "Model answer", "Rubric", "Differential", "Briefing", "Pearls", "Reading")
 KIT_READING = "Reading"
+KIT_LISTENING = "Listening"
+LISTEN_BULLET_RE = re.compile(r"^[ \t>]*(?:[-*+]|\d+[.)])?[ \t]*")
+LISTEN_TOPIC_RE = re.compile(r"^[*_`]*(Q[1-9][0-9]?|case)[*_`]*[ \t]*(?:\||$)", re.I)
+LISTEN_LENGTH_RE = re.compile(r"^(?:about[ \t]+|~[ \t]*)?(\d{1,3})[ \t]*min", re.I)
+LISTEN_FIELDS = 6
 HEADING_RE = re.compile(r"^[ \t]{0,3}#{1,6}[ \t]*(.+?)[ \t#:]*$", re.M)
 
 # Rule 5: the abbreviations that need no spelling out are listed in the rulebook, between these
@@ -3642,6 +3773,88 @@ def kit_headings(text):
     return [h.strip().strip("*_`").strip().lower() for h in HEADING_RE.findall(text or "")]
 
 
+def kit_section(text, name):
+    """The body of the kit's first section whose heading starts with `name` (to the next
+    heading), or None when there is no such heading."""
+    heads = list(HEADING_RE.finditer(text or ""))
+    for i, m in enumerate(heads):
+        if m.group(1).strip().strip("*_`").strip().lower().startswith(name.lower()):
+            return text[m.end():heads[i + 1].start() if i + 1 < len(heads) else len(text)]
+    return None
+
+
+def listening_topics(text):
+    """The "Listening" section of a kit, read: {topic id: {"entries": [[field, …]], "none": bool}}
+    in the order written ("Q1", …, "case"), or None when the kit has no such section. A line
+    that starts with a key id opens a topic; under it every line with a link or with fields is
+    one candidate, and a line starting "none" says that fewer than three were kept on purpose."""
+    body = kit_section(text, KIT_LISTENING)
+    if body is None:
+        return None
+    topics, current = {}, None
+    for line in body.splitlines():
+        line = LISTEN_BULLET_RE.sub("", line, count=1).strip()
+        if not line:
+            continue
+        m = LISTEN_TOPIC_RE.match(line)
+        if m:
+            kid = m.group(1)
+            kid = "case" if kid.lower() == "case" else kid.upper()
+            current = topics.setdefault(kid, {"entries": [], "none": False})
+        elif current is None or line.lower().startswith("sources"):
+            continue
+        elif line.strip("*_`").lower().startswith("none"):
+            current["none"] = True
+        elif "|" in line or "spotify.com" in line:
+            current["entries"].append([f.strip() for f in line.split("|")])
+    return topics
+
+
+def listening_entry_flaws(fields, avoid=()):
+    """What is wrong with one candidate line, as words that name no content: [] when it has its
+    six fields, a link to one Spotify episode, a length of 15 to 90 minutes and a show the
+    learner does not avoid."""
+    flaws = []
+    if len(fields) != LISTEN_FIELDS or not all(fields):
+        flaws.append("fields")
+    link = fields[0].strip("<>") if fields else ""
+    if not SPOTIFY_EPISODE_RE.match(link):
+        flaws.append("link")
+    m = LISTEN_LENGTH_RE.match(fields[3]) if len(fields) > 3 else None
+    if not m or not LISTEN_MINUTES[0] <= int(m.group(1)) <= LISTEN_MINUTES[1]:
+        flaws.append("length")
+    if len(fields) > 1 and fields[1].strip("*_`").casefold() in [a.casefold() for a in avoid]:
+        flaws.append("avoided show")
+    return flaws
+
+
+def listening_findings(files, plan=None):
+    """Rule 8, the judgement call on the candidates the checker kept: per kit and topic, lines
+    that are not a candidate in form (fields, link, length, an avoided show), fewer than three
+    candidates with no "none" line, or more than three. Names files, key ids and counts only."""
+    if plan is not None and plan.get("listening") is False:
+        return []
+    avoid = ((plan or {}).get("podcast_sources") or {}).get("avoid") or []
+    found = []
+    for kit in KIT_FOR.values():
+        for kid, topic in (listening_topics(files.get(kit)) or {}).items():
+            flaws = [f for e in topic["entries"] for f in listening_entry_flaws(e, avoid)]
+            bad = sum(1 for e in topic["entries"] if listening_entry_flaws(e, avoid))
+            n = len(topic["entries"])
+            said = []
+            if bad:
+                said.append("%d of %d candidate%s malformed (%s)"
+                            % (bad, n, "" if n == 1 else "s", ", ".join(sorted(set(flaws)))))
+            if n - bad < LISTEN_CANDIDATES and not topic["none"]:
+                said.append("%d usable candidate%s, %d wanted (or a line 'none: why')"
+                            % (n - bad, "" if n - bad == 1 else "s", LISTEN_CANDIDATES))
+            if n > LISTEN_CANDIDATES:
+                said.append("%d candidates, %d wanted" % (n, LISTEN_CANDIDATES))
+            if said:
+                found.append({"rule": 8, "file": kit, "where": "Listening, %s" % kid, "detail": "; ".join(said)})
+    return found
+
+
 def kit_problems(files, plan=None, kits_required=True):
     """Rule 8, the mechanical part: every kit is there and has its sections. Names files, key ids
     and section names only."""
@@ -3664,11 +3877,22 @@ def kit_problems(files, plan=None, kits_required=True):
                                 % (kit, ", ".join(missing)))
             counts = (plan or {}).get("counts") or {}
             want = [KIT_READING] if plan and not counts.get("case") else []
+        listening = (plan or {}).get("listening") is not False
+        if listening:
+            want.append(KIT_LISTENING)
         missing = [name for name in want if not any(h.startswith(name.lower().rstrip("s")) for h in heads)]
         if missing:
             problems.append("%s: section%s %s missing (a heading for each: %s)"
                             % (kit, "" if len(missing) == 1 else "s", ", ".join("'%s'" % m for m in missing),
                                ", ".join("'## %s'" % m for m in missing)))
+        topics = listening_topics(files[kit]) if listening else None
+        if topics is not None:
+            ids = ["case"] if kit == "kit_case.md" else [
+                k for k in parse_key_headers(files[sealed], sealed)[0] if k != "case"]
+            missing = [k for k in ids if k not in topics]
+            if missing:
+                problems.append("%s: Listening has no line for %s (one line per topic: '%s | points: …')"
+                                % (kit, ", ".join(missing), missing[0]))
     return problems
 
 
@@ -3731,9 +3955,11 @@ def mixed_time_anchors(blocks_in_order):
     return found
 
 
-def lint_round(files, plan=None, kits_required=True, standards=None):
+def lint_round(files, plan=None, kits_required=True, standards=None, candidates=False):
     """Lint a written round ({file name: text}) against the rulebook: {"blocking": [...],
-    "review": [...], "notes": [...]}. Key headers are checked separately (check_key_headers)."""
+    "review": [...], "notes": [...]}. Key headers are checked separately (check_key_headers).
+    `candidates`: the checker has run, so the listening candidates in the kits are looked at
+    too (before it, the author's "Listening" sections hold only their topic lines)."""
     lint = {"blocking": kit_problems(files, plan, kits_required), "review": [], "notes": []}
     shown = presented_text(files)
     common = common_abbreviations(standards)
@@ -3747,6 +3973,8 @@ def lint_round(files, plan=None, kits_required=True, standards=None):
         lint["review"].append({"rule": 6, "file": name, "where": where,
                                "detail": "from now: %s; by numbered day: %s"
                                          % (", ".join('"%s"' % x for x in now), ", ".join('"%s"' % x for x in day))})
+    if candidates:
+        lint["review"] += listening_findings(files, plan)
     return lint
 
 
@@ -3759,15 +3987,21 @@ def lint_lines(lint):
         if n5:
             lines.append("%s: %d abbreviation%s not spelled out at first use (references/standards.md, rule 5)"
                          % (name, n5, "" if n5 == 1 else "s"))
+        n8 = sum(1 for r in lint["review"] if r["file"] == name and r["rule"] == 8)
         if n6:
             lines.append("%s: time anchors look mixed in %d place%s (references/standards.md, rule 6)"
                          % (name, n6, "" if n6 == 1 else "s"))
+        if n8:
+            lines.append("%s: the listening candidates of %d topic%s are not three episodes in form "
+                         "(references/standards.md, rule 8)" % (name, n8, "" if n8 == 1 else "s"))
     return lines
 
 
 def lint_summary(lint, details=None):
     out = {"abbreviations": sum(1 for r in lint["review"] if r["rule"] == 5),
            "time_anchors": sum(1 for r in lint["review"] if r["rule"] == 6)}
+    if any(r["rule"] == 8 for r in lint["review"]):
+        out["listening"] = sum(1 for r in lint["review"] if r["rule"] == 8)
     if lint["review"]:
         out["where"] = lint_lines(lint)
         if details:
@@ -3784,12 +4018,14 @@ def write_lint_details(folder, lint):
             os.remove(path)
         return None
     titles = {5: "Rule 5: abbreviations not spelled out at first use in the presented text",
-              6: "Rule 6: more than one time anchor in one case or question"}
+              6: "Rule 6: more than one time anchor in one case or question",
+              8: "Rule 8: listening candidates that are not three episodes in form (for the checker, "
+                 "evidence_check.md §6; the author changes nothing here)"}
     lines = ["# Lint: judgement calls (references/standards.md)", "",
              "Sealed like the keys: this file names content. Only the author reads it.",
              "Each line is a heuristic's finding: correct the text where the rule is broken, leave it "
              "where the finding is wrong.", ""]
-    for rule in (5, 6):
+    for rule in (5, 6, 8):
         rows = [r for r in lint["review"] if r["rule"] == rule]
         if rows:
             lines += ["## %s" % titles[rule], ""]
@@ -4198,6 +4434,7 @@ def cmd_save(args):
     keys = fill_round_from_keys(rnd, sealed, load_json(plan_path) if plan_path else None)
     if keys:
         warnings.extend(keys.pop("warnings"))
+    listening = listening_picks(rnd, warnings)      # after the keys: the items have their topics
     if not feedback and not feedback_questions:
         die("save needs the feedback as sent: %s in the work folder" % FEEDBACK_FILE)
     st = copy.deepcopy(st_in)       # st_in stays the ledger as it was before this round
@@ -4210,6 +4447,8 @@ def cmd_save(args):
     if first_run:                   # nothing failed: keep the ledger this round started from
         save_json(st_in, before)
     doc = session_doc_a(rnd, sid, md)
+    if listening is not None:
+        doc["listening"] = listening
     rec = {}
     path = publish_ledger(work, info, st, rec, session=doc, empty_prepared=True)
     rec = report(path, os.path.getsize(path), dict(res, **rec))
@@ -4221,6 +4460,8 @@ def cmd_save(args):
         rec["page_settings_applied"] = prefs_changes
     if keys:
         rec["keys"] = keys
+    if listening is not None:
+        rec["listening"] = len(listening)
     save_json(rnd, os.path.join(work, RECORD_FILE))     # the round record as recorded, beside round.json
     if block_end(st):
         rec["next_block"] = block_end(st)       # tell the learner its `line` in the closing message
@@ -4264,6 +4505,14 @@ def cmd_close(args):
     doc = load_json(doc_path)
     if doc.get("id") and doc["id"] != sid:
         die("session document %s does not match the reflected session %s" % (doc.get("id"), sid))
+    # the podcast sources are asked for once, in the first Listening section: what the learner
+    # answered is in the reflection; no answer is kept as "none named", so it is not asked again
+    refl = load_json_arg(reflection) or {}
+    if refl.get("podcast_sources") is not None:
+        st["profile"]["podcast_sources"] = podcast_sources(refl["podcast_sources"], "reflection podcast_sources")
+        res["podcast_sources"] = st["profile"]["podcast_sources"]
+    elif st["profile"].get("podcast_sources") is None and "listening" in doc:
+        st["profile"]["podcast_sources"] = podcast_sources(None)
     doc["closing"] = md_b
     doc["reflected"] = True
     doc.pop("learner_changes", None)        # close can run again: only this run's count

@@ -67,9 +67,14 @@
   }
  ],
  "lab_units": "SI",
+ "listening": true,
  "note": "Blind: do not reveal topics, reasons or the drill before all answers are in. The learner is told the block's theme and position (block.line) and nothing more specific: never which items are on the theme, nor the domain of any other item. Make every vignette and stem clearly different from already_used and recent_cases_any_topic (patient, setting, presentation, twist). MCQs and focused questions are presented together and get their feedback before the case is shown; neither they nor their feedback may cue the case.",
  "ok": true,
  "pending_errata": [],
+ "podcast_sources": {
+  "avoid": [],
+  "trusted": []
+ },
  "prepare_ahead": true,
  "presentation_order": [
   "mcq CARD-01",
