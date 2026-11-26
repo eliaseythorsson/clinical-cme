@@ -1,0 +1,332 @@
+{
+ "schema": 2,
+ "ok": true,
+ "date": "2026-11-26",
+ "persona": "stops-halfway",
+ "skill_version": "4.3.1",
+ "commit": "4849242",
+ "examiner_model": "claude-opus-5-5",
+ "learner_model": "claude-sonnet-5-5",
+ "config": {
+  "session_minutes": 35,
+  "mcqs": 0,
+  "focused": 1,
+  "case": true,
+  "round_set_at": "2026-11-26T19:52:24Z",
+  "case_format": "unfolding",
+  "feedback_depth": "detailed",
+  "target_sessions_per_week": 3,
+  "review_interval_days": 42,
+  "intervals_days": [
+   1,
+   3,
+   7,
+   16,
+   35,
+   90
+  ],
+  "new_topics_per_round": 1,
+  "lab_units": "SI",
+  "blood_gas_units": "mmHg",
+  "guideline_region": "Iceland/Europe",
+  "item_order": "mcqs_first",
+  "helpers": false,
+  "prepare_ahead": false,
+  "prepare_task": false,
+  "testing": false,
+  "show_coding": true,
+  "reminders": false,
+  "listening": true,
+  "resource_preferences": {
+   "free_only": false,
+   "formats": [
+    "guidelines",
+    "review articles"
+   ]
+  }
+ },
+ "round": {
+  "session": "S0001",
+  "shape": "1 focused",
+  "score": 5.0,
+  "confident_misses": 0,
+  "continued_from_earlier_run": false
+ },
+ "messages": {
+  "examiner": 5,
+  "learner": 4
+ },
+ "checks": {
+  "blinding": {
+   "ok": true,
+   "leaks": 0,
+   "to_review": 3,
+   "seal_lifted_at": {
+    "questions": 3
+   },
+   "never_lifted": [
+    "case"
+   ],
+   "terms_checked": 287,
+   "block_line": "Block: Cardiology, round 1 of 12",
+   "findings": [
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "heart",
+     "message": 2,
+     "excerpt": "…ears, stopped 5 years ago). Temperature 36.8 °C, heart rate 92/min regular, blood pressure 138/84 mmHg i…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "heart",
+     "message": 4,
+     "excerpt": "… its supplementary material. Byrne RA et al., Eur Heart J 2023;44:3720–3826. - On posterior leads, the Fo…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "heart",
+     "message": 6,
+     "excerpt": "…nt of acute coronary syndromes (Byrne et al., Eur Heart J 2023), section 3 on ECG diagnosis and initial t…"
+    }
+   ],
+   "problems": []
+  },
+  "saved": {
+   "ok": true,
+   "session": "S0001",
+   "publish_set": [
+    "data/sessions/S0001.json",
+    "data/page.json",
+    "data/prepared.json",
+    "data/state.json"
+   ],
+   "files_compared": 4,
+   "problems": []
+  },
+  "log": {
+   "ok": true,
+   "sections": [
+    "a_case",
+    "a_questions",
+    "case",
+    "coded",
+    "discussion",
+    "fb_questions",
+    "feedback",
+    "grade_changes",
+    "notes",
+    "questions",
+    "reflection"
+   ],
+   "problems": [],
+   "examiner_text_not_logged": [
+    {
+     "message": 2,
+     "starts": "Today's round: 1 focused question + the case, about 35 minutes. Block: Cardiology, round 1"
+    },
+    {
+     "message": 9,
+     "starts": "- **Tested:** acute coronary syndrome (Question 1, focused). Score 5/5. - **Coming up:** 2"
+    },
+    {
+     "message": 9,
+     "starts": "Your reflection added a new topic to the blueprint: the aortic-imaging question you raised"
+    },
+    {
+     "message": 9,
+     "starts": "You're aiming for 3 sessions a week, so the next one fits in the next day or two."
+    }
+   ]
+  },
+  "standards": {
+   "ok": true,
+   "abbreviations": 3,
+   "time_anchors": 0,
+   "to_review": 8,
+   "feedback": [
+    {
+     "id": "questions",
+     "glossary": true,
+     "abbreviations": 14,
+     "not_in_glossary": [
+      "UA",
+      "BMJ",
+      "RA"
+     ]
+    },
+    {
+     "id": "final",
+     "glossary": true,
+     "abbreviations": 6,
+     "not_in_glossary": [
+      "STEMI",
+      "ST"
+     ]
+    }
+   ],
+   "findings": [
+    {
+     "rule": "5.1",
+     "where": "the questions as presented",
+     "detail": "PR"
+    },
+    {
+     "rule": "5.1",
+     "where": "the questions as presented",
+     "detail": "QRS"
+    },
+    {
+     "rule": "5.1",
+     "where": "the questions as presented",
+     "detail": "ST"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "UA"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "BMJ"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "RA"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "STEMI"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "ST"
+    }
+   ],
+   "problems": []
+  },
+  "listening": {
+   "ok": true,
+   "on": true,
+   "picks": 0,
+   "topics": 1,
+   "from_kit": 0,
+   "from_search": 0,
+   "problems": []
+  },
+  "stopped": {
+   "ok": true,
+   "case_topic": "CARD-02",
+   "case_topic_schedule": {
+    "last": null,
+    "attempts": 0,
+    "step": 0,
+    "due": null
+   },
+   "items_saved": 1,
+   "problems": []
+  }
+ },
+ "timings": {
+  "steps": [
+   {
+    "step": 1,
+    "label": "start of round",
+    "learner_message": 1,
+    "wait_s": 52.4,
+    "turn_s": 199.9,
+    "examiner_messages": 1,
+    "examiner_chars": 1694,
+    "learner_s": null
+   },
+   {
+    "step": 2,
+    "label": "after the answers to the questions",
+    "learner_message": 3,
+    "wait_s": 64.5,
+    "turn_s": 71.8,
+    "examiner_messages": 1,
+    "examiner_chars": 9920,
+    "learner_s": 9.8
+   },
+   {
+    "step": 3,
+    "label": "after the case answer",
+    "learner_message": 5,
+    "wait_s": 27.1,
+    "turn_s": 41.0,
+    "examiner_messages": 2,
+    "examiner_chars": 2144,
+    "learner_s": 4.8
+   },
+   {
+    "step": 4,
+    "label": "after the reflection",
+    "learner_message": 8,
+    "wait_s": 28.3,
+    "turn_s": 36.7,
+    "examiner_messages": 1,
+    "examiner_chars": 615,
+    "learner_s": 5.7
+   }
+  ],
+  "total_wait_s": 172.3,
+  "longest_wait_s": 64.5,
+  "elapsed_s": 361.3
+ },
+ "quality": {
+  "scorer_model": "claude-opus-5-5",
+  "items": [
+   {
+    "id": "Q1",
+    "type": "focused",
+    "topic": "CARD-01",
+    "answered": true,
+    "score": 4,
+    "note": "Accurate, ESC-aligned posterior OMI item with a good dissection distractor; 'main alternative' is ambiguous and key rubric cites RBBB/T-inversion noise absent from the stem."
+   },
+   {
+    "id": "Case",
+    "type": "case",
+    "topic": "CARD-02",
+    "answered": false,
+    "score": 4,
+    "note": "Presented, unanswered. Coherent, realistic NSAID-precipitated de novo HFrEF; bank fits (urine Na 38, 70 mL/h, ferritin 64/TSAT 12%); minor eGFR 37 vs 38 mismatch in key."
+   }
+  ],
+  "feedback": [
+   {
+    "id": "questions",
+    "score": 4,
+    "note": "Fair 5/5; teaches V1-V3 vs V4-V6 well; ADD-RS briefing sound (Goodacre BMJ 2024 checked by web search) but ESC 2024 aortic guideline not cited; pearl wording is muddled."
+   },
+   {
+    "id": "final",
+    "score": 4,
+    "note": "Correct stop handling, accurate gap summary and calibration, relevant ESC 2023 reading; listening section adds noise but nothing misleading."
+   }
+  ],
+  "item_mean": 4.0,
+  "feedback_mean": 4.0,
+  "score": 4,
+  "note": "Short round, one item answered: clinically sound, well pitched for internal medicine in Europe; small key/stem inconsistencies and a non-ESC source for the dissection briefing.",
+  "concerns": [
+   "Q1 key rubric point 4 refers to an old RBBB-like pattern and prior anterior T inversion that the stem never shows.",
+   "Q1 feedback cites a BMJ review for dissection work-up; for a European learner the ESC 2024 aortic disease guideline algorithm is the primary source.",
+   "Case key gives eGFR 38 for the day-1 SGLT2i decision while the bank says eGFR 37 (immaterial to the decision)."
+  ],
+  "problems": [
+   "feedback dispute has no score"
+  ]
+ },
+ "note": null
+}

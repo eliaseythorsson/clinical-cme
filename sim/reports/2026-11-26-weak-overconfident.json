@@ -1,0 +1,391 @@
+{
+ "schema": 2,
+ "ok": true,
+ "date": "2026-11-26",
+ "persona": "weak-overconfident",
+ "skill_version": "4.3.1",
+ "commit": "4849242",
+ "examiner_model": "claude-opus-5-5",
+ "learner_model": "claude-sonnet-5-5",
+ "config": {
+  "session_minutes": 35,
+  "mcqs": 0,
+  "focused": 1,
+  "case": true,
+  "round_set_at": "2026-11-26T19:52:24Z",
+  "case_format": "unfolding",
+  "feedback_depth": "detailed",
+  "target_sessions_per_week": 3,
+  "review_interval_days": 42,
+  "intervals_days": [
+   1,
+   3,
+   7,
+   16,
+   35,
+   90
+  ],
+  "new_topics_per_round": 1,
+  "lab_units": "SI",
+  "blood_gas_units": "mmHg",
+  "guideline_region": "Iceland/Europe",
+  "item_order": "mcqs_first",
+  "helpers": false,
+  "prepare_ahead": false,
+  "prepare_task": false,
+  "testing": false,
+  "show_coding": true,
+  "reminders": false,
+  "listening": true,
+  "resource_preferences": {
+   "free_only": false,
+   "formats": [
+    "guidelines",
+    "review articles"
+   ]
+  }
+ },
+ "round": {
+  "session": "S0001",
+  "shape": "1 focused, case (two stages)",
+  "score": 2.0,
+  "confident_misses": 1,
+  "continued_from_earlier_run": false
+ },
+ "messages": {
+  "examiner": 6,
+  "learner": 5
+ },
+ "checks": {
+  "blinding": {
+   "ok": true,
+   "leaks": 0,
+   "to_review": 3,
+   "seal_lifted_at": {
+    "questions": 3,
+    "case": 7
+   },
+   "never_lifted": [],
+   "terms_checked": 341,
+   "block_line": "Block: Cardiology, round 1 of 12",
+   "findings": [
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "heart",
+     "message": 2,
+     "excerpt": "… saturation 97% on room air; temperature 36.7 °C. Heart sounds normal, no murmur; chest clear; abdomen so…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "failure",
+     "message": 4,
+     "excerpt": "…night only, no palpitations. Past history: heart failure with reduced ejection fraction, ischaemic (anteri…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "heart",
+     "message": 4,
+     "excerpt": "… the management of acute coronary syndromes. *Eur Heart J* 2023;44:3720–3826 — section on the ECG at firs…"
+    }
+   ],
+   "problems": []
+  },
+  "saved": {
+   "ok": true,
+   "session": "S0001",
+   "publish_set": [
+    "data/sessions/S0001.json",
+    "data/page.json",
+    "data/prepared.json",
+    "data/state.json"
+   ],
+   "files_compared": 4,
+   "problems": []
+  },
+  "log": {
+   "ok": true,
+   "sections": [
+    "a_case",
+    "a_final",
+    "a_questions",
+    "case",
+    "coded",
+    "discussion",
+    "fb_questions",
+    "feedback",
+    "grade_changes",
+    "questions",
+    "reflection",
+    "stage2"
+   ],
+   "problems": [],
+   "examiner_text_not_logged": [
+    {
+     "message": 2,
+     "starts": "Today's round: 1 focused question + the case, about 35 minutes. Block: Cardiology, round 1"
+    },
+    {
+     "message": 11,
+     "starts": "Saved: session S0001 — acute coronary syndrome (focused question) and acute decompensated "
+    },
+    {
+     "message": 11,
+     "starts": "Your reflection rated both areas 5/5 against graded scores of 1 and 3, so both topics stay"
+    },
+    {
+     "message": 11,
+     "starts": "At your target of three sessions a week, the next round fits any time from tomorrow."
+    }
+   ]
+  },
+  "standards": {
+   "ok": true,
+   "abbreviations": 3,
+   "time_anchors": 0,
+   "to_review": 18,
+   "feedback": [
+    {
+     "id": "questions",
+     "glossary": true,
+     "abbreviations": 8,
+     "not_in_glossary": [
+      "GRACE",
+      "RA"
+     ]
+    },
+    {
+     "id": "final",
+     "glossary": true,
+     "abbreviations": 33,
+     "not_in_glossary": [
+      "ADVOR",
+      "QRS",
+      "GP",
+      "PUSH",
+      "AHF",
+      "TA",
+      "NEJM",
+      "AFFIRM",
+      "STRONG",
+      "IDEA",
+      "EP",
+      "OMI",
+      "NOMI"
+     ]
+    }
+   ],
+   "findings": [
+    {
+     "rule": "5.1",
+     "where": "the questions as presented",
+     "detail": "PR"
+    },
+    {
+     "rule": "5.1",
+     "where": "the questions as presented",
+     "detail": "QRS"
+    },
+    {
+     "rule": "5.1",
+     "where": "the questions as presented",
+     "detail": "ST"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "GRACE"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "RA"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "ADVOR"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "QRS"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "GP"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "PUSH"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "AHF"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "TA"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "NEJM"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "AFFIRM"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "STRONG"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "IDEA"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "EP"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "OMI"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "NOMI"
+    }
+   ],
+   "problems": []
+  },
+  "listening": {
+   "ok": true,
+   "on": true,
+   "picks": 2,
+   "topics": 2,
+   "from_kit": 0,
+   "from_search": 2,
+   "problems": []
+  }
+ },
+ "timings": {
+  "steps": [
+   {
+    "step": 1,
+    "label": "start of round",
+    "learner_message": 1,
+    "wait_s": 50.6,
+    "turn_s": 216.6,
+    "examiner_messages": 1,
+    "examiner_chars": 1790,
+    "learner_s": null
+   },
+   {
+    "step": 2,
+    "label": "after the answers to the questions",
+    "learner_message": 3,
+    "wait_s": 91.8,
+    "turn_s": 105.8,
+    "examiner_messages": 1,
+    "examiner_chars": 8346,
+    "learner_s": 8.2
+   },
+   {
+    "step": 3,
+    "label": "after the Stage 1 answer",
+    "learner_message": 5,
+    "wait_s": 18.7,
+    "turn_s": 21.2,
+    "examiner_messages": 1,
+    "examiner_chars": 2404,
+    "learner_s": 8.1
+   },
+   {
+    "step": 4,
+    "label": "after the final answers",
+    "learner_message": 7,
+    "wait_s": 124.1,
+    "turn_s": 152.1,
+    "examiner_messages": 2,
+    "examiner_chars": 13417,
+    "learner_s": 7.5
+   },
+   {
+    "step": 5,
+    "label": "after the reflection",
+    "learner_message": 10,
+    "wait_s": 357.4,
+    "turn_s": 381.8,
+    "examiner_messages": 1,
+    "examiner_chars": 508,
+    "learner_s": 5.7
+   }
+  ],
+  "total_wait_s": 642.6,
+  "longest_wait_s": 357.4,
+  "elapsed_s": 882.7
+ },
+ "quality": {
+  "scorer_model": "claude-opus-5-5",
+  "items": [
+   {
+    "id": "Q1",
+    "type": "focused",
+    "topic": "CARD-01",
+    "answered": true,
+    "score": 4,
+    "note": "Accurate ESC 2023 posterior OMI item; ECG given, V7-V9 not handed over. Keyed answer sound. Quibble: point-of-care hs-TnT is unrealistic in most clinics."
+   },
+   {
+    "id": "Case",
+    "type": "case",
+    "topic": "CARD-02",
+    "answered": true,
+    "score": 4,
+    "note": "Coherent, realistic warm-wet HFrEF with NSAID trigger, urine-Na response check, iron and CRT twists; results fit. CRT 'despite OMT' timing on sub-target doses not addressed."
+   }
+  ],
+  "feedback": [
+   {
+    "id": "questions",
+    "score": 5,
+    "note": "Correct grade; ESC 2023 timing (immediate <2 h for refractory pain, early <24 h IIa) and V7-V9 threshold accurate and well sourced; teaches the decisive ECG point."
+   },
+   {
+    "id": "final",
+    "score": 4,
+    "note": "Claims checked (ADVOR WRF 41 vs 19%, ESC diuretic algorithm, IV iron, STRONG-HF) accurate; fair 3/5. Table cites procalcitonin/D-dimer never shown; ICD vs CRT a bit harsh."
+   }
+  ],
+  "item_mean": 4.0,
+  "feedback_mean": 4.5,
+  "score": 4,
+  "note": "High-yield, accurate items pitched well for internal medicine; feedback sourced and fair. Minor leaks of unreleased results and a device-timing nuance.",
+  "concerns": [
+   "Case feedback table quotes procalcitonin 0.08 and D-dimer 0.9, results never released to the learner.",
+   "CRT referral: ESC class I applies after optimised GDMT (>=3 months); she is on sub-target doses, so marking 'ICD consideration' down could be softened.",
+   "Meekers 2025 is an EJHF expert consensus document, cited as a 'Heart Failure Association consensus' - minor misattribution.",
+   "Q1: point-of-care high-sensitivity troponin T is not widely available; a lab hs-TnT would be more realistic."
+  ],
+  "problems": [
+   "feedback dispute has no score"
+  ]
+ },
+ "note": null
+}

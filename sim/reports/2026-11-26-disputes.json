@@ -1,0 +1,428 @@
+{
+ "schema": 2,
+ "ok": true,
+ "date": "2026-11-26",
+ "persona": "disputes",
+ "skill_version": "4.3.1",
+ "commit": "4849242",
+ "examiner_model": "claude-opus-5-5",
+ "learner_model": "claude-sonnet-5-5",
+ "config": {
+  "session_minutes": 35,
+  "mcqs": 0,
+  "focused": 1,
+  "case": true,
+  "round_set_at": "2026-11-26T19:52:24Z",
+  "case_format": "unfolding",
+  "feedback_depth": "detailed",
+  "target_sessions_per_week": 3,
+  "review_interval_days": 42,
+  "intervals_days": [
+   1,
+   3,
+   7,
+   16,
+   35,
+   90
+  ],
+  "new_topics_per_round": 1,
+  "lab_units": "SI",
+  "blood_gas_units": "mmHg",
+  "guideline_region": "Iceland/Europe",
+  "item_order": "mcqs_first",
+  "helpers": false,
+  "prepare_ahead": false,
+  "prepare_task": false,
+  "testing": false,
+  "show_coding": true,
+  "reminders": false,
+  "listening": true,
+  "resource_preferences": {
+   "free_only": false,
+   "formats": [
+    "guidelines",
+    "review articles"
+   ]
+  }
+ },
+ "round": {
+  "session": "S0001",
+  "shape": "1 focused, case (two stages)",
+  "score": 4.5,
+  "confident_misses": 0,
+  "continued_from_earlier_run": false
+ },
+ "messages": {
+  "examiner": 9,
+  "learner": 6
+ },
+ "checks": {
+  "blinding": {
+   "ok": true,
+   "leaks": 0,
+   "to_review": 6,
+   "seal_lifted_at": {
+    "questions": 3,
+    "case": 8
+   },
+   "never_lifted": [],
+   "terms_checked": 399,
+   "block_line": "Block: Cardiology, round 1 of 12",
+   "findings": [
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "heart",
+     "message": 2,
+     "excerpt": "… pack-years). No allergies. Temperature 36.7 °C, heart rate 92/min, blood pressure 148/86 mmHg in the ri…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "failure",
+     "message": 4,
+     "excerpt": "…with D-dimer <500 ng/mL missed 3 of 241 cases — a failure rate of 0.3% (95% CI 0.1–1) — and ruled out about…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "heart",
+     "message": 4,
+     "excerpt": "…circumflex, with worse outcomes (Khan et al., Eur Heart J 2017, meta-analysis; I could not open it today,…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "failure",
+     "message": 5,
+     "excerpt": "…y morning without fail\". **Past history**: heart failure with reduced ejection fraction diagnosed four yea…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "heart",
+     "message": 5,
+     "excerpt": "… \"every morning without fail\". **Past history**: heart failure with reduced ejection fraction diagnosed …"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "heart",
+     "message": 7,
+     "excerpt": "… the first 24 hours −450 mL. Temperature 36.8 °C, heart rate 84/min, blood pressure 146/82 mmHg, respirat…"
+    }
+   ],
+   "problems": []
+  },
+  "saved": {
+   "ok": true,
+   "session": "S0001",
+   "publish_set": [
+    "data/sessions/S0001.json",
+    "data/page.json",
+    "data/prepared.json",
+    "data/state.json"
+   ],
+   "files_compared": 4,
+   "problems": []
+  },
+  "log": {
+   "ok": true,
+   "sections": [
+    "a_case",
+    "a_final",
+    "a_questions",
+    "case",
+    "coded",
+    "discussion",
+    "fb_questions",
+    "feedback",
+    "grade_changes",
+    "notes",
+    "questions",
+    "reflection",
+    "stage2"
+   ],
+   "problems": [],
+   "examiner_text_not_logged": [
+    {
+     "message": 2,
+     "starts": "Today's round: 1 focused question + the case, about 35 minutes. Block: Cardiology, round 1"
+    },
+    {
+     "message": 15,
+     "starts": "Saved. Session S0001: acute coronary syndrome (focused question, 5/5 after your challenge)"
+    },
+    {
+     "message": 15,
+     "starts": "Your reflection added the three points you named (urine-sodium-guided diuresis, in-hospita"
+    },
+    {
+     "message": 15,
+     "starts": "At three sessions a week, the next round fits in about two days. The Cardiology block cont"
+    }
+   ]
+  },
+  "standards": {
+   "ok": true,
+   "abbreviations": 3,
+   "time_anchors": 0,
+   "to_review": 14,
+   "feedback": [
+    {
+     "id": "questions",
+     "glossary": true,
+     "abbreviations": 12,
+     "not_in_glossary": [
+      "UA",
+      "CI"
+     ]
+    },
+    {
+     "id": "final",
+     "glossary": true,
+     "abbreviations": 33,
+     "not_in_glossary": [
+      "ADVOR",
+      "LV",
+      "ENACT",
+      "PUSH",
+      "TA",
+      "NEJM",
+      "STRONG",
+      "DANISH",
+      "IDEA"
+     ]
+    }
+   ],
+   "findings": [
+    {
+     "rule": "5.1",
+     "where": "the questions as presented",
+     "detail": "PR"
+    },
+    {
+     "rule": "5.1",
+     "where": "the questions as presented",
+     "detail": "QRS"
+    },
+    {
+     "rule": "5.1",
+     "where": "the questions as presented",
+     "detail": "ST"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "UA"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "CI"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "ADVOR"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "LV"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "ENACT"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "PUSH"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "TA"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "NEJM"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "STRONG"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "DANISH"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "IDEA"
+    }
+   ],
+   "problems": []
+  },
+  "listening": {
+   "ok": true,
+   "on": true,
+   "picks": 0,
+   "topics": 2,
+   "from_kit": 0,
+   "from_search": 0,
+   "problems": []
+  },
+  "dispute": {
+   "ok": true,
+   "logged_in": [
+    "notes"
+   ],
+   "problems": [],
+   "grade_changes": [
+    {
+     "item": "Q1",
+     "topic": "CARD-01",
+     "from": 4,
+     "to": 5,
+     "outcome": "learner_right"
+    },
+    {
+     "item": "Q1",
+     "topic": "CARD-01",
+     "from": 4,
+     "to": 5,
+     "outcome": "learner_right"
+    }
+   ]
+  }
+ },
+ "timings": {
+  "steps": [
+   {
+    "step": 1,
+    "label": "start of round",
+    "learner_message": 1,
+    "wait_s": 53.8,
+    "turn_s": 196.0,
+    "examiner_messages": 1,
+    "examiner_chars": 1746,
+    "learner_s": null
+   },
+   {
+    "step": 2,
+    "label": "after the answers to the questions",
+    "learner_message": 3,
+    "wait_s": 88.0,
+    "turn_s": 96.5,
+    "examiner_messages": 2,
+    "examiner_chars": 10016,
+    "learner_s": 11.8
+   },
+   {
+    "step": 3,
+    "label": "after the Stage 1 answer",
+    "learner_message": 6,
+    "wait_s": 21.0,
+    "turn_s": 23.7,
+    "examiner_messages": 1,
+    "examiner_chars": 2766,
+    "learner_s": 18.2
+   },
+   {
+    "step": 4,
+    "label": "after the final answers",
+    "learner_message": 8,
+    "wait_s": 276.2,
+    "turn_s": 488.2,
+    "examiner_messages": 2,
+    "examiner_chars": 14345,
+    "learner_s": 24.4
+   },
+   {
+    "step": 5,
+    "label": "after learner message 11",
+    "learner_message": 11,
+    "wait_s": 41.0,
+    "turn_s": 204.8,
+    "examiner_messages": 2,
+    "examiner_chars": 2250,
+    "learner_s": 37.7
+   },
+   {
+    "step": 6,
+    "label": "after the reflection",
+    "learner_message": 14,
+    "wait_s": 110.1,
+    "turn_s": 260.3,
+    "examiner_messages": 1,
+    "examiner_chars": 592,
+    "learner_s": 6.3
+   }
+  ],
+  "total_wait_s": 590.1,
+  "longest_wait_s": 276.2,
+  "elapsed_s": 1217.9
+ },
+ "quality": {
+  "scorer_model": "claude-opus-5-5",
+  "items": [
+   {
+    "id": "Q1",
+    "type": "focused",
+    "topic": "CARD-01",
+    "answered": true,
+    "score": 5,
+    "note": "Classic posterior OMI with a well-built dissection distractor; key correct per ESC 2023; V7-V9 withheld, tests ECG reading that matters for an internist."
+   },
+   {
+    "id": "Case",
+    "type": "case",
+    "topic": "CARD-02",
+    "answered": true,
+    "score": 4,
+    "note": "Realistic, coherent ADHF case; results fit; urine Na rightly held back. Crux slightly soft: ESC says urine Na and/or 6-h output, so output alone meets it."
+   }
+  ],
+  "feedback": [
+   {
+    "id": "questions",
+    "score": 4,
+    "note": "Accurate teaching (posterior pattern, ADD-RS, ADvISED checked); but 4/5 deduction for a management 'gate' the question never asked about, later withdrawn."
+   },
+   {
+    "id": "final",
+    "score": 4,
+    "note": "Claims check out (ADVOR, iron classes, CrCl calc, DANISH); urine Na gap a bit harsh given 'and/or'; cites a D-dimer the learner never saw; O2 94-98% let pass."
+   },
+   {
+    "id": "dispute",
+    "score": 4,
+    "note": "Re-checked ESC 2023 Table 4 (class I, C), conceded fairly and corrected the timing wording; muddled '<2 h' self-correction needed a second message."
+   }
+  ],
+  "item_mean": 4.5,
+  "feedback_mean": 4.0,
+  "score": 4,
+  "note": "Strong, current, well-pitched round with accurate sourcing; grading a touch strict on both items, one corrected on challenge.",
+  "concerns": [
+   "Case feedback: urine-sodium gap scored though ESC 2021 response check is urine Na AND/OR 6-h output, which the learner planned.",
+   "Case feedback differential table cites D-dimer 1.4, a result never shown to the learner.",
+   "Case feedback let 'titrate O2 to 94-98%' pass; ESC acute HF advises oxygen only if SpO2 <90%.",
+   "Case: ARNI-timing gap coded as 'knowledge, numeric'; it is a management-timing judgement and was defensible as written."
+  ],
+  "problems": []
+ },
+ "note": null
+}
