@@ -58,7 +58,7 @@ needs judgement; the rest is in the references:
 
 | Reference | Read when |
 |---|---|
-| `references/store.md` | Every session start (first time in a session: §2–4); setup, a failed save, recovery, export |
+| `references/store.md` | After the first message (§4, before publishing); before it only when turn 1 says so; setup, a failed save, recovery, export |
 | `references/standards.md` | Before grading: the numbered rules for items and feedback (rules 1–5 bind your feedback); all of it when you write items |
 | `references/feedback_guide.md` | Before grading; contains the reflection prompt |
 | `references/analysis_framework.md` | Before grading (§1 coding); for the deep review (§2) |
@@ -136,38 +136,38 @@ independent tool calls, and end the turn with one short line ("Answer when ready
 
 ### Turn 1. Start → questions out
 
-1. **In one parallel batch**: note the date and time; find and read the store into
-   `<work>/store/` (`store.md` §3–4: `data/state.json`, `data/index.json`,
-   `data/prepared.json`, `index.html`, and the page's settings document `cme/prefs`; the last
-   two may be missing). No store → ask once (`store.md` §3); first-timers → `onboarding.md`.
-2. `python3 cme.py start --work <work> --store <work>/store --version <version read>` (plus
-   `--prefs '<the cme/prefs JSON>'` when it exists, and the one-round options of `requests.md`
-   §3 for a special round). It prints neutral status and counts (`estimated_minutes` is a
-   guide), never topics. Route on it:
+The questions are out within about ten seconds: before the first message, only the calls of
+steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the store is not the page).
+
+1. **Read the store, in one parallel batch** (before it, one call listing the learner's
+   artifacts to find **Clinical CME**, unless a link or folder was given): `data/state.json`,
+   `data/index.json`, `data/prepared.json` and `index.html` as saved local files, never into
+   the conversation, noting the version read; and the page's settings document `cme/prefs`.
+   All but the ledger may be missing. No store → ask once (`store.md` §3) or `onboarding.md`.
+2. **One shell call**: copy the saved files into `<work>/store/` and run `python3 cme.py start
+   --work <work> --store <work>/store --version <version read>` (plus `--prefs '<the cme/prefs
+   JSON>'` when it exists, and the one-round options of `requests.md` §3 for a special round).
+   It prints neutral status, never topics, and all the first message needs. Route on it:
    - `onboarding_needed` → setup. "Prepare only", or a scheduled task asking for it →
      `preparing.md` §3, not a round. Any other request → `requests.md`.
    - `review_due` → offer the progress review in one line; default to after the round.
    - `last_session.unreflected` → one neutral line: the last session was saved without its
      reflection and stays recorded that way.
-   - `round_mix` → its `say` in the opening line; else `page_settings_applied` (unless only
+   - `round_mix` → its `say` after the opening line; else `page_settings_applied` (unless only
      `unchanged`) → "Using the mix you set on your page: …"; page-settings `warnings` → one line.
-   - `block.line` → into the opening line word for word; with `block.starts` true, add
-     `block.reason` ("New block: …"). The learner is told the theme and the position, nothing
-     more specific: not which questions are on the theme, not the domain of any other item.
-   - keep `helpers`, `prepared`, `testing`, `speed_settings_new`, `pending_errata_count`,
-     `guideline_region` and `specialty`: every grade and all feedback follows rules 2–5 with them.
-3. **Get the first part's text.** `prepared.used` true → it is `present` in the `start`
-   output and the files in `prepared.ready` are already in `<work>`. Otherwise the round is
-   written now, the first part before anything is sent: `preparing.md` §6.
-4. **Send it**: one opening line, for example "Today's round: two MCQs and a focused question,
-   then one case, about 25 minutes. Block: Cardiology, round 4 of 12. Last saved session: 25
-   Oct." Nothing else about content. After a long gap, at most add "Welcome back — N items
-   are waiting; we'll start with the most overdue", without scolding or enlarging the round.
-   Then the text exactly as printed; it already ends with its answer prompt.
-5. **Behind the scenes**, in this order: start a background checker for each sealed file in
-   `<work>` without an evidence file; read `standards.md`, `feedback_guide.md` and
-   `analysis_framework.md` §1 in one batch; have what `prepared.ready` lacks of the round
-   written (`preparing.md` §6).
+   - `opening` → the opening line, word for word. Nothing more specific about the block: not
+     which questions are on its theme, not the domain of any other item.
+   - keep `started_at` (for `round.json`), `helpers`, `prepared`, `testing`, `speed_settings_new`,
+     `pending_errata_count`, `guideline_region` and `specialty` (rules 2–5 grade with them).
+3. **Send the first message**: `opening` (after a long gap at most add "Welcome back — N items
+   are waiting; we'll start with the most overdue", without scolding or enlarging the round),
+   then, with `prepared.used` true, `present` exactly as printed (it ends with its answer
+   prompt; the files in `prepared.ready` are already in `<work>`). Nothing else about content.
+   `prepared.used` false → the round is written now, the first part first: `preparing.md` §6.
+4. **Behind the scenes**, in this order: start a background checker for each sealed file in
+   `prepared.unchecked` (a round written now: each one in `<work>` without an evidence file);
+   read `standards.md`, `feedback_guide.md`, `analysis_framework.md` §1 and `store.md` §4
+   (publishing) in one batch; have what `prepared.ready` lacks written (`preparing.md` §6).
 
 ### Turn 2. Question answers in → their feedback, then the case
 
