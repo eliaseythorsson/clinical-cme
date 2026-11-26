@@ -35,6 +35,7 @@ it with `start --work <work>` (no `--store`): it continues from the changed ledg
 | **Move my data to a folder** | `store.md` §3 and §7. |
 | **Export everything** ("give me my data") | `store.md` §7. |
 | **FAQ or how it works** | `onboarding.md` §5, briefly. |
+| **A score or a gap set by the learner** ("record that as 4", "close that gap") | After the close: read the store with that session's document, `open`, then `cme.py override --work <work> --scores '[{"topic": "CARD-03", "score": 4}]' --close-gaps '[{"gap": "G0007"}]'` → publish its `files` (`feedback_guide.md` §7.1). Before the close it goes in the reflection JSON. Never edit the ledger by hand. |
 | **Add the reflection to the last session** | `store.md` §6, "Session saved without a reflection". |
 
 ## 2. Testing mode

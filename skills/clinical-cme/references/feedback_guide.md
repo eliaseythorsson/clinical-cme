@@ -19,10 +19,9 @@ has changed since then, search that point once the answers are in. Otherwise tha
   are not certain of: guideline recommendations and their class/level, thresholds,
   doses, trial results, approval status. Use web search and fetch the primary source
   (society guideline, journal article, PubMed record) rather than a secondary summary.
-- Grade against current guidance. If guidance changed recently, or regional guidelines
-  disagree (e.g. ESC vs ACC/AHA, NICE vs US), say so and grade the learner fairly against
-  the guidance appropriate to their region: `guideline_region` in the `start` output (set at
-  setup, changed on request), read with their `specialty`.
+- Grade against current guidance for the learner's region and specialty, and say so where
+  guidance changed recently or regions disagree (e.g. ESC vs ACC/AHA, NICE vs US): rule 2
+  of `standards.md`. Units and drug names as in rule 3; depth as the pitch of rule 4.
 - Never invent a trial name, effect size, recommendation number, page, table, DOI or
   PubMed ID. If you cannot verify a detail, state it qualitatively ("reduced mortality in
   the pivotal trial") or omit it. A precise-looking wrong number is worse than none.
@@ -40,11 +39,12 @@ has changed since then, search that point once the answers are in. Otherwise tha
 
 ## 2. Structure of the feedback
 
-Two messages, each sent the moment its part is graded:
+Two messages, each sent the moment its part is graded. Each opens with the one-line
+glossary of the abbreviations it uses (rule 5.3).
 
 - **Part 1, after the short questions are answered**: A (for these items only), B, B2. It
   closes with one line on the score so far and "The case follows." No gap summary, no reading
-  list, no reflection prompt, and nothing about the case (`case_design.md` §1). The case is
+  list, no reflection prompt, and nothing about the case (rule 1.5). The case is
   sent straight after it.
 - **Part 2, after the case's last answer**: A (for the case), C, D for the **whole round**
   (short questions included), E, F.
@@ -230,6 +230,36 @@ Use `both_defensible` or `upheld` as appropriate. If the dispute changes the cod
 the final position. The review reports dispute outcomes honestly; a learner who is often
 right is telling you something about the grading.
 
+### 7.1 A score the learner sets, a gap the learner closes
+
+"Record it as 4" or "close that gap" is not a dispute: the learner is not arguing the
+evidence, they are deciding what their record says. It is their record, so do it, without
+arguing and without changing your grading. Never write it as a dispute outcome (your
+grading did not change), and never edit the ledger by hand.
+
+- **Before the close**, in the reflection JSON (`state_schema.md` §3):
+  `"learner_scores": [{"item": "Q2", "type": "mcq", "topic": "CARD-03", "score": 4, "note": "the learner's words"}]`
+  and `"learner_closed_gaps": [{"gap": "G0007", "note": "…"}]` (a gap by its id, or
+  `{"topic": "CARD-03"}` for one this round opened).
+- **After the close** (also in a later conversation, after reading the store with the
+  session's document and `open`): `python3 cme.py override --work <work> --scores '[…]'
+  --close-gaps '[…]'` with the same entries (`--session <id>` for a round other than the
+  last), then publish its `files`.
+
+What the engine does with it: the item keeps both scores, `graded` (yours) and `mastery`
+(the learner's, marked `set_by: learner`); the topic is scheduled with the learner's score
+and the round's score follows it; the change is a `grade_changes` entry with outcome
+`learner_set`. A gap closed this way moves to `resolved` marked `closed_by: learner` and
+gets **no retest**; the topic still comes back when its score says so. The session document
+gets a "Set by the learner" section naming both scores and who closed the gap, so the log
+does not depend on what you write in part B. A learner-set score does not close the gap on
+that point: it stays open unless the learner asks for that too (say so in one line). The
+review counts these apart from disputes.
+
+If the learner gives a reason that is about the evidence ("the guideline says otherwise"),
+it is a dispute: re-check first, and use this path only if they still want their own score
+after your grading stands.
+
 ## 8. The log needs the feedback verbatim
 
 Part A of the log copies both feedback messages exactly as sent (`session_log.md` §2): write
@@ -241,26 +271,8 @@ page.
 
 Feedback is written when the answers are in, but most of its substance does not depend on
 them. That substance is put into a kit when the items are written, by whoever writes them
-(`author.md`), so that grading is quick and the feedback can be written straight away. A kit
-is notes for the grader, not prose to paste: terse, sealed with the items, never shown.
-
-`kit_questions.md`, per item:
-
-- the reveal line (topic, blueprint ID, why it was chosen, any prior gap it re-tests);
-- MCQ: the decisive datum in the stem; one line per distractor (wrong here because …, right
-  when …); focused: the decisive point and the tempting wrong turn;
-- the briefing in outline: the rule, the why in a sentence, the evidence to cite (as on the
-  verification list; figures to be confirmed), how it applies to this patient;
-- the two-line version for a correct, sure answer (§4).
-
-`kit_case.md`:
-
-- the reveal line, and the drill if there is one;
-- the model answer in one paragraph;
-- the rubric for each stage, as a checklist to mark ✓ ◐ ✗;
-- the differential table (§2 C.3), complete, with the incidental findings and why they are noise;
-- a briefing outline for each rubric element a learner could plausibly miss;
-- one to three pearls or pitfalls; up to two reading pointers (§2 E).
+(`author.md`), so that grading is quick and the feedback can be written straight away. What
+`kit_questions.md` and `kit_case.md` hold is rule 8 of `standards.md`.
 
 At grading, correct the kit's figures and sources from the evidence check before using them,
 mark the rubric against what the learner wrote, scale each briefing to the answer (§4) and

@@ -42,16 +42,20 @@ review is saved"); the same commands then plan from the ledger the review wrote.
    both. Without helpers, skip this step: the evidence is then checked at the session, after
    the answers.
 4. **Finish**: `python3 cme.py finish-prepare --work <work>` (add `--no-evidence` when step 3
-   was skipped). It checks the key headers, reads the checkers' counts, prints counts and the
-   names of files, keys and fields only, and, when the round is clean, packs it and adds
-   `data/prepared.json` to the publish set:
-   - `"stashed": true` → publish its `files` (`store.md` §4).
-   - `"revise": true` (a key is contradicted; nothing stashed yet) → start the author once
-     more with Parts `revise`, wait, then run the command again with `--revised` and publish.
-   - an error naming key headers (one missing or malformed; nothing stashed) → start the
-     author once more with Parts `headers` and the error's list of problems in its prompt (it
-     names no content), wait, then run the command again. Without an author, correct the
-     headers yourself (`author.md` §3).
+   was skipped). It lints the round against the rulebook (`standards.md`, "The lint"), reads
+   the checkers' counts, prints counts and the names of files, keys, fields and kit sections
+   only, and, when the round is clean, packs it and adds `data/prepared.json` to the publish
+   set:
+   - `"stashed": true` → publish its `files` (`store.md` §4). `warnings` that begin "accepted
+     after one revision" need nothing done.
+   - `"revise": true` (a key is contradicted, or the lint made a judgement call; nothing
+     stashed yet) → start the author once more with Parts `revise`, wait, then run the
+     command again with `--revised`, which stashes whatever the lint still finds, and publish.
+     Never open `<work>/next/lint.md`: it names content.
+   - an error naming key headers or kits (the lint's blocking problems; nothing stashed) →
+     start the author once more with Parts `headers` and the error's list of problems in its
+     prompt (it names no content), wait, then run the command again. Without an author,
+     correct them yourself (rules 8 and 9).
    - an error naming an evidence file (missing, empty or unfinished) → start the checker for
      that file once more and run the command again; never pass `--no-evidence` to get past it.
 
@@ -106,13 +110,13 @@ learner answers. If `prepared.ready` lists some files, only what is missing is w
   `<work>/plan.json`, Write into `<work>`, Parts `questions`; `case` if the round has no short
   questions), wait, then `python3 cme.py present <work>/sealed_questions.md --block questions`
   (or `sealed_case.md --block case`) prints the text to send. Without an author: read
-  `author.md`, `case_design.md` and `plan.json` (never paste it) and write
+  `author.md`, `standards.md`, `case_design.md` and `plan.json` (never paste it) and write
   `<work>/sealed_questions.md` yourself (`author.md` §3), in the file and not in your
   reasoning; its `present` block is the text.
 - **The rest, behind the scenes of turn 1**, after the checker for the first part is started:
   the case (`sealed_case.md`) and both kits. With an author: start it again (Parts `case`),
   wait, then start the case's checker in the background. Without: write them yourself
-  (`author.md` §3; `feedback_guide.md` §9), the case first.
+  (`author.md` §3; `standards.md` rule 8), the case first.
 - **Evidence**: a checker is started in the background for every sealed file without an
   evidence file. Without helpers, the examiner runs each part's verification list only after
   that part's answers are in (`evidence_check.md` §4).

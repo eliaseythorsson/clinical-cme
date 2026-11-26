@@ -724,7 +724,8 @@ def check_dispute(rnd):
     """The dispute persona: the round holds a settled dispute, in the ledger's grade changes and in
     the log (the exchange word for word, and the change under 'Grade changes')."""
     problems = []
-    changes = (rnd.session or {}).get("grade_changes") or []
+    # a score the learner set themselves (outcome learner_set) is not a dispute and settles none
+    changes = [g for g in (rnd.session or {}).get("grade_changes") or [] if g.get("outcome") != "learner_set"]
     if not rnd.session:
         problems.append("the ledger holds no record of this round")
     elif not changes:

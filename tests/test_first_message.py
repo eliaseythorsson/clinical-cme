@@ -234,7 +234,7 @@ def test_turn_1_sends_the_questions_before_any_reference_reading():
     after = after[after.index("**Behind the scenes**"):]
     assert "no reference" in before and "One shell call" in before and "one parallel batch" in before
     # the guides for grading and publishing are read behind the scenes, after the message is out
-    for name in ("feedback_guide.md", "analysis_framework.md"):
+    for name in ("standards.md", "feedback_guide.md", "analysis_framework.md"):
         assert name not in before and name in after
     assert "`store.md` §4 (publishing)" in after
     # before the message, a reference is named only for the cases that are not a prepared round

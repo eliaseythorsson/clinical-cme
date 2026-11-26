@@ -26,8 +26,11 @@ Open the list file and find its **verification list**: three to six lines, each 
 search for one claim the feedback will rest on (a guideline recommendation and its year, a
 threshold or dose, a trial result, a test's accuracy, an approval status). The keys and model
 answers in the same file tell you exactly what each claim is, and the line above the list
-gives the learner's guideline region and specialty: look for that region's guidance first. Check those claims, and any other specific number, dose or recommendation in
-the keys that could have changed or that you are not certain of. Nothing else.
+gives the learner's guideline region and specialty: check against them as rule 2 of
+`standards.md` says. Check those claims, and any other specific number, dose or
+recommendation in the keys that could have changed or that you are not certain of, and that
+the section each reading pointer names exists (rule 8, when the kit is beside the list file).
+Nothing else.
 
 ## 2. How
 
@@ -71,7 +74,7 @@ Keys contradicted: <n>
 `<n>` is a plain number, `0` when no key is contradicted. Write the line even then: the script
 (`cme.py finish-prepare`) stops when the output file is missing, empty or ends without this
 line, and the round is not kept until the check is run again. When more than zero, the author
-is started once more to revise those items before the round is kept (`author.md`, Parts
+is started once more to revise those items before the round is kept (`author.md` §2, Parts
 `revise`).
 
 ## 4. When the assistant checks for itself

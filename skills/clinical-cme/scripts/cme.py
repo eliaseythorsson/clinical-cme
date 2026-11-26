@@ -37,11 +37,22 @@ A job (one work folder):
   prepare --work W [--if-needed] [--allow-unreflected]
                                                   plan the NEXT round into W/next/plan.json (counts only)
   finish-prepare --work W [--revised] [--no-evidence]
-                                                  after the checkers: check the key headers in W/next, count
-                                                  contradicted keys (a bad header or a missing evidence file
-                                                  is an error), pack the round as data/prepared.json
-  keys    DIR|SEALED.. [--plan PLAN]              the author's check of key headers (no content printed)
+                                                  after the checkers: lint the round in W/next against the
+                                                  rulebook (references/standards.md) and count contradicted
+                                                  keys. A bad key header, a missing kit section or a missing
+                                                  evidence file is an error; an abbreviation that looks
+                                                  undefined or mixed time anchors send the round back to the
+                                                  author once (details in W/next/lint.md), then are accepted
+                                                  with a warning (--revised). Packs the round as
+                                                  data/prepared.json
+  keys    DIR|SEALED.. [--plan PLAN]              the author's check: key headers, kit sections and the same
+                                                  lint (no content printed; details in DIR/lint.md)
+  key-table                                       the key-header table of references/standards.md (rule 9),
+                                                  as generated from the KEY_* definitions
   addendum --work W --md ADD.md [--session ID]    append to a session document (default: the last session)
+  override --work W [--scores J] [--close-gaps J] [--session ID]
+                                                  after the close: a score the learner sets themselves, a gap
+                                                  closed at the learner's request (before it: reflection JSON)
   verify  --work W --store CHECK_DIR              testing mode: the publish set against a fresh re-read
   testing-note --work W --feedback J              testing mode: the learner's feedback + the store check
 
@@ -147,6 +158,11 @@ BIASES = ("anchoring", "premature_closure", "confirmation", "availability", "bas
           "representativeness", "search_satisficing", "framing", "overconfidence", "omission",
           "commission", "unpacking_failure")
 DRILL_RESULTS = ("avoided", "partial", "fell_for")
+DISPUTE_OUTCOMES = ("learner_right", "both_defensible", "upheld")
+# A score the learner set themselves ("record it as 4") is not a dispute: the examiner did not
+# change its grading. `learner_override` is what rounds recorded by hand before 5.0 used.
+LEARNER_SET = "learner_set"
+LEARNER_SET_OUTCOMES = (LEARNER_SET, "learner_override")
 ITEM_TYPES = ("case", "essay", "mcq", "focused")      # "essay" = the name older ledgers use for a case
 FOCUSED_ASPECTS = ("diagnosis", "interpretation", "testing", "management", "disposition",
                    "prevention", "prognosis")
@@ -434,8 +450,14 @@ def empty_agg():
                        "bias": {}},
             "calibration": {k: [0, 0.0] for k in CONF_PROB}, "brier": [0.0, 0],
             "drills": {k: 0 for k in DRILL_RESULTS},
-            "disputes": {"learner_right": 0, "both_defensible": 0, "upheld": 0},
+            "disputes": {k: 0 for k in DISPUTE_OUTCOMES},
+            "overrides": {"scores": 0, "gaps": 0},
             "reflection_skipped": 0}
+
+
+def agg_overrides(agg):
+    """The all-time counters of what the learner set themselves (ledgers before 5.0 have none)."""
+    return agg.setdefault("overrides", {"scores": 0, "gaps": 0})
 
 
 # ---------------------------------------------------------------- blueprint
@@ -553,6 +575,9 @@ def adjusted_item_mastery(item):
     conf = (item.get("confidence") or "").lower() or None
     correct = item.get("correct")
     misconception = False
+    if item.get("set_by") == "learner":
+        # the learner's own score is taken as given: no confidence rule is laid over it
+        return m, False
     if item.get("type") == "mcq":
         if correct is True and conf == "guess":
             m = min(m, 3.0)
@@ -566,7 +591,9 @@ def adjusted_item_mastery(item):
 def item_outcome(it):
     if it.get("type") == "mcq":
         return None if it.get("correct") is None else (1.0 if it.get("correct") else 0.0)
-    m = it.get("mastery")
+    # calibration compares the confidence with what the examiner graded, also where the learner
+    # set the recorded score
+    m = it.get("graded") if it.get("set_by") == "learner" and it.get("graded") is not None else it.get("mastery")
     return None if m is None else max(0.0, min(1.0, float(m) / 5.0))
 
 
@@ -1305,8 +1332,8 @@ def plan_round(st, args, today):
             c["retest_gap"] = {
                 "id": gap_ref(g), "gap": clip(g.get("gap"), CLIP_GAP),
                 "how": "Write this item on the gap's decision point, in a new clinical context, and "
-                       "write the line 'retests: %s' in the item's key header (references/author.md, "
-                       "section 3). Only an item that says so, answered well, closes the gap." % gap_ref(g)}
+                       "write the line 'retests: %s' in the item's key header (references/standards.md, "
+                       "rule 9). Only an item that says so, answered well, closes the gap." % gap_ref(g)}
     used_cases, used_stems = all_sessions_for_novelty(st)
     for c in chosen:
         same = [x for x in used_cases if x.get("topic") == c.get("topic")]
@@ -1446,6 +1473,8 @@ def compact_item(it):
            "mastery": it.get("mastery"), "confidence": it.get("confidence")}
     if typ == "mcq":
         out["correct"] = it.get("correct")
+    if it.get("set_by") == "learner":      # `mastery` is the learner's score, `graded` the examiner's
+        out["graded"], out["set_by"] = it.get("graded"), "learner"
     if typ == "focused" and it.get("aspect"):
         out["aspect"] = it["aspect"]
     if it.get("retests"):
@@ -1519,6 +1548,8 @@ def agg_add_session(agg, s):
     for g in s.get("grade_changes") or []:
         if g.get("outcome") in agg["disputes"]:
             agg["disputes"][g["outcome"]] += 1
+        elif g.get("outcome") in LEARNER_SET_OUTCOMES:
+            agg_overrides(agg)["scores"] += 1
     if (s.get("reflection") or {}).get("skipped"):
         agg["reflection_skipped"] += 1
 
@@ -1554,6 +1585,7 @@ def apply_round(state, rnd, today, theme=None):
     self_gap_topics = {g["topic"] for g in gaps_in if g.get("source") == "self"}
 
     summary = {}
+    steps_before = {}       # each topic's step before this round: `override` reschedules from it
     number_gaps(state)
     gap_index = {g.get("topic"): g for g in state["gaps"]}
     for it in rnd["items"]:
@@ -1566,6 +1598,7 @@ def apply_round(state, rnd, today, theme=None):
         adj = [adjusted_item_mastery(i) for i in items]
         mastery = round_half(sum(m for m, _ in adj) / len(adj))
         misconception = any(mc for _, mc in adj)
+        steps_before[tid] = int(t.get("step") or 0)
         comfort = comfort_map.get(tid)
         try:
             comfort = None if comfort is None else max(1, min(5, int(round(float(comfort)))))
@@ -1713,6 +1746,7 @@ def apply_round(state, rnd, today, theme=None):
                  if rnd["case"].get(k)} if rnd.get("case") and has_case else None,
         "grade_changes": rnd.get("grade_changes") or [],
         "drill": rnd.get("drill"),
+        "steps_before": steps_before,
     }
     if entry["case"] is not None:
         entry["case"]["topic"] = next((it["topic"] for it in rnd["items"] if is_case(it)), None)
@@ -1786,6 +1820,8 @@ def to_previous(sess):
               "confidence": it.get("confidence")}
         if it.get("type") == "mcq":
             ci["correct"] = it.get("correct")
+        if it.get("set_by") == "learner":
+            ci["graded"], ci["set_by"] = it.get("graded"), "learner"
         if it.get("type") == "focused" and it.get("aspect"):
             ci["aspect"] = it["aspect"]
         cc = {}
@@ -1801,7 +1837,8 @@ def to_previous(sess):
            "topics": sess.get("topics"), "score": sess.get("score"), "minutes": sess.get("minutes"),
            "mcqs": sess.get("mcqs"), "mcq_correct": sess.get("mcq_correct"), "focused": sess.get("focused") or 0,
            "format": sess.get("format"), "items": items,
-           "drill": sess.get("drill"), "grade_changes": [{"outcome": g.get("outcome")} for g in sess.get("grade_changes") or []],
+           "drill": sess.get("drill"), "grade_changes": [{k: g.get(k) for k in ("outcome", "from", "to") if g.get(k) is not None}
+                             for g in sess.get("grade_changes") or []],
            "reflection": {"skipped": bool((sess.get("reflection") or {}).get("skipped"))}}
     if sess.get("case"):
         out["case"] = {k: sess["case"].get(k) for k in ("topic", "presentation", "diagnosis") if sess["case"].get(k)}
@@ -1809,6 +1846,8 @@ def to_previous(sess):
         out["url"] = sess["url"]
     if sess.get("block"):
         out["block"] = sess["block"]
+    if sess.get("learner_closed_gaps"):
+        out["learner_closed_gaps"] = sess["learner_closed_gaps"]
     return out
 
 
@@ -1874,16 +1913,206 @@ def reflect_round(st, refl, today, session=None):
             it = by.get((ch.get("type"), ch.get("topic")))
             if it:
                 it.update({k: v for k, v in ch.items() if k not in ("type", "topic")})
+    # what the learner set themselves: after any dispute, so `graded` is the examiner's last word
+    rdate = iso(parse_date(rnd.get("date")) or today)
+    changes = []
+    for req in refl.get("learner_scores") or []:
+        ch = learner_score(find_item(rnd["items"], req, sid), req, rdate)
+        rnd["grade_changes"] = list(rnd.get("grade_changes") or []) + [ch.pop("grade_change")]
+        changes.append(ch)
     entry, summary, warnings, errata_ids = apply_round(st, rnd, today, (sess.get("block") or {}).get("theme"))
     if sess.get("block"):
         entry["block"] = sess["block"]
+    for req in refl.get("learner_closed_gaps") or []:      # after the round: a gap it opened can be closed too
+        ch = learner_close_gap(st, req, rdate, entry)
+        summary.setdefault(ch["topic"], {})["gap_closed_by_learner"] = True
+        changes.append(ch)
     st["unreflected"] = None
     compact(st)
     bump_gen(st)
-    return {"gen": st["gen"], "session_id": entry["id"],
-            "topics": summary, "open_gaps": len(st["gaps"]), "errata_ids": errata_ids,
-            "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
-            "warnings": warnings}
+    out = {"gen": st["gen"], "session_id": entry["id"],
+           "topics": summary, "open_gaps": len(st["gaps"]), "errata_ids": errata_ids,
+           "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
+           "warnings": warnings}
+    if changes:
+        out["learner_changes"] = changes
+    return out
+
+
+# ---------------------------------------------------------------- what the learner sets themselves
+
+def find_item(items, req, sid):
+    """The item of a round a learner-set score names: by topic, and by type where the round has
+    more than one item on that topic."""
+    if not isinstance(req, dict) or not req.get("topic"):
+        die("a learner-set score needs 'topic' (and 'type' when the round has two items on it) and 'score'")
+    typ = "case" if req.get("type") == "essay" else req.get("type")
+    hits = [i for i in items if i.get("topic") == req["topic"]
+            and (not typ or ("case" if is_case(i) else i.get("type")) == typ)]
+    if len(hits) != 1:
+        die("learner-set score: %s in round %s (items: %s)"
+            % ("no item %s%s" % (typ + " " if typ else "", req["topic"]) if not hits
+               else "%d items on %s, name the 'type'" % (len(hits), req["topic"]), sid,
+               ", ".join("%s %s" % (i.get("type"), i.get("topic")) for i in items)))
+    return hits[0]
+
+
+def learner_score(it, req, date):
+    """Set the score of item `it` to the learner's own. `mastery` becomes the learner's score
+    (the one scheduling uses), `graded` keeps the examiner's, `set_by` says whose `mastery` is.
+    Returns the change for the log, with the `grade_change` entry for the ledger."""
+    try:
+        score = float(req.get("score"))
+    except (TypeError, ValueError):
+        score = -1.0
+    if not 0 <= score <= 5:
+        die("learner-set score for %s: 'score' must be a number from 0 to 5" % req.get("topic"))
+    score = int(score) if score == int(score) else score
+    graded = it.get("graded") if it.get("set_by") == "learner" else it.get("mastery")
+    it.update({"mastery": score, "graded": graded, "set_by": "learner"})
+    label = req.get("item") or "%s %s" % ("case" if is_case(it) else it.get("type"), it.get("topic"))
+    note = clip(req.get("note"), 200)
+    gc = {"item": label, "topic": it.get("topic"), "from": graded, "to": score, "outcome": LEARNER_SET,
+          "examiner": graded, "learner": score, "date": date}
+    if note:
+        gc["note"] = note
+    return {"kind": "score", "item": label, "topic": it.get("topic"), "examiner": graded, "learner": score,
+            "set_by": "learner", "date": date, "note": note, "grade_change": gc}
+
+
+def learner_close_gap(st, req, date, sess=None, sid=None):
+    """Close an open gap because the learner asked: it moves to `resolved` marked
+    `closed_by: learner`, and no retest follows (the topic keeps the due date its score gave
+    it). `req` names the gap by id or by topic. Returns the change for the log."""
+    if isinstance(req, str):
+        req = {"gap": req}
+    ref = (req or {}).get("gap") or (req or {}).get("id") or (req or {}).get("topic")
+    g = next((x for x in st["gaps"] if ref and ref in (x.get("id"), x.get("topic"))), None)
+    if not g:
+        die("no open gap %s to close (open: %s)"
+            % (ref, ", ".join("%s %s" % (x.get("id"), x.get("topic")) for x in st["gaps"]) or "none"))
+    st["gaps"].remove(g)
+    note = clip(req.get("note"), 200)
+    sid = (sess or {}).get("id") or sid
+    st["resolved"].append({"id": g.get("id"), "topic": g.get("topic"), "note": clip(g.get("gap"), 200),
+                           "opened": g.get("opened") or g.get("date"), "resolved": date, "partial": False,
+                           "closed_by": "learner", "learner_note": note, "session": sid})
+    agg_overrides(st["agg"])["gaps"] += 1
+    if sess is not None:
+        sess.setdefault("learner_closed_gaps", []).append({"id": g.get("id"), "topic": g.get("topic")})
+    return {"kind": "gap", "gap": g.get("id"), "topic": g.get("topic"), "text": clip(g.get("gap"), 200),
+            "closed_by": "learner", "date": date, "note": note}
+
+
+def reschedule_topic(st, sess, tid):
+    """After a score of the closed round `sess` changed: schedule topic `tid` again from that
+    round, as `close` would have with the new score. Returns the topic's new line for the
+    report, or None when the topic has been tested again since (its schedule is then left as
+    that later round set it)."""
+    t = st["topics"].get(tid)
+    hist = (t or {}).get("history") or []
+    if not t or t.get("last") != sess.get("date") or not hist or hist[-1][0] != sess.get("date"):
+        return None
+    adj = [adjusted_item_mastery(i) for i in sess.get("items") or [] if i.get("topic") == tid]
+    mastery = round_half(sum(m for m, _ in adj) / len(adj))
+    misconception = any(mc for _, mc in adj)
+    intervals = [int(x) for x in st["config"].get("intervals_days") or DEFAULT_CONFIG["intervals_days"]]
+    comfort = hist[-1][2]
+    before = (sess.get("steps_before") or {}).get(tid)
+    self_gap = any(g.get("topic") == tid and "self" in (g.get("source") or []) for g in st["gaps"])
+    step, due, calibration, interval = schedule_topic(t.get("step") if before is None else before, mastery, comfort,
+                                                      misconception, self_gap, intervals, parse_date(sess["date"]))
+    t.update({"mastery": mastery, "step": step, "due": iso(due), "calibration": calibration})
+    hist[-1] = [sess["date"], mastery, comfort, calibration]
+    return {"mastery": mastery, "step": step, "due": iso(due), "interval_days": interval, "calibration": calibration}
+
+
+def learner_changes_md(changes, heading):
+    """The learner's own changes as they are written into the session document."""
+    lines = []
+    for c in changes:
+        if c["kind"] == "score":
+            line = ("- %s (%s): the examiner's score %s, the learner's score %s. Recorded and scheduled with "
+                    "the learner's score, at the learner's request."
+                    % (c["item"], c["topic"], c["examiner"], c["learner"]))
+        else:
+            line = ("- Gap %s (%s) closed by the learner, not by a retest: %s"
+                    % (c["gap"], c["topic"], c.get("text") or ""))
+        lines.append(line + (" Learner's note: %s" % c["note"] if c.get("note") else ""))
+    return "%s\n\n%s\n" % (heading, "\n".join(lines))
+
+
+def cmd_override(args):
+    """After the close: the learner sets a score of a closed round themselves (--scores) or
+    closes a gap by request (--close-gaps). The ledger, the session document (its
+    `learner_changes` and a line in the addendum) and the index go into the publish set.
+    Before the close both belong in the reflection JSON (`learner_scores`,
+    `learner_closed_gaps`), which `close` handles the same way."""
+    today = today_from(args)
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
+    scores = (load_json_arg(args.scores) if args.scores else None) or []
+    closes = (load_json_arg(args.close_gaps) if args.close_gaps else None) or []
+    scores, closes = ([x] if isinstance(x, (dict, str)) else list(x) for x in (scores, closes))
+    if not scores and not closes:
+        die("override needs --scores '[{\"topic\": …, \"score\": N}]' or --close-gaps '[{\"gap\": \"G0007\"}]'")
+    if st.get("unreflected"):
+        die("round %s is not closed yet: put `learner_scores` and `learner_closed_gaps` in its reflection "
+            "JSON and run close (`{\"skipped\": true}` with them when there is no reflection)" % st["unreflected"])
+    sid = job_session(work, info, st, args.session)
+    sess = next((x for x in st["sessions"] if x.get("id") == sid), None)
+    if not sess and scores:
+        die("round %s is %s: its scores can no longer be changed (a note can still be added with addendum)"
+            % (sid, "from before the last progress review" if has_session(st, sid) else "not in the ledger"))
+    doc_path = store_file(work, info, session_path(sid))
+    if not doc_path:
+        die("the session file of %s was not found: read %s from the store into the store copy "
+            "(%s) first" % (sid, session_path(sid), info.get("store")))
+    doc = load_json(doc_path)
+    changes, topics, warnings = [], {}, []
+    for req in scores:
+        it = find_item(sess["items"], req, sid)
+        old = adjusted_item_mastery(it)[0]
+        ch = learner_score(it, req, iso(today))
+        sess["grade_changes"] = list(sess.get("grade_changes") or []) + [ch.pop("grade_change")]
+        agg_overrides(st["agg"])["scores"] += 1
+        if it.get("type") == "focused":
+            st["agg"]["focused_mastery_sum"] = st["agg"].get("focused_mastery_sum", 0.0) + float(it["mastery"]) - float(old)
+        changes.append(ch)
+        line = reschedule_topic(st, sess, it["topic"])
+        if line:
+            topics[it["topic"]] = line
+        else:
+            warnings.append("%s has been tested again since %s: the score is recorded, its schedule is "
+                            "left as the later round set it" % (it["topic"], sid))
+    if scores:
+        all_m = [adjusted_item_mastery(i)[0] for i in sess["items"]]
+        new = round(sum(all_m) / len(all_m), 2)
+        if isinstance(sess.get("score"), (int, float)):
+            st["agg"]["score_sum"] += new - float(sess["score"])
+        sess["score"] = doc["score"] = new
+    for req in closes:
+        ch = learner_close_gap(st, req, iso(today), sess, sid)
+        topics.setdefault(ch["topic"], {})["gap_closed_by_learner"] = True
+        changes.append(ch)
+    doc["learner_changes"] = list(doc.get("learner_changes") or []) + changes
+    doc["addendum"] = ((doc.get("addendum") or "").rstrip() + "\n\n"
+                       + learner_changes_md(changes, "## Set by the learner · %s" % iso(today))).strip() + "\n"
+    compact(st)
+    # never content-neutral: a learner-set score moves the topic's step and due date, a closed gap
+    # takes its retest out of the plan, so a round prepared before this was planned on other facts
+    bump_gen(st)
+    st["updated"] = iso(today)
+    out = {"ok": True, "gen": st["gen"], "session": sid, "learner_changes": changes, "topics": topics,
+           "open_gaps": len(st["gaps"]), "warnings": warnings}
+    if scores:
+        out["score"] = sess["score"]
+    # the prepared round was planned with the gap open and the old due date
+    publish_ledger(work, info, st, out, session=doc, empty_prepared=True)
+    # close cannot be run again from the ledger it started from: that would drop this change
+    if os.path.isfile(os.path.join(work, BEFORE_CLOSE_FILE)):
+        os.remove(os.path.join(work, BEFORE_CLOSE_FILE))
+    print(json.dumps(published(work, info, out), indent=1, ensure_ascii=False))
 
 
 # ---------------------------------------------------------------- stats
@@ -1931,6 +2160,9 @@ def coding_analytics(log):
         row["gap"] = round(row["expected"] - row["observed"], 2)
     drills = [s.get("drill") for s in log if isinstance(s.get("drill"), dict)]
     gch = [g for s in log for g in (s.get("grade_changes") or [])]
+    own = [g for g in gch if g.get("outcome") in LEARNER_SET_OUTCOMES]
+    disputes = [g for g in gch if g.get("outcome") not in LEARNER_SET_OUTCOMES]
+    shifts = [g for g in own if all(isinstance(g.get(k), (int, float)) for k in ("from", "to"))]
     scores = [s.get("score") for s in log if isinstance(s.get("score"), (int, float))]
     return {
         "sessions": len(log), "items": len(items), "items_coded": len(coded),
@@ -1962,8 +2194,13 @@ def coding_analytics(log):
         "drills": {"n": len(drills), "results": {r: sum(1 for d in drills if d.get("result") == r) for r in DRILL_RESULTS},
                    "by_code": {c: [d.get("result") for d in drills if d.get("code") == c]
                                for c in sorted({d.get("code") for d in drills if d.get("code")})}},
-        "grade_disputes": {"n": len(gch), "outcomes": {o: sum(1 for g in gch if g.get("outcome") == o)
-                                                       for o in ("learner_right", "both_defensible", "upheld")}},
+        "grade_disputes": {"n": len(disputes), "outcomes": {o: sum(1 for g in disputes if g.get("outcome") == o)
+                                                            for o in DISPUTE_OUTCOMES}},
+        # what the learner set themselves: not disputes, the examiner's grading did not change
+        "learner_overrides": {
+            "scores": len(own),
+            "mean_change": round(sum(g["to"] - g["from"] for g in shifts) / len(shifts), 2) if shifts else None,
+            "gaps_closed": sum(len(s.get("learner_closed_gaps") or []) for s in log)},
     }
 
 
@@ -1987,6 +2224,7 @@ def agg_analytics(agg):
         "confidence_calibration": {"table": cal, "brier_score": round(agg["brier"][0] / agg["brier"][1], 3) if agg["brier"][1] else None,
                                    "items_with_confidence": agg["brier"][1]},
         "drills": agg["drills"], "grade_disputes": agg["disputes"],
+        "learner_overrides": {"scores": agg_overrides(agg)["scores"], "gaps_closed": agg_overrides(agg)["gaps"]},
         "reflection_skipped": agg["reflection_skipped"],
     }
 
@@ -2039,6 +2277,7 @@ def cmd_stats(args):
         lbl = (st["topics"].get(g["topic"]) or {}).get("label") or ""
         if "self" not in (g.get("source") or []) and not (significant_tokens(lbl) & set(re.findall(r"[a-z]{5,}", named))):
             blind.append({"topic": g["topic"], "label": lbl, "gap": g.get("gap")})
+    in_period = [g for g in st["resolved"] if parse_date(g.get("resolved")) and start and parse_date(g["resolved"]) >= start]
     out = {
         "ok": True, "period_start": iso(start), "period_end": iso(today), "sessions": len(log),
         "sessions_per_week": round(len(log) / weeks, 2) if weeks else None,
@@ -2056,7 +2295,8 @@ def cmd_stats(args):
         "per_domain": per_domain,
         "domains_not_covered": sorted(d for d in bp_weights(st) if d not in per_domain),
         "calibration_counts": calib, "topics_improved": improved, "topics_declined": declined,
-        "gaps_resolved": [g for g in st["resolved"] if parse_date(g.get("resolved")) and start and parse_date(g["resolved"]) >= start],
+        "gaps_resolved": [g for g in in_period if g.get("closed_by") != "learner"],
+        "gaps_closed_by_learner": [g for g in in_period if g.get("closed_by") == "learner"],
         "open_gaps": st["gaps"], "gaps_open_60_days_or_more": long_open,
         "topics_with_repeated_confident_errors": conf_err,
         "graded_gaps_never_self_reported": blind,
@@ -2689,13 +2929,19 @@ def contradicted_keys(text):
 
 
 def cmd_finish_prepare(args):
-    """After the checkers: check the key headers of the sealed files in <work>/next, read the
-    evidence files' counts of contradicted keys and, when the round is clean (or was revised),
-    pack it and add it to the publish set as data/prepared.json. A missing or malformed key
-    header stops the command, so that it is not found only at `save`, in the middle of the
-    round. An evidence file that is missing, empty or without its count line stops it too: it
-    is never read as "nothing contradicted".
-    Prints counts, file names and the names of keys and fields only."""
+    """After the checkers: lint the round drafted in <work>/next against the rulebook
+    (references/standards.md), read the evidence files' counts of contradicted keys and, when the
+    round is clean (or was revised), pack it and add it to the publish set as data/prepared.json.
+
+    Definite problems stop the command and nothing is stashed: a missing or malformed key header
+    (so that it is not found only at `save`, in the middle of the round), a missing kit or kit
+    section, and an evidence file that is missing, empty or without its count line (never read
+    as "nothing contradicted").
+    Judgement calls (an abbreviation that looks undefined, time anchors that look mixed) go back
+    to the author once, like a contradicted key: `"revise": true`; with --revised whatever is
+    still found is accepted and listed under `warnings`.
+    Prints counts, file names and the names of keys, fields and kit sections only; what the lint
+    found is written to <work>/next/lint.md, which only the author reads."""
     work, info = job(args)
     folder = os.path.join(work, NEXT_DIR)
     plan_path = os.path.join(folder, PLAN_FILE)
@@ -2705,17 +2951,24 @@ def cmd_finish_prepare(args):
     plan = plan_for_prepared(st, plan_path)
     files, has, warnings = prepared_round_files(plan, folder)
     _, key_problems = check_key_headers([os.path.join(folder, n) for n in SEALED_FILES if n in files], plan)
-    if key_problems:
-        die("the key headers are not complete in %s: %s. Nothing was stashed. Have the headers corrected in "
-            "the sealed files (references/author.md, section 3; `keys` runs this check alone), then run this "
-            "command again" % (folder, "; ".join(key_problems)))
+    lint = lint_round(files, plan, kits_required=True)
+    if key_problems or lint["blocking"]:
+        stops = []
+        if key_problems:
+            stops.append("the key headers are not complete in %s: %s" % (folder, "; ".join(key_problems)))
+        if lint["blocking"]:
+            stops.append("the kits are not complete in %s: %s" % (folder, "; ".join(lint["blocking"])))
+        die("%s. Nothing was stashed. Have them corrected in the files (references/standards.md, rule 9 for "
+            "key headers, rule 8 for kits; `keys` runs this check alone), then run this command again"
+            % ". Also, ".join(stops))
     out = {"ok": True}
     if args.no_evidence:
         # no checker was run (no helpers): the evidence is checked at the session, after the answers
         for name in EVIDENCE_FOR.values():
             files.pop(name, None)
         has = [h for h in has if not h.startswith("evidence_")]
-        out.update({"evidence": "not checked", "contradicted": None, "revise": False})
+        out.update({"evidence": "not checked", "contradicted": None})
+        total = 0
     else:
         per_file, problems = {}, []
         for sealed, evidence in EVIDENCE_FOR.items():
@@ -2735,15 +2988,20 @@ def cmd_finish_prepare(args):
                 "again (references/evidence_check.md), or pass --no-evidence if no checker is run in this session"
                 % (folder, "; ".join(problems)))
         total = sum(per_file.values())
-        out.update({"evidence": per_file, "contradicted": total, "revise": bool(total) and not args.revised})
-        if args.revised:
-            out["revised"] = True
+        out.update({"evidence": per_file, "contradicted": total})
+    out["lint"] = lint_summary(lint, write_lint_details(folder, lint))
+    out["revise"] = bool(total or lint["review"]) and not args.revised
+    if args.revised:
+        out["revised"] = True
+        warnings = warnings + ["accepted after one revision: %s" % line for line in lint_lines(lint)]
+    warnings = warnings + lint["notes"]
     if warnings:
         out["warnings"] = warnings
     if out["revise"]:
         out.update({"stashed": False,
-                    "next": "start the author once more with Parts `revise` on this folder, wait for it, "
-                            "then run this command again with --revised"})
+                    "next": "start the author once more with Parts `revise` on this folder (it reads the "
+                            "evidence files and lint.md there), wait for it, then run this command again "
+                            "with --revised"})
         print(json.dumps(out, ensure_ascii=False))
         return
     publish_json(work, PREPARED_PATH, prepared_doc(st, plan, files, has))
@@ -3150,7 +3408,7 @@ def fill_round_from_keys(rnd, sealed, plan=None):
         filled.append(kid)
     if problems:
         die("the round record cannot be built from the keys: " + "; ".join(problems)
-            + ". Correct the header in the sealed file (references/author.md, section 3), or the "
+            + ". Correct the header in the sealed file (references/standards.md, rule 9), or the "
               "\"key\" in round.json, and run save again. Nothing was recorded.")
     if not rnd.get("case_format") and any(is_case(it) for it in items) and (plan or {}).get("case_format"):
         rnd["case_format"] = plan["case_format"]
@@ -3181,7 +3439,7 @@ def check_key_headers(paths, plan=None):
     for name, ids in by_file.items():
         if not ids and present_blocks(read_text(next(p for p in paths if os.path.basename(p) == name))):
             problems.append("%s: no key header; each item needs one ('<!-- key: Q1 -->' … '<!-- /key -->', "
-                            "references/author.md section 3)" % name)
+                            "references/standards.md rule 9)" % name)
     if plan:
         want = plan.get("counts") or {}
         have = {"mcqs": 0, "focused": 0, "case": 0}
@@ -3198,13 +3456,289 @@ def check_key_headers(paths, plan=None):
     return by_file, problems
 
 
+# What each field holds, for the table of references/standards.md (rule 9). The table there is
+# printed by `key-table` from the KEY_* definitions above and these notes; tests/test_standards.py
+# fails when the two differ, so the rulebook cannot drift from what the engine reads.
+KEY_FIELD_NOTES = {
+    "type": "`mcq`, `focused` or `case`",
+    "topic": "the blueprint ID (for a `new_in_domain` item, the one you chose)",
+    "label": "the topic's label in the blueprint",
+    "reason": "the plan's `reason_code` for the item, copied as it is",
+    "stem_summary": "about ten words on what the stem asks, for the list of stems already used",
+    "aspect": "one of " + ", ".join("`%s`" % a for a in FOCUSED_ASPECTS),
+    "patient": "age and sex (\"74F\")",
+    "setting": "where the case takes place (\"ED\")",
+    "presentation": "the presenting problem (\"confusion after a marathon\")",
+    "diagnosis": "the final diagnosis",
+    "twist": "what makes this case different from others on the topic",
+    "domain": "the domain code, only when the topic ID does not start with it",
+    "retests": "the plan's `retest_gap.id`, on an item written on that gap's decision point; "
+               "otherwise leave the line out",
+}
+KEY_TABLE_OPEN = "<!-- key-header-table: generated by `cme.py key-table`; do not edit by hand -->"
+KEY_TABLE_CLOSE = "<!-- /key-header-table -->"
+
+
+def key_header_fields():
+    """Every field a key header can have, in the order of the table."""
+    seen = []
+    for f in (KEY_COMMON + tuple(f for t in KEY_TYPES for f in KEY_REQUIRED[t])
+              + tuple(f for t in KEY_TYPES for f in KEY_OPTIONAL[t]) + KEY_ANY):
+        if f not in seen:
+            seen.append(f)
+    return seen
+
+
+def key_header_table():
+    """The key-header table of the rulebook, as Markdown, from the KEY_* definitions."""
+    def cell(field, typ):
+        if field in KEY_COMMON or field in KEY_REQUIRED[typ]:
+            return "required"
+        if field in KEY_OPTIONAL[typ] or field in KEY_ANY:
+            return "optional"
+        return "–"
+    lines = ["| Field | MCQ | Focused question | Case | What to write |", "|---|---|---|---|---|"]
+    for f in key_header_fields():
+        lines.append("| `%s` | %s | %s | %s | %s |" % (f, cell(f, "mcq"), cell(f, "focused"), cell(f, "case"),
+                                                       KEY_FIELD_NOTES[f]))
+    return "\n".join(lines)
+
+
+def cmd_key_table(args):
+    """Print the key-header table for references/standards.md (between its two markers)."""
+    sys.stdout.write("%s\n%s\n%s\n" % (KEY_TABLE_OPEN, key_header_table(), KEY_TABLE_CLOSE))
+
+
+# ---------------------------------------------------------------- the lint of a written round
+#
+# The rulebook (references/standards.md) holds the rules for writing items. What can be checked
+# mechanically is checked here, by `finish-prepare` (a round prepared ahead) and by `keys` (the
+# author's own check), in two categories:
+#
+#   blocking   definite problems: a malformed key header (rule 9, check_key_headers) and a kit
+#              or kit section that is missing (rule 8). Nothing is stashed.
+#   review     judgement calls, found by heuristics: an abbreviation in the presented text that
+#              is not spelled out at first use (rule 5) and time anchors that look mixed
+#              (rule 6). The author revises once; what is still found is accepted with a warning.
+#
+# The lint prints file names, key ids, section names and counts only. What it found (the
+# abbreviations, the phrases) names content, so it goes to lint.md beside the sealed files.
+
+STANDARDS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                              "references", "standards.md")
+LINT_FILE = "lint.md"
+KIT_FOR = {"sealed_questions.md": "kit_questions.md", "sealed_case.md": "kit_case.md"}
+# Rule 8: the sections a kit must have, each under a Markdown heading that starts with the name.
+# kit_questions.md has one heading per question ("## Q1") instead, and "Reading" only in a round
+# without a case. Reserved for issue #50 (podcast candidates): a "Listening" section, not yet required.
+KIT_CASE_SECTIONS = ("Reveal", "Model answer", "Rubric", "Differential", "Briefing", "Pearls", "Reading")
+KIT_READING = "Reading"
+HEADING_RE = re.compile(r"^[ \t]{0,3}#{1,6}[ \t]*(.+?)[ \t#:]*$", re.M)
+
+# Rule 5: the abbreviations that need no spelling out are listed in the rulebook, between these
+# two markers. That list is the only source: there is no copy of it here.
+ABBREVIATIONS_RE = re.compile(r"<!--\s*common-abbreviations\s*-->(.*?)<!--\s*/common-abbreviations\s*-->", re.S)
+ABBREVIATION_RE = re.compile(r"(?<![A-Za-z0-9])([A-Z]{2,6})s?(?![A-Za-z0-9])")
+ROMAN_RE = re.compile(r"^[IVX]+$")
+
+# Rule 6: phrases that count from now, and phrases that count from a numbered day.
+_NUM = r"(?:\d+|an?|one|two|three|four|five|six|seven|eight|nine|ten|twelve|few|several|couple of)"
+_ORD = r"(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)"
+TIME_NOW_RE = re.compile(
+    r"\b" + _NUM + r"\s+(?:minutes?|mins?|hours?|hrs?|days?|nights?|weeks?)\s+ago\b"
+    r"|\bsince\s+(?:this\s+morning|yesterday|last\s+night|last\s+week)\b"
+    r"|\b(?:this\s+morning|yesterday|last\s+night|earlier\s+today)\b", re.I)
+TIME_DAY_RE = re.compile(
+    r"\bday\s*\d+\b|\bday\s+(?:zero|one|two|three|four|five|six|seven|eight|nine|ten)\b"
+    r"|\b(?:hospital|admission|post-?operative|post-?op|treatment|ICU)\s+day\b"
+    r"|\b" + _ORD + r"\s+(?:hospital\s+|admission\s+|post-?operative\s+)?day\b|\bPOD\s*\d+\b", re.I)
+QUESTION_START_RE = re.compile(r"(?m)^(?=[ \t>*_#]{0,6}(?:Question|Q)[ \t]*\d+)")
+
+
+def common_abbreviations(path=None):
+    """The abbreviations the rulebook lists as needing no spelling out (rule 5), or None when the
+    rulebook or its list cannot be read."""
+    try:
+        m = ABBREVIATIONS_RE.search(read_text(path or STANDARDS_FILE))
+    except OSError:
+        return None
+    if not m:
+        return None
+    return {w for w in re.split(r"[\s,;]+", m.group(1).strip()) if w}
+
+
+def kit_headings(text):
+    return [h.strip().strip("*_`").strip().lower() for h in HEADING_RE.findall(text or "")]
+
+
+def kit_problems(files, plan=None, kits_required=True):
+    """Rule 8, the mechanical part: every kit is there and has its sections. Names files, key ids
+    and section names only."""
+    problems = []
+    for sealed, kit in KIT_FOR.items():
+        if sealed not in files or not present_blocks(files[sealed]):
+            continue
+        if kit not in files:
+            if kits_required:
+                problems.append("%s is missing" % kit)
+            continue
+        heads = kit_headings(files[kit])
+        if kit == "kit_case.md":
+            want = list(KIT_CASE_SECTIONS)
+        else:
+            ids = [k for k in parse_key_headers(files[sealed], sealed)[0] if k != "case"]
+            missing = [k for k in ids if not any(re.match(r"%s\b" % re.escape(k.lower()), h) for h in heads)]
+            if missing:
+                problems.append("%s: no section for %s (one heading per question, '## Q1')"
+                                % (kit, ", ".join(missing)))
+            counts = (plan or {}).get("counts") or {}
+            want = [KIT_READING] if plan and not counts.get("case") else []
+        missing = [name for name in want if not any(h.startswith(name.lower().rstrip("s")) for h in heads)]
+        if missing:
+            problems.append("%s: section%s %s missing (a heading for each: %s)"
+                            % (kit, "" if len(missing) == 1 else "s", ", ".join("'%s'" % m for m in missing),
+                               ", ".join("'## %s'" % m for m in missing)))
+    return problems
+
+
+def presented_text(files):
+    """The text the learner is shown, in the order of a session: [(file, block, text)]. The
+    results bank counts: Stage 2 is assembled from it."""
+    out = []
+    q = present_blocks(files.get("sealed_questions.md")).get("questions")
+    if q:
+        out.append(("sealed_questions.md", "questions", q))
+    case = files.get("sealed_case.md")
+    c = present_blocks(case).get("case")
+    if c:
+        out.append(("sealed_case.md", "case", c))
+        bank = "\n".join(v for _, v in BANK_RE.findall(case or "")).strip()
+        if bank:
+            out.append(("sealed_case.md", "bank", bank))
+    return out
+
+
+def undefined_abbreviations(blocks_in_order, common):
+    """Rule 5 as a heuristic: all-caps tokens of two to six letters (a plural s allowed) that are
+    not on the rulebook's list and, where the session first shows them, have neither an expansion
+    in brackets after them ("ABC (…)") nor stand in brackets after one ("… (ABC)").
+    [(file, block, token)], each token once."""
+    seen, found = set(), []
+    for name, block, text in blocks_in_order:
+        for m in ABBREVIATION_RE.finditer(text):
+            token = m.group(1)
+            if token in seen:
+                continue
+            seen.add(token)
+            if token in common or ROMAN_RE.match(token):
+                continue
+            if re.match(r"s?[ \t]*\(", text[m.end(1):]) or re.search(r"\([ \t]*$", text[:m.start(1)]):
+                continue
+            found.append((name, block, token))
+    return found
+
+
+def mixed_time_anchors(blocks_in_order):
+    """Rule 6 as a heuristic: one case (or one short question) that counts time both from now
+    ("3 hours ago", "since this morning") and from a numbered day ("day 3", "hospital day").
+    [(file, where, [phrases from now], [phrases by day])]."""
+    units = []
+    case = [(n, t) for n, b, t in blocks_in_order if n == "sealed_case.md"]
+    for name, block, text in blocks_in_order:
+        if block == "questions":
+            for i, part in enumerate([p for p in QUESTION_START_RE.split(text) if p.strip()], 1):
+                m = re.match(r"[ \t>*_#]*(?:Question|Q)[ \t]*(\d+)", part)
+                units.append((name, "question %s" % (m.group(1) if m else i), part))
+    if case:
+        units.append(("sealed_case.md", "the case (present block and bank)", "\n".join(t for _, t in case)))
+    found = []
+    for name, where, text in units:
+        now = sorted({m.group(0).lower() for m in TIME_NOW_RE.finditer(text)})
+        day = sorted({m.group(0).lower() for m in TIME_DAY_RE.finditer(text)})
+        if now and day:
+            found.append((name, where, now, day))
+    return found
+
+
+def lint_round(files, plan=None, kits_required=True, standards=None):
+    """Lint a written round ({file name: text}) against the rulebook: {"blocking": [...],
+    "review": [...], "notes": [...]}. Key headers are checked separately (check_key_headers)."""
+    lint = {"blocking": kit_problems(files, plan, kits_required), "review": [], "notes": []}
+    shown = presented_text(files)
+    common = common_abbreviations(standards)
+    if common is None:
+        lint["notes"].append("the abbreviation list of references/standards.md (rule 5) could not be read: "
+                             "abbreviations were not checked")
+    else:
+        for name, block, token in undefined_abbreviations(shown, common):
+            lint["review"].append({"rule": 5, "file": name, "where": "%s block" % block, "detail": token})
+    for name, where, now, day in mixed_time_anchors(shown):
+        lint["review"].append({"rule": 6, "file": name, "where": where,
+                               "detail": "from now: %s; by numbered day: %s"
+                                         % (", ".join('"%s"' % x for x in now), ", ".join('"%s"' % x for x in day))})
+    return lint
+
+
+def lint_lines(lint):
+    """The judgement calls as lines that name no content: file, rule and a count."""
+    lines = []
+    for name in sorted({r["file"] for r in lint["review"]}):
+        n5 = sum(1 for r in lint["review"] if r["file"] == name and r["rule"] == 5)
+        n6 = sum(1 for r in lint["review"] if r["file"] == name and r["rule"] == 6)
+        if n5:
+            lines.append("%s: %d abbreviation%s not spelled out at first use (references/standards.md, rule 5)"
+                         % (name, n5, "" if n5 == 1 else "s"))
+        if n6:
+            lines.append("%s: time anchors look mixed in %d place%s (references/standards.md, rule 6)"
+                         % (name, n6, "" if n6 == 1 else "s"))
+    return lines
+
+
+def lint_summary(lint, details=None):
+    out = {"abbreviations": sum(1 for r in lint["review"] if r["rule"] == 5),
+           "time_anchors": sum(1 for r in lint["review"] if r["rule"] == 6)}
+    if lint["review"]:
+        out["where"] = lint_lines(lint)
+        if details:
+            out["details"] = details
+    return out
+
+
+def write_lint_details(folder, lint):
+    """Write what the lint found to <folder>/lint.md for the author (it names content, so it is
+    never printed), or remove an earlier one when nothing is found. Returns the path or None."""
+    path = os.path.join(folder, LINT_FILE)
+    if not lint["review"]:
+        if os.path.exists(path):
+            os.remove(path)
+        return None
+    titles = {5: "Rule 5: abbreviations not spelled out at first use in the presented text",
+              6: "Rule 6: more than one time anchor in one case or question"}
+    lines = ["# Lint: judgement calls (references/standards.md)", "",
+             "Sealed like the keys: this file names content. Only the author reads it.",
+             "Each line is a heuristic's finding: correct the text where the rule is broken, leave it "
+             "where the finding is wrong.", ""]
+    for rule in (5, 6):
+        rows = [r for r in lint["review"] if r["rule"] == rule]
+        if rows:
+            lines += ["## %s" % titles[rule], ""]
+            lines += ["- %s, %s: %s" % (r["file"], r["where"], r["detail"]) for r in rows]
+            lines.append("")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines))
+    return os.path.abspath(path)
+
+
 def cmd_keys(args):
-    """Check the key headers of sealed files (the author's last step; `finish-prepare` runs the
-    same check before it stashes). Prints which keys each file has and what is wrong with them;
-    never a topic or any other value."""
-    paths = []
+    """The author's last step (`finish-prepare` runs the same checks before it stashes): check the
+    key headers of sealed files and, for a folder, the kits' sections and the lint's judgement
+    calls. Prints which keys each file has, `problems` (what would stop `finish-prepare`) and
+    `review` (counts of what the lint would send back; the findings themselves go to lint.md in
+    the folder); never a topic or any other value."""
+    paths, folder = [], None
     for p in args.paths:
         if os.path.isdir(p):
+            folder = folder or p
             paths += [os.path.join(p, n) for n in SEALED_FILES if os.path.isfile(os.path.join(p, n))]
         elif os.path.isfile(p):
             paths.append(p)
@@ -3212,8 +3746,24 @@ def cmd_keys(args):
             die("not found: %s" % p)
     if not paths:
         die("no sealed files (%s) in %s" % (", ".join(SEALED_FILES), ", ".join(args.paths)))
-    by_file, problems = check_key_headers(paths, load_json(args.plan) if args.plan else None)
-    print(json.dumps({"ok": not problems, "keys": by_file, "problems": problems}, indent=1, ensure_ascii=False))
+    plan = load_json(args.plan) if args.plan else None
+    by_file, problems = check_key_headers(paths, plan)
+    files = {os.path.basename(p): read_text(p) for p in paths}
+    if folder:
+        for kit in KIT_FOR.values():
+            if os.path.isfile(os.path.join(folder, kit)):
+                files[kit] = read_text(os.path.join(folder, kit))
+    # a kit not written yet (Parts: questions) is no problem here; finish-prepare requires it
+    lint = lint_round(files, plan, kits_required=False)
+    problems = problems + lint["blocking"]
+    out = {"ok": not problems, "keys": by_file, "problems": problems, "review": lint_lines(lint)}
+    if folder:
+        details = write_lint_details(folder, lint)
+        if details:
+            out["details"] = details
+    if lint["notes"]:
+        out["warnings"] = lint["notes"]
+    print(json.dumps(out, indent=1, ensure_ascii=False))
     return 0 if not problems else 1
 
 
@@ -3645,6 +4195,10 @@ def cmd_close(args):
         die("session document %s does not match the reflected session %s" % (doc.get("id"), sid))
     doc["closing"] = md_b
     doc["reflected"] = True
+    doc.pop("learner_changes", None)        # close can run again: only this run's count
+    if res.get("learner_changes"):          # in the log whoever wrote part B: both scores, who closed the gap
+        doc["learner_changes"] = res["learner_changes"]
+        doc["closing"] = md_b.rstrip() + "\n\n" + learner_changes_md(res["learner_changes"], "### Set by the learner")
     sess = next((s for s in st["sessions"] if s.get("id") == sid), None)
     if sess and isinstance(sess.get("score"), (int, float)):
         doc["score"] = sess["score"]
@@ -3851,11 +4405,14 @@ def main(argv=None):
     s = command("save", cmd_save)
     s = command("close", cmd_close); s.add_argument("--reflection"); s.add_argument("--session")
     s = command("addendum", cmd_addendum); s.add_argument("--md", required=True); s.add_argument("--session")
+    s = command("override", cmd_override); s.add_argument("--scores"); s.add_argument("--close-gaps")
+    s.add_argument("--session")
     s = command("prepare", cmd_prepare); s.add_argument("--if-needed", action="store_true")
     s.add_argument("--allow-unreflected", action="store_true")
     s = command("finish-prepare", cmd_finish_prepare); s.add_argument("--revised", action="store_true")
     s.add_argument("--no-evidence", action="store_true")
     s = command("keys", cmd_keys, work=False); s.add_argument("paths", nargs="+"); s.add_argument("--plan")
+    s = command("key-table", cmd_key_table, work=False)
     s = command("verify", cmd_verify); s.add_argument("--store", required=True)
     s = command("testing-note", cmd_testing_note); s.add_argument("--feedback", required=True); s.add_argument("--session")
     s = command("stats", cmd_stats); s.add_argument("--all", action="store_true")

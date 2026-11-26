@@ -67,7 +67,7 @@
    "reason_code": "due",
    "retest_gap": {
     "gap": "Example gap: missed the decision point again in S0006",
-    "how": "Write this item on the gap's decision point, in a new clinical context, and write the line 'retests: G0005' in the item's key header (references/author.md, section 3). Only an item that says so, answered well, closes the gap.",
+    "how": "Write this item on the gap's decision point, in a new clinical context, and write the line 'retests: G0005' in the item's key header (references/standards.md, rule 9). Only an item that says so, answered well, closes the gap.",
     "id": "G0005"
    },
    "separation": "other domain",

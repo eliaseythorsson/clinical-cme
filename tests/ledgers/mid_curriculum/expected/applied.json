@@ -342,6 +342,13 @@
    "self_comfort": {},
    "self_performance": null,
    "started_at": null,
+   "steps_before": {
+    "GEN-02": 0,
+    "PULM-05": 0,
+    "PULM-06": 0,
+    "PULM-08": 0,
+    "TOX-03": 0
+   },
    "summary": "Synthetic round 11 of an example ledger.",
    "tags": [
     "example"
@@ -731,6 +738,13 @@
    },
    "self_performance": 3,
    "started_at": null,
+   "steps_before": {
+    "GEN-02": 0,
+    "PULM-05": 0,
+    "PULM-06": 0,
+    "PULM-08": 0,
+    "TOX-03": 0
+   },
    "summary": "Synthetic round 11 of an example ledger.",
    "tags": [
     "example"

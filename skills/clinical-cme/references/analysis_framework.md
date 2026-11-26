@@ -278,6 +278,9 @@ Sections, in this order:
    - Pace vs target, minutes, reflection skipped, uncertainty flagged, reading reported.
    - Disputes and their outcomes. If the learner was often right, say so plainly: it says
      something about the grading.
+   - Scores the learner set and gaps they closed by request (`learner_overrides`), apart from
+     disputes: how many, how far from the grading, on which topics, and whether those topics
+     held up when tested again. State it; it is the learner's record.
 10. **Critical feedback.** One or two paragraphs in the voice of a demanding, fair senior
     colleague: what would worry them about this clinician's practice, and what would
     impress them.

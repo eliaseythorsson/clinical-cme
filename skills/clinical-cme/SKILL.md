@@ -19,12 +19,12 @@ next round, written and source-checked in advance). The skill holds no learner d
 
 ## Principles
 
-1. **Blind until answered, part by part.** Never reveal a topic, domain or reason for selection
-   before that part's answers are committed (one exception: the theme of the current block, in
-   the opening line) — not in text, headings, task items, tool-call descriptions, web searches
-   **or your own reasoning** ("Roles", "Sealed"). The case stays sealed until its last answer.
+1. **Blind until answered, part by part**: rule 1 of the rulebook (`references/standards.md`),
+   in text, headings, task items, tool-call descriptions, web searches **and your own
+   reasoning** ("Roles", "Sealed"). The learner is told only the theme of the current block;
+   the case stays sealed until its last answer.
 2. **Realistic information, no cueing.** A case gives what a ward team would have; specialised
-   tests are requested by the learner. Neither the short questions nor their feedback cue it.
+   tests are requested by the learner (rule 7). No short question or its feedback cues it.
 3. **Teach in the feedback**, with verified, granular sources, so the gap closes in the session.
 4. **The learner never waits for something that could have been made ready.** Quality of items
    and feedback, and completeness of the log, are fixed; only waiting is cut.
@@ -59,6 +59,7 @@ needs judgement; the rest is in the references:
 | Reference | Read when |
 |---|---|
 | `references/store.md` | After the first message (§4, before publishing); before it only when turn 1 says so; setup, a failed save, recovery, export |
+| `references/standards.md` | Before grading: the numbered rules for items and feedback (rules 1–5 bind your feedback); all of it when you write items |
 | `references/feedback_guide.md` | Before grading; contains the reflection prompt |
 | `references/analysis_framework.md` | Before grading (§1 coding); for the deep review (§2) |
 | `references/state_schema.md` | Writing `round.json` (§2) and `reflection.json` (§3); commands (§6); spacing and blocks (§4) |
@@ -67,7 +68,7 @@ needs judgement; the rest is in the references:
 | `references/requests.md` | Any request that is not a round (§1); testing mode (§2); case first and other variants (§3) |
 | `references/onboarding.md` | First run, settings at setup, FAQ (§5) |
 | `references/progress_review.md` | When a review is due or requested |
-| `references/author.md`, `references/case_design.md` | Only when you write items yourself (the author's brief and the standard for items) |
+| `references/author.md`, `references/case_design.md` | Only when you write items yourself (the author's brief and how items are designed) |
 | `references/evidence_check.md` | The checker's brief; also how you check evidence yourself (§4) |
 
 ## Roles: who writes, who grades, who checks
@@ -115,9 +116,8 @@ the topic). Once a file is written, the rules above for opening it apply all the
 Your reasoning may be shown to the learner as a summary. Until a part's answers are committed,
 keep it free of that part's content:
 
-- Refer to items only as "the case", "Q1", "Stage 2"; checks by number. No diagnosis,
-  differential, topic, domain, blueprint ID, finding, test, drug, answer letter or selection
-  reason in reasoning.
+- Refer to items only as "the case", "Q1", "Stage 2"; checks by number. Nothing of their
+  content or of why they were selected appears in reasoning (rule 1.4).
 - Do not open a sealed file, a kit, an evidence file or the plan before its part is answered
   (Roles). Present each part with the text `cme.py present` (or `start`) printed, exactly as
   printed. Between answers think only about logistics ("answers received; send feedback").
@@ -158,7 +158,7 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
    - `opening` → the opening line, word for word. Nothing more specific about the block: not
      which questions are on its theme, not the domain of any other item.
    - keep `started_at` (for `round.json`), `helpers`, `prepared`, `testing`, `speed_settings_new`,
-     `pending_errata_count`, and `guideline_region` and `specialty` for all grading and feedback.
+     `pending_errata_count`, `guideline_region` and `specialty` (rules 2–5 grade with them).
 3. **Send the first message**: `opening` (after a long gap at most add "Welcome back — N items
    are waiting; we'll start with the most overdue", without scolding or enlarging the round),
    then, with `prepared.used` true, `present` exactly as printed (it ends with its answer
@@ -166,8 +166,8 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
    `prepared.used` false → the round is written now, the first part first: `preparing.md` §6.
 4. **Behind the scenes**, in this order: start a background checker for each sealed file in
    `prepared.unchecked` (a round written now: each one in `<work>` without an evidence file);
-   read `feedback_guide.md`, `analysis_framework.md` §1 and `store.md` §4 (publishing) in one
-   batch; have what `prepared.ready` lacks of the round written (`preparing.md` §6).
+   read `standards.md`, `feedback_guide.md`, `analysis_framework.md` §1 and `store.md` §4
+   (publishing) in one batch; have what `prepared.ready` lacks written (`preparing.md` §6).
 
 ### Turn 2. Question answers in → their feedback, then the case
 
@@ -212,7 +212,7 @@ graded. If answers are missing, ask once; proceed if the learner says so.
 
 1. **In one batch** read `sealed_case.md`, `kit_case.md` and `evidence_case.md` now (no
    evidence file → run the case's verification list); the round is no longer sealed.
-2. **Grade** against current guidance for the learner's `guideline_region` and `specialty`;
+2. **Grade** against current guidance for the learner's region and specialty (rule 2);
    watch for transfer gaps and calibration across the whole round; code the case (ART steps
    and Revised-IDEA; an error record for every missed or partial element).
 3. **Send the final feedback** (`feedback_guide.md` §2 part 2: case reveal → case → gap summary
@@ -235,6 +235,7 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    shaky areas, reading minutes. Turn each shaky area into a precise gap linked to a blueprint
    ID (`self_gaps`). A disputed grade is resolved first (`feedback_guide.md` §7; never defend
    a grade by repeating it), with the outcome in `grade_changes`. "skip" → `{"skipped": true}`.
+   "Record it as 4" or "close that gap" is the learner's call, not a dispute: §7.1 there.
 2. **In one batch**: `cme.py answer --work <work> --part reflection`; write
    `<work>/reflection.json` (`state_schema.md` §3) and `<work>/B.md` (discussion verbatim,
    grade changes, coded analysis, errata from `errata_to_log`; `session_log.md` §3). Then
