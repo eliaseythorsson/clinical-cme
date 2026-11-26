@@ -66,9 +66,10 @@ Planning notes:
   headers (rule 9) and kit sections (rule 8) and run the check of §4 until it prints
   `"ok": true`. Change nothing else.
 - `Parts: revise`: the round is written and `cme.py finish-prepare` printed `"revise": true`:
-  a key is contradicted, or the lint made a judgement call, or both. Change nothing but what
-  these two name, and leave the evidence files as they are: the round is stashed after your
-  "done", whatever the lint still finds.
+  a key is contradicted, or the lint made a judgement call, or both; or the checker retried
+  claims it had not verified, and the kits are to take up what it confirmed. Change nothing
+  but what these name, and leave the evidence files as they are: the round is stashed after
+  your "done", whatever the lint still finds.
   - Read `evidence_questions.md` and `evidence_case.md` in the output folder, where they
     exist. Wherever a **Note** says a key is contradicted by current guidance, correct the
     item so that it has one best answer under that guidance: the key, the kit, and the stem or

@@ -38,12 +38,15 @@ A job (one work folder):
                                                   plan the NEXT round into W/next/plan.json (counts only)
   finish-prepare --work W [--revised] [--no-evidence]
                                                   after the checkers: lint the round in W/next against the
-                                                  rulebook (references/standards.md) and count contradicted
-                                                  keys. A bad key header, a missing kit section or a missing
-                                                  evidence file is an error; an abbreviation that looks
+                                                  rulebook (references/standards.md), count contradicted
+                                                  keys and claims not verified. A bad key header, a missing
+                                                  kit section or an evidence file that is missing or lacks
+                                                  its two count lines is an error; an abbreviation that looks
                                                   undefined or mixed time anchors send the round back to the
-                                                  author once (details in W/next/lint.md), then are accepted
-                                                  with a warning (--revised). Packs the round as
+                                                  author once (details in W/next/lint.md), more than a third
+                                                  of a part's claims not verified sends it back to its
+                                                  checker once, then they are accepted with a warning
+                                                  (--revised). Packs the round as
                                                   data/prepared.json
   keys    DIR|SEALED.. [--plan PLAN]              the author's check: key headers, kit sections and the same
                                                   lint (no content printed; details in DIR/lint.md)
@@ -2892,7 +2895,14 @@ def prepared_doc(st, plan, files, has):
             "payload": pack({"plan": plan, "files": files})}
 
 
-# The last line of an evidence file, as references/evidence_check.md §3 prescribes it.
+# The last two lines of an evidence file, as references/evidence_check.md §4 prescribes them.
+CHECKED_RE = re.compile(r"^[ \t>*_`-]*Checked[ \t*_`]*:[ \t*_`]*(\S.*?),[ \t]*(\d+)[ \t]+claims?[ \t]*,"
+                        r"[ \t]*(\d+)[ \t]+not[ \t]+verified[ \t*_`.]*$", re.M | re.I)
+EVIDENCE_BLOCK_RE = re.compile(r"^#{2,4}[ \t]+\d+[.)]", re.M)
+STATUS_RE = re.compile(r"^[ \t>*_`-]*Status[ \t*_`]*:[ \t*_`]*(.*)$", re.M | re.I)
+TRIED_RE = re.compile(r"^[ \t>*_`-]*Tried[ \t*_`]*:[ \t*_`]*\S", re.M | re.I)
+# A part goes back to its checker once when more than this share of its claims is not verified.
+NOT_VERIFIED_MAX = (1, 3)
 CONTRADICTED_RE = re.compile(r"^[ \t>*_`-]*Keys contradicted[ \t*_`]*:[ \t*_`]*(\d+)[ \t*_`.]*$", re.M | re.I)
 EVIDENCE_FOR = {"sealed_questions.md": "evidence_questions.md", "sealed_case.md": "evidence_case.md"}
 NEXT_DIR = "next"                       # in the work folder: the next round's plan and drafts
@@ -2903,6 +2913,48 @@ def contradicted_keys(text):
     return int(found[-1]) if found else None
 
 
+def checked_counts(text):
+    """What an evidence file says of its own check, from its `Checked: <date>, <n> claims, <n> not
+    verified` line (the last one, if the file was written twice) and the claim blocks under it:
+    {"claims", "not_verified", "untried"}, or None when the line is missing or cannot be read
+    (also when it counts no claims, or more not verified than claims).
+
+    `not_verified` is the larger of the line's number and the blocks whose status is "not
+    verified", so that a line that undercounts its own blocks is not believed; `untried` is how
+    many of those blocks have no `Tried:` line (no other route was attempted)."""
+    text = text or ""
+    lines = list(CHECKED_RE.finditer(text))
+    if not lines:
+        return None
+    claims, not_verified = int(lines[-1].group(2)), int(lines[-1].group(3))
+    if claims < 1 or not_verified > claims:
+        return None
+    body = text[lines[-2].end() if len(lines) > 1 else 0:lines[-1].start()]
+    starts = [m.start() for m in EVIDENCE_BLOCK_RE.finditer(body)]
+    open_blocks = []
+    for i, at in enumerate(starts):
+        block = body[at:starts[i + 1] if i + 1 < len(starts) else len(body)]
+        status = STATUS_RE.search(block)
+        if status and re.match(r"not[ \t]+verified\b", status.group(1).strip(" \t*_`"), re.I):
+            open_blocks.append(block)
+    return {"claims": claims, "not_verified": min(claims, max(not_verified, len(open_blocks))),
+            "untried": sum(1 for b in open_blocks if not TRIED_RE.search(b))}
+
+
+def needs_recheck(counts):
+    """Does this part go back to its checker for one retry pass? Yes when more than a third of its
+    claims is not verified, or when a claim was given up without another route being tried."""
+    num, den = NOT_VERIFIED_MAX
+    return counts["not_verified"] * den > counts["claims"] * num or counts["untried"] > 0
+
+
+def not_verified_line(name, counts):
+    line = "%s: %d of %d claims not verified" % (name, counts["not_verified"], counts["claims"])
+    if counts["untried"]:
+        line += ", %d without a `Tried:` line" % counts["untried"]
+    return line
+
+
 def cmd_finish_prepare(args):
     """After the checkers: lint the round drafted in <work>/next against the rulebook
     (references/standards.md), read the evidence files' counts of contradicted keys and, when the
@@ -2910,11 +2962,13 @@ def cmd_finish_prepare(args):
 
     Definite problems stop the command and nothing is stashed: a missing or malformed key header
     (so that it is not found only at `save`, in the middle of the round), a missing kit or kit
-    section, and an evidence file that is missing, empty or without its count line (never read
-    as "nothing contradicted").
-    Judgement calls (an abbreviation that looks undefined, time anchors that look mixed) go back
-    to the author once, like a contradicted key: `"revise": true`; with --revised whatever is
-    still found is accepted and listed under `warnings`.
+    section, and an evidence file that is missing, empty or without its two count lines (never
+    read as "nothing contradicted" or "everything verified").
+    Judgement calls go back once: an abbreviation that looks undefined, time anchors that look
+    mixed and a contradicted key to the author (`"revise": true`); a part with more than a third
+    of its claims not verified, or a claim given up without another route tried, to its checker
+    (`"recheck": [files]`). With --revised whatever is still found is accepted and listed under
+    `warnings`.
     Prints counts, file names and the names of keys, fields and kit sections only; what the lint
     found is written to <work>/next/lint.md, which only the author reads."""
     work, info = job(args)
@@ -2943,9 +2997,9 @@ def cmd_finish_prepare(args):
             files.pop(name, None)
         has = [h for h in has if not h.startswith("evidence_")]
         out.update({"evidence": "not checked", "contradicted": None})
-        total = 0
+        total, checked = 0, {}
     else:
-        per_file, problems = {}, []
+        per_file, checked, problems = {}, {}, []
         for sealed, evidence in EVIDENCE_FOR.items():
             if sealed not in files:
                 continue
@@ -2953,30 +3007,47 @@ def cmd_finish_prepare(args):
             if evidence not in files:
                 problems.append("%s is %s" % (evidence, "empty" if os.path.exists(path) else "missing"))
                 continue
-            n = contradicted_keys(files[evidence])
+            n, counts = contradicted_keys(files[evidence]), checked_counts(files[evidence])
+            if counts is None:
+                problems.append("%s has no readable `Checked: <date>, <n> claims, <n> not verified` line"
+                                % evidence)
             if n is None:
                 problems.append("%s has no `Keys contradicted: <n>` line" % evidence)
-            else:
-                per_file[evidence] = n
+            if n is not None and counts is not None:
+                per_file[evidence], checked[evidence] = n, counts
         if problems:
             die("the evidence check is not complete in %s: %s. Nothing was stashed. Run the checker for it "
                 "again (references/evidence_check.md), or pass --no-evidence if no checker is run in this session"
                 % (folder, "; ".join(problems)))
         total = sum(per_file.values())
-        out.update({"evidence": per_file, "contradicted": total})
+        out.update({"evidence": per_file, "contradicted": total, "not_verified": checked,
+                    "not_verified_total": sum(c["not_verified"] for c in checked.values()),
+                    "claims_total": sum(c["claims"] for c in checked.values())})
+    flagged = [name for name, counts in checked.items() if needs_recheck(counts)]
     out["lint"] = lint_summary(lint, write_lint_details(folder, lint))
     out["revise"] = bool(total or lint["review"]) and not args.revised
+    recheck = [] if args.revised else flagged
+    if not args.no_evidence:
+        out["recheck"] = recheck
     if args.revised:
         out["revised"] = True
         warnings = warnings + ["accepted after one revision: %s" % line for line in lint_lines(lint)]
+        warnings = warnings + ["accepted after one retry: %s (references/evidence_check.md §3); state these "
+                               "claims qualitatively or leave them out" % not_verified_line(name, checked[name])
+                               for name in flagged]
     warnings = warnings + lint["notes"]
     if warnings:
         out["warnings"] = warnings
-    if out["revise"]:
+    if out["revise"] or recheck:
+        steps = []
+        if recheck:
+            steps.append("start the checker once more for %s (same prompt; it finds its own file and retries "
+                         "only what is not verified, references/evidence_check.md §3) and wait for it"
+                         % " and ".join(recheck))
+        steps.append("start the author once more with Parts `revise` on this folder (it reads the evidence "
+                     "files and lint.md there) and wait for it")
         out.update({"stashed": False,
-                    "next": "start the author once more with Parts `revise` on this folder (it reads the "
-                            "evidence files and lint.md there), wait for it, then run this command again "
-                            "with --revised"})
+                    "next": "%s, then run this command again with --revised" % "; then ".join(steps)})
         print(json.dumps(out, ensure_ascii=False))
         return
     publish_json(work, PREPARED_PATH, prepared_doc(st, plan, files, has))
