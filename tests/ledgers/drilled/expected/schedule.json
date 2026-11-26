@@ -1,0 +1,303 @@
+{
+ "after_record": {
+  "CARD-06": {
+   "attempts": 2,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "CARD",
+   "due": "2026-10-29",
+   "history": [
+    [
+     "2026-10-10",
+     5.0,
+     null,
+     "not_rated"
+    ],
+    [
+     "2026-10-22",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Hypertensive emergency/urgency",
+   "last": "2026-10-22",
+   "mastery": 5.0,
+   "step": 2
+  },
+  "CARD-07": {
+   "attempts": 2,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "CARD",
+   "due": "2026-10-29",
+   "history": [
+    [
+     "2026-10-04",
+     5.0,
+     null,
+     "not_rated"
+    ],
+    [
+     "2026-10-22",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Pericardial disease, myocarditis",
+   "last": "2026-10-22",
+   "mastery": 5.0,
+   "step": 2
+  },
+  "CARD-08": {
+   "attempts": 2,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "CARD",
+   "due": "2026-10-29",
+   "history": [
+    [
+     "2026-10-01",
+     5.0,
+     null,
+     "not_rated"
+    ],
+    [
+     "2026-10-22",
+     4.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Venous thromboembolism — PE (see also PULM/HEME)",
+   "last": "2026-10-22",
+   "mastery": 4.0,
+   "step": 2
+  },
+  "GI-05": {
+   "attempts": 3,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "GI",
+   "due": "2026-10-25",
+   "history": [
+    [
+     "2026-10-13",
+     1.0,
+     null,
+     "confident_error"
+    ],
+    [
+     "2026-10-16",
+     2.0,
+     null,
+     "not_rated"
+    ],
+    [
+     "2026-10-22",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Inflammatory bowel disease flare",
+   "last": "2026-10-22",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "NEURO-04": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "NEURO",
+   "due": "2026-10-25",
+   "history": [
+    [
+     "2026-10-22",
+     2.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Altered mental status / delirium",
+   "last": "2026-10-22",
+   "mastery": 2.0,
+   "step": 0
+  }
+ },
+ "after_reflect": {
+  "CARD-06": {
+   "attempts": 2,
+   "calibration": "aligned",
+   "comfort": 5,
+   "domain": "CARD",
+   "due": "2026-10-29",
+   "history": [
+    [
+     "2026-10-10",
+     5.0,
+     null,
+     "not_rated"
+    ],
+    [
+     "2026-10-22",
+     5.0,
+     5,
+     "aligned"
+    ]
+   ],
+   "label": "Hypertensive emergency/urgency",
+   "last": "2026-10-22",
+   "mastery": 5.0,
+   "step": 2
+  },
+  "CARD-07": {
+   "attempts": 2,
+   "calibration": "underconfident",
+   "comfort": 2,
+   "domain": "CARD",
+   "due": "2026-10-26",
+   "history": [
+    [
+     "2026-10-04",
+     5.0,
+     null,
+     "not_rated"
+    ],
+    [
+     "2026-10-22",
+     5.0,
+     2,
+     "underconfident"
+    ]
+   ],
+   "label": "Pericardial disease, myocarditis",
+   "last": "2026-10-22",
+   "mastery": 5.0,
+   "step": 2
+  },
+  "CARD-08": {
+   "attempts": 2,
+   "calibration": "aligned",
+   "comfort": 4,
+   "domain": "CARD",
+   "due": "2026-10-29",
+   "history": [
+    [
+     "2026-10-01",
+     5.0,
+     null,
+     "not_rated"
+    ],
+    [
+     "2026-10-22",
+     4.0,
+     4,
+     "aligned"
+    ]
+   ],
+   "label": "Venous thromboembolism — PE (see also PULM/HEME)",
+   "last": "2026-10-22",
+   "mastery": 4.0,
+   "step": 2
+  },
+  "GI-05": {
+   "attempts": 3,
+   "calibration": "aligned",
+   "comfort": 4,
+   "domain": "GI",
+   "due": "2026-10-25",
+   "history": [
+    [
+     "2026-10-13",
+     1.0,
+     null,
+     "confident_error"
+    ],
+    [
+     "2026-10-16",
+     2.0,
+     null,
+     "not_rated"
+    ],
+    [
+     "2026-10-22",
+     5.0,
+     4,
+     "aligned"
+    ]
+   ],
+   "label": "Inflammatory bowel disease flare",
+   "last": "2026-10-22",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "NEURO-04": {
+   "attempts": 1,
+   "calibration": "aligned",
+   "comfort": 2,
+   "domain": "NEURO",
+   "due": "2026-10-25",
+   "history": [
+    [
+     "2026-10-22",
+     2.0,
+     2,
+     "aligned"
+    ]
+   ],
+   "label": "Altered mental status / delirium",
+   "last": "2026-10-22",
+   "mastery": 2.0,
+   "step": 0
+  }
+ },
+ "date": "2026-10-22",
+ "due_before": [
+  {
+   "due": "2026-10-04",
+   "topic": "CARD-08"
+  },
+  {
+   "due": "2026-10-07",
+   "topic": "CARD-07"
+  },
+  {
+   "due": "2026-10-10",
+   "topic": "RENAL-06"
+  },
+  {
+   "due": "2026-10-13",
+   "topic": "CARD-06"
+  },
+  {
+   "due": "2026-10-19",
+   "topic": "GI-05"
+  },
+  {
+   "due": "2026-10-19",
+   "topic": "HEME-04"
+  },
+  {
+   "due": "2026-10-22",
+   "topic": "CARD-01"
+  },
+  {
+   "due": "2026-10-22",
+   "topic": "CARD-02"
+  },
+  {
+   "due": "2026-10-22",
+   "topic": "CARD-03"
+  },
+  {
+   "due": "2026-10-22",
+   "topic": "CARD-05"
+  },
+  {
+   "due": "2026-10-22",
+   "topic": "GEN-09"
+  }
+ ]
+}

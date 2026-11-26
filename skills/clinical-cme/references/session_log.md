@@ -1,6 +1,6 @@
 # The session log: one document per round
 
-`data/sessions/S0042.json` in the store (`sessions/S0042` in a database store) is the full
+`data/sessions/S0042.json` in the store is the full
 record of a round. The artifact page lists these
 documents, searches them by title, tags and text, and renders the transcript. The ledger stays
 the compact memory that drives scheduling; the log is the record.
@@ -37,12 +37,15 @@ Markdown, headings exactly as below (a short qualifier after them is fine):
 
 Sections follow the order of the round: the short questions, their answers and their feedback,
 then the case, its answers and the final feedback (with `case_first`, the case sections come
-first and there is one feedback section). `cme.py save` assembles it from the sealed `present`
-blocks, the answer blocks, `--feedback-questions` and `--feedback`. The
+first and there is one feedback section). `cme.py save` assembles it from the files in the work
+folder (`state_schema.md` §6.1): the sealed `present` blocks, `stage2.md`, the answers added
+with `cme.py answer`, `feedback_questions.md` and `feedback.md`. The
 "Questions" sections hold the MCQs and the focused questions together, as they were presented
 and answered; a round without a case has no case sections. Write "None." under a section with
-nothing to report. `cme.py doc --part A` adds the metadata from
-the round JSON (id, date, title, summary, tags, topics, score, format, drill):
+nothing to report. `save` adds the metadata from the round record (id, date, title, summary,
+tags, topics, score, format, drill), the reading pointers as the document's `reading` list
+and, when the round had a Listening section, the picks as its `listening` list
+(`state_schema.md` §2; the page shows both under "Reading & listening"):
 
 - **Title**: "presentation — diagnosis or main point", under about 90 characters.
 - **Summary**: one or two sentences on the main teaching, not the score.
@@ -51,6 +54,10 @@ the round JSON (id, date, title, summary, tags, topics, score, format, drill):
   `numeric-error`, `data-gathering`, `slip`), and `drill` if one ran.
 
 ## 3. Part B (`B.md`, after the reflection)
+
+Write `B.md` from "Discussion" on. The reflection is added with `cme.py answer --part
+reflection`, and `close` puts it above the rest as the first section; a `B.md` that already has
+a "Reflection" heading is kept as it is.
 
 ```markdown
 ### Reflection (verbatim)
@@ -67,15 +74,21 @@ the round JSON (id, date, title, summary, tags, topics, score, format, drill):
   scored); calibration notes; drill result. It must agree with the `coding`
   blocks in the round JSON.
 - **Grade changes**: each with from → to, the reason and the outcome. "None." otherwise.
+  A score the learner set or a gap they closed (`feedback_guide.md` §7.1) is not written here
+  by hand: `close` adds a "Set by the learner" section with both scores and who closed the
+  gap (`override` after the close: the same lines in the addendum), and the document keeps
+  them as `learner_changes`.
 
-`cme.py doc --part B` wraps it as `{"closing": …, "reflected": true}` for `update`.
+`cme.py close` puts it into the session document as `closing`, with `reflected: true`.
 
 ## 4. Addendum
 
 Discussion after the close: write it as `## Addendum · <date>` followed by the text to a file and
-run `cme.py addendum --doc <session file> --md <file> --out-dir <dir>`, then save the file it
-prints. It appends to an existing addendum; read the current session file first if it may have
-changed. If the
+run `cme.py addendum --work <work> --md <file>` (the last session; `--session <id>` for an
+older one), then publish the `files` it prints. Straight after a close the work folder already
+holds the session document; in a later conversation, read the store with
+`data/sessions/<id>.json` and `open` the work folder first. It appends to an existing
+addendum. If the
 learner returns to an old case in a later session, note the current session's ID in the text.
 
 ## 5. Errata
@@ -100,8 +113,8 @@ An erratum corrects an earlier teaching point. Two sources:
 
 ## 6. Search and teaching export
 
-- **Finding cases**: `data/index.json` has id, date, title, summary, tags and topics for every
-  session; filter it in Python. For words inside transcripts, read the session files into local
+- **Finding cases**: `data/page.json` lists id, date, title, summary, tags and topics for every
+  session (`sessions`); filter it in Python. For words inside transcripts, read the session files into local
   files and search them. Answer with a short table (ID, date, title). The learner can also use the page.
 - **Teaching export** ("make S0042 into a teaching case"):
   1. Read the session document into a local file. Check the content is still current (a quick guideline check

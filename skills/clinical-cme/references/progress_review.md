@@ -23,17 +23,15 @@ Offer the two parts in one question (as structured choices where the app offers 
 > and critical feedback with a written report; it takes me 15–30 minutes and you about 10 to
 > read and discuss): **both** (recommended) · **check-in only** · **deep analysis later this week**.
 
-For a learner migrated from an earlier version, say that sessions before the migration may have
-no transcript (only scores, gaps and coding) unless transcripts were imported.
+If some of the period's older sessions have no transcript (only scores, gaps and coding), say so.
 
 ## 1. Gather
 
-1. Read the ledger into a file (`store.md` §4), then `python3 cme.py stats <state>`. Use only these figures and the
+1. Read the store and `open` the work folder (`store.md` §4), then `python3 cme.py stats --work <work>`. Use only these figures and the
    state; never estimate numbers in prose. It lists the period's session IDs.
-2. With the deep analysis on: take the period's session IDs from `stats` (or the index), and
-   read those session documents into local files in `<work>/period` (store A: the read-files
-   tool with up to the allowed number of paths per call; B: get each document to a file; C:
-   copy) — no transcript enters the conversation unread. Read them in batches of about six
+2. With the deep analysis on: take the period's session IDs from `stats` (or the page file), and
+   read those session documents into local files in `<work>/period` (the page: the read-files
+   tool with up to the allowed number of paths per call; a folder: copy) — no transcript enters the conversation unread. Read them in batches of about six
    (`transcript` and `closing` fields), take notes per batch in `<work>/review_notes.md`
    (patterns, quotations, session IDs) and rely on those notes rather than memory. Large periods
    (> 15 sessions) with parallel helper agents available: one batch per subagent with
@@ -47,14 +45,23 @@ no transcript (only scores, gaps and coding) unless transcripts were imported.
 
 **Your last N weeks**
 - Sessions: *n* (≈ *x* per week; target *y*). Time: about *m* minutes in sessions plus *r*
-  minutes of reading reported (say when timings are estimates).
+  minutes of reading reported (say when timings are estimates). With timed rounds (`stats`
+  `timing`): the median round against the budget, split into answering, waiting and reading,
+  and its `hint`; the sessions it leaves out are older ones without measured time.
 - Items: cases, focused questions (mean score) and MCQs (accuracy), from `stats` `items`.
 - Coverage: domains practised with mean latest score; blueprint domains not yet touched.
 - **What you learned**: gaps resolved in the period, one plain line each, plus key learning
-  points. The most useful part; keep it concrete.
+  points. The most useful part; keep it concrete. `gaps_resolved` holds only gaps closed by a
+  retest; those the learner closed are in `gaps_closed_by_learner` and are not "learned".
 - Still open: persisting gaps, grouped by domain, shortest description each.
 - Calibration: how often comfort matched performance; confident-but-low and good-but-unsure topics.
 - Trend: topics that clearly improved or declined.
+- Set by you: scores the learner set themselves and gaps they closed by request
+  (`analysis.period.learner_overrides`: `scores`, `mean_change`, `gaps_closed`), one neutral
+  line, only when there are any ("You set 2 scores yourself, on average 1.5 above my grading,
+  and closed 1 gap without a retest"). Counted apart from disputes (`grade_disputes`): a
+  dispute changed the grading, these did not. The mean score includes the learner's scores;
+  calibration uses the grading.
 - With the deep analysis: its three-line headline, the reasoning-step profile in one line, the
   number of critical errors.
 
@@ -81,13 +88,12 @@ context changes a finding.
 1. **Report.** With the deep analysis, write the final report (Markdown, template in
    `analysis_framework.md` §2.6) to `<work>/report.md`, wrap it as
    `{"date": "…", "title": "CME progress review — <date>", "headline": "…", "report": "<markdown>"}`
-   `python3 cme.py review-doc --md <work>/report.md --headline "<headline>" --state <state>
-   --index <work>/store/index.json --out-dir <work>/outR`. The page renders it. Offer a shareable document
-   (for an appraisal or revalidation portfolio) if they want one.
-2. **Review JSON** → `python3 cme.py review <state> --review review.json --out next.json` →
-   `python3 cme.py place next.json --index <work>/outR/data/index.json --out-dir <work>/outR` →
-   save every file in `<work>/outR` in one write (`store.md` §4; database stores: the report to
-   `reviews/<date>`, the ledger to `cme/state`):
+   `python3 cme.py review-doc --work <work> --md <work>/report.md --headline "<headline>"`.
+   The page renders it. Offer a shareable document (for an appraisal or revalidation
+   portfolio) if they want one.
+2. **Review JSON** → `python3 cme.py review --work <work> --review <work>/review.json` →
+   publish every file in its `files` in one write (`store.md` §4; the report from step 1 is
+   among them):
 
 ```json
 {
@@ -96,7 +102,7 @@ context changes a finding.
   "learner_feedback": {"format": "…", "time": "…", "difficulty": "about right", "feedback": "…"},
   "goals": ["…"],
   "config_changes": {"session_minutes": 25, "target_sessions_per_week": 2, "review_interval_days": 60},
-  "profile_changes": {"goals": ["…"]},
+  "profile_changes": {"aim": "the learner's own new paragraph, if what they are aiming at changed"},
   "domain_self_ratings": {"GEN": 2}, "domain_emphasis": {"GEN": 1.5, "RENAL": 0.7},
   "deep_analysis": true,
   "key_figures": {"sessions": 14, "mean_score": 3.4, "brier": 0.21, "errors_per_session": 1.8, "critical_errors": 2},
@@ -119,6 +125,7 @@ context changes a finding.
 ## After the review is saved
 
 Recording a review changes the ledger, which sets aside any round prepared ahead. If the
-review ran at the end of a session, prepare the next round now, from the ledger the review
-wrote (SKILL.md, turn 5, "prepare the next round"), after your last message of the review.
+review ran at the end of a session, prepare the next round now, in the same work folder
+(`preparing.md` §2: it plans from the ledger the review wrote), after your last message of
+the review.
 

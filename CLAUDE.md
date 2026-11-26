@@ -1,6 +1,6 @@
 # clinical-cme
 
-Source repo for the `clinical-cme` skill (currently version 4.3.1): blinded clinical
+Source repo for the `clinical-cme` skill (currently version 5.0.0): blinded clinical
 self-assessment rounds for physicians — MCQs, focused questions and a full case, with
 evidence-based feedback, reflection-informed spaced repetition and periodic reasoning review.
 
@@ -8,12 +8,18 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
 
 - `skills/clinical-cme/` — the shippable skill folder. Install by copying this folder into a
   skills directory (or zipping it for upload). Keep it free of personal/learner data.
-  - `SKILL.md` — the protocol the assistant follows in a round
+  - `SKILL.md` — the protocol the assistant follows in a round; about 250 lines, only what
+    needs judgement (presenting, grading, feedback): procedure belongs in `cme.py`, the rest
+    in `references/`
   - `scripts/cme.py` — the state engine (Python 3.8+, standard library only)
-  - `references/` — store, schema, case design, feedback, analysis, logging, review, onboarding
+  - `references/` — store, schema, the rulebook (`standards.md`), case design, feedback, analysis, logging, review, onboarding,
+    preparing ahead, other requests
   - `templates/` — learner page (`page.html`), default blueprint, resource library
-  - `legacy/` — version-3 scripts, used only for migration
 - `tests/` — pytest suite for `cme.py` (`conftest.py` runs it the way the assistant does)
+  - `tests/ledgers/` — synthetic example ledgers with their expected plan, schedule and applied
+    round; `tests/examples.py` says how to accept a deliberate change
+- `sim/` — simulation harness (`simulate.py`, personas, saved reports); run with `/simulate`,
+  procedure in `sim/README.md`. Run folders (`sim/runs/`) are never committed
 - `docs/agents/` — config read by the engineering skills (see below)
 - `docs/adr/` — architecture decision records (created lazily)
 
@@ -31,6 +37,8 @@ do not add one. Run `claude plugin validate .` after touching either manifest.
 - `python3 -m py_compile skills/clinical-cme/scripts/cme.py` and `python3 -m pytest -q tests` must
   pass before committing (GitHub Actions runs both on every pull request).
 - Domain vocabulary: `CONTEXT.md`. Decisions: `docs/adr/`. Current plan: `docs/plan-v5.md`.
+- A rule for writing items is written once, in `references/standards.md`; briefs cite its number.
+  After changing `KEY_*` in `cme.py`, paste `cme.py key-table` into rule 9 (a test compares them).
 - Never commit learner data (`data/`, `state.json`, session logs).
 
 ## Agent skills

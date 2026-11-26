@@ -1,0 +1,263 @@
+{
+ "after_record": {
+  "GEN-02": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "GEN",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Perioperative anticoagulation / antiplatelet bridging",
+   "last": "2026-10-28",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "PULM-05": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Pleural effusion / empyema",
+   "last": "2026-10-28",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "PULM-06": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     4.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Pulmonary embolism (management)",
+   "last": "2026-10-28",
+   "mastery": 4.0,
+   "step": 1
+  },
+  "PULM-08": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     4.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Shock differentiation & resuscitation",
+   "last": "2026-10-28",
+   "mastery": 4.0,
+   "step": 1
+  },
+  "TOX-03": {
+   "attempts": 2,
+   "calibration": "confident_error",
+   "comfort": null,
+   "domain": "TOX",
+   "due": "2026-11-04",
+   "history": [
+    [
+     "2026-10-23",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-10-28",
+     1.0,
+     null,
+     "confident_error"
+    ]
+   ],
+   "label": "Environmental (hypothermia, hyperthermia)",
+   "last": "2026-10-28",
+   "mastery": 1.0,
+   "step": 0
+  }
+ },
+ "after_reflect": {
+  "GEN-02": {
+   "attempts": 1,
+   "calibration": "underconfident",
+   "comfort": 2,
+   "domain": "GEN",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     5.0,
+     2,
+     "underconfident"
+    ]
+   ],
+   "label": "Perioperative anticoagulation / antiplatelet bridging",
+   "last": "2026-10-28",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "PULM-05": {
+   "attempts": 1,
+   "calibration": "aligned",
+   "comfort": 4,
+   "domain": "PULM",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     5.0,
+     4,
+     "aligned"
+    ]
+   ],
+   "label": "Pleural effusion / empyema",
+   "last": "2026-10-28",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "PULM-06": {
+   "attempts": 1,
+   "calibration": "aligned",
+   "comfort": 4,
+   "domain": "PULM",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     4.0,
+     4,
+     "aligned"
+    ]
+   ],
+   "label": "Pulmonary embolism (management)",
+   "last": "2026-10-28",
+   "mastery": 4.0,
+   "step": 1
+  },
+  "PULM-08": {
+   "attempts": 1,
+   "calibration": "aligned",
+   "comfort": 5,
+   "domain": "PULM",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     4.0,
+     5,
+     "aligned"
+    ]
+   ],
+   "label": "Shock differentiation & resuscitation",
+   "last": "2026-10-28",
+   "mastery": 4.0,
+   "step": 1
+  },
+  "TOX-03": {
+   "attempts": 2,
+   "calibration": "confident_error",
+   "comfort": 4,
+   "domain": "TOX",
+   "due": "2026-11-04",
+   "history": [
+    [
+     "2026-10-23",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-10-28",
+     1.0,
+     4,
+     "confident_error"
+    ]
+   ],
+   "label": "Environmental (hypothermia, hyperthermia)",
+   "last": "2026-10-28",
+   "mastery": 1.0,
+   "step": 0
+  }
+ },
+ "date": "2026-10-28",
+ "due_before": [
+  {
+   "due": "2026-10-21",
+   "topic": "RENAL-03"
+  },
+  {
+   "due": "2026-10-22",
+   "topic": "EMRG-02"
+  },
+  {
+   "due": "2026-10-22",
+   "topic": "GEN-10"
+  },
+  {
+   "due": "2026-10-23",
+   "topic": "CARD-04"
+  },
+  {
+   "due": "2026-10-24",
+   "topic": "CARD-05"
+  },
+  {
+   "due": "2026-10-24",
+   "topic": "ENDO-06"
+  },
+  {
+   "due": "2026-10-24",
+   "topic": "GI-02"
+  },
+  {
+   "due": "2026-10-24",
+   "topic": "TOX-03"
+  },
+  {
+   "due": "2026-10-25",
+   "topic": "ID-07"
+  },
+  {
+   "due": "2026-10-25",
+   "topic": "PULM-04"
+  },
+  {
+   "due": "2026-10-25",
+   "topic": "TOX-02"
+  },
+  {
+   "due": "2026-10-26",
+   "topic": "NEURO-03"
+  },
+  {
+   "due": "2026-10-28",
+   "topic": "HEME-04"
+  }
+ ]
+}

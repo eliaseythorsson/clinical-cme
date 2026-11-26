@@ -1,0 +1,359 @@
+{
+ "after_record": {
+  "HEME-02": {
+   "attempts": 3,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "HEME",
+   "due": "2026-10-22",
+   "history": [
+    [
+     "2026-10-07",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-10-09",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-19",
+     2.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Thrombocytopenia, HIT, TTP/HUS",
+   "last": "2026-10-19",
+   "mastery": 2.0,
+   "step": 0
+  },
+  "PULM-02": {
+   "attempts": 4,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-10-26",
+   "history": [
+    [
+     "2026-10-09",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-12",
+     1.0,
+     4,
+     "confident_error"
+    ],
+    [
+     "2026-10-14",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-19",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "COPD exacerbation",
+   "last": "2026-10-19",
+   "mastery": 5.0,
+   "step": 2
+  },
+  "PULM-05": {
+   "attempts": 1,
+   "calibration": "confident_error",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-10-22",
+   "history": [
+    [
+     "2026-10-19",
+     1.0,
+     null,
+     "confident_error"
+    ]
+   ],
+   "label": "Pleural effusion / empyema",
+   "last": "2026-10-19",
+   "mastery": 1.0,
+   "step": 0
+  },
+  "PULM-08": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-10-22",
+   "history": [
+    [
+     "2026-10-19",
+     3.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Shock differentiation & resuscitation",
+   "last": "2026-10-19",
+   "mastery": 3.0,
+   "step": 0
+  }
+ },
+ "after_reflect": {
+  "HEME-02": {
+   "attempts": 3,
+   "calibration": "aligned",
+   "comfort": 2,
+   "domain": "HEME",
+   "due": "2026-10-22",
+   "history": [
+    [
+     "2026-10-07",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-10-09",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-19",
+     2.0,
+     2,
+     "aligned"
+    ]
+   ],
+   "label": "Thrombocytopenia, HIT, TTP/HUS",
+   "last": "2026-10-19",
+   "mastery": 2.0,
+   "step": 0
+  },
+  "PULM-02": {
+   "attempts": 4,
+   "calibration": "aligned",
+   "comfort": 5,
+   "domain": "PULM",
+   "due": "2026-10-26",
+   "history": [
+    [
+     "2026-10-09",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-12",
+     1.0,
+     4,
+     "confident_error"
+    ],
+    [
+     "2026-10-14",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-19",
+     5.0,
+     5,
+     "aligned"
+    ]
+   ],
+   "label": "COPD exacerbation",
+   "last": "2026-10-19",
+   "mastery": 5.0,
+   "step": 2
+  },
+  "PULM-05": {
+   "attempts": 1,
+   "calibration": "confident_error",
+   "comfort": 4,
+   "domain": "PULM",
+   "due": "2026-10-22",
+   "history": [
+    [
+     "2026-10-19",
+     1.0,
+     4,
+     "confident_error"
+    ]
+   ],
+   "label": "Pleural effusion / empyema",
+   "last": "2026-10-19",
+   "mastery": 1.0,
+   "step": 0
+  },
+  "PULM-08": {
+   "attempts": 1,
+   "calibration": "overconfident",
+   "comfort": 5,
+   "domain": "PULM",
+   "due": "2026-10-22",
+   "history": [
+    [
+     "2026-10-19",
+     3.0,
+     5,
+     "overconfident"
+    ]
+   ],
+   "label": "Shock differentiation & resuscitation",
+   "last": "2026-10-19",
+   "mastery": 3.0,
+   "step": 0
+  }
+ },
+ "after_reflecting_waiting_round": {
+  "GEN-04": {
+   "attempts": 2,
+   "calibration": "confident_error",
+   "comfort": 4,
+   "domain": "GEN",
+   "due": "2026-10-23",
+   "history": [
+    [
+     "2026-10-14",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-10-16",
+     1.0,
+     4,
+     "confident_error"
+    ]
+   ],
+   "label": "Pain management & opioid stewardship",
+   "last": "2026-10-16",
+   "mastery": 1.0,
+   "step": 0
+  },
+  "GI-03": {
+   "attempts": 2,
+   "calibration": "aligned",
+   "comfort": 4,
+   "domain": "GI",
+   "due": "2026-10-23",
+   "history": [
+    [
+     "2026-10-07",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-16",
+     5.0,
+     4,
+     "aligned"
+    ]
+   ],
+   "label": "Cirrhosis & its complications (ascites, SBP, HRS, varices)",
+   "last": "2026-10-16",
+   "mastery": 5.0,
+   "step": 2
+  },
+  "HEME-06": {
+   "attempts": 1,
+   "calibration": "underconfident",
+   "comfort": 2,
+   "domain": "HEME",
+   "due": "2026-10-19",
+   "history": [
+    [
+     "2026-10-16",
+     5.0,
+     2,
+     "underconfident"
+    ]
+   ],
+   "label": "Transfusion medicine & reactions",
+   "last": "2026-10-16",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "NEURO-03": {
+   "attempts": 3,
+   "calibration": "aligned",
+   "comfort": 4,
+   "domain": "NEURO",
+   "due": "2026-10-19",
+   "history": [
+    [
+     "2026-10-05",
+     5.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-14",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-16",
+     4.0,
+     4,
+     "aligned"
+    ]
+   ],
+   "label": "Seizure & status epilepticus",
+   "last": "2026-10-16",
+   "mastery": 4.0,
+   "step": 1
+  }
+ },
+ "date": "2026-10-19",
+ "due_before": [
+  {
+   "due": "2026-10-11",
+   "topic": "HEME-02"
+  },
+  {
+   "due": "2026-10-12",
+   "topic": "GEN-01"
+  },
+  {
+   "due": "2026-10-15",
+   "topic": "ID-02"
+  },
+  {
+   "due": "2026-10-16",
+   "topic": "PULM-02"
+  },
+  {
+   "due": "2026-10-17",
+   "topic": "GEN-04"
+  },
+  {
+   "due": "2026-10-19",
+   "topic": "CARD-05"
+  },
+  {
+   "due": "2026-10-19",
+   "topic": "HEME-06"
+  },
+  {
+   "due": "2026-10-19",
+   "topic": "NEURO-03"
+  },
+  {
+   "due": "2026-10-19",
+   "topic": "RENAL-06"
+  }
+ ]
+}

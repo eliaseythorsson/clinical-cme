@@ -10,7 +10,7 @@ One session of assessment: the short questions, their feedback, the case, its fe
 _Avoid_: quiz, session (when meaning the content)
 
 **Short question**:
-An MCQ or a focused question; asked before the case, on topics unrelated to it.
+An MCQ or a focused question; asked before the case, on topics unrelated to it (in a block they often share its domain, never its topic).
 
 **Focused question**:
 A mini-case ending in one free-text question on a single decision, graded on the reasoning.
@@ -18,6 +18,14 @@ A mini-case ending in one free-text question on a single decision, graded on the
 **Case**:
 The full clinical case of a round, usually unfolding in two stages.
 _Avoid_: vignette, scenario
+
+**Key**:
+What the author writes down as the right answer to an item and how to score it; the examiner grades with it as the author's view.
+_Avoid_: answer sheet, solution
+
+**Key header**:
+The few fixed lines at the top of a key (topic, stem summary, aspect, compact case, selection reason, the gap it retests) that the state engine reads.
+_Avoid_: metadata, front matter
 
 **Results bank**:
 The prepared results of tests the learner may order in Stage 1 of a case.
@@ -53,8 +61,55 @@ _Avoid_: state (in conversation with the learner)
 **Log**:
 The verbatim, append-only record of every round, one session document each.
 
+**Round record**:
+What the ledger keeps of one round: its items with topic, score, confidence and coding, the gaps and the compact case. The state engine builds it from the key headers and the examiner's grading.
+_Avoid_: round JSON (for the assembled record)
+
+**Page file**:
+The file the engine writes for the page (`data/page.json`): exactly what the page may show, already blinded. It is all the page renders, apart from the prefs it writes itself and the session or review document the learner opens; only Export reads the ledger.
+_Avoid_: index (it replaces `data/index.json`)
+
+**Page**:
+The learner's own view of their store: past sessions, scores, progress reviews, topics already tested, reading and listening from past rounds, and settings. It never names what a coming round will test (no open gaps, no due topics).
+_Avoid_: dashboard
+
 **Gap**:
-A specific point the learner got wrong or flagged as shaky, linked to a blueprint topic, open until an item tests that point and it is answered well.
+A specific point the learner got wrong or flagged as shaky, linked to a blueprint topic, open until an item tests that point and it is answered well, or until the learner closes it themselves.
+
+**Learner-set score**:
+A score the learner asks to have recorded in place of the examiner's ("record it as 4"). The record keeps both; scheduling uses the learner's. Not a dispute: the grading did not change.
+_Avoid_: override (fine for the command), dispute
+
+**Retest**:
+An item written on an open gap's decision point, in a new clinical context; it names the gap, and only a retest answered well closes it.
+
+**Listening pick**:
+The one podcast episode a topic of the round gets in the final feedback: 15 to 90 minutes, chosen for the gap the learner showed, given as a Spotify link with a one-line reason.
+_Avoid_: recommendation, podcast link
+
+**Reading pointer**:
+One of at most two further-reading items in the final feedback: a document, the exact section to read, the minutes it takes and one line on why it fits the gap. Listed with its link in the session document.
+_Avoid_: reference, reading list
+
+**Library**:
+The reading pointers and listening picks of past sessions as the page lists them under "Reading & listening" (`library` in the page file). Whether one is done is kept in the viewer's browser, never in the store.
+
+**Candidate episode**:
+One of up to three episodes per topic that the checker finds when the round is prepared and that stay sealed in the kit; the pick is taken from them when one covers the learner's gap.
+
+**Podcast sources**:
+The shows the learner trusts and the shows to avoid; asked once, and always respected.
+
+**Rest**:
+The minimum of three days before a tested topic or a new gap can come back.
+
+**Work folder**:
+The scratch folder in which one job is worked on (a round, or a settings change, a theme change or preparing the next round, set up with `open`); every file has a fixed name there and every command needs only the work folder.
+_Avoid_: temp folder, session folder, workbench (fine when explaining to the learner)
+
+**Publish set**:
+The one list in the work folder of what the store must hold now: the newest version of every store file that changed, the store version it was read at, and the write order (the ledger last). Every command updates it; whoever carries files to the store publishes all of it.
+_Avoid_: output folder, files list
 
 ## Curriculum
 
@@ -72,15 +127,80 @@ A run of rounds (default 12) with one domain as its theme; most new material and
 _Avoid_: module, month
 
 **Theme**:
-The domain of the current block. It is visible to the learner; topics stay blind.
+The domain of the current block. It is visible to the learner; topics stay blind. It is proposed with a one-line reason and the learner can change it, at the end of a block or in the middle of one.
+
+**Share**:
+The part of a round's short questions given to the theme (60%), to due repeats (25%) or to the wildcard (15%), met over the block rather than in every round.
+
+**Due repeat**:
+A topic whose spacing date has come, or a gap ready for its retest, from any domain; fills the repeat share.
+
+**Wildcard**:
+A short question on an untested topic outside the theme, so breadth is not lost during a block.
 
 **Drill-down**:
-Successive rounds probing deeper into one sub-topic after wrong answers; capped, and only within the theme.
+Successive rounds coming back to one topic after wrong answers. Limited: no topic is in more than two rounds in a row; outside the theme a miss gets one retest, then at least a week between returns.
+
+**Guideline region**:
+The learner's choice of whose guidelines items are written and graded against; asked at setup, default Iceland/Europe.
+_Avoid_: country, locale
+
+**Where you are**:
+The learner's own paragraph on their stage of training or career and how they rate their knowledge and skills (`profile.journey`); the author pitches items to it and the examiner writes the feedback for it. A short stage label (medical student … senior attending) is derived for display only.
+_Avoid_: level, role (as a fixed category)
+
+**Where you're aiming**:
+The learner's own paragraph on what the rounds should help them achieve (an exam, a level, areas to strengthen; `profile.aim`); part of the pitch, with goal tags derived for display only.
+_Avoid_: goals list
+
+**Rulebook**:
+The numbered standards for writing items (`references/standards.md`), the same for every learner; briefs cite its rule numbers. Contrast with settings, which are per learner.
+_Avoid_: guidelines (means clinical guidelines here)
+
+**Crux test**:
+The decisive test of an item when it is one clinicians often fail to order; its result is requested by the learner, never given in the stem (rule 7 of the rulebook).
+_Avoid_: key test, special test
+
+**Glossary line**:
+The one line "Abbreviations: …" that opens a feedback message and explains the abbreviations it uses (rule 5.3). Presented items have none: there an abbreviation is spelled out at first use.
+
+**Time anchor**:
+The single point a case counts all its timings from: a named event (admission as day 0) or now, never both (rule 6).
+
+**Active time**:
+The minutes of a round in which something happened: the learner answering, waiting for the examiner or reading feedback, with idle stretches cut. Measured by the engine from the steps of the round; nobody types a time.
+_Avoid_: duration, session length (that is the budget)
+
+**Timed round**:
+A round whose active time was measured. Rounds of older versions are not timed (their minutes were capped at 180) and count in no median or estimate.
+
+**Pace**:
+The learner's active time per round against the default estimate for the same items; estimates move to it over ten timed rounds.
+
+**Time hint**:
+The one sentence, from five timed rounds, comparing the learner's median round with their budget and naming the change to the mix that would fit it best.
+
+**Specialty**:
+The learner's field of practice, which sets the pitch of items and which guideline applies; asked at setup, default internal/hospital medicine.
 
 ## Development
 
 **Testing mode**:
 A learner setting that adds a short feedback check and a store-integrity check at the end of each round.
 
+**Example ledger**:
+A synthetic ledger kept with the tests (fresh, mid-curriculum, overdue, unreflected, stale prepared round, drilled), with the expected plan, due dates and applied round saved beside it.
+_Avoid_: fixture, golden file (in conversation)
+
 **Simulation**:
 A scripted run of the skill in which one agent is the examiner and another plays a learner persona.
+
+**Persona**:
+The kind of learner an agent plays in a simulation (strong; weak and overconfident; disputes a grade; stops halfway).
+
+**Quality scorer**:
+A third agent in a simulation that, after the round, rates each item and each feedback message for clinical quality. It takes no part in the round.
+_Avoid_: judge
+
+**Clinical-quality score**:
+The quality scorer's rating, 1–5, of one item or one feedback message; kept in the simulation report for comparison over time, never a pass bar.

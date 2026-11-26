@@ -1,0 +1,2314 @@
+{
+ "schema": 4,
+ "gen": 21,
+ "created": "2026-10-05",
+ "updated": "2026-10-23",
+ "next_id": "S0011",
+ "profile": {
+  "display_name": "Example learner",
+  "role": null,
+  "specialty": "Internal/hospital medicine",
+  "subspecialty": null,
+  "practice_setting": [],
+  "goals": [],
+  "strengths": [],
+  "weaknesses": [],
+  "domain_self_ratings": {
+   "CARD": 3.9,
+   "NEURO": 4.0,
+   "GEN": 3.3,
+   "ENDO": 2.9,
+   "GI": 3.1,
+   "HEME": 3.9,
+   "RENAL": 4.3,
+   "ID": 4.1,
+   "PULM": 3.3,
+   "RHEUM": 4.7,
+   "EMRG": 4,
+   "TOX": 4.3
+  },
+  "domain_emphasis": {},
+  "notes": "",
+  "onboarded_at": "2026-10-05"
+ },
+ "config": {
+  "session_minutes": 20,
+  "mcqs": 3,
+  "focused": 1,
+  "case": true,
+  "round_set_at": "2026-10-05T08:00:00Z",
+  "case_format": "unfolding",
+  "feedback_depth": "detailed",
+  "target_sessions_per_week": 3,
+  "review_interval_days": 42,
+  "intervals_days": [
+   1,
+   3,
+   7,
+   16,
+   35,
+   90
+  ],
+  "new_topics_per_round": 1,
+  "lab_units": "SI",
+  "blood_gas_units": "mmHg",
+  "guideline_region": "Iceland/Europe",
+  "item_order": "mcqs_first",
+  "helpers": true,
+  "prepare_ahead": true,
+  "prepare_task": false,
+  "testing": false,
+  "show_coding": true,
+  "reminders": false,
+  "mirror": null,
+  "resource_preferences": {
+   "free_only": false,
+   "formats": [
+    "guidelines",
+    "review articles"
+   ]
+  }
+ },
+ "review": {
+  "last": null,
+  "next_due": "2026-11-16",
+  "period_start": "2026-10-05"
+ },
+ "blueprint": {
+  "CARD": {
+   "name": "Cardiology",
+   "weight": 1.0,
+   "topics": {
+    "CARD-01": "Acute coronary syndrome (STEMI/NSTEMI/UA)",
+    "CARD-02": "Acute decompensated heart failure (HFrEF / HFpEF)",
+    "CARD-03": "Atrial fibrillation & rate/rhythm control, anticoagulation",
+    "CARD-04": "Bradyarrhythmias & tachyarrhythmias, syncope",
+    "CARD-05": "Valvular disease & infective endocarditis",
+    "CARD-06": "Hypertensive emergency/urgency",
+    "CARD-07": "Pericardial disease, myocarditis",
+    "CARD-08": "Venous thromboembolism — PE (see also PULM/HEME)"
+   }
+  },
+  "PULM": {
+   "name": "Pulmonary & Critical Care",
+   "weight": 1.0,
+   "topics": {
+    "PULM-01": "Community- & hospital-acquired pneumonia",
+    "PULM-02": "COPD exacerbation",
+    "PULM-03": "Asthma exacerbation",
+    "PULM-04": "Acute respiratory failure, ARDS, mechanical ventilation basics",
+    "PULM-05": "Pleural effusion / empyema",
+    "PULM-06": "Pulmonary embolism (management)",
+    "PULM-07": "Sepsis & septic shock",
+    "PULM-08": "Shock differentiation & resuscitation"
+   }
+  },
+  "ID": {
+   "name": "Infectious Disease",
+   "weight": 1.0,
+   "topics": {
+    "ID-01": "Sepsis source identification & empiric antibiotics / stewardship",
+    "ID-02": "Skin & soft tissue infections, necrotizing fasciitis",
+    "ID-03": "UTI / pyelonephritis / catheter-associated",
+    "ID-04": "Meningitis & encephalitis",
+    "ID-05": "Endocarditis (see CARD-05)",
+    "ID-06": "C. difficile infection",
+    "ID-07": "Bone & joint infection (osteomyelitis, septic arthritis)",
+    "ID-08": "Fever of unknown origin, febrile neutropenia",
+    "ID-09": "HIV inpatient issues & opportunistic infection",
+    "ID-10": "Healthcare-associated / MDRO, antibiotic selection"
+   }
+  },
+  "RENAL": {
+   "name": "Nephrology & Acid-Base/Electrolytes",
+   "weight": 1.0,
+   "topics": {
+    "RENAL-01": "Acute kidney injury (pre/intra/post-renal)",
+    "RENAL-02": "Hyponatremia / hypernatremia",
+    "RENAL-03": "Potassium disorders",
+    "RENAL-04": "Acid-base disorders (mixed disturbances)",
+    "RENAL-05": "Calcium / phosphate / magnesium disorders",
+    "RENAL-06": "CKD inpatient management, indications for dialysis",
+    "RENAL-07": "Rhabdomyolysis, contrast nephropathy"
+   }
+  },
+  "GI": {
+   "name": "Gastroenterology & Hepatology",
+   "weight": 0.6,
+   "topics": {
+    "GI-01": "Upper & lower GI bleeding",
+    "GI-02": "Acute pancreatitis",
+    "GI-03": "Cirrhosis & its complications (ascites, SBP, HRS, varices)",
+    "GI-04": "Acute liver failure, drug-induced liver injury",
+    "GI-05": "Inflammatory bowel disease flare",
+    "GI-06": "Bowel obstruction, ischemia",
+    "GI-07": "Hepatic encephalopathy"
+   }
+  },
+  "ENDO": {
+   "name": "Endocrinology",
+   "weight": 0.6,
+   "topics": {
+    "ENDO-01": "DKA & hyperosmolar hyperglycemic state",
+    "ENDO-02": "Inpatient glycemic management",
+    "ENDO-03": "Thyroid storm & myxedema coma",
+    "ENDO-04": "Adrenal insufficiency / crisis",
+    "ENDO-05": "Pituitary emergencies, SIADH (see RENAL-02)",
+    "ENDO-06": "Pheochromocytoma, hypercalcemia of malignancy"
+   }
+  },
+  "HEME": {
+   "name": "Hematology & Oncology",
+   "weight": 0.6,
+   "topics": {
+    "HEME-01": "Anemia workup (inpatient)",
+    "HEME-02": "Thrombocytopenia, HIT, TTP/HUS",
+    "HEME-03": "Anticoagulation & reversal, DOAC management",
+    "HEME-04": "VTE prophylaxis & treatment",
+    "HEME-05": "Oncologic emergencies (tumor lysis, cord compression, SVC, hypercalcemia)",
+    "HEME-06": "Transfusion medicine & reactions",
+    "HEME-07": "Sickle cell crisis",
+    "HEME-08": "Febrile neutropenia (see ID-08)"
+   }
+  },
+  "NEURO": {
+   "name": "Neurology",
+   "weight": 0.6,
+   "topics": {
+    "NEURO-01": "Acute ischemic stroke & TIA",
+    "NEURO-02": "Intracranial hemorrhage",
+    "NEURO-03": "Seizure & status epilepticus",
+    "NEURO-04": "Altered mental status / delirium",
+    "NEURO-05": "Acute weakness (GBS, myasthenic crisis, cord)",
+    "NEURO-06": "Headache — dangerous causes"
+   }
+  },
+  "RHEUM": {
+   "name": "Rheumatology & Immunology",
+   "weight": 0.35,
+   "topics": {
+    "RHEUM-01": "Acute mono/polyarthritis, crystal arthropathy",
+    "RHEUM-02": "Systemic vasculitis, GCA",
+    "RHEUM-03": "SLE flare & complications",
+    "RHEUM-04": "Anaphylaxis, drug hypersensitivity"
+   }
+  },
+  "GEN": {
+   "name": "General & Perioperative Hospital Medicine",
+   "weight": 1.0,
+   "topics": {
+    "GEN-01": "Perioperative risk assessment & medical consultation",
+    "GEN-02": "Perioperative anticoagulation / antiplatelet bridging",
+    "GEN-03": "Delirium prevention & management (see NEURO-04)",
+    "GEN-04": "Pain management & opioid stewardship",
+    "GEN-05": "Alcohol withdrawal & substance use",
+    "GEN-06": "Nutrition, refeeding syndrome",
+    "GEN-07": "Venous thromboembolism prophylaxis (see HEME-04)",
+    "GEN-08": "Palliative & end-of-life care, goals of care",
+    "GEN-09": "Transitions of care, discharge safety, readmission",
+    "GEN-10": "Diagnostic reasoning & cognitive bias (meta-skill; good for CPC essays)",
+    "GEN-11": "Patient safety, quality improvement, high-value care",
+    "GEN-12": "Fluid & electrolyte therapy, maintenance fluids"
+   }
+  },
+  "TOX": {
+   "name": "Emergencies / Toxicology",
+   "weight": 0.6,
+   "topics": {
+    "TOX-01": "Common poisonings & antidotes (acetaminophen, salicylate, TCA, etc.)",
+    "TOX-02": "Serotonin syndrome / NMS / malignant hyperthermia",
+    "TOX-03": "Environmental (hypothermia, hyperthermia)"
+   }
+  },
+  "EMRG": {
+   "name": "Emergencies / Toxicology",
+   "weight": 0.6,
+   "topics": {
+    "EMRG-01": "Anaphylaxis (see RHEUM-04)",
+    "EMRG-02": "Acute agitation, behavioral emergency"
+   }
+  }
+ },
+ "topics": {
+  "CARD-05": {
+   "domain": "CARD",
+   "label": "Valvular disease & infective endocarditis",
+   "last": "2026-10-21",
+   "attempts": 4,
+   "mastery": 4.0,
+   "step": 1,
+   "due": "2026-10-24",
+   "comfort": 4,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-10-05",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-09",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-10-19",
+     1.0,
+     4,
+     "confident_error"
+    ],
+    [
+     "2026-10-21",
+     4.0,
+     4,
+     "aligned"
+    ]
+   ]
+  },
+  "NEURO-03": {
+   "domain": "NEURO",
+   "label": "Seizure & status epilepticus",
+   "last": "2026-10-23",
+   "attempts": 4,
+   "mastery": 5.0,
+   "step": 1,
+   "due": "2026-10-26",
+   "comfort": 4,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-10-05",
+     5.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-12",
+     5.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-22",
+     1.0,
+     4,
+     "confident_error"
+    ],
+    [
+     "2026-10-23",
+     5.0,
+     4,
+     "aligned"
+    ]
+   ]
+  },
+  "GEN-01": {
+   "domain": "GEN",
+   "label": "Perioperative risk assessment & medical consultation",
+   "last": "2026-10-21",
+   "attempts": 3,
+   "mastery": 5.0,
+   "step": 3,
+   "due": "2026-10-29",
+   "comfort": 2,
+   "calibration": "underconfident",
+   "history": [
+    [
+     "2026-10-05",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-07",
+     4.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-10-21",
+     5.0,
+     2,
+     "underconfident"
+    ]
+   ]
+  },
+  "ENDO-06": {
+   "domain": "ENDO",
+   "label": "Pheochromocytoma, hypercalcemia of malignancy",
+   "last": "2026-10-23",
+   "attempts": 5,
+   "mastery": 2.0,
+   "step": 0,
+   "due": "2026-10-24",
+   "comfort": 2,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-10-05",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-10-09",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-12",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-16",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-23",
+     2.0,
+     2,
+     "aligned"
+    ]
+   ]
+  },
+  "GI-02": {
+   "domain": "GI",
+   "label": "Acute pancreatitis",
+   "last": "2026-10-21",
+   "attempts": 6,
+   "mastery": 5.0,
+   "step": 1,
+   "due": "2026-10-24",
+   "comfort": 4,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-10-05",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-07",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-09",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-14",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-10-19",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-21",
+     5.0,
+     4,
+     "aligned"
+    ]
+   ]
+  },
+  "HEME-04": {
+   "domain": "HEME",
+   "label": "VTE prophylaxis & treatment",
+   "last": "2026-10-21",
+   "attempts": 5,
+   "mastery": 5.0,
+   "step": 2,
+   "due": "2026-10-28",
+   "comfort": 5,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-10-07",
+     1.0,
+     4,
+     "confident_error"
+    ],
+    [
+     "2026-10-09",
+     5.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-12",
+     1.0,
+     4,
+     "confident_error"
+    ],
+    [
+     "2026-10-14",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-21",
+     5.0,
+     5,
+     "aligned"
+    ]
+   ]
+  },
+  "RENAL-03": {
+   "domain": "RENAL",
+   "label": "Potassium disorders",
+   "last": "2026-10-14",
+   "attempts": 2,
+   "mastery": 5.0,
+   "step": 2,
+   "due": "2026-10-21",
+   "comfort": 5,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-10-07",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-14",
+     5.0,
+     5,
+     "aligned"
+    ]
+   ]
+  },
+  "ID-09": {
+   "domain": "ID",
+   "label": "HIV inpatient issues & opportunistic infection",
+   "last": "2026-10-23",
+   "attempts": 4,
+   "mastery": 5.0,
+   "step": 2,
+   "due": "2026-10-30",
+   "comfort": 5,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-10-07",
+     5.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-14",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-16",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-23",
+     5.0,
+     5,
+     "aligned"
+    ]
+   ]
+  },
+  "PULM-04": {
+   "domain": "PULM",
+   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
+   "last": "2026-10-23",
+   "attempts": 5,
+   "mastery": 5.0,
+   "step": 1,
+   "due": "2026-10-25",
+   "comfort": 2,
+   "calibration": "underconfident",
+   "history": [
+    [
+     "2026-10-09",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-10-12",
+     4.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-10-19",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-10-22",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-23",
+     5.0,
+     2,
+     "underconfident"
+    ]
+   ]
+  },
+  "CARD-04": {
+   "domain": "CARD",
+   "label": "Bradyarrhythmias & tachyarrhythmias, syncope",
+   "last": "2026-10-16",
+   "attempts": 2,
+   "mastery": 5.0,
+   "step": 2,
+   "due": "2026-10-23",
+   "comfort": 4,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-10-12",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-16",
+     5.0,
+     4,
+     "aligned"
+    ]
+   ]
+  },
+  "GEN-10": {
+   "domain": "GEN",
+   "label": "Diagnostic reasoning & cognitive bias (meta-skill; good for CPC essays)",
+   "last": "2026-10-19",
+   "attempts": 3,
+   "mastery": 5.0,
+   "step": 1,
+   "due": "2026-10-22",
+   "comfort": 5,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-10-14",
+     1.0,
+     4,
+     "confident_error"
+    ],
+    [
+     "2026-10-16",
+     1.0,
+     4,
+     "confident_error"
+    ],
+    [
+     "2026-10-19",
+     5.0,
+     5,
+     "aligned"
+    ]
+   ]
+  },
+  "RHEUM-04": {
+   "domain": "RHEUM",
+   "label": "Anaphylaxis, drug hypersensitivity",
+   "last": "2026-10-22",
+   "attempts": 2,
+   "mastery": 4.0,
+   "step": 2,
+   "due": "2026-10-29",
+   "comfort": 4,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-10-16",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-10-22",
+     4.0,
+     4,
+     "aligned"
+    ]
+   ]
+  },
+  "EMRG-02": {
+   "domain": "EMRG",
+   "label": "Acute agitation, behavioral emergency",
+   "last": "2026-10-19",
+   "attempts": 1,
+   "mastery": 4.0,
+   "step": 1,
+   "due": "2026-10-22",
+   "comfort": 4,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-10-19",
+     4.0,
+     4,
+     "aligned"
+    ]
+   ]
+  },
+  "ID-07": {
+   "domain": "ID",
+   "label": "Bone & joint infection (osteomyelitis, septic arthritis)",
+   "last": "2026-10-22",
+   "attempts": 2,
+   "mastery": 4.0,
+   "step": 1,
+   "due": "2026-10-25",
+   "comfort": 5,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-10-21",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-22",
+     4.0,
+     5,
+     "aligned"
+    ]
+   ]
+  },
+  "TOX-02": {
+   "domain": "TOX",
+   "label": "Serotonin syndrome / NMS / malignant hyperthermia",
+   "last": "2026-10-22",
+   "attempts": 1,
+   "mastery": 5.0,
+   "step": 1,
+   "due": "2026-10-25",
+   "comfort": 4,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-10-22",
+     5.0,
+     4,
+     "aligned"
+    ]
+   ]
+  },
+  "TOX-03": {
+   "domain": "TOX",
+   "label": "Environmental (hypothermia, hyperthermia)",
+   "last": "2026-10-23",
+   "attempts": 1,
+   "mastery": 3.0,
+   "step": 0,
+   "due": "2026-10-24",
+   "comfort": 5,
+   "calibration": "overconfident",
+   "history": [
+    [
+     "2026-10-23",
+     3.0,
+     5,
+     "overconfident"
+    ]
+   ]
+  }
+ },
+ "gaps": [
+  {
+   "topic": "ENDO-06",
+   "gap": "Example gap 10.3: missed the decision point",
+   "self": null,
+   "source": [
+    "graded"
+   ],
+   "date": "2026-10-23",
+   "opened": "2026-10-23"
+  }
+ ],
+ "resolved": [
+  {
+   "topic": "GI-02",
+   "note": "Example gap 2.0: missed the decision point",
+   "opened": "2026-10-05",
+   "resolved": "2026-10-09",
+   "partial": false
+  },
+  {
+   "topic": "ENDO-06",
+   "note": "Example gap 3.3: missed the decision point",
+   "opened": "2026-10-09",
+   "resolved": "2026-10-12",
+   "partial": false
+  },
+  {
+   "topic": "HEME-04",
+   "note": "Confident but incorrect answer on 2026-10-07; re-test the same decision point. | Example self-reported gap 3 | Confident but incorrect answer on 2026-10-12; re-test the same decision point.",
+   "opened": "2026-10-07",
+   "resolved": "2026-10-14",
+   "partial": false
+  },
+  {
+   "topic": "ID-09",
+   "note": "Example gap 5.2: missed the decision point",
+   "opened": "2026-10-14",
+   "resolved": "2026-10-16",
+   "partial": false
+  },
+  {
+   "topic": "GEN-10",
+   "note": "Confident but incorrect answer on 2026-10-14; re-test the same decision point. | Confident but incorrect answer on 2026-10-16; re-test the same decision point.",
+   "opened": "2026-10-14",
+   "resolved": "2026-10-19",
+   "partial": false
+  },
+  {
+   "topic": "CARD-05",
+   "note": "Confident but incorrect answer on 2026-10-19; re-test the same decision point.",
+   "opened": "2026-10-19",
+   "resolved": "2026-10-21",
+   "partial": false
+  },
+  {
+   "topic": "GI-02",
+   "note": "Example gap 7.1: missed the decision point",
+   "opened": "2026-10-19",
+   "resolved": "2026-10-21",
+   "partial": false
+  },
+  {
+   "topic": "ID-07",
+   "note": "Example gap 8.4: missed the decision point",
+   "opened": "2026-10-21",
+   "resolved": "2026-10-22",
+   "partial": false
+  },
+  {
+   "topic": "NEURO-03",
+   "note": "Confident but incorrect answer on 2026-10-22; re-test the same decision point.",
+   "opened": "2026-10-22",
+   "resolved": "2026-10-23",
+   "partial": false
+  },
+  {
+   "topic": "PULM-04",
+   "note": "Example gap 9.0: missed the decision point",
+   "opened": "2026-10-22",
+   "resolved": "2026-10-23",
+   "partial": false
+  }
+ ],
+ "sessions": [
+  {
+   "id": "S0001",
+   "date": "2026-10-05",
+   "started_at": null,
+   "ended_at": null,
+   "minutes": 29,
+   "reading_minutes": null,
+   "title": "Example round S0001",
+   "summary": "Synthetic round 1 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "topics": [
+    "CARD-05",
+    "NEURO-03",
+    "GEN-01",
+    "ENDO-06",
+    "GI-02"
+   ],
+   "format": "unfolding",
+   "mcqs": 3,
+   "mcq_correct": 2,
+   "focused": 1,
+   "score": 4.2,
+   "items": [
+    {
+     "type": "case",
+     "topic": "CARD-05",
+     "mastery": 4,
+     "confidence": "unsure",
+     "coding": {
+      "art": {
+       "DG": 2,
+       "PR": 2,
+       "DDX": 2,
+       "TEST": 2,
+       "META": 1,
+       "MGMT": 2
+      },
+      "idea": {
+       "I": 4,
+       "D": 2,
+       "E": 2,
+       "A": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "focused",
+     "topic": "NEURO-03",
+     "mastery": 5,
+     "confidence": "sure",
+     "aspect": "diagnosis",
+     "stem": "Example focused stem 1.1",
+     "coding": {
+      "art": {
+       "DDX": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "GEN-01",
+     "mastery": 5,
+     "confidence": "unsure",
+     "correct": true,
+     "stem": "Example MCQ stem 1.2",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "ENDO-06",
+     "mastery": 5,
+     "confidence": "sure",
+     "correct": true,
+     "stem": "Example MCQ stem 1.3",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "GI-02",
+     "mastery": 2,
+     "confidence": "unsure",
+     "correct": false,
+     "stem": "Example MCQ stem 1.4",
+     "coding": {
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    }
+   ],
+   "why": {
+    "CARD-05": "new",
+    "NEURO-03": "new",
+    "GEN-01": "new",
+    "ENDO-06": "new",
+    "GI-02": "new"
+   },
+   "self_performance": 3,
+   "self_comfort": {
+    "CARD-05": 4,
+    "NEURO-03": 4,
+    "GEN-01": 2,
+    "ENDO-06": 5,
+    "GI-02": 2
+   },
+   "reflection": {
+    "solid": "Example: what felt solid in round 1",
+    "gaps": "Example: what felt shaky in round 1",
+    "skipped": false
+   },
+   "key_learning": [],
+   "case": {
+    "patient": "Example patient 1",
+    "setting": "ward",
+    "presentation": "Example presentation 1",
+    "diagnosis": "Example diagnosis: Valvular disease & infective endocarditis",
+    "topic": "CARD-05"
+   },
+   "grade_changes": [],
+   "drill": null
+  },
+  {
+   "id": "S0002",
+   "date": "2026-10-07",
+   "started_at": null,
+   "ended_at": null,
+   "minutes": 29,
+   "reading_minutes": null,
+   "title": "Example round S0002",
+   "summary": "Synthetic round 2 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "topics": [
+    "GI-02",
+    "GEN-01",
+    "HEME-04",
+    "RENAL-03",
+    "ID-09"
+   ],
+   "format": "unfolding",
+   "mcqs": 3,
+   "mcq_correct": 2,
+   "focused": 1,
+   "score": 3.2,
+   "items": [
+    {
+     "type": "case",
+     "topic": "GI-02",
+     "mastery": 2,
+     "confidence": "unsure",
+     "coding": {
+      "art": {
+       "DG": 1,
+       "PR": 1,
+       "DDX": 0,
+       "TEST": 1,
+       "META": 1,
+       "MGMT": 1
+      },
+      "idea": {
+       "I": 2,
+       "D": 1,
+       "E": 1,
+       "A": 0
+      },
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    },
+    {
+     "type": "focused",
+     "topic": "GEN-01",
+     "mastery": 4,
+     "confidence": "guess",
+     "aspect": "testing",
+     "stem": "Example focused stem 2.1",
+     "coding": {
+      "art": {
+       "DDX": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "HEME-04",
+     "mastery": 1,
+     "confidence": "sure",
+     "correct": false,
+     "stem": "Example MCQ stem 2.2",
+     "coding": {
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "RENAL-03",
+     "mastery": 4,
+     "confidence": "unsure",
+     "correct": true,
+     "stem": "Example MCQ stem 2.3",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "ID-09",
+     "mastery": 5,
+     "confidence": "sure",
+     "correct": true,
+     "stem": "Example MCQ stem 2.4",
+     "coding": {
+      "errors": []
+     }
+    }
+   ],
+   "why": {
+    "GI-02": "due",
+    "GEN-01": "due",
+    "HEME-04": "new",
+    "RENAL-03": "new",
+    "ID-09": "new"
+   },
+   "self_performance": 3,
+   "self_comfort": {
+    "GI-02": 2,
+    "GEN-01": 5,
+    "HEME-04": 4,
+    "RENAL-03": 4,
+    "ID-09": 4
+   },
+   "reflection": {
+    "solid": "Example: what felt solid in round 2",
+    "gaps": "Example: what felt shaky in round 2",
+    "skipped": false
+   },
+   "key_learning": [],
+   "case": {
+    "patient": "Example patient 2",
+    "setting": "ward",
+    "presentation": "Example presentation 2",
+    "diagnosis": "Example diagnosis: Acute pancreatitis",
+    "topic": "GI-02"
+   },
+   "grade_changes": [],
+   "drill": null
+  },
+  {
+   "id": "S0003",
+   "date": "2026-10-09",
+   "started_at": null,
+   "ended_at": null,
+   "minutes": 29,
+   "reading_minutes": null,
+   "title": "Example round S0003",
+   "summary": "Synthetic round 3 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "topics": [
+    "HEME-04",
+    "GI-02",
+    "CARD-05",
+    "ENDO-06",
+    "PULM-04"
+   ],
+   "format": "unfolding",
+   "mcqs": 3,
+   "mcq_correct": 2,
+   "focused": 1,
+   "score": 4.0,
+   "items": [
+    {
+     "type": "case",
+     "topic": "HEME-04",
+     "mastery": 5,
+     "confidence": "sure",
+     "coding": {
+      "art": {
+       "DG": 2,
+       "PR": 2,
+       "DDX": 2,
+       "TEST": 2,
+       "META": 1,
+       "MGMT": 2
+      },
+      "idea": {
+       "I": 4,
+       "D": 2,
+       "E": 2,
+       "A": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "focused",
+     "topic": "GI-02",
+     "mastery": 5,
+     "confidence": "unsure",
+     "aspect": "management",
+     "stem": "Example focused stem 3.1",
+     "coding": {
+      "art": {
+       "DDX": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "CARD-05",
+     "mastery": 5,
+     "confidence": "sure",
+     "correct": true,
+     "stem": "Example MCQ stem 3.2",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "ENDO-06",
+     "mastery": 2,
+     "confidence": "unsure",
+     "correct": false,
+     "stem": "Example MCQ stem 3.3",
+     "coding": {
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "PULM-04",
+     "mastery": 4,
+     "confidence": "guess",
+     "correct": true,
+     "stem": "Example MCQ stem 3.4",
+     "coding": {
+      "errors": []
+     }
+    }
+   ],
+   "why": {
+    "HEME-04": "due",
+    "GI-02": "due",
+    "CARD-05": "due",
+    "ENDO-06": "due",
+    "PULM-04": "new"
+   },
+   "self_performance": 3,
+   "self_comfort": {
+    "HEME-04": 4,
+    "GI-02": 2,
+    "CARD-05": 5,
+    "ENDO-06": 2,
+    "PULM-04": 5
+   },
+   "reflection": {
+    "solid": "Example: what felt solid in round 3",
+    "gaps": "Example: what felt shaky in round 3",
+    "skipped": false
+   },
+   "key_learning": [],
+   "case": {
+    "patient": "Example patient 3",
+    "setting": "ward",
+    "presentation": "Example presentation 3",
+    "diagnosis": "Example diagnosis: VTE prophylaxis & treatment",
+    "topic": "HEME-04"
+   },
+   "grade_changes": [],
+   "drill": null
+  },
+  {
+   "id": "S0004",
+   "date": "2026-10-12",
+   "started_at": null,
+   "ended_at": null,
+   "minutes": 29,
+   "reading_minutes": null,
+   "title": "Example round S0004",
+   "summary": "Synthetic round 4 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "topics": [
+    "PULM-04",
+    "HEME-04",
+    "ENDO-06",
+    "NEURO-03",
+    "CARD-04"
+   ],
+   "format": "unfolding",
+   "mcqs": 3,
+   "mcq_correct": 3,
+   "focused": 1,
+   "score": 3.8,
+   "items": [
+    {
+     "type": "case",
+     "topic": "PULM-04",
+     "mastery": 4,
+     "confidence": "guess",
+     "coding": {
+      "art": {
+       "DG": 2,
+       "PR": 2,
+       "DDX": 2,
+       "TEST": 2,
+       "META": 1,
+       "MGMT": 2
+      },
+      "idea": {
+       "I": 4,
+       "D": 2,
+       "E": 2,
+       "A": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "focused",
+     "topic": "HEME-04",
+     "mastery": 1,
+     "confidence": "sure",
+     "aspect": "interpretation",
+     "stem": "Example focused stem 4.1",
+     "coding": {
+      "art": {
+       "DDX": 1
+      },
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "ENDO-06",
+     "mastery": 4,
+     "confidence": "unsure",
+     "correct": true,
+     "stem": "Example MCQ stem 4.2",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "NEURO-03",
+     "mastery": 5,
+     "confidence": "sure",
+     "correct": true,
+     "stem": "Example MCQ stem 4.3",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "CARD-04",
+     "mastery": 5,
+     "confidence": "unsure",
+     "correct": true,
+     "stem": "Example MCQ stem 4.4",
+     "coding": {
+      "errors": []
+     }
+    }
+   ],
+   "why": {
+    "PULM-04": "due",
+    "HEME-04": "due",
+    "ENDO-06": "due",
+    "NEURO-03": "due",
+    "CARD-04": "new"
+   },
+   "self_performance": 3,
+   "self_comfort": {
+    "PULM-04": 5,
+    "HEME-04": 4,
+    "ENDO-06": 4,
+    "NEURO-03": 4,
+    "CARD-04": 2
+   },
+   "reflection": {
+    "solid": "Example: what felt solid in round 4",
+    "gaps": "Example: what felt shaky in round 4",
+    "skipped": false
+   },
+   "key_learning": [],
+   "case": {
+    "patient": "Example patient 4",
+    "setting": "ward",
+    "presentation": "Example presentation 4",
+    "diagnosis": "Example diagnosis: Acute respiratory failure, ARDS, mechanical ventilation basi…",
+    "topic": "PULM-04"
+   },
+   "grade_changes": [],
+   "drill": null
+  },
+  {
+   "id": "S0005",
+   "date": "2026-10-14",
+   "started_at": null,
+   "ended_at": null,
+   "minutes": 29,
+   "reading_minutes": null,
+   "title": "Example round S0005",
+   "summary": "Synthetic round 5 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "topics": [
+    "HEME-04",
+    "RENAL-03",
+    "ID-09",
+    "GI-02",
+    "GEN-10"
+   ],
+   "format": "unfolding",
+   "mcqs": 3,
+   "mcq_correct": 1,
+   "focused": 1,
+   "score": 3.2,
+   "items": [
+    {
+     "type": "case",
+     "topic": "HEME-04",
+     "mastery": 5,
+     "confidence": "unsure",
+     "coding": {
+      "art": {
+       "DG": 2,
+       "PR": 2,
+       "DDX": 2,
+       "TEST": 2,
+       "META": 1,
+       "MGMT": 2
+      },
+      "idea": {
+       "I": 4,
+       "D": 2,
+       "E": 2,
+       "A": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "focused",
+     "topic": "RENAL-03",
+     "mastery": 5,
+     "confidence": "sure",
+     "aspect": "disposition",
+     "stem": "Example focused stem 5.1",
+     "coding": {
+      "art": {
+       "DDX": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "ID-09",
+     "mastery": 2,
+     "confidence": "unsure",
+     "correct": false,
+     "stem": "Example MCQ stem 5.2",
+     "coding": {
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "GI-02",
+     "mastery": 4,
+     "confidence": "guess",
+     "correct": true,
+     "stem": "Example MCQ stem 5.3",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "GEN-10",
+     "mastery": 1,
+     "confidence": "sure",
+     "correct": false,
+     "stem": "Example MCQ stem 5.4",
+     "coding": {
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    }
+   ],
+   "why": {
+    "HEME-04": "due",
+    "RENAL-03": "due",
+    "ID-09": "due",
+    "GI-02": "due",
+    "GEN-10": "new"
+   },
+   "self_performance": 3,
+   "self_comfort": {
+    "HEME-04": 2,
+    "RENAL-03": 5,
+    "ID-09": 2,
+    "GI-02": 5,
+    "GEN-10": 4
+   },
+   "reflection": {
+    "solid": "Example: what felt solid in round 5",
+    "gaps": "Example: what felt shaky in round 5",
+    "skipped": false
+   },
+   "key_learning": [],
+   "case": {
+    "patient": "Example patient 5",
+    "setting": "ward",
+    "presentation": "Example presentation 5",
+    "diagnosis": "Example diagnosis: VTE prophylaxis & treatment",
+    "topic": "HEME-04"
+   },
+   "grade_changes": [],
+   "drill": null
+  },
+  {
+   "id": "S0006",
+   "date": "2026-10-16",
+   "started_at": null,
+   "ended_at": null,
+   "minutes": 29,
+   "reading_minutes": null,
+   "title": "Example round S0006",
+   "summary": "Synthetic round 6 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "topics": [
+    "GEN-10",
+    "ID-09",
+    "CARD-04",
+    "ENDO-06",
+    "RHEUM-04"
+   ],
+   "format": "unfolding",
+   "mcqs": 3,
+   "mcq_correct": 3,
+   "focused": 1,
+   "score": 4.0,
+   "items": [
+    {
+     "type": "case",
+     "topic": "GEN-10",
+     "mastery": 1,
+     "confidence": "sure",
+     "coding": {
+      "art": {
+       "DG": 1,
+       "PR": 1,
+       "DDX": 0,
+       "TEST": 1,
+       "META": 1,
+       "MGMT": 1
+      },
+      "idea": {
+       "I": 2,
+       "D": 1,
+       "E": 1,
+       "A": 0
+      },
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    },
+    {
+     "type": "focused",
+     "topic": "ID-09",
+     "mastery": 4,
+     "confidence": "unsure",
+     "aspect": "prevention",
+     "stem": "Example focused stem 6.1",
+     "coding": {
+      "art": {
+       "DDX": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "CARD-04",
+     "mastery": 5,
+     "confidence": "sure",
+     "correct": true,
+     "stem": "Example MCQ stem 6.2",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "ENDO-06",
+     "mastery": 5,
+     "confidence": "unsure",
+     "correct": true,
+     "stem": "Example MCQ stem 6.3",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "RHEUM-04",
+     "mastery": 5,
+     "confidence": "sure",
+     "correct": true,
+     "stem": "Example MCQ stem 6.4",
+     "coding": {
+      "errors": []
+     }
+    }
+   ],
+   "why": {
+    "GEN-10": "due",
+    "ID-09": "due",
+    "CARD-04": "due",
+    "ENDO-06": "due",
+    "RHEUM-04": "new"
+   },
+   "self_performance": 3,
+   "self_comfort": {
+    "GEN-10": 4,
+    "ID-09": 4,
+    "CARD-04": 4,
+    "ENDO-06": 2,
+    "RHEUM-04": 5
+   },
+   "reflection": {
+    "solid": "Example: what felt solid in round 6",
+    "gaps": "Example: what felt shaky in round 6",
+    "skipped": false
+   },
+   "key_learning": [],
+   "case": {
+    "patient": "Example patient 6",
+    "setting": "ward",
+    "presentation": "Example presentation 6",
+    "diagnosis": "Example diagnosis: Diagnostic reasoning & cognitive bias (meta-skill; good for…",
+    "topic": "GEN-10"
+   },
+   "grade_changes": [],
+   "drill": null
+  },
+  {
+   "id": "S0007",
+   "date": "2026-10-19",
+   "started_at": null,
+   "ended_at": null,
+   "minutes": 29,
+   "reading_minutes": null,
+   "title": "Example round S0007",
+   "summary": "Synthetic round 7 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "topics": [
+    "GEN-10",
+    "GI-02",
+    "PULM-04",
+    "CARD-05",
+    "EMRG-02"
+   ],
+   "format": "unfolding",
+   "mcqs": 3,
+   "mcq_correct": 2,
+   "focused": 1,
+   "score": 3.0,
+   "items": [
+    {
+     "type": "case",
+     "topic": "GEN-10",
+     "mastery": 5,
+     "confidence": "sure",
+     "coding": {
+      "art": {
+       "DG": 2,
+       "PR": 2,
+       "DDX": 2,
+       "TEST": 2,
+       "META": 1,
+       "MGMT": 2
+      },
+      "idea": {
+       "I": 4,
+       "D": 2,
+       "E": 2,
+       "A": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "focused",
+     "topic": "GI-02",
+     "mastery": 2,
+     "confidence": "unsure",
+     "aspect": "prognosis",
+     "stem": "Example focused stem 7.1",
+     "coding": {
+      "art": {
+       "DDX": 1
+      },
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "PULM-04",
+     "mastery": 4,
+     "confidence": "guess",
+     "correct": true,
+     "stem": "Example MCQ stem 7.2",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "CARD-05",
+     "mastery": 1,
+     "confidence": "sure",
+     "correct": false,
+     "stem": "Example MCQ stem 7.3",
+     "coding": {
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "EMRG-02",
+     "mastery": 4,
+     "confidence": "unsure",
+     "correct": true,
+     "stem": "Example MCQ stem 7.4",
+     "coding": {
+      "errors": []
+     }
+    }
+   ],
+   "why": {
+    "GEN-10": "due",
+    "GI-02": "due",
+    "PULM-04": "due",
+    "CARD-05": "due",
+    "EMRG-02": "new"
+   },
+   "self_performance": 3,
+   "self_comfort": {
+    "GEN-10": 5,
+    "GI-02": 2,
+    "PULM-04": 5,
+    "CARD-05": 4,
+    "EMRG-02": 4
+   },
+   "reflection": {
+    "solid": "Example: what felt solid in round 7",
+    "gaps": "Example: what felt shaky in round 7",
+    "skipped": false
+   },
+   "key_learning": [],
+   "case": {
+    "patient": "Example patient 7",
+    "setting": "ward",
+    "presentation": "Example presentation 7",
+    "diagnosis": "Example diagnosis: Diagnostic reasoning & cognitive bias (meta-skill; good for…",
+    "topic": "GEN-10"
+   },
+   "grade_changes": [],
+   "drill": null
+  },
+  {
+   "id": "S0008",
+   "date": "2026-10-21",
+   "started_at": null,
+   "ended_at": null,
+   "minutes": 29,
+   "reading_minutes": null,
+   "title": "Example round S0008",
+   "summary": "Synthetic round 8 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "topics": [
+    "CARD-05",
+    "GI-02",
+    "GEN-01",
+    "HEME-04",
+    "ID-07"
+   ],
+   "format": "unfolding",
+   "mcqs": 3,
+   "mcq_correct": 2,
+   "focused": 1,
+   "score": 4.2,
+   "items": [
+    {
+     "type": "case",
+     "topic": "CARD-05",
+     "mastery": 4,
+     "confidence": "unsure",
+     "coding": {
+      "art": {
+       "DG": 2,
+       "PR": 2,
+       "DDX": 2,
+       "TEST": 2,
+       "META": 1,
+       "MGMT": 2
+      },
+      "idea": {
+       "I": 4,
+       "D": 2,
+       "E": 2,
+       "A": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "focused",
+     "topic": "GI-02",
+     "mastery": 5,
+     "confidence": "sure",
+     "aspect": "diagnosis",
+     "stem": "Example focused stem 8.1",
+     "coding": {
+      "art": {
+       "DDX": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "GEN-01",
+     "mastery": 5,
+     "confidence": "unsure",
+     "correct": true,
+     "stem": "Example MCQ stem 8.2",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "HEME-04",
+     "mastery": 5,
+     "confidence": "sure",
+     "correct": true,
+     "stem": "Example MCQ stem 8.3",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "ID-07",
+     "mastery": 2,
+     "confidence": "unsure",
+     "correct": false,
+     "stem": "Example MCQ stem 8.4",
+     "coding": {
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    }
+   ],
+   "why": {
+    "CARD-05": "due",
+    "GI-02": "due",
+    "GEN-01": "due",
+    "HEME-04": "due",
+    "ID-07": "new"
+   },
+   "self_performance": 3,
+   "self_comfort": {
+    "CARD-05": 4,
+    "GI-02": 4,
+    "GEN-01": 2,
+    "HEME-04": 5,
+    "ID-07": 2
+   },
+   "reflection": {
+    "solid": "Example: what felt solid in round 8",
+    "gaps": "Example: what felt shaky in round 8",
+    "skipped": false
+   },
+   "key_learning": [],
+   "case": {
+    "patient": "Example patient 8",
+    "setting": "ward",
+    "presentation": "Example presentation 8",
+    "diagnosis": "Example diagnosis: Valvular disease & infective endocarditis",
+    "topic": "CARD-05"
+   },
+   "grade_changes": [],
+   "drill": null
+  },
+  {
+   "id": "S0009",
+   "date": "2026-10-22",
+   "started_at": null,
+   "ended_at": null,
+   "minutes": 29,
+   "reading_minutes": null,
+   "title": "Example round S0009",
+   "summary": "Synthetic round 9 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "topics": [
+    "PULM-04",
+    "ID-07",
+    "NEURO-03",
+    "RHEUM-04",
+    "TOX-02"
+   ],
+   "format": "unfolding",
+   "mcqs": 3,
+   "mcq_correct": 2,
+   "focused": 1,
+   "score": 3.2,
+   "items": [
+    {
+     "type": "case",
+     "topic": "PULM-04",
+     "mastery": 2,
+     "confidence": "unsure",
+     "coding": {
+      "art": {
+       "DG": 1,
+       "PR": 1,
+       "DDX": 0,
+       "TEST": 1,
+       "META": 1,
+       "MGMT": 1
+      },
+      "idea": {
+       "I": 2,
+       "D": 1,
+       "E": 1,
+       "A": 0
+      },
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    },
+    {
+     "type": "focused",
+     "topic": "ID-07",
+     "mastery": 4,
+     "confidence": "guess",
+     "aspect": "testing",
+     "stem": "Example focused stem 9.1",
+     "coding": {
+      "art": {
+       "DDX": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "NEURO-03",
+     "mastery": 1,
+     "confidence": "sure",
+     "correct": false,
+     "stem": "Example MCQ stem 9.2",
+     "coding": {
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "RHEUM-04",
+     "mastery": 4,
+     "confidence": "unsure",
+     "correct": true,
+     "stem": "Example MCQ stem 9.3",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "TOX-02",
+     "mastery": 5,
+     "confidence": "sure",
+     "correct": true,
+     "stem": "Example MCQ stem 9.4",
+     "coding": {
+      "errors": []
+     }
+    }
+   ],
+   "why": {
+    "PULM-04": "due",
+    "ID-07": "due",
+    "NEURO-03": "due",
+    "RHEUM-04": "due",
+    "TOX-02": "new"
+   },
+   "self_performance": 3,
+   "self_comfort": {
+    "PULM-04": 2,
+    "ID-07": 5,
+    "NEURO-03": 4,
+    "RHEUM-04": 4,
+    "TOX-02": 4
+   },
+   "reflection": {
+    "solid": "Example: what felt solid in round 9",
+    "gaps": "Example: what felt shaky in round 9",
+    "skipped": false
+   },
+   "key_learning": [],
+   "case": {
+    "patient": "Example patient 9",
+    "setting": "ward",
+    "presentation": "Example presentation 9",
+    "diagnosis": "Example diagnosis: Acute respiratory failure, ARDS, mechanical ventilation basi…",
+    "topic": "PULM-04"
+   },
+   "grade_changes": [],
+   "drill": null
+  },
+  {
+   "id": "S0010",
+   "date": "2026-10-23",
+   "started_at": null,
+   "ended_at": null,
+   "minutes": 29,
+   "reading_minutes": null,
+   "title": "Example round S0010",
+   "summary": "Synthetic round 10 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "topics": [
+    "NEURO-03",
+    "PULM-04",
+    "ID-09",
+    "ENDO-06",
+    "TOX-03"
+   ],
+   "format": "unfolding",
+   "mcqs": 3,
+   "mcq_correct": 2,
+   "focused": 1,
+   "score": 4.0,
+   "items": [
+    {
+     "type": "case",
+     "topic": "NEURO-03",
+     "mastery": 5,
+     "confidence": "sure",
+     "coding": {
+      "art": {
+       "DG": 2,
+       "PR": 2,
+       "DDX": 2,
+       "TEST": 2,
+       "META": 1,
+       "MGMT": 2
+      },
+      "idea": {
+       "I": 4,
+       "D": 2,
+       "E": 2,
+       "A": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "focused",
+     "topic": "PULM-04",
+     "mastery": 5,
+     "confidence": "unsure",
+     "aspect": "management",
+     "stem": "Example focused stem 10.1",
+     "coding": {
+      "art": {
+       "DDX": 2
+      },
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "ID-09",
+     "mastery": 5,
+     "confidence": "sure",
+     "correct": true,
+     "stem": "Example MCQ stem 10.2",
+     "coding": {
+      "errors": []
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "ENDO-06",
+     "mastery": 2,
+     "confidence": "unsure",
+     "correct": false,
+     "stem": "Example MCQ stem 10.3",
+     "coding": {
+      "errors": [
+       {
+        "element": "",
+        "category": "knowledge",
+        "severity": "important",
+        "knowledge_type": "missing"
+       }
+      ]
+     }
+    },
+    {
+     "type": "mcq",
+     "topic": "TOX-03",
+     "mastery": 4,
+     "confidence": "guess",
+     "correct": true,
+     "stem": "Example MCQ stem 10.4",
+     "coding": {
+      "errors": []
+     }
+    }
+   ],
+   "why": {
+    "NEURO-03": "due",
+    "PULM-04": "due",
+    "ID-09": "due",
+    "ENDO-06": "due",
+    "TOX-03": "new"
+   },
+   "self_performance": 3,
+   "self_comfort": {
+    "NEURO-03": 4,
+    "PULM-04": 2,
+    "ID-09": 5,
+    "ENDO-06": 2,
+    "TOX-03": 5
+   },
+   "reflection": {
+    "solid": "Example: what felt solid in round 10",
+    "gaps": "Example: what felt shaky in round 10",
+    "skipped": false
+   },
+   "key_learning": [],
+   "case": {
+    "patient": "Example patient 10",
+    "setting": "ward",
+    "presentation": "Example presentation 10",
+    "diagnosis": "Example diagnosis: Seizure & status epilepticus",
+    "topic": "NEURO-03"
+   },
+   "grade_changes": [],
+   "drill": null
+  }
+ ],
+ "previous": [],
+ "agg": {
+  "sessions": 10,
+  "items": 50,
+  "minutes": 290,
+  "reading_minutes": 0,
+  "mcqs": 30,
+  "mcq_correct": 21,
+  "focused": 10,
+  "focused_mastery_sum": 40.0,
+  "score_sum": 36.8,
+  "score_n": 10,
+  "art": {
+   "DG": [
+    8.5,
+    10
+   ],
+   "PR": [
+    8.5,
+    10
+   ],
+   "DDX": [
+    7.0,
+    10
+   ],
+   "TEST": [
+    8.5,
+    10
+   ],
+   "META": [
+    10.0,
+    10
+   ],
+   "MGMT": [
+    8.5,
+    10
+   ]
+  },
+  "art_focused": {
+   "DG": [
+    0.0,
+    0
+   ],
+   "PR": [
+    0.0,
+    0
+   ],
+   "DDX": [
+    9.0,
+    10
+   ],
+   "TEST": [
+    0.0,
+    0
+   ],
+   "META": [
+    0.0,
+    0
+   ],
+   "MGMT": [
+    0.0,
+    0
+   ]
+  },
+  "idea": [
+   82,
+   10,
+   7
+  ],
+  "errors": {
+   "category": {
+    "knowledge": 14
+   },
+   "knowledge_type": {
+    "missing": 14
+   },
+   "art_domain": {},
+   "severity": {
+    "important": 14
+   },
+   "bias": {}
+  },
+  "calibration": {
+   "sure": [
+    21,
+    15.4
+   ],
+   "unsure": [
+    22,
+    14.600000000000001
+   ],
+   "guess": [
+    7,
+    6.3999999999999995
+   ]
+  },
+  "brier": [
+   10.879999999999997,
+   50
+  ],
+  "drills": {
+   "avoided": 0,
+   "partial": 0,
+   "fell_for": 0
+  },
+  "disputes": {
+   "learner_right": 0,
+   "both_defensible": 0,
+   "upheld": 0
+  },
+  "reflection_skipped": 0
+ },
+ "reviews": [],
+ "drills": [],
+ "errata": [],
+ "pending_errata": [],
+ "teaching_point_checks": {},
+ "unreflected": null
+}

@@ -25,22 +25,37 @@ the conversation, and the keys must be good enough for another clinician to grad
 
 ## 1. Read first
 
-1. `case_design.md` (same folder as this file), all of it. It is the standard for every item.
-2. `feedback_guide.md` §2–4 and §9: what the feedback will contain, and so what the notes
+1. `standards.md` (same folder as this file), all of it: the numbered rules every item, key
+   and kit must meet. This brief and `case_design.md` cite them as "rule N".
+2. `case_design.md`, all of it: how items are designed.
+3. `feedback_guide.md` §2–4: what the feedback will contain, and so what the kits (rule 8)
    must hold.
-3. The plan (JSON). It gives, per item: slot (`mcq`, `focused`, `case`), topic and blueprint
+4. The plan (JSON). It gives, per item: slot (`mcq`, `focused`, `case`), topic and blueprint
    ID, the reason it was chosen, any open gap to re-test, `aspect_hint` for focused items, a
    `drill` if one applies, `separation` notes, and `already_used` stems and cases; and for the
-   round: `case_format`, units, `guideline_region`, `feedback_depth`, the learner's profile,
-   `recent_cases_any_topic`.
+   round: `case_format`, units, `guideline_region`, `specialty`, `feedback_depth`, the learner's profile (their own two paragraphs: rule 4),
+   `recent_cases_any_topic`, `listening` and `podcast_sources`.
 
 Planning notes:
 
 - An item without a specific topic (`new_in_domain`) gets an untested topic from that
   blueprint domain; record the ID and label you chose in the key.
-- Pitch at the learner's role and specialty; use the plan's units and guideline region.
-- A re-tested gap gets the same decision point in a new clinical context (transfer).
+- The round belongs to a themed block (`block` in the plan). The case and most short questions
+  are on the theme, so they share a domain: keep each short question on a different problem
+  from the case and from the others, so that none cues another. An item with `reason_code`
+  `revisit` is a theme topic tested before and not yet due: write it on another decision point
+  of the topic than the stems in `already_used`. The theme stays out of the items (rule 1.1).
+- The plan's `guideline_region`, `specialty`, units and profile are applied as rules 2–4 say:
+  the pitch of every item, and the background, evidence depth and sources its kit holds, come
+  from the profile's paragraphs by rule 4.
+- An item with `retest_gap` in the plan re-tests that gap: the same decision point in a new
+  clinical context (transfer). Write `retests: <retest_gap.id>` in that item's key header
+  (rule 9), as the plan's `how` line says; without it a good answer cannot close the gap.
 - A `drill` is built into its item (`case_design.md` §9, §11.5).
+- Unless the plan's `listening` is false, each kit ends with `## Listening` (rule 8): the
+  `Sources` line from the plan's `podcast_sources`, and one line per topic with the point
+  tested and its likely failure points. You name no episode and search for none: the checker
+  fills in the candidates.
 - Every vignette and stem is clearly different from `already_used` and
   `recent_cases_any_topic`: patient, setting, presentation, twist.
 
@@ -51,12 +66,26 @@ Planning notes:
   for it.
 - `Parts: case`: `sealed_case.md` and `kit_case.md`, and `kit_questions.md` if it is not in
   the output folder yet.
-- `Parts: revise`: the round is written and its evidence has been checked. Read
-  `evidence_questions.md` and `evidence_case.md` in the output folder. Wherever a **Note**
-  says a key is contradicted by current guidance, correct the item so that it has one best
-  answer under that guidance: the key, the kit, and the stem or options if they no longer
-  work, keeping the `present` block complete. Replace every `(verify)` in the kits that the
-  check confirmed with the confirmed figure and source. Change nothing else.
+- `Parts: headers`: the round is written and `cme.py finish-prepare` refused it for its key
+  headers or its kits (the lint's blocking problems, `standards.md`, "The lint"). The
+  problems are listed in your prompt by file, key, field and kit section. Correct those
+  headers (rule 9) and kit sections (rule 8) and run the check of §4 until it prints
+  `"ok": true`. Change nothing else.
+- `Parts: revise`: the round is written and `cme.py finish-prepare` printed `"revise": true`:
+  a key is contradicted, or the lint made a judgement call, or both; or the checker retried
+  claims it had not verified, and the kits are to take up what it confirmed. Change nothing
+  but what these name, and leave the evidence files as they are: the round is stashed after
+  your "done", whatever the lint still finds.
+  - Read `evidence_questions.md` and `evidence_case.md` in the output folder, where they
+    exist. Wherever a **Note** says a key is contradicted by current guidance, correct the
+    item so that it has one best answer under that guidance: the key, the kit, and the stem or
+    options if they no longer work, keeping the `present` block complete. Replace every
+    `(verify)` in the kits that the check confirmed with the confirmed figure and source.
+    The candidates under `## Listening` are the checker's: leave them as they are.
+  - Read `lint.md` in the output folder, if there is one. For each line decide whether the
+    rule it names is broken (rule 5: an abbreviation not spelled out at first use; rule 6:
+    more than one time anchor) and correct the presented text where it is. A finding that is
+    wrong is left alone.
 
 Write the short questions first, then the case, so the case can be kept clear of them and of
 what their feedback will teach (`case_design.md` §2). With `Parts: case`, read the
@@ -69,13 +98,15 @@ files of a part the plan does not have (no case, or no short questions).
 
 In this order:
 
-1. **Keys**, one block per item, written before its stem:
-   - MCQ: topic ID and label; the correct option and a one-line reason; a few words per
-     distractor on the scenario in which it would be right; `stem_summary` (about ten words).
-   - Focused question: topic ID and label; best answer (two to four sentences); rubric (two to
-     four one-line elements); acceptable alternatives and how they score; unacceptable
-     answers; `aspect`; `stem_summary` (`case_design.md` §11.3).
-2. **Pre-flight**: one line (`case_design.md` §8, lines 6 and 10–13).
+1. **Keys**, one block per item, written before its stem. Each starts with its **key header**
+   (rule 9), then:
+   - MCQ: the correct option and a one-line reason; a few words per distractor on the
+     scenario in which it would be right.
+   - Focused question: best answer (two to four sentences); rubric (two to four one-line
+     elements); acceptable alternatives and how they score; unacceptable answers
+     (`case_design.md` §11.3).
+2. **Pre-flight**: one line (`case_design.md` §8, lines 6 and 10–16; the last three are
+   rules 5–7).
 3. **Verification list**: one precise search per claim the feedback will rest on (guideline
    and year, threshold or dose, trial), three to six lines.
 4. **The text to present**, exactly as the learner will see it, between
@@ -85,16 +116,17 @@ In this order:
 
 ### `sealed_case.md`
 
-1. **Key**: topic ID and label; the diagnosis; the decisive tests; the two or three leading
-   alternatives; the expected elements of each stage (the rubric); the compact description for
-   the log (`patient`, `setting`, `presentation`, `diagnosis`, `twist`); the drill, if any.
+1. **Key**: its key header (`<!-- key: case -->`, rule 9), which holds the diagnosis and the
+   compact description for the log; then the decisive tests; the two or three leading
+   alternatives; the expected elements of each stage (the rubric); the drill, if any.
 2. **Results bank** (unfolding cases), between `<!-- bank -->` and `<!-- /bank -->`: the result
    of every investigation a competent clinician might reasonably order here, each as it would
    be reported, typically ten to fifteen; one line "Add if not ordered: <decisive test>; with:
    <one or two other reasonable tests>"; the clinical course to Stage 2; the Stage 2 questions
    (`case_design.md` §5). The examiner reads only this block before the final answers, so it
    holds no diagnosis, no key, no alternatives and no rubric.
-3. **Novelty and pre-flight**: one line each (`case_design.md` §8, lines 1–5 and 7–9; §10).
+3. **Novelty and pre-flight**: one line each (`case_design.md` §8, lines 1–5, 7–9 and 14–16,
+   the last three being rules 5–7; §10).
 4. **Verification list**: three to six precise searches.
 5. **The text to present**: Stage 1 (or the whole one-step case), exactly as the learner will
    see it, between `<!-- present: case -->` and `<!-- /present -->`, headed "Case", ending with
@@ -103,13 +135,23 @@ In this order:
 
 ### `kit_questions.md` and `kit_case.md`
 
-The notes the feedback will be written from, as `feedback_guide.md` §9 lists them. Terse:
-notes for a colleague who will grade, not prose to paste. Mark every figure and source that
-the verification list is to confirm with `(verify)`.
+The notes the feedback will be written from: what they hold, and the headings they are
+written under, is rule 8.
 
 ## 4. Before you finish
 
 Fix anything the pre-flight found by editing the file, without restating content anywhere
-else. Check that each `present` block is complete and closed, and that no present block
-contains a key, a topic word or a title, and that the bank block (if any) is closed and
-holds no diagnosis or key. Then reply `done`.
+else. Check that each `present` block is complete and closed and that the bank block (if any)
+is closed (rule 1.1–1.2 for what they must not hold). Then run the lint: `python3 <this
+file's folder>/../scripts/cme.py keys <output folder> --plan <plan>` (description "Prepare the
+round"). It prints names and counts only:
+
+- `problems`: key headers (rule 9) and kit sections (rule 8) that are missing or malformed.
+  Correct them until it prints `"ok": true`; a round prepared ahead is not kept while one is
+  left (`cme.py finish-prepare` runs the same check).
+- `review`: the lint's judgement calls on rules 5 and 6, with the findings in `lint.md` in the
+  output folder. Read it, correct what is a real breach, and run the check once more.
+
+No lint checks rule 7: pre-flight line 16 is its only check before the round is played.
+
+(With `Parts: questions` or `case` it checks the files written so far.) Then reply `done`.

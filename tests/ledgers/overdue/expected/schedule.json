@@ -1,0 +1,229 @@
+{
+ "after_record": {
+  "NEURO-04": {
+   "attempts": 1,
+   "calibration": "confident_error",
+   "comfort": null,
+   "domain": "NEURO",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     1.0,
+     null,
+     "confident_error"
+    ]
+   ],
+   "label": "Altered mental status / delirium",
+   "last": "2026-11-20",
+   "mastery": 1.0,
+   "step": 0
+  },
+  "NEURO-05": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "NEURO",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Acute weakness (GBS, myasthenic crisis, cord)",
+   "last": "2026-11-20",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "NEURO-06": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "NEURO",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     3.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Headache — dangerous causes",
+   "last": "2026-11-20",
+   "mastery": 3.0,
+   "step": 0
+  },
+  "TOX-02": {
+   "attempts": 3,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "TOX",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-08-05",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-08-07",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-11-20",
+     2.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Serotonin syndrome / NMS / malignant hyperthermia",
+   "last": "2026-11-20",
+   "mastery": 2.0,
+   "step": 0
+  }
+ },
+ "after_reflect": {
+  "NEURO-04": {
+   "attempts": 1,
+   "calibration": "confident_error",
+   "comfort": 4,
+   "domain": "NEURO",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     1.0,
+     4,
+     "confident_error"
+    ]
+   ],
+   "label": "Altered mental status / delirium",
+   "last": "2026-11-20",
+   "mastery": 1.0,
+   "step": 0
+  },
+  "NEURO-05": {
+   "attempts": 1,
+   "calibration": "aligned",
+   "comfort": 5,
+   "domain": "NEURO",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     5.0,
+     5,
+     "aligned"
+    ]
+   ],
+   "label": "Acute weakness (GBS, myasthenic crisis, cord)",
+   "last": "2026-11-20",
+   "mastery": 5.0,
+   "step": 1
+  },
+  "NEURO-06": {
+   "attempts": 1,
+   "calibration": "overconfident",
+   "comfort": 5,
+   "domain": "NEURO",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     3.0,
+     5,
+     "overconfident"
+    ]
+   ],
+   "label": "Headache — dangerous causes",
+   "last": "2026-11-20",
+   "mastery": 3.0,
+   "step": 0
+  },
+  "TOX-02": {
+   "attempts": 3,
+   "calibration": "aligned",
+   "comfort": 2,
+   "domain": "TOX",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-08-05",
+     3.0,
+     5,
+     "overconfident"
+    ],
+    [
+     "2026-08-07",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-11-20",
+     2.0,
+     2,
+     "aligned"
+    ]
+   ],
+   "label": "Serotonin syndrome / NMS / malignant hyperthermia",
+   "last": "2026-11-20",
+   "mastery": 2.0,
+   "step": 0
+  }
+ },
+ "date": "2026-11-20",
+ "due_before": [
+  {
+   "due": "2026-08-09",
+   "topic": "TOX-02"
+  },
+  {
+   "due": "2026-08-10",
+   "topic": "ID-10"
+  },
+  {
+   "due": "2026-08-13",
+   "topic": "RENAL-05"
+  },
+  {
+   "due": "2026-08-15",
+   "topic": "RHEUM-02"
+  },
+  {
+   "due": "2026-08-17",
+   "topic": "GEN-12"
+  },
+  {
+   "due": "2026-08-17",
+   "topic": "HEME-02"
+  },
+  {
+   "due": "2026-08-18",
+   "topic": "NEURO-02"
+  },
+  {
+   "due": "2026-08-19",
+   "topic": "EMRG-02"
+  },
+  {
+   "due": "2026-08-20",
+   "topic": "CARD-02"
+  },
+  {
+   "due": "2026-08-20",
+   "topic": "HEME-01"
+  },
+  {
+   "due": "2026-08-24",
+   "topic": "GI-07"
+  }
+ ]
+}

@@ -1,6 +1,6 @@
 # Analysis framework: coding each round, and the deep review
 
-Version 3 analyses the learner's reasoning in two steps.
+The skill analyses the learner's reasoning in two steps.
 
 - **Code every round at grading time**, while the case, the answers and the evidence are in
   front of you. The codes go into the round JSON (and from there the ledger) and into the
@@ -209,7 +209,7 @@ the standard check-in only. Expect 15–30 minutes of work and a report of 1,500
 
 ### 2.1 Gather
 
-1. `python3 cme.py stats STATE`. Its `analysis` block holds the coded aggregates for this
+1. `python3 cme.py stats --work <work>`. Its `analysis` block holds the coded aggregates for this
    period, the previous period and all time. It also lists critical errors, bias evidence,
    long-open gaps, repeated confident errors, blind spots, drill results, disputes and previous
    reviews. Use these figures; never estimate numbers in prose.
@@ -278,6 +278,9 @@ Sections, in this order:
    - Pace vs target, minutes, reflection skipped, uncertainty flagged, reading reported.
    - Disputes and their outcomes. If the learner was often right, say so plainly: it says
      something about the grading.
+   - Scores the learner set and gaps they closed by request (`learner_overrides`), apart from
+     disputes: how many, how far from the grading, on which topics, and whether those topics
+     held up when tested again. State it; it is the learner's record.
 10. **Critical feedback.** One or two paragraphs in the voice of a demanding, fair senior
     colleague: what would worry them about this clinician's practice, and what would
     impress them.
@@ -329,8 +332,8 @@ relationship, explore reactions, explore content, coach for change.
 
 - Save the report as the store document `reviews/<YYYY-MM-DD>` (template below;
   `progress_review.md` §3).
-- Record the review with `cme.py review STATE --review REVIEW.json --out NEXT` and `set` the
-  state, including `doc`, `deep_analysis: true`, `headline`, `key_figures`, `change_plan`,
+- Record the review with `cme.py review --work <work> --review REVIEW.json` and publish its
+  `files`; the review JSON includes `doc`, `deep_analysis: true`, `headline`, `key_figures`, `change_plan`,
   `drill_targets` and `teaching_point_checks`. Never write to the session log during a review.
 
 ### 2.6 Report template

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Clinical CME</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="cme-page-version" content="4.2.1">
+<meta name="cme-page-version" content="5.4.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
@@ -120,6 +120,7 @@ h1{font-weight:600;font-size:1.75rem;letter-spacing:-.025em;line-height:1.1;marg
 .score b{font-weight:600;font-size:.95rem;font-variant-numeric:tabular-nums;line-height:1}
 .meter{width:52px;height:4px;border-radius:4px;background:var(--line);overflow:hidden}
 .meter i{display:block;height:100%;border-radius:4px;background:var(--faint)}
+.block-meter{width:120px;margin-top:6px} .block-meter i{background:var(--accent)}
 .good .meter i,.meter.good i{background:var(--good)} .warn .meter i,.meter.warn i{background:var(--warn)} .crit .meter i,.meter.crit i{background:var(--crit)}
 .score.good b{color:var(--good)} .score.warn b{color:var(--warn)} .score.crit b{color:var(--crit)}
 
@@ -150,18 +151,9 @@ h1{font-weight:600;font-size:1.75rem;letter-spacing:-.025em;line-height:1.1;marg
 .md a{color:var(--accent);text-underline-offset:2px}
 .md hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 
-/* gaps */
-.gap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;padding:14px 18px;border-top:1px solid var(--line)}
-.gap:first-child{border-top:0}
-.gap .h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;min-width:0}
-.gap .h strong{font-weight:500}
-.gap .g{grid-column:1 / -1;color:var(--muted);font-size:.88rem;line-height:1.55;overflow-wrap:anywhere}
-.gap .g.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.more{grid-column:1 / -1;justify-self:start;border:0;background:none;color:var(--accent);font-size:.82rem;font-weight:500;padding:0;cursor:pointer}
-.due{font-size:.74rem;font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted);background:var(--bg)}
-.due.over{color:var(--crit);background:var(--crit-bg)} .due.today{color:var(--warn);background:var(--warn-bg)}
-.src{font-size:.76rem;color:var(--faint)}
-.right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+/* progress: topics already tested. Nothing here may name what a coming round will test:
+   no open gaps, no due dates, no ordering by next review. */
+.note{color:var(--muted);font-size:.88rem;line-height:1.55;margin:0}
 
 /* topics table */
 .tbl-wrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow-x:auto}
@@ -201,12 +193,39 @@ table.plain td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
 .mix-foot .est{color:var(--muted);font-size:.85rem;flex:1 1 220px}
 .mix-status{font-size:.84rem}
 .mix-status.ok{color:var(--good)}.mix-status.err{color:var(--crit)}.mix-status.pending{color:var(--warn)}
+.para{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-top:1px solid var(--line)}
+.para-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.para-head .lbl{font-weight:500}
+.para-head .chips{margin:0;flex:1 1 auto}
+.para-head .chip{font-family:var(--sans)}
+.para-text{margin:0;font-size:.9rem;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.para-box{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.para-box label{color:var(--muted);font-size:.85rem;line-height:1.5}
+.para-box textarea{font:inherit;font-size:.9rem;line-height:1.5;color:var(--ink,inherit);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 11px;resize:vertical;min-height:110px}
+.para-box textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.para-foot{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:flex-end}
+.para-foot .mix-status{flex:1 1 200px}
 dl.kv{display:grid;grid-template-columns:minmax(120px,34%) minmax(0,1fr);margin:0;font-size:.9rem}
 dl.kv dt,dl.kv dd{margin:0;padding:9px 0;border-top:1px solid var(--line)}
 dl.kv dt{color:var(--muted)}
 dl.kv dd{overflow-wrap:anywhere}
 dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
+/* reading & listening: one simple list per session, a done mark kept in this browser */
+.lib-group{display:flex;flex-direction:column;gap:8px}
+.lib-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;font-size:.84rem;color:var(--muted);padding:0 4px}
+.lib-h b{color:var(--ink);font-weight:500;overflow-wrap:anywhere}
+.lib-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center;padding:12px 18px;border-top:1px solid var(--line)}
+.lib-item:first-child{border-top:0}
+.lib-item .body{display:flex;flex-direction:column;gap:3px;min-width:0}
+.lib-item a{color:var(--accent);font-weight:500;line-height:1.35;overflow-wrap:anywhere;text-underline-offset:2px}
+.lib-item .s{color:var(--muted);font-size:.84rem;overflow-wrap:anywhere}
+.lib-item.done a{color:var(--muted);text-decoration:line-through}
+.lib-item .chip{font-family:var(--sans)}
+.lib-done{font-size:.82rem;padding:6px 11px;min-height:36px;white-space:nowrap}
+.lib-done[aria-pressed="true"]{background:var(--good-bg);color:var(--good);border-color:transparent}
 .notice{color:var(--muted);font-size:.85rem;line-height:1.55;padding:0 4px}
+.export-warn{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--warn-bg);border-radius:var(--r);padding:12px 16px;font-size:.88rem}
+.export-warn span{flex:1 1 280px}
 
 @media (prefers-reduced-motion:no-preference){.row,.tab,.btn{transition:background .12s,color .12s,border-color .12s}}
 @media (prefers-reduced-motion:reduce){.switch span,.switch span::after{transition:none}}
@@ -219,6 +238,8 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     <div>
       <h1>Clinical CME</h1>
       <div class="sub" id="who">Your rounds, ledger and log</div>
+      <div class="sub" id="block" hidden></div>
+      <div class="meter block-meter" id="block-meter" role="progressbar" aria-label="Rounds done in this block" hidden><i id="block-bar"></i></div>
     </div>
     <button class="btn" id="export" type="button" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg>
@@ -226,8 +247,15 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     </button>
   </header>
 
+  <div class="export-warn" id="export-warn" role="status" hidden>
+    <span id="export-note">The export is a full backup. It includes your ledger, which lists your open gaps and when each topic comes back: leave the file unopened if you want your rounds to stay blind.</span>
+    <button class="btn primary" id="export-go" type="button">Download backup</button>
+    <button class="btn" id="export-cancel" type="button">Cancel</button>
+  </div>
+  <p class="notice" id="legacy" hidden>This page has been updated. Your past sessions are listed below; your progress and settings appear here again after your next round.</p>
+
   <section class="band" aria-label="Summary">
-    <div class="cell"><span class="k">Due now</span><span class="v" id="t-due">–</span><span class="n" id="t-due-n">topics ready for review</span></div>
+    <div class="cell"><span class="k">Topics tested</span><span class="v" id="t-topics">–</span><span class="n" id="t-topics-n"></span></div>
     <div class="cell"><span class="k">Sessions this period</span><span class="v" id="t-sess">–</span><span class="n" id="t-sess-n"></span></div>
     <div class="cell"><span class="k">Mean score</span><span class="v"><span id="t-score">–</span><svg class="spark" id="t-spark" viewBox="0 0 84 28" aria-hidden="true"></svg></span><span class="n" id="t-score-n">out of 5, this period</span></div>
     <div class="cell"><span class="k">Progress review</span><span class="v" id="t-review">–</span><span class="n" id="t-review-n"></span></div>
@@ -236,7 +264,8 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   <div class="tabs-bar">
     <div class="tabs" role="tablist" aria-label="Views">
       <button class="tab" role="tab" id="tab-sessions" data-view="sessions" aria-controls="v-sessions" aria-selected="true">Sessions <span class="c" id="c-sessions"></span></button>
-      <button class="tab" role="tab" id="tab-gaps" data-view="gaps" aria-controls="v-gaps" aria-selected="false" tabindex="-1">Gaps &amp; topics <span class="c" id="c-gaps"></span></button>
+      <button class="tab" role="tab" id="tab-progress" data-view="progress" aria-controls="v-progress" aria-selected="false" tabindex="-1">Progress <span class="c" id="c-progress"></span></button>
+      <button class="tab" role="tab" id="tab-library" data-view="library" aria-controls="v-library" aria-selected="false" tabindex="-1">Reading &amp; listening <span class="c" id="c-library"></span></button>
       <button class="tab" role="tab" id="tab-reviews" data-view="reviews" aria-controls="v-reviews" aria-selected="false" tabindex="-1">Reviews <span class="c" id="c-reviews"></span></button>
       <button class="tab" role="tab" id="tab-settings" data-view="settings" aria-controls="v-settings" aria-selected="false" tabindex="-1">Settings</button>
     </div>
@@ -252,11 +281,16 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     <article id="s-detail" class="reader" hidden></article>
   </section>
 
-  <section class="panel" id="v-gaps" role="tabpanel" aria-labelledby="tab-gaps" hidden>
-    <div class="section-h"><h2>Open gaps</h2><span class="aside" id="gaps-aside"></span></div>
-    <div id="gaps" class="list"><div class="empty">Loading…</div></div>
-    <div class="section-h"><h2>All topics tested</h2><span class="aside">Sorted by next review</span></div>
+  <section class="panel" id="v-progress" role="tabpanel" aria-labelledby="tab-progress" hidden>
+    <div class="section-h"><h2>Topics tested so far</h2><span class="aside">Most recently tested first</span></div>
+    <p class="note">What comes next stays hidden, so each round tests what you know rather than what you just looked up. Points you missed are in the feedback of past sessions and come back unannounced.</p>
     <div class="tbl-wrap"><table class="plain" id="topics"></table></div>
+  </section>
+
+  <section class="panel" id="v-library" role="tabpanel" aria-labelledby="tab-library" hidden>
+    <div class="section-h"><h2>Reading &amp; listening</h2><span class="aside" id="lib-count"></span></div>
+    <p class="note" id="lib-note">The reading pointers and podcast episodes from your feedback, newest session first. Links open in a new tab; what you mark as done is remembered in this browser only.</p>
+    <div id="lib-list"></div>
   </section>
 
   <section class="panel" id="v-reviews" role="tabpanel" aria-labelledby="tab-reviews" hidden>
@@ -298,6 +332,28 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
         <button class="btn primary" id="mix-save" type="button" disabled>Save</button>
       </div>
     </section>
+    <section class="card" id="about" aria-labelledby="about-h" hidden>
+      <h2 id="about-h">Where you are and where you’re aiming</h2>
+      <p class="lead" id="about-lead"></p>
+      <div class="para">
+        <div class="para-head"><span class="lbl">Where you are</span><span class="chips" id="lvl-label"></span><button class="btn" id="lvl-edit" type="button" aria-controls="lvl-box" hidden>Update</button></div>
+        <p class="para-text" id="lvl-text"></p>
+        <div class="para-box" id="lvl-box" hidden>
+          <label for="lvl-input" id="lvl-q">In a few sentences, describe where you are in your training or career and how you'd rate your own knowledge and clinical skills: for example your stage, your specialty, how independently you work, and what kinds of decisions you're comfortable making.</label>
+          <textarea id="lvl-input" rows="5" maxlength="4000"></textarea>
+          <div class="para-foot"><span class="mix-status" id="lvl-status" role="status" aria-live="polite"></span><button class="btn primary" id="lvl-save" type="button">Save</button></div>
+        </div>
+      </div>
+      <div class="para">
+        <div class="para-head"><span class="lbl">Where you’re aiming</span><span class="chips" id="aim-label"></span><button class="btn" id="aim-edit" type="button" aria-controls="aim-box" hidden>Update</button></div>
+        <p class="para-text" id="aim-text"></p>
+        <div class="para-box" id="aim-box" hidden>
+          <label for="aim-input" id="aim-q">What do you want these rounds to help you achieve? For example an exam you're preparing for, the level you want to reach, where you want to be stronger, or anything else.</label>
+          <textarea id="aim-input" rows="5" maxlength="4000"></textarea>
+          <div class="para-foot"><span class="mix-status" id="aim-status" role="status" aria-live="polite"></span><button class="btn primary" id="aim-save" type="button">Save</button></div>
+        </div>
+      </div>
+    </section>
     <section class="card" aria-labelledby="set-h">
       <h2 id="set-h">Current settings</h2>
       <p class="lead">Change these in a session with your assistant, for example “make sessions 30 minutes” or “more perioperative medicine”.</p>
@@ -325,35 +381,29 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     const pct = typeof v === "number" ? Math.max(0, Math.min(100, v / 5 * 100)) : 0;
     return `<span class="score ${scoreClass(v)}"><b>${fmtScore(v, dp)}</b><span class="meter"><i style="width:${pct}%"></i></span></span>`;
   }
-  function dueHTML(d){
-    if (!d) return "";
-    const n = daysUntil(d);
-    if (n < 0) return `<span class="due over">Overdue ${-n} d</span>`;
-    if (n === 0) return `<span class="due today">Due today</span>`;
-    return `<span class="due">${n <= 14 ? "In " + n + " d" : shortDate(d)}</span>`;
-  }
 
-  let state = null, sessions = [], reviews = [];
-  let prefs = null;           // cme/prefs in the page database: the round mix set on this page
+  // Everything shown comes from one file the engine writes, data/page.json (already blinded),
+  // plus the session and review documents opened on demand. The ledger is read by Export only.
+  let page = null, sessions = [], reviews = [];
+  let prefs = null;           // cme/prefs in the page database: the round mix and the paragraphs set on this page
   let dbRef = null;
-  let mode = null;            // "files" (data/*.json in this artifact) or "db" (artifact database, v4.0)
   let fullText = false;       // all session files fetched for full-text search
   const getJSON = async (path) => { const r = await fetch(path, {cache: "no-store"}); if (!r.ok) throw new Error(path + " " + r.status); return r.json(); };
   async function fullSession(s){
-    if (mode !== "files" || s._full) return s;
+    if (s._full) return s;
     try { const d = await getJSON("data/sessions/" + encodeURIComponent(s.id) + ".json"); Object.assign(s, d, {_full: true}); }
     catch (e) { s._full = true; s._missing = true; }
     return s;
   }
   async function loadAllSessions(){
-    if (fullText || mode !== "files") return;
+    if (fullText) return;
     fullText = true;
     const todo = sessions.filter(s => !s._full);
     for (let i = 0; i < todo.length; i += 6) await Promise.all(todo.slice(i, i + 6).map(fullSession));
   }
 
   // ---- views -----------------------------------------------------------------------------
-  const views = ["sessions", "gaps", "reviews", "settings"];
+  const views = ["sessions", "progress", "library", "reviews", "settings"];
   const tabs = () => Array.from(document.querySelectorAll(".tabs [role=tab]"));
   function show(view, focus){
     views.forEach(v => { $("v-" + v).hidden = v !== view; });
@@ -388,28 +438,34 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
       <circle cx="${x(vals.length - 1)}" cy="${y(last)}" r="2.6" fill="var(--accent)"/>`;
   }
   function renderTiles(){
-    if (!state) return;
-    const topics = state.topics || {};
-    const due = Object.values(topics).filter(t => t.due && t.due <= today).length;
-    $("t-due").textContent = due;
-    $("t-due-n").textContent = due === 1 ? "topic ready for review" : "topics ready for review";
-    const sess = state.sessions || [];
-    const per = state.config && state.config.target_sessions_per_week;
-    $("t-sess").textContent = sess.length;
-    const since = state.review && state.review.period_start;
-    $("t-sess-n").textContent = (since ? "since " + shortDate(since) : "this period") + (per ? " · target " + per + "/week" : "");
-    const scores = sess.map(s => s.score).filter(x => typeof x === "number");
-    $("t-score").textContent = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : "–";
+    if (!page) return;
+    const t = page.totals || {}, set = page.settings || {}, w = page.who || {};
+    // Counts only, and only of what has been tested.
+    $("t-topics").textContent = t.topics != null ? t.topics : "–";
+    $("t-topics-n").textContent = t.mean_mastery != null ? "mean mastery " + fmtScore(t.mean_mastery) + " of 5" : "none yet";
+    $("t-sess").textContent = t.sessions != null ? t.sessions : "–";
+    $("t-sess-n").textContent = (t.since ? "since " + shortDate(t.since) : "this period") + (set.per_week ? " · target " + set.per_week + "/week" : "");
+    $("t-score").textContent = fmtScore(t.mean_score);
     const recent = sessions.slice().reverse().map(s => s.score).filter(x => typeof x === "number").slice(-12);
     sparkline(recent);
     if (recent.length > 1) $("t-score-n").textContent = "out of 5 · last " + recent.length + " sessions";
-    const nr = state.review && state.review.next_due;
+    const nr = page.next_review;
     $("t-review").textContent = nr ? shortDate(nr) : "–";
     $("t-review-n").textContent = nr ? (nr <= today ? "due — ask for your progress review" : "in " + daysUntil(nr) + " days") : "";
-    const p = state.profile || {};
-    const who = [p.display_name || p.role, [p.specialty, p.subspecialty].filter(Boolean).join(" · ")].filter(Boolean).join(" · ");
+    const who = [w.name || w.role, [w.specialty, w.subspecialty].filter(Boolean).join(" · ")].filter(Boolean).join(" · ");
     if (who) $("who").textContent = who;
-    $("c-gaps").textContent = (state.gaps || []).length || "";
+    // The block's theme is shown on purpose (domain only); which topics come next is not in the file.
+    const b = page.block;
+    if (b && b.name) {
+      const done = +b.done || 0, len = +b.length || 1;
+      $("block").textContent = "Block: " + b.name + " · " + (done >= len ? "finished (" + len + " rounds); the next block starts with your next round"
+        : !done ? "starts with your next round (" + len + " rounds)" : done + " of " + len + " rounds done");
+      $("block").hidden = false;
+      $("block-bar").style.width = Math.round(100 * Math.min(done, len) / len) + "%";
+      $("block-meter").setAttribute("aria-valuenow", Math.min(done, len)); $("block-meter").setAttribute("aria-valuemax", len);
+      $("block-meter").hidden = false;
+    }
+    $("c-progress").textContent = t.topics || "";
   }
 
   // ---- sessions ----------------------------------------------------------------------------
@@ -420,7 +476,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     const flags = [];
     if (s.reflected === false) flags.push(`<span class="chip flag">Reflection pending</span>`);
     if (s.drill) flags.push(`<span class="chip note">Drill</span>`);
-    if (!s.transcript && s.url) flags.push(`<span class="chip note">In Google Drive</span>`);
+    if (!s.transcript && s.url) flags.push(`<span class="chip note">Linked document</span>`);
     const codes = (s.topics && s.topics.length ? s.topics : (s.tags || []).filter(isTopicCode)).slice(0, 5);
     b.innerHTML = `<span class="when"><b>${esc(shortDate(s.date))}</b><span>${esc(s.id)}</span></span>
       <span class="body"><span class="t">${esc(s.title || "Session " + s.id)}</span>
@@ -440,7 +496,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
       const hay = [s.id, s.title, s.summary, (s.tags || []).join(" "), (s.topics || []).join(" "), s.transcript, s.closing, s.addendum].join(" ").toLowerCase();
       return q.split(/\s+/).every(w => hay.includes(w));
     });
-    if (q && mode === "files" && !fullText) { loadAllSessions().then(renderList); }
+    if (q && !fullText) { loadAllSessions().then(renderList); }
     if (!hits.length) { list.innerHTML = `<div class="empty">${sessions.length ? "No session matches that search." : "No sessions yet. Start one with the clinical-cme skill."}</div>`; return; }
     hits.forEach(s => list.appendChild(sessionRow(s)));
   }
@@ -449,9 +505,9 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   async function openSession(s){
     const a = $("s-detail");
     listMode(false);
-    if (mode === "files" && !s._full) { a.innerHTML = `<div class="empty">Loading…</div>`; await fullSession(s); }
+    if (!s._full) { a.innerHTML = `<div class="empty">Loading…</div>`; await fullSession(s); }
     const body = s.transcript ? md(s.transcript) + (s.closing ? "<hr>" + md(s.closing) : "") + (s.addendum ? "<hr>" + md(s.addendum) : "")
-      : `<p>${s.url ? `This session's transcript is in Google Drive: <a href="${esc(s.url)}" target="_blank" rel="noopener">open the document</a>.` : "Only the summary of this session is stored."}</p>`;
+      : `<p>${s.url ? `This session's transcript is kept in a separate document: <a href="${esc(s.url)}" target="_blank" rel="noopener">open the document</a>.` : "Only the summary of this session is stored."}</p>`;
     a.innerHTML = `<h2>${esc(s.title || s.id)}</h2>
       <div class="meta"><span>${esc(s.id)}</span><span>${fmtDate(s.date)}</span>${s.format ? `<span>${esc(s.format)}</span>` : ""}${s.drill ? `<span>drill: ${esc(s.drill)}</span>` : ""}${scoreHTML(s.score, 2)}</div>
       ${s.summary ? `<p class="lede">${esc(s.summary)}</p>` : ""}
@@ -462,44 +518,74 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   $("back").addEventListener("click", () => { listMode(true); });
   $("q").addEventListener("input", renderList);
 
-  // ---- gaps and topics -----------------------------------------------------------------------
-  function renderGaps(){
-    const box = $("gaps"); box.innerHTML = "";
-    if (!state) return;
-    const gaps = state.gaps || [];
-    const topics = state.topics || {};
-    $("gaps-aside").textContent = gaps.length ? gaps.length + " open · most urgent first" : "";
-    if (!gaps.length) box.innerHTML = `<div class="empty">No open gaps.</div>`;
-    const key = (g) => (topics[g.topic] && topics[g.topic].due) || "9999";
-    gaps.slice().sort((a, b) => key(a) === key(b) ? (a.topic > b.topic ? 1 : -1) : key(a) > key(b) ? 1 : -1).forEach(g => {
-      const t = topics[g.topic] || {};
-      const d = document.createElement("div"); d.className = "gap";
-      const text = String(g.gap || "");
-      d.innerHTML = `<div class="h"><span class="code">${esc(g.topic)}</span><strong>${esc(t.label || g.topic)}</strong></div>
-        <div class="right">${dueHTML(t.due)}</div>
-        <div class="g clamp">${esc(text)}</div>
-        <div class="h src">${esc((g.source || []).join(", "))}${g.opened || g.date ? " · open since " + esc(fmtDate(g.opened || g.date)) : ""}${t.mastery != null ? " · mastery " + esc(t.mastery) + "/5" : ""}</div>`;
-      box.appendChild(d);
-      const g2 = d.querySelector(".g");
-      requestAnimationFrame(() => {
-        if (g2.scrollHeight > g2.clientHeight + 2) {
-          const m = document.createElement("button"); m.type = "button"; m.className = "more"; m.textContent = "Show full note";
-          m.addEventListener("click", () => { const c = g2.classList.toggle("clamp"); m.textContent = c ? "Show full note" : "Show less"; });
-          d.insertBefore(m, d.lastElementChild);
-        }
-      });
-    });
+  // ---- progress ----------------------------------------------------------------------------
+  // The file lists only topics already tested, most recently tested first; it is shown as it comes.
+  function renderProgress(){
+    if (!page) return;
+    const rows = page.topics || [];
     const tb = $("topics");
-    const rows = Object.entries(topics).sort((a, b) => (a[1].due || "9") < (b[1].due || "9") ? -1 : (a[1].due || "9") > (b[1].due || "9") ? 1 : 0);
     if (!rows.length) { tb.innerHTML = `<tbody><tr><td class="empty">No topics tested yet.</td></tr></tbody>`; return; }
-    tb.innerHTML = `<thead><tr><th>Topic</th><th>Mastery</th><th>Last tested</th><th>Next review</th><th>Calibration</th></tr></thead><tbody>` + rows.map(([id, t]) => {
+    tb.innerHTML = `<thead><tr><th>Topic</th><th>Mastery</th><th>Last tested</th><th>Calibration</th></tr></thead><tbody>` + rows.map((t) => {
       const m = typeof t.mastery === "number" ? t.mastery : null;
       const cal = t.calibration && t.calibration !== "not_rated" ? t.calibration.replace(/_/g, " ") : "–";
-      return `<tr><td><span class="code">${esc(id)}</span>${esc(t.label || "")}</td>
+      return `<tr><td><span class="code">${esc(t.id)}</span>${esc(t.label || "")}</td>
         <td><span class="mcell"><span class="meter ${scoreClass(m)}"><i style="width:${m != null ? m / 5 * 100 : 0}%"></i></span>${m != null ? esc(m) : "–"}</span></td>
-        <td class="num">${t.last ? shortDate(t.last) : "–"}</td><td class="num">${dueHTML(t.due) || "–"}</td>
+        <td class="num">${t.last ? shortDate(t.last) : "–"}</td>
         <td><span class="cal ${/over/.test(cal) ? "over" : ""}">${esc(cal)}</span></td></tr>`;
     }).join("") + `</tbody>`;
+  }
+
+  // ---- reading & listening ------------------------------------------------------------------
+  // The file's `library`: the reading pointers and podcast picks of past sessions, newest first.
+  // Done / not done is a convenience of this browser: kept in its own storage where there is
+  // one (otherwise for this visit only) and never written to the store.
+  const DONE_KEY = "cme-library-done";
+  let done = {};
+  try { const raw = window.localStorage.getItem(DONE_KEY); const o = raw ? JSON.parse(raw) : null; if (o && typeof o === "object") done = o; } catch (e) { done = {}; }
+  const keepDone = () => { try { window.localStorage.setItem(DONE_KEY, JSON.stringify(done)); } catch (e) { /* no storage here: this visit only */ } };
+  const libKey = (x) => [x.session, x.kind, x.link].join("|");
+  const webLink = (u) => /^https?:\/\//i.test(String(u || "")) ? String(u) : "";
+  function renderLibrary(){
+    const list = $("lib-list"); list.innerHTML = "";
+    const items = page && Array.isArray(page.library) ? page.library : null;
+    if (!items || !items.length) {
+      $("c-library").textContent = ""; $("lib-count").textContent = "";
+      list.innerHTML = `<div class="list"><div class="empty">${!page ? "Nothing here yet."
+        : !items ? "Nothing listed yet: reading and listening from your rounds appear here after your next round."
+        : "No reading or listening yet. The pointers and episodes from each round's feedback are collected here."}</div></div>`;
+      return;
+    }
+    const left = items.filter(x => !done[libKey(x)]).length;
+    $("c-library").textContent = left || "";
+    $("lib-count").textContent = left ? left + " of " + items.length + " to do" : "All " + items.length + " done";
+    const titles = {}; sessions.forEach(s => { titles[s.id] = s.title; });
+    let group = null, box = null;
+    items.forEach((x, i) => {
+      if (x.session !== group) {
+        group = x.session;
+        const g = document.createElement("div"); g.className = "lib-group";
+        g.innerHTML = `<div class="lib-h"><span>${esc(shortDate(x.date))} · ${esc(x.session)}</span><b>${esc(titles[x.session] || "")}</b></div>`;
+        box = document.createElement("div"); box.className = "list";
+        g.appendChild(box); list.appendChild(g);
+      }
+      const isDone = !!done[libKey(x)], href = webLink(x.link), listen = x.kind === "listening";
+      const row = document.createElement("div"); row.className = "lib-item" + (isDone ? " done" : "");
+      const body = document.createElement("div"); body.className = "body";
+      const detail = [listen ? x.show : x.section, x.minutes ? "about " + x.minutes + " min" : ""].filter(Boolean).join(" · ");
+      body.innerHTML = `<span class="chips"><span class="chip">${listen ? "Listen" : "Read"}</span>${x.label || x.topic ? `<span class="chip note">${esc(x.label || x.topic)}</span>` : ""}</span>
+        ${href ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(x.title || href)}</a>` : `<span class="t">${esc(x.title || "")}</span>`}
+        ${detail ? `<span class="s">${esc(detail)}</span>` : ""}`;
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "btn lib-done"; b.id = "lib-done-" + i;
+      b.setAttribute("aria-pressed", String(isDone));
+      b.setAttribute("aria-label", (isDone ? "Done: " : "Mark as done: ") + (x.title || ""));
+      b.textContent = isDone ? "✓ Done" : "Mark done";
+      b.addEventListener("click", () => {
+        if (done[libKey(x)]) delete done[libKey(x)]; else done[libKey(x)] = 1;
+        keepDone(); renderLibrary();
+      });
+      row.appendChild(body); row.appendChild(b); box.appendChild(row);
+    });
   }
 
   // ---- reviews -----------------------------------------------------------------------------
@@ -508,7 +594,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     const list = $("r-list"); list.innerHTML = "";
     $("c-reviews").textContent = reviews.length || "";
     if (!reviews.length) {
-      const nr = state && state.review && state.review.next_due;
+      const nr = page && page.next_review;
       list.innerHTML = `<div class="empty">No progress reviews yet.${nr ? " The first is due " + esc(fmtDate(nr)) + "." : ""}</div>`; return;
     }
     reviews.forEach(r => {
@@ -517,7 +603,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
         <span class="body"><span class="t">${esc(r.title || "Progress review")}</span>${r.headline ? `<span class="s">${esc(r.headline)}</span>` : ""}</span><span></span>`;
       b.addEventListener("click", async () => {
         const a = $("r-detail"); reviewMode(false); a.innerHTML = `<div class="empty">Loading…</div>`;
-        if (mode === "files" && !r.report) { try { Object.assign(r, await getJSON("data/reviews/" + encodeURIComponent(r.date) + ".json")); } catch (e) {} }
+        if (!r.report) { try { Object.assign(r, await getJSON("data/reviews/" + encodeURIComponent(r.date) + ".json")); } catch (e) {} }
         a.innerHTML = `<h2>${esc(r.title || "Progress review")}</h2><div class="meta"><span>${fmtDate(r.date)}</span></div><div class="md">${md(r.report || r.headline || "")}</div>`;
         $("r-back").scrollIntoView({block: "start"});
       });
@@ -527,30 +613,79 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   $("r-back").addEventListener("click", () => reviewMode(true));
 
   // ---- settings ----------------------------------------------------------------------------
+  const words = (v) => String(v || "").replace(/_/g, " ");
   function renderSettings(){
-    if (!state) { $("settings").innerHTML = ""; return; }
-    const c = state.config || {}, p = state.profile || {};
-    const rows = [["Role", p.role], ["Specialty", [p.specialty, p.subspecialty].filter(Boolean).join(" · ")], ["Setting", (p.practice_setting || []).join(", ")],
-      ["Session length", c.session_minutes ? c.session_minutes + " min" : ""], ["Round", mixText(effectiveMix()) + (mixPending() ? " (from your next round)" : "") + (c.item_order ? ", " + String(c.item_order).replace(/_/g, " ") : "")], ["Case format", c.case_format],
-      ["Feedback", (c.feedback_depth || "") + (c.show_coding ? ", with coding line" : "")], ["Target", c.target_sessions_per_week ? c.target_sessions_per_week + " sessions/week" : ""],
-      ["Review interval", c.review_interval_days ? c.review_interval_days + " days" : ""], ["Units", (c.lab_units || "") + (c.blood_gas_units ? ", gases in " + c.blood_gas_units : "")], ["Guidelines", c.guideline_region],
-      ["Reminders", c.reminders ? "On" : "Off"], ["Mirror to Google Drive", c.mirror ? "On" : "Off"],
-      ["Domain emphasis", Object.entries(p.domain_emphasis || {}).map(([k, v]) => k + " ×" + v).join(", ") || "None"],
-      ["Self-ratings", Object.entries(p.domain_self_ratings || {}).map(([k, v]) => k + " " + v).join(", ")],
-      ["Active drills", (state.drills || []).map(d => d.code).join(", ") || "None"],
-      ["Ledger", "Schema " + state.schema + " · generation " + state.gen + " · next session " + state.next_id]];
+    if (!page || !page.settings) { $("settings").innerHTML = ""; return; }
+    const c = page.settings, w = page.who || {}, u = c.units || {};
+    const rows = [["Specialty", [w.specialty, w.subspecialty].filter(Boolean).join(" · ")], ["Setting", (w.practice || []).join(", ")],
+      ["Session length", c.session_length ? c.session_length + " min" : ""], ["Round", mixText(effectiveMix()) + (mixPending() ? " (from your next round)" : "") + (c.order ? ", " + words(c.order) : "")], ["Case format", c.case_style],
+      ["Feedback", (c.feedback || "") + (c.coding_line ? ", with coding line" : "")], ["Target", c.per_week ? c.per_week + " sessions/week" : ""],
+      ["Review interval", c.review_every_days ? c.review_every_days + " days" : ""], ["Units", (u.labs || "") + (u.gases ? ", gases in " + u.gases : "")], ["Guidelines", c.region],
+      ["Reminders", c.reminders ? "On" : "Off"],
+      ["Domain emphasis", Object.entries(c.emphasis || {}).map(([k, v]) => k + " ×" + v).join(", ") || "None"],
+      ["Self-ratings", Object.entries(c.self_ratings || {}).map(([k, v]) => k + " " + v).join(", ")]];
+    rows.push(["Last saved", page.updated ? fmtDate(page.updated) : ""]);
     $("settings").innerHTML = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v || "–")}</dd>`).join("");
   }
 
+  // ---- where you are, where you're aiming ----------------------------------------------------
+  // The learner's own paragraphs with the labels derived from them. "Update" asks the same open
+  // question as setup; what is written goes to cme/prefs as {text, updated}, the next round takes
+  // it over and derives the labels again. [prefs key, element ids, name in the page file]
+  const PARAS = [["journey", "lvl", "level"], ["aim", "aim", "aim"]];
+  const fileText = (f) => { const x = page && page.settings && page.settings[f]; return (x && x.text) || ""; };
+  // saved here and not yet in the file (a file written on a later day has overtaken it)
+  const paraPending = (k, f) => { const d = prefs && prefs[k]; return !!(d && d.text && d.text !== fileText(f) && String(d.updated || "").slice(0, 10) >= String((page && page.updated) || "")); };
+  function paraStatus(id, text, cls){ const el = $(id + "-status"); el.textContent = text || ""; el.className = "mix-status" + (cls ? " " + cls : ""); }
+  function renderAbout(){
+    if (!page || !page.settings) { $("about").hidden = true; return; }
+    $("about").hidden = false;
+    $("about-lead").textContent = "Your rounds are written for what you say here, in your own words. " + (dbRef
+      ? "A change applies from your next round."
+      : "To change either, tell your assistant; this view of the page cannot save settings.");
+    PARAS.forEach(([k, id, f]) => {
+      const x = page.settings[f] || {}, pending = paraPending(k, f);
+      const labels = pending ? [] : (f === "level" ? [x.label] : (x.tags || [])).filter(Boolean);
+      $(id + "-label").innerHTML = labels.map(l => `<span class="chip">${esc(l)}</span>`).join("") + (pending ? `<span class="chip note">From your next round</span>` : "");
+      $(id + "-text").textContent = pending ? prefs[k].text : (x.text || "Not described yet.");
+      $(id + "-edit").hidden = !dbRef;
+      if (!dbRef) $(id + "-box").hidden = true;
+    });
+  }
+  let savingPara = false;
+  PARAS.forEach(([k, id, f]) => {
+    $(id + "-edit").addEventListener("click", () => {
+      const box = $(id + "-box");
+      box.hidden = !box.hidden;
+      if (!box.hidden) { $(id + "-input").value = paraPending(k, f) ? prefs[k].text : fileText(f); paraStatus(id, ""); }
+    });
+    $(id + "-save").addEventListener("click", async () => {
+      if (!dbRef || savingPara) return;
+      const text = String($(id + "-input").value || "").trim();
+      if (!text) { paraStatus(id, "Write a few sentences first.", "err"); return; }
+      savingPara = true; paraStatus(id, "Saving…");
+      const doc = Object.assign({}, prefs || {}, {[k]: {text, updated: new Date().toISOString()}});
+      try {
+        await dbRef.doc("cme/prefs").set(doc);
+        prefs = doc; $(id + "-box").hidden = true;
+        renderAbout();
+      } catch (e) {
+        paraStatus(id, "Could not save. Try again, or tell your assistant instead.", "err");
+      } finally { savingPara = false; }
+    });
+  });
+
   // ---- round mix: MCQs, focused questions, full case ----------------------------------------
   // The page cannot rewrite the ledger; it stores the learner's choice in cme/prefs with the
-  // ledger value it changed (base = config.round_set_at). The skill applies it at the next round
-  // only if the ledger still has that value, so a later change made in a chat wins.
-  const LIMITS = {mcqs: [1, 10], focused: [1, 6]};
-  const ledgerMix = () => { const c = (state && state.config) || {}; return {mcqs: +c.mcqs || 0, focused: +c.focused || 0, case: c.case !== false}; };
-  const baseOf = () => (state && state.config && state.config.round_set_at != null) ? state.config.round_set_at : null;
+  // time the mix in the file was set (base). The skill applies it at the next round only if
+  // nothing has set the mix since, so a later change made in a chat wins. The limits and the
+  // minutes per item come with the file: nothing about them is kept here.
+  const R = () => (page && page.round) || {};
+  const fileMix = () => { const m = R().mix || {}; return {mcqs: +m.mcqs || 0, focused: +m.focused || 0, case: m.case !== false}; };
+  const baseOf = () => R().set_at != null ? R().set_at : null;
   const mixPending = () => !!(prefs && prefs.round && (prefs.base ?? null) === baseOf());
-  const effectiveMix = () => mixPending() ? Object.assign(ledgerMix(), prefs.round) : ledgerMix();
+  const effectiveMix = () => mixPending() ? Object.assign(fileMix(), prefs.round) : fileMix();
+  const limits = (k) => { const l = (R().limits || {})[k] || [0, 0]; return [Math.max(1, +l[0] || 0), +l[1] || 0]; };
   function mixText(m){
     const parts = [];
     if (m.mcqs) parts.push(m.mcqs + (m.mcqs === 1 ? " MCQ" : " MCQs"));
@@ -559,16 +694,18 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     return parts.join(" + ") || "–";
   }
   function estimate(m){
-    const c = (state && state.config) || {};
-    const caseMin = c.case_format === "discriminate" || (+c.session_minutes || 20) <= 12 ? 10 : 15;
-    return 3 * m.mcqs + 5 * m.focused + (m.case ? caseMin : 0);
+    if (same(m, fileMix()) && R().minutes != null) return R().minutes;
+    const per = R().minutes_per;
+    return per ? Math.round(per.mcq * m.mcqs + per.focused * m.focused + (m.case ? per.case : 0)) : null;
   }
+  // the estimate is at the learner's own pace once their rounds are timed: say what it rests on
+  const basis = () => { const n = +R().timed_rounds || 0; return n ? ", based on your last " + (n === 1 ? "round" : n + " rounds") : ""; };
   const counts = {mcqs: 3, focused: 1};   // the stepper values, kept while a switch is off
   let saved = null;                        // the mix as last saved or loaded, to enable Save only on change
   const readMix = () => ({mcqs: $("sw-mcq").checked ? counts.mcqs : 0, focused: $("sw-foc").checked ? counts.focused : 0, case: $("sw-case").checked});
   function paintSteppers(){
     [["mcqs", "mcq"], ["focused", "foc"]].forEach(([k, s]) => {
-      const on = $("sw-" + s).checked && !!dbRef, [lo, hi] = LIMITS[k];
+      const on = $("sw-" + s).checked && !!dbRef, [lo, hi] = limits(k);
       $("n-" + s).textContent = counts[k];
       $("st-" + s).classList.toggle("off", !$("sw-" + s).checked);
       $("dn-" + s).disabled = !on || counts[k] <= lo;
@@ -585,16 +722,17 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     paintSteppers();
     const m = readMix();
     const empty = !m.mcqs && !m.focused && !m.case;
-    const sm = state && state.config && state.config.session_minutes;
+    const sm = page && page.settings && page.settings.session_length, est = estimate(m);
     $("mix-est").textContent = empty ? "Choose at least one question type." :
-      "About " + estimate(m) + " minutes with feedback" + (sm ? " · your session length is " + sm + " min" : "") + ".";
+      (est != null ? "About " + est + " minutes with feedback" + basis() : "") + (sm ? (est != null ? " · " : "") + "your session length is " + sm + " min" : "") + "." +
+      (R().time_hint ? " " + R().time_hint : "");
     $("mix-save").disabled = !dbRef || empty || same(m, saved);
     if (dbRef && !same(m, saved) && !empty) status("Not saved yet", "pending");
     else if (dbRef && mixPending() && same(m, saved)) status("Saved · applies from your next round", "ok");
     else status("");
   }
   function initMix(){
-    if (!state) { $("mix").hidden = true; return; }
+    if (!page || !page.round) { $("mix").hidden = true; return; }
     $("mix").hidden = false;
     const m = effectiveMix(); saved = m;
     setMix(m);
@@ -607,9 +745,8 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   }
   ["sw-mcq", "sw-foc", "sw-case"].forEach(id => $(id).addEventListener("change", refreshMix));
   [["mcqs", "mcq"], ["focused", "foc"]].forEach(([k, s]) => {
-    const [lo, hi] = LIMITS[k];
-    $("dn-" + s).addEventListener("click", () => { counts[k] = Math.max(lo, counts[k] - 1); refreshMix(); });
-    $("up-" + s).addEventListener("click", () => { counts[k] = Math.min(hi, counts[k] + 1); refreshMix(); });
+    $("dn-" + s).addEventListener("click", () => { counts[k] = Math.max(limits(k)[0], counts[k] - 1); refreshMix(); });
+    $("up-" + s).addEventListener("click", () => { counts[k] = Math.min(limits(k)[1], counts[k] + 1); refreshMix(); });
   });
   let saving = false;
   $("mix-save").addEventListener("click", async () => {
@@ -617,7 +754,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     const m = readMix();
     if (!m.mcqs && !m.focused && !m.case) return;
     saving = true; $("mix-save").disabled = true; status("Saving…");
-    const doc = {round: m, base: baseOf(), updated: new Date().toISOString()};
+    const doc = Object.assign({}, prefs || {}, {round: m, base: baseOf(), updated: new Date().toISOString()});
     try {
       await dbRef.doc("cme/prefs").set(doc);
       prefs = doc; saved = m;
@@ -638,63 +775,53 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
         prefs = snap && snap.exists ? snap.data() : null;
       }
     } catch (e) { prefs = null; }
-    initMix(); renderSettings();
+    initMix(); renderSettings(); renderAbout();
   }
 
   // ---- loading -------------------------------------------------------------------------------
   const byDateDesc = (a, b) => (b.date || "") === (a.date || "") ? (b.id > a.id ? 1 : -1) : (b.date || "") > (a.date || "") ? 1 : -1;
   async function loadFiles(){
-    let idx = null;
-    try { state = await getJSON("data/state.json"); } catch (e) { return false; }
-    try { idx = await getJSON("data/index.json"); } catch (e) { idx = null; }
-    mode = "files";
-    sessions = ((idx && idx.sessions) || (state.previous || []).concat(state.sessions || [])).map(s => Object.assign({}, s));
+    try { page = await getJSON("data/page.json"); } catch (e) { page = null; }
+    if (!page || !Array.isArray(page.sessions)) {
+      // A store last saved before the page had its own file: the list of sessions it had then,
+      // and nothing else, until the next save writes data/page.json.
+      page = null;
+      try { const old = await getJSON("data/index.json"); if (old && Array.isArray(old.sessions)) page = {sessions: old.sessions, reviews: old.reviews || []}; } catch (e) { page = null; }
+      if (page) $("legacy").hidden = false;
+    }
+    if (!page) return false;
+    sessions = page.sessions.map(s => Object.assign({}, s));
     sessions.sort(byDateDesc);
-    reviews = ((idx && idx.reviews) || []).slice().sort((a, b) => (b.date || "") > (a.date || "") ? 1 : -1);
+    reviews = (page.reviews || []).slice().sort((a, b) => (b.date || "") > (a.date || "") ? 1 : -1);
     return true;
   }
 
-  async function loadDb(){
-    const db = (window.claude && claude.use) ? await claude.use("db") : null;
-    if (!db) return false;
-    try {
-      const snap = await db.doc("cme/state").get();
-      const d = snap && snap.exists ? snap.data() : null;
-      if (!d || d.moved_to) return false;
-      state = d;
-    } catch (e) { return false; }
-    mode = "db";
-    try {
-      const qs = await db.collection("sessions").orderBy("date", "desc").limit(500).get();
-      sessions = qs.docs.map(d => Object.assign({id: d.id, _full: true}, d.data()));
-      sessions.sort(byDateDesc);
-    } catch (e) { sessions = []; }
-    try {
-      const rs = await db.collection("reviews").orderBy("date", "desc").limit(50).get();
-      reviews = rs.docs.map(d => Object.assign({id: d.id}, d.data()));
-    } catch (e) { reviews = []; }
-    return true;
+  // Export is a full backup: the ledger (read here and nowhere else), every session and review.
+  async function exportAll(downloads){
+    const ledger = await getJSON("data/state.json");
+    await loadAllSessions();
+    for (const r of reviews) { if (!r.report) { try { Object.assign(r, await getJSON("data/reviews/" + encodeURIComponent(r.date) + ".json")); } catch (e) {} } }
+    const clean = sessions.map(s => { const o = Object.assign({}, s); delete o._full; delete o._missing; return o; });
+    await downloads.save({filename: "clinical-cme-export-" + today + ".json", data: JSON.stringify({state: ledger, sessions: clean, reviews}, null, 1)});
   }
 
   async function load(){
     let ok = false;
-    try { ok = (await loadFiles()) || (await loadDb()); } catch (e) { ok = false; }
-    if (!ok) { state = null; $("s-list").innerHTML = `<div class="empty">No ledger yet. Say “set up clinical CME” in a chat with your assistant to create it.</div>`; }
-    renderTiles(); renderGaps(); renderSettings();
+    try { ok = await loadFiles(); } catch (e) { ok = false; }
+    if (!ok) { page = null; $("s-list").innerHTML = `<div class="empty">No ledger yet. Say “set up clinical CME” in a chat with your assistant to create it.</div>`; }
+    renderTiles(); renderProgress(); renderSettings(); renderAbout();
     if (ok) renderList();
-    renderReviews();
+    renderReviews(); renderLibrary();
     loadPrefs();
     let downloads = null;
     try { downloads = (window.claude && claude.use) ? await claude.use("downloads") : null; } catch (e) { downloads = null; }
-    if (downloads && state) {
+    if (downloads && page) {
       $("export").hidden = false;
-      $("export").addEventListener("click", async () => {
-        try {
-          await loadAllSessions();
-          if (mode === "files") { for (const r of reviews) { if (!r.report) { try { Object.assign(r, await getJSON("data/reviews/" + encodeURIComponent(r.date) + ".json")); } catch (e) {} } } }
-          const clean = sessions.map(s => { const o = Object.assign({}, s); delete o._full; delete o._missing; return o; });
-          await downloads.save({filename: "clinical-cme-export-" + today + ".json", data: JSON.stringify({state, sessions: clean, reviews}, null, 1)});
-        } catch (e) { /* declined or unavailable */ }
+      // First the warning, then the download: the backup shows what the page keeps hidden.
+      $("export").addEventListener("click", () => { $("export-warn").hidden = !$("export-warn").hidden; });
+      $("export-cancel").addEventListener("click", () => { $("export-warn").hidden = true; });
+      $("export-go").addEventListener("click", async () => {
+        try { await exportAll(downloads); $("export-warn").hidden = true; } catch (e) { /* declined or unavailable */ }
       });
     }
   }

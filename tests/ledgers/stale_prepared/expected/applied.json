@@ -1,0 +1,827 @@
+{
+ "ledger_after_record": {
+  "agg": {
+   "art": {
+    "DDX": [
+     4.0,
+     5
+    ],
+    "DG": [
+     4.5,
+     5
+    ],
+    "META": [
+     5.0,
+     5
+    ],
+    "MGMT": [
+     4.5,
+     5
+    ],
+    "PR": [
+     4.5,
+     5
+    ],
+    "TEST": [
+     4.5,
+     5
+    ]
+   },
+   "art_focused": {
+    "DDX": [
+     4.5,
+     5
+    ],
+    "DG": [
+     0.0,
+     0
+    ],
+    "META": [
+     0.0,
+     0
+    ],
+    "MGMT": [
+     0.0,
+     0
+    ],
+    "PR": [
+     0.0,
+     0
+    ],
+    "TEST": [
+     0.0,
+     0
+    ]
+   },
+   "brier": [
+    3.9499999999999993,
+    20
+   ],
+   "calibration": {
+    "guess": [
+     3,
+     2.6
+    ],
+    "sure": [
+     8,
+     6.2
+    ],
+    "unsure": [
+     9,
+     6.2
+    ]
+   },
+   "disputes": {
+    "both_defensible": 0,
+    "learner_right": 0,
+    "upheld": 0
+   },
+   "drills": {
+    "avoided": 0,
+    "fell_for": 0,
+    "partial": 0
+   },
+   "errors": {
+    "art_domain": {},
+    "bias": {},
+    "category": {
+     "knowledge": 5
+    },
+    "knowledge_type": {
+     "missing": 5
+    },
+    "severity": {
+     "important": 5
+    }
+   },
+   "focused": 5,
+   "focused_mastery_sum": 20.0,
+   "idea": [
+    44,
+    5,
+    4
+   ],
+   "items": 20,
+   "mcq_correct": 7,
+   "mcqs": 10,
+   "minutes": 149,
+   "reading_minutes": 0,
+   "reflection_skipped": 0,
+   "score_n": 5,
+   "score_sum": 19.0,
+   "sessions": 5
+  },
+  "block": {
+   "chosen": "auto",
+   "last": "2026-11-20",
+   "length": 12,
+   "reason": "Pulmonary & Critical Care: mean 5.0 of 5 over 1 topic tested, not yet a theme",
+   "round": 1,
+   "started": "2026-11-20",
+   "theme": "PULM"
+  },
+  "blocks": [],
+  "domain_self_ratings": {
+   "GEN": 4.3,
+   "GI": 2.7,
+   "HEME": 4.0,
+   "ID": 4.3,
+   "NEURO": 4,
+   "PULM": 2.0,
+   "RENAL": 5.0,
+   "RHEUM": 4
+  },
+  "gaps": [
+   {
+    "date": "2026-09-10",
+    "gap": "Example gap 3.3: missed the decision point | Confident but incorrect answer on 2026-09-10; re-test the same decision point.",
+    "id": "G0001",
+    "opened": "2026-09-07",
+    "self": null,
+    "source": [
+     "graded",
+     "misconception"
+    ],
+    "topic": "GI-06"
+   },
+   {
+    "date": "2026-11-20",
+    "gap": "Example gap 5.2: missed the decision point",
+    "id": "G0002",
+    "opened": "2026-11-20",
+    "self": null,
+    "source": [
+     "graded"
+    ],
+    "topic": "PULM-06"
+   }
+  ],
+  "gen": 10,
+  "next_id": "S0006",
+  "resolved": [
+   {
+    "note": "Example gap 2.0: missed the decision point",
+    "opened": "2026-09-03",
+    "partial": false,
+    "resolved": "2026-09-07",
+    "topic": "PULM-07"
+   },
+   {
+    "note": "Confident but incorrect answer on 2026-09-03; re-test the same decision point. | Example self-reported gap 3",
+    "opened": "2026-09-03",
+    "partial": false,
+    "resolved": "2026-09-10",
+    "topic": "GEN-09"
+   }
+  ],
+  "session": {
+   "block": {
+    "length": 12,
+    "round": 1,
+    "theme": "PULM"
+   },
+   "case": {
+    "diagnosis": "Example diagnosis: Sepsis & septic shock",
+    "patient": "Example patient 5",
+    "presentation": "Example presentation 5",
+    "setting": "ward",
+    "topic": "PULM-07"
+   },
+   "date": "2026-11-20",
+   "drill": null,
+   "ended_at": null,
+   "focused": 1,
+   "format": "unfolding",
+   "grade_changes": [],
+   "id": "S0005",
+   "items": [
+    {
+     "coding": {
+      "art": {
+       "DDX": 2,
+       "DG": 2,
+       "META": 1,
+       "MGMT": 2,
+       "PR": 2,
+       "TEST": 2
+      },
+      "errors": [],
+      "idea": {
+       "A": 2,
+       "D": 2,
+       "E": 2,
+       "I": 4
+      }
+     },
+     "confidence": "unsure",
+     "mastery": 5,
+     "topic": "PULM-07",
+     "type": "case"
+    },
+    {
+     "aspect": "disposition",
+     "coding": {
+      "art": {
+       "DDX": 2
+      },
+      "errors": []
+     },
+     "confidence": "sure",
+     "mastery": 5,
+     "stem": "Example focused stem 5.1",
+     "topic": "RENAL-06",
+     "type": "focused"
+    },
+    {
+     "coding": {
+      "errors": [
+       {
+        "category": "knowledge",
+        "element": "",
+        "knowledge_type": "missing",
+        "severity": "important"
+       }
+      ]
+     },
+     "confidence": "unsure",
+     "correct": false,
+     "mastery": 2,
+     "stem": "Example MCQ stem 5.2",
+     "topic": "PULM-06",
+     "type": "mcq"
+    },
+    {
+     "coding": {
+      "errors": []
+     },
+     "confidence": "guess",
+     "correct": true,
+     "mastery": 4,
+     "stem": "Example MCQ stem 5.3",
+     "topic": "PULM-04",
+     "type": "mcq"
+    }
+   ],
+   "key_learning": [],
+   "mcq_correct": 1,
+   "mcqs": 2,
+   "minutes": 45,
+   "reading_minutes": null,
+   "reflection": null,
+   "score": 3.75,
+   "self_comfort": {},
+   "self_performance": null,
+   "started_at": null,
+   "steps_before": {
+    "PULM-04": 0,
+    "PULM-06": 0,
+    "PULM-07": 1,
+    "RENAL-06": 1
+   },
+   "summary": "Synthetic round 5 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "title": "Example round S0005",
+   "topics": [
+    "PULM-07",
+    "RENAL-06",
+    "PULM-06",
+    "PULM-04"
+   ],
+   "why": {
+    "PULM-04": "new",
+    "PULM-06": "new",
+    "PULM-07": "due",
+    "RENAL-06": "due"
+   }
+  },
+  "session_ids": [
+   "S0001",
+   "S0002",
+   "S0003",
+   "S0004",
+   "S0005"
+  ],
+  "unreflected": "S0005",
+  "updated": "2026-11-20"
+ },
+ "ledger_after_reflect": {
+  "agg": {
+   "art": {
+    "DDX": [
+     4.0,
+     5
+    ],
+    "DG": [
+     4.5,
+     5
+    ],
+    "META": [
+     5.0,
+     5
+    ],
+    "MGMT": [
+     4.5,
+     5
+    ],
+    "PR": [
+     4.5,
+     5
+    ],
+    "TEST": [
+     4.5,
+     5
+    ]
+   },
+   "art_focused": {
+    "DDX": [
+     4.5,
+     5
+    ],
+    "DG": [
+     0.0,
+     0
+    ],
+    "META": [
+     0.0,
+     0
+    ],
+    "MGMT": [
+     0.0,
+     0
+    ],
+    "PR": [
+     0.0,
+     0
+    ],
+    "TEST": [
+     0.0,
+     0
+    ]
+   },
+   "brier": [
+    3.9499999999999993,
+    20
+   ],
+   "calibration": {
+    "guess": [
+     3,
+     2.6
+    ],
+    "sure": [
+     8,
+     6.2
+    ],
+    "unsure": [
+     9,
+     6.2
+    ]
+   },
+   "disputes": {
+    "both_defensible": 0,
+    "learner_right": 0,
+    "upheld": 0
+   },
+   "drills": {
+    "avoided": 0,
+    "fell_for": 0,
+    "partial": 0
+   },
+   "errors": {
+    "art_domain": {},
+    "bias": {},
+    "category": {
+     "knowledge": 5
+    },
+    "knowledge_type": {
+     "missing": 5
+    },
+    "severity": {
+     "important": 5
+    }
+   },
+   "focused": 5,
+   "focused_mastery_sum": 20.0,
+   "idea": [
+    44,
+    5,
+    4
+   ],
+   "items": 20,
+   "mcq_correct": 7,
+   "mcqs": 10,
+   "minutes": 149,
+   "reading_minutes": 0,
+   "reflection_skipped": 0,
+   "score_n": 5,
+   "score_sum": 19.0,
+   "sessions": 5
+  },
+  "block": {
+   "chosen": "auto",
+   "last": "2026-11-20",
+   "length": 12,
+   "reason": "Pulmonary & Critical Care: mean 5.0 of 5 over 1 topic tested, not yet a theme",
+   "round": 1,
+   "started": "2026-11-20",
+   "theme": "PULM"
+  },
+  "blocks": [],
+  "domain_self_ratings": {
+   "GEN": 4.3,
+   "GI": 2.7,
+   "HEME": 4.0,
+   "ID": 4.3,
+   "NEURO": 4,
+   "PULM": 3.0,
+   "RENAL": 5.0,
+   "RHEUM": 4
+  },
+  "gaps": [
+   {
+    "date": "2026-09-10",
+    "gap": "Example gap 3.3: missed the decision point | Confident but incorrect answer on 2026-09-10; re-test the same decision point.",
+    "id": "G0001",
+    "opened": "2026-09-07",
+    "self": null,
+    "source": [
+     "graded",
+     "misconception"
+    ],
+    "topic": "GI-06"
+   },
+   {
+    "date": "2026-11-20",
+    "gap": "Example gap 5.2: missed the decision point",
+    "id": "G0002",
+    "opened": "2026-11-20",
+    "self": null,
+    "source": [
+     "graded"
+    ],
+    "topic": "PULM-06"
+   }
+  ],
+  "gen": 11,
+  "next_id": "S0006",
+  "resolved": [
+   {
+    "note": "Example gap 2.0: missed the decision point",
+    "opened": "2026-09-03",
+    "partial": false,
+    "resolved": "2026-09-07",
+    "topic": "PULM-07"
+   },
+   {
+    "note": "Confident but incorrect answer on 2026-09-03; re-test the same decision point. | Example self-reported gap 3",
+    "opened": "2026-09-03",
+    "partial": false,
+    "resolved": "2026-09-10",
+    "topic": "GEN-09"
+   }
+  ],
+  "session": {
+   "block": {
+    "length": 12,
+    "round": 1,
+    "theme": "PULM"
+   },
+   "case": {
+    "diagnosis": "Example diagnosis: Sepsis & septic shock",
+    "patient": "Example patient 5",
+    "presentation": "Example presentation 5",
+    "setting": "ward",
+    "topic": "PULM-07"
+   },
+   "date": "2026-11-20",
+   "drill": null,
+   "ended_at": null,
+   "focused": 1,
+   "format": "unfolding",
+   "grade_changes": [],
+   "id": "S0005",
+   "items": [
+    {
+     "coding": {
+      "art": {
+       "DDX": 2,
+       "DG": 2,
+       "META": 1,
+       "MGMT": 2,
+       "PR": 2,
+       "TEST": 2
+      },
+      "errors": [],
+      "idea": {
+       "A": 2,
+       "D": 2,
+       "E": 2,
+       "I": 4
+      }
+     },
+     "confidence": "unsure",
+     "mastery": 5,
+     "topic": "PULM-07",
+     "type": "case"
+    },
+    {
+     "aspect": "disposition",
+     "coding": {
+      "art": {
+       "DDX": 2
+      },
+      "errors": []
+     },
+     "confidence": "sure",
+     "mastery": 5,
+     "stem": "Example focused stem 5.1",
+     "topic": "RENAL-06",
+     "type": "focused"
+    },
+    {
+     "coding": {
+      "errors": [
+       {
+        "category": "knowledge",
+        "element": "",
+        "knowledge_type": "missing",
+        "severity": "important"
+       }
+      ]
+     },
+     "confidence": "unsure",
+     "correct": false,
+     "mastery": 2,
+     "stem": "Example MCQ stem 5.2",
+     "topic": "PULM-06",
+     "type": "mcq"
+    },
+    {
+     "coding": {
+      "errors": []
+     },
+     "confidence": "guess",
+     "correct": true,
+     "mastery": 4,
+     "stem": "Example MCQ stem 5.3",
+     "topic": "PULM-04",
+     "type": "mcq"
+    }
+   ],
+   "key_learning": [],
+   "mcq_correct": 1,
+   "mcqs": 2,
+   "minutes": 45,
+   "reading_minutes": null,
+   "reflection": {
+    "gaps": "Example: what felt shaky in round 5",
+    "skipped": false,
+    "solid": "Example: what felt solid in round 5"
+   },
+   "score": 3.75,
+   "self_comfort": {
+    "PULM-04": 5,
+    "PULM-06": 2,
+    "PULM-07": 2,
+    "RENAL-06": 5
+   },
+   "self_performance": 3,
+   "started_at": null,
+   "steps_before": {
+    "PULM-04": 0,
+    "PULM-06": 0,
+    "PULM-07": 1,
+    "RENAL-06": 1
+   },
+   "summary": "Synthetic round 5 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "title": "Example round S0005",
+   "topics": [
+    "PULM-07",
+    "RENAL-06",
+    "PULM-06",
+    "PULM-04"
+   ],
+   "why": {
+    "PULM-04": "new",
+    "PULM-06": "new",
+    "PULM-07": "due",
+    "RENAL-06": "due"
+   }
+  },
+  "session_ids": [
+   "S0001",
+   "S0002",
+   "S0003",
+   "S0004",
+   "S0005"
+  ],
+  "unreflected": null,
+  "updated": "2026-11-21"
+ },
+ "record": {
+  "errata_ids": [],
+  "errata_to_log": [],
+  "gen": 10,
+  "next_id": "S0006",
+  "open_gaps": 2,
+  "reflection_pending": true,
+  "score": 3.75,
+  "session_id": "S0005",
+  "topics": {
+   "PULM-04": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 3.0,
+    "misconception": false,
+    "step": 0
+   },
+   "PULM-06": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 2.0,
+    "misconception": false,
+    "step": 0
+   },
+   "PULM-07": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-27",
+    "interval_days": 7,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 2
+   },
+   "RENAL-06": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-27",
+    "interval_days": 7,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 2
+   }
+  },
+  "warnings": []
+ },
+ "reflect": {
+  "errata_ids": [],
+  "errata_to_log": [],
+  "gen": 11,
+  "open_gaps": 2,
+  "session_id": "S0005",
+  "topics": {
+   "PULM-04": {
+    "calibration": "overconfident",
+    "comfort": 5,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 3.0,
+    "misconception": false,
+    "step": 0
+   },
+   "PULM-06": {
+    "calibration": "aligned",
+    "comfort": 2,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 2.0,
+    "misconception": false,
+    "step": 0
+   },
+   "PULM-07": {
+    "calibration": "underconfident",
+    "comfort": 2,
+    "due": "2026-11-24",
+    "interval_days": 4,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 2
+   },
+   "RENAL-06": {
+    "calibration": "aligned",
+    "comfort": 5,
+    "due": "2026-11-27",
+    "interval_days": 7,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 2
+   }
+  },
+  "warnings": []
+ },
+ "reflection": {
+  "gaps": "Example: what felt shaky in round 5",
+  "performance": 3,
+  "solid": "Example: what felt solid in round 5",
+  "topic_comfort": {
+   "PULM-04": 5,
+   "PULM-06": 2,
+   "PULM-07": 2,
+   "RENAL-06": 5
+  }
+ },
+ "round": {
+  "case": {
+   "diagnosis": "Example diagnosis: Sepsis & septic shock",
+   "patient": "Example patient 5",
+   "presentation": "Example presentation 5",
+   "setting": "ward"
+  },
+  "case_format": "unfolding",
+  "gaps": [
+   {
+    "gap": "Example gap 5.2: missed the decision point",
+    "source": "graded",
+    "topic": "PULM-06"
+   }
+  ],
+  "items": [
+   {
+    "coding": {
+     "art": {
+      "DDX": 2,
+      "DG": 2,
+      "META": 1,
+      "MGMT": 2,
+      "PR": 2,
+      "TEST": 2
+     },
+     "errors": [],
+     "idea": {
+      "A": 2,
+      "D": 2,
+      "E": 2,
+      "I": 4
+     }
+    },
+    "confidence": "unsure",
+    "mastery": 5,
+    "topic": "PULM-07",
+    "type": "case"
+   },
+   {
+    "aspect": "disposition",
+    "coding": {
+     "art": {
+      "DDX": 2
+     },
+     "errors": []
+    },
+    "confidence": "sure",
+    "mastery": 5,
+    "stem_summary": "Example focused stem 5.1",
+    "topic": "RENAL-06",
+    "type": "focused"
+   },
+   {
+    "coding": {
+     "errors": [
+      {
+       "category": "knowledge",
+       "knowledge_type": "missing",
+       "severity": "important"
+      }
+     ]
+    },
+    "confidence": "unsure",
+    "correct": false,
+    "mastery": 2,
+    "stem_summary": "Example MCQ stem 5.2",
+    "topic": "PULM-06",
+    "type": "mcq"
+   },
+   {
+    "coding": {
+     "errors": []
+    },
+    "confidence": "guess",
+    "correct": true,
+    "mastery": 4,
+    "stem_summary": "Example MCQ stem 5.3",
+    "topic": "PULM-04",
+    "type": "mcq"
+   }
+  ],
+  "log_id": "S0005",
+  "minutes": 45,
+  "selection_reasons": {
+   "PULM-04": "new",
+   "PULM-06": "new",
+   "PULM-07": "due",
+   "RENAL-06": "due"
+  },
+  "summary": "Synthetic round 5 of an example ledger.",
+  "tags": [
+   "example"
+  ],
+  "title": "Example round S0005"
+ }
+}

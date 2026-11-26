@@ -1,0 +1,279 @@
+{
+ "schema": 2,
+ "ok": true,
+ "date": "2026-11-21",
+ "persona": "stops-halfway",
+ "skill_version": "4.3.1",
+ "commit": "cea86ce",
+ "examiner_model": "claude-fable-5-2",
+ "learner_model": "claude-fable-5-2",
+ "config": {
+  "session_minutes": 20,
+  "mcqs": 3,
+  "focused": 0,
+  "case": true,
+  "round_set_at": "2026-11-21T01:25:29Z",
+  "case_format": "unfolding",
+  "feedback_depth": "detailed",
+  "target_sessions_per_week": 3,
+  "review_interval_days": 42,
+  "intervals_days": [
+   1,
+   3,
+   7,
+   16,
+   35,
+   90
+  ],
+  "new_topics_per_round": 1,
+  "lab_units": "SI",
+  "blood_gas_units": "mmHg",
+  "guideline_region": "Iceland/Europe",
+  "item_order": "mcqs_first",
+  "helpers": false,
+  "prepare_ahead": false,
+  "prepare_task": false,
+  "testing": false,
+  "show_coding": true,
+  "reminders": false,
+  "resource_preferences": {
+   "free_only": false,
+   "formats": [
+    "guidelines",
+    "review articles"
+   ]
+  }
+ },
+ "round": {
+  "session": "S0001",
+  "shape": "3 MCQ",
+  "score": 4.0,
+  "confident_misses": 0,
+  "continued_from_earlier_run": false
+ },
+ "messages": {
+  "examiner": 5,
+  "learner": 4
+ },
+ "checks": {
+  "blinding": {
+   "ok": true,
+   "leaks": 0,
+   "to_review": 4,
+   "seal_lifted_at": {
+    "questions": 3
+   },
+   "never_lifted": [
+    "case"
+   ],
+   "terms_checked": 405,
+   "block_line": "Block: Cardiology, round 1 of 12",
+   "findings": [
+    {
+     "part": "questions",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "coronary",
+     "message": 2,
+     "excerpt": "…t exercise test B. Start fondaparinux and arrange coronary angiography within two hours C. Give a ticagrelor…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "rhythm",
+     "message": 2,
+     "excerpt": "…n air; examination is normal. The ECG shows sinus rhythm with no ST-segment or T-wave changes, and is unch…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "atrial",
+     "message": 4,
+     "excerpt": "…l/L (2.15–2.55), magnesium 0.82 mmol/L. **ECG**: atrial fibrillation, ventricular rate 138–150/min; norma…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "fibrillation",
+     "message": 4,
+     "excerpt": "…15–2.55), magnesium 0.82 mmol/L. **ECG**: atrial fibrillation, ventricular rate 138–150/min; normal axis; QRS 8…"
+    }
+   ],
+   "problems": []
+  },
+  "saved": {
+   "ok": true,
+   "session": "S0001",
+   "output_folders": [
+    "out1",
+    "out2"
+   ],
+   "files_compared": 4,
+   "problems": []
+  },
+  "log": {
+   "ok": true,
+   "sections": [
+    "a_case",
+    "a_questions",
+    "case",
+    "coded",
+    "discussion",
+    "fb_questions",
+    "feedback",
+    "grade_changes",
+    "notes",
+    "questions",
+    "reflection"
+   ],
+   "problems": [],
+   "examiner_text_not_logged": [
+    {
+     "message": 2,
+     "starts": "Today's round: three MCQs, then one case, about 25 minutes. Block: Cardiology, round 1 of "
+    },
+    {
+     "message": 9,
+     "starts": "Saved as session **S0001**: three cardiology questions — acute decompensated heart failure"
+    },
+    {
+     "message": 9,
+     "starts": "Your reflection is in: your comfort ratings match the grading, and ACS triage with the 0 h"
+    },
+    {
+     "message": 9,
+     "starts": "With your target of three sessions a week, the next one fits in two or three days."
+    }
+   ]
+  },
+  "stopped": {
+   "ok": true,
+   "case_topic": "CARD-03",
+   "case_topic_schedule": {
+    "last": null,
+    "attempts": 0,
+    "step": 0,
+    "due": null
+   },
+   "items_saved": 3,
+   "problems": []
+  }
+ },
+ "timings": {
+  "steps": [
+   {
+    "step": 1,
+    "label": "start of round",
+    "learner_message": 1,
+    "wait_s": 67.1,
+    "turn_s": 226.8,
+    "examiner_messages": 1,
+    "examiner_chars": 3531,
+    "learner_s": null
+   },
+   {
+    "step": 2,
+    "label": "after the answers to the questions",
+    "learner_message": 3,
+    "wait_s": 127.5,
+    "turn_s": 132.5,
+    "examiner_messages": 1,
+    "examiner_chars": 9464,
+    "learner_s": 15.1
+   },
+   {
+    "step": 3,
+    "label": "after learner message 5",
+    "learner_message": 5,
+    "wait_s": 49.6,
+    "turn_s": 59.5,
+    "examiner_messages": 2,
+    "examiner_chars": 2677,
+    "learner_s": 38.8
+   },
+   {
+    "step": 4,
+    "label": "after the reflection",
+    "learner_message": 8,
+    "wait_s": 120.0,
+    "turn_s": 123.5,
+    "examiner_messages": 1,
+    "examiner_chars": 599,
+    "learner_s": 38.8
+   }
+  ],
+  "total_wait_s": 364.2,
+  "longest_wait_s": 127.5,
+  "elapsed_s": 631.4
+ },
+ "quality": {
+  "scorer_model": "claude-fable-5-2",
+  "items": [
+   {
+    "id": "Q1",
+    "type": "mcq",
+    "topic": "CARD-02",
+    "answered": true,
+    "score": 5,
+    "note": "Matches ESC 2021 diuretic algorithm (urine Na <50-70 at 2 h, output <100-150 mL/h); first dose under home daily dose; doubling is the only defensible option. Right for a medical ward."
+   },
+   {
+    "id": "Q2",
+    "type": "mcq",
+    "topic": "CARD-05",
+    "answered": true,
+    "score": 5,
+    "note": "HF from perforation with severe MR = urgent surgery (days), not emergency; bland 6 mm infarct does not delay (ESC 2023). Distractors each wrong for a teachable reason."
+   },
+   {
+    "id": "Q3",
+    "type": "mcq",
+    "topic": "CARD-01",
+    "answered": true,
+    "score": 4,
+    "note": "hs-cTnT cut-offs and observe-zone step correct (ESC 2023). Quibble: delta sits exactly on the 3 ng/L boundary and typical angina in a diabetic makes treating as NSTE-ACS tempting; D still best."
+   },
+   {
+    "id": "Case",
+    "type": "case",
+    "topic": "CARD-03",
+    "answered": false,
+    "score": 4,
+    "note": "Realistic thyrotoxic AF with coherent results and a fair PE distractor; key fits ESC 2024. Quibble: 37.7 C, rate 140, AF and restlessness score near storm range, which the key never addresses."
+   }
+  ],
+  "feedback": [
+   {
+    "id": "questions",
+    "score": 5,
+    "note": "Claims match ESC 2021/2023 as I know them (thresholds, 3-5 days, cut-offs, early invasive IIa, no pretreatment); grades fair; Q3 pins the exact misstep and credits the learner's doubt."
+   },
+   {
+    "id": "final",
+    "score": 5,
+    "note": "Gap summary restates the troponin cut-offs correctly, codes the Q3 error fairly as numeric knowledge, and leaves the unanswered case ungraded and unrevealed; nothing clinically wrong."
+   },
+   {
+    "id": "dispute",
+    "score": 4,
+    "note": "No clinical challenge was raised; this rates the replies to the stop request and reflection: accurate, proportionate, no new claims. Not a test of source re-checking."
+   }
+  ],
+  "item_mean": 4.5,
+  "feedback_mean": 4.67,
+  "score": 4,
+  "note": "Accurate, current, well-pitched round with precise feedback; only quibbles (Q3 boundary delta, storm not considered in case key). Judged from knowledge; search confirmed cited pages exist only.",
+  "concerns": [
+   "Q1 sealed key calls the 40 mg IV dose 'equal to the oral home dose' then says it was too low (home 80 mg/day); the feedback sent has it right.",
+   "Q3: the 1 h change is exactly 3 ng/L, on the rule-out delta boundary; a delta of 4 would make the observe zone unambiguous.",
+   "Case: presented findings give a Burch-Wartofsky score around 40-50; the key and rubric should say why this is not thyroid storm, or soften temperature/restlessness.",
+   "Dispute entry: the learner made no challenge, so that score reflects only the wrap-up replies and should not be compared with runs that had a real dispute.",
+   "Guideline details were judged from memory; web search returned links but no text, so class/level statements were not checked against the primary documents."
+  ],
+  "problems": []
+ },
+ "note": null
+}

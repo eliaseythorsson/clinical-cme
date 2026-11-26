@@ -1,0 +1,344 @@
+{
+ "schema": 2,
+ "ok": true,
+ "date": "2026-11-21",
+ "persona": "disputes",
+ "skill_version": "4.3.1",
+ "commit": "cea86ce",
+ "examiner_model": "claude-fable-5-2",
+ "learner_model": "claude-fable-5-2",
+ "config": {
+  "session_minutes": 20,
+  "mcqs": 3,
+  "focused": 0,
+  "case": true,
+  "round_set_at": "2026-11-21T01:25:27Z",
+  "case_format": "unfolding",
+  "feedback_depth": "detailed",
+  "target_sessions_per_week": 3,
+  "review_interval_days": 42,
+  "intervals_days": [
+   1,
+   3,
+   7,
+   16,
+   35,
+   90
+  ],
+  "new_topics_per_round": 1,
+  "lab_units": "SI",
+  "blood_gas_units": "mmHg",
+  "guideline_region": "Iceland/Europe",
+  "item_order": "mcqs_first",
+  "helpers": false,
+  "prepare_ahead": false,
+  "prepare_task": false,
+  "testing": false,
+  "show_coding": true,
+  "reminders": false,
+  "resource_preferences": {
+   "free_only": false,
+   "formats": [
+    "guidelines",
+    "review articles"
+   ]
+  }
+ },
+ "round": {
+  "session": "S0001",
+  "shape": "3 MCQ, case (two stages)",
+  "score": 5.0,
+  "confident_misses": 0,
+  "continued_from_earlier_run": false
+ },
+ "messages": {
+  "examiner": 7,
+  "learner": 6
+ },
+ "checks": {
+  "blinding": {
+   "ok": true,
+   "leaks": 0,
+   "to_review": 9,
+   "seal_lifted_at": {
+    "questions": 3,
+    "case": 7
+   },
+   "never_lifted": [],
+   "terms_checked": 401,
+   "block_line": "Block: Cardiology, round 1 of 12",
+   "findings": [
+    {
+     "part": "questions",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "failure",
+     "message": 2,
+     "excerpt": "…pnoea and 6 kg of weight gain. He has known heart failure with an ejection fraction of 30 %, type 2 diabete…"
+    },
+    {
+     "part": "questions",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "heart",
+     "message": 2,
+     "excerpt": "… orthopnoea and 6 kg of weight gain. He has known heart failure with an ejection fraction of 30 %, type 2…"
+    },
+    {
+     "part": "questions",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "coronary",
+     "message": 2,
+     "excerpt": "…ains pain-free and haemodynamically stable on the coronary care unit. What is the most appropriate timing a…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "rhythm",
+     "message": 2,
+     "excerpt": "…arrival: BP 118/72 mmHg, heart rate 88/min, sinus rhythm, SpO₂ 93 % on 2 L/min, warm peripheries, JVP 8 cm…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "atrial",
+     "message": 4,
+     "excerpt": "…7.41, pCO₂ 39 mmHg, lactate 1.4 mmol/L. **ECG.** Atrial fibrillation, ventricular rate 132/min, normal ax…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "fibrillation",
+     "message": 4,
+     "excerpt": "…CO₂ 39 mmHg, lactate 1.4 mmol/L. **ECG.** Atrial fibrillation, ventricular rate 132/min, normal axis, QRS 92 ms…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "atrial",
+     "message": 6,
+     "excerpt": "…. No pericardial effusion. No thrombus seen (left atrial appendage not assessable transthoracically). - Hi…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "fibrillation",
+     "message": 6,
+     "excerpt": "…in the first 6 hours. - 24-hour telemetry: atrial fibrillation throughout, ventricular rate 105–140/min, no paus…"
+    },
+    {
+     "part": "case",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "rhythm",
+     "message": 6,
+     "excerpt": "… is comfortable at rest on 1 L/min of oxygen. The rhythm on telemetry has been unchanged throughout; resti…"
+    }
+   ],
+   "problems": []
+  },
+  "saved": {
+   "ok": true,
+   "session": "S0001",
+   "output_folders": [
+    "out1",
+    "out2"
+   ],
+   "files_compared": 4,
+   "problems": []
+  },
+  "log": {
+   "ok": true,
+   "sections": [
+    "a_case",
+    "a_final",
+    "a_questions",
+    "case",
+    "coded",
+    "discussion",
+    "fb_questions",
+    "feedback",
+    "grade_changes",
+    "questions",
+    "reflection",
+    "stage2"
+   ],
+   "problems": [],
+   "examiner_text_not_logged": [
+    {
+     "message": 2,
+     "starts": "Today's round: three MCQs, then one case, about 20–25 minutes. New block: Cardiology: noth"
+    },
+    {
+     "message": 13,
+     "starts": "**Saved: session S0001.** Tested: atrial fibrillation (case), acute heart failure, endocar"
+    },
+    {
+     "message": 13,
+     "starts": "How your reflection changed the plan: your comfort ratings matched your results, so nothin"
+    },
+    {
+     "message": 13,
+     "starts": "With your target of three sessions a week, the next one fits in two to three days."
+    }
+   ]
+  },
+  "dispute": {
+   "ok": true,
+   "logged_in": [
+    "discussion"
+   ],
+   "problems": [],
+   "grade_changes": [
+    {
+     "item": "Case stage 2 (disposition/follow-up)",
+     "topic": "CARD-03",
+     "from": 5,
+     "to": 5,
+     "outcome": "learner_right"
+    }
+   ]
+  }
+ },
+ "timings": {
+  "steps": [
+   {
+    "step": 1,
+    "label": "start of round",
+    "learner_message": 1,
+    "wait_s": 65.0,
+    "turn_s": 229.0,
+    "examiner_messages": 1,
+    "examiner_chars": 3654,
+    "learner_s": null
+   },
+   {
+    "step": 2,
+    "label": "after the answers to the questions",
+    "learner_message": 3,
+    "wait_s": 52.4,
+    "turn_s": 131.8,
+    "examiner_messages": 1,
+    "examiner_chars": 7360,
+    "learner_s": 15.7
+   },
+   {
+    "step": 3,
+    "label": "after the Stage 1 answer",
+    "learner_message": 5,
+    "wait_s": 30.5,
+    "turn_s": 67.5,
+    "examiner_messages": 1,
+    "examiner_chars": 2122,
+    "learner_s": 30.8
+   },
+   {
+    "step": 4,
+    "label": "after the final answers",
+    "learner_message": 7,
+    "wait_s": 96.1,
+    "turn_s": 132.4,
+    "examiner_messages": 2,
+    "examiner_chars": 9472,
+    "learner_s": 29.9
+   },
+   {
+    "step": 5,
+    "label": "after learner message 10",
+    "learner_message": 10,
+    "wait_s": 45.2,
+    "turn_s": 129.4,
+    "examiner_messages": 1,
+    "examiner_chars": 2244,
+    "learner_s": 17.6
+   },
+   {
+    "step": 6,
+    "label": "after the reflection",
+    "learner_message": 12,
+    "wait_s": 90.0,
+    "turn_s": 170.4,
+    "examiner_messages": 1,
+    "examiner_chars": 850,
+    "learner_s": 11.8
+   }
+  ],
+  "total_wait_s": 379.2,
+  "longest_wait_s": 96.1,
+  "elapsed_s": 885.8
+ },
+ "quality": {
+  "scorer_model": "claude-fable-5-2",
+  "items": [
+   {
+    "id": "Q1",
+    "type": "mcq",
+    "topic": "CARD-02",
+    "answered": true,
+    "score": 5,
+    "note": "Matches ESC 2021 diuretic algorithm: 1x oral dose given, urine Na 38 and ~70 mL/h, warm and wet, so doubling the loop dose is the only best answer; distractors each right elsewhere."
+   },
+   {
+    "id": "Q2",
+    "type": "mcq",
+    "topic": "CARD-05",
+    "answered": true,
+    "score": 5,
+    "note": "Persistent community S. aureus bacteraemia, new murmur, negative TTE: TOE is ESC 2023 class I and the single best answer; realistic stem, cloxacillin fits region."
+   },
+   {
+    "id": "Q3",
+    "type": "mcq",
+    "topic": "CARD-01",
+    "answered": true,
+    "score": 4,
+    "note": "Key D fits ESC 2023 high-risk tier and stem excludes very-high-risk; but <24 h is only class IIa now, so inpatient angiography by 72 h is not indefensible in practice."
+   },
+   {
+    "id": "Case",
+    "type": "case",
+    "topic": "CARD-03",
+    "answered": true,
+    "score": 5,
+    "note": "Coherent, realistic new AF with HF; echo, flat troponin, TSH fit; key right on CHA2DS2-VA 4, apixaban 5 mg, no non-DHP CCB at EF<=40%, 24-h cardioversion rule. JVP 4 cm a touch low."
+   }
+  ],
+  "feedback": [
+   {
+    "id": "questions",
+    "score": 5,
+    "note": "All three explanations accurate and correctly attributed to ESC 2021/2023; class IIa downgrade and TIMACS/VERDICT right; honest about which sources were not re-opened."
+   },
+   {
+    "id": "final",
+    "score": 4,
+    "note": "Claims accurate (RACE II, EAST-AFNET 4, 24-h rule, dose rule; checked EHRA). Flaws: EHRA interval misquoted as six-monthly (it is 4), half mark harsh, EAST CI is 96% not 95%."
+   },
+   {
+    "id": "dispute",
+    "score": 5,
+    "note": "Re-read EHRA 2021 (I checked: 4-monthly at 75+, CrCl/10 confirmed), conceded ungraded status, corrected its own misquote, restored the mark and kept the teaching point."
+   }
+  ],
+  "item_mean": 4.75,
+  "feedback_mean": 4.67,
+  "score": 4,
+  "note": "Accurate, current ESC-based round well pitched for an internist; only blemishes a misquoted EHRA interval and a harsh half mark, both corrected on challenge, and the IIa softness of Q3.",
+  "concerns": [
+   "Final feedback as sent says EHRA advises about six-monthly renal checks at 75+; EHRA 2021 says 4-monthly (corrected only in the dispute reply).",
+   "round.json still carries the withdrawn minor knowledge error and a key-learning line saying 'every 4-6 months', with grade_changes empty; check the dispute outcome reached the record.",
+   "Q3: with the <24 h target now class IIa in ESC 2023, option B (within 72 h) is partly defensible; consider rewording B or the question to 'guideline-recommended target'.",
+   "Final feedback quotes the EAST-AFNET 4 interval as 95% CI; the trial reported a 96% CI (0.66-0.94). From memory, not re-checked online.",
+   "Final feedback gave mastery 5/5 alongside a half mark and a coded knowledge error for the same item; internally inconsistent before the dispute.",
+   "Case exam gives JVP 4 cm above the sternal angle, which is borderline rather than clearly raised; fits 'mild' failure but a higher value would be cleaner."
+  ],
+  "problems": []
+ },
+ "note": null
+}

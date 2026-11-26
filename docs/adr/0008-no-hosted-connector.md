@@ -1,0 +1,3 @@
+# No hosted connector; sharing is a public plugin
+
+A hosted MCP connector would let the skill run in any MCP client and could enforce blinding on a server, but it means hosting, sign-in and holding other physicians' performance data (GDPR, a privacy policy), against the principle that each learner owns their store (ADR 0002) and that the project runs on no paid infrastructure (ADR 0005). The owner ruled it out for good (2026-11-26). The skill is shared as a public Claude plugin marketplace instead; the engine's store seam (folder and artifact-page adapters) stays inside the learner's own environment.

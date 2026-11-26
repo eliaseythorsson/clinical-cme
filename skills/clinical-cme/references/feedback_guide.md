@@ -11,17 +11,23 @@ Feedback comes in two parts — the short questions' as soon as they are answere
 after its last answer — and each rests on evidence checked for that part
 (`references/evidence_check.md`). Where a checker has done the check — when the round was
 prepared, or while the learner was answering — its file (`evidence_questions.md`,
-`evidence_case.md`) is ready: read it and grade. Its `Checked:` line gives the date; a
-prepared round can be up to 30 days old, so if you know or suspect that guidance on a point
-has changed since then, search that point once the answers are in. Otherwise that part's answers are now committed, so you may check for yourself.
+`evidence_case.md`) is ready: read it and grade, **without running the verification list
+again** — the checker has already retried what it could not reach (`evidence_check.md` §3).
+Its `Checked:` line gives the date and how many claims are not verified; a prepared round can
+be up to 30 days old, so if you know or suspect that guidance on a point has changed since
+then, search that point once the answers are in. Only where a part has **no evidence file**
+do you check for yourself, now that its answers are committed:
 
 - Check every specific claim you are about to make that could have changed or that you
   are not certain of: guideline recommendations and their class/level, thresholds,
   doses, trial results, approval status. Use web search and fetch the primary source
-  (society guideline, journal article, PubMed record) rather than a secondary summary.
-- Grade against current guidance. If guidance changed recently, or regional guidelines
-  disagree (e.g. ESC vs ACC/AHA, NICE vs US), say so and grade the learner fairly against
-  the guidance appropriate to their region.
+  (society guideline, journal article, PubMed record) rather than a secondary summary; a
+  page that was not reached has other routes (`evidence_check.md` §3).
+- Grade against current guidance for the learner's region and specialty, and say so where
+  guidance changed recently or regions disagree (e.g. ESC vs ACC/AHA, NICE vs US): rule 2
+  of `standards.md`. Units and drug names as in rule 3. How much background, how deep the
+  evidence and its limits, and (for an exam aim) which sources the grading follows: rule 4,
+  from the learner's paragraphs (`pitch` in the `start` output).
 - Never invent a trial name, effect size, recommendation number, page, table, DOI or
   PubMed ID. If you cannot verify a detail, state it qualitatively ("reduced mortality in
   the pivotal trial") or omit it. A precise-looking wrong number is worse than none.
@@ -29,27 +35,34 @@ has changed since then, search that point once the answers are in. Otherwise tha
   matters.
 - Keep searches efficient: typically 2–6 per part. They are listed in advance in the sealed
   files ("verification list": the questions' in `sealed_questions.md`, the case's in
-  `sealed_case.md`): run a part's list in one parallel batch, then fetch the primary sources
-  you will cite, also in one batch. Never run them yourself before that part's answers are in.
-- After a helper's check, search again only for what the learner's answers raise that the file
+  `sealed_case.md`). With no evidence file for a part, run its list in one parallel batch,
+  then fetch the primary sources you will cite, also in one batch. Never run them yourself
+  before that part's answers are in.
+- After a helper's check, search only for what the learner's answers raise that the file
   does not cover (a stated uncertainty, an unexpected but defensible answer). A claim the file
-  marks "not verified" is stated qualitatively or left out. If the file says a key is
-  contradicted by current guidance, correct the key before grading and grade against the
-  guidance.
+  marks "not verified" is stated qualitatively or left out; search it yourself only if the
+  learner's answer turns on it. If the file says a key is contradicted by current guidance,
+  correct the key before grading and grade against the guidance.
 
 ## 2. Structure of the feedback
 
-Two messages, each sent the moment its part is graded:
+Two messages, each sent the moment its part is graded. **Every feedback message starts with
+the glossary line** of rule 5.3: one line, "Abbreviations: …", above the reveal, listing the
+abbreviations that message uses, those on the rule's list excepted. Each message's line is
+complete on its own: an abbreviation explained in the first message is explained again in the
+second if it is used there. The line is part of the message as sent, so it is logged with it
+(§8). A message that uses no abbreviation has no line.
 
-- **Part 1, after the short questions are answered**: A (for these items only), B, B2. It
-  closes with one line on the score so far and "The case follows." No gap summary, no reading
-  list, no reflection prompt, and nothing about the case (`case_design.md` §1). The case is
-  sent straight after it.
-- **Part 2, after the case's last answer**: A (for the case), C, D for the **whole round**
-  (short questions included), E, F.
+- **Part 1, after the short questions are answered**: glossary line, A (for these items
+  only), B, B2. It closes with one line on the score so far and "The case follows." No gap
+  summary, no reading list, no reflection prompt, and nothing about the case (rule 1.5). The
+  case is sent straight after it.
+- **Part 2, after the case's last answer**: glossary line, A (for the case), C, D for the
+  **whole round** (short questions included), E, E2, F.
 
-A round without a case has one message: A, B, B2, D, E, F. With `case_first`, one message at
-the end: A, C, B, B2, D, E, F. Leave out any section the round did not have.
+A round without a case has one message: A, B, B2, D, E, E2, F. With `case_first`, one message
+at the end: A, C, B, B2, D, E, E2, F. Either starts with its glossary line. Leave out any
+section the round did not have.
 
 ### A. Reveal
 For each item of the part: the topic (blueprint ID and label), and why it was chosen in plain words,
@@ -98,6 +111,10 @@ an answer only for not matching the wording of the key.
    ✗ missed, with a short note on what was right or what was missing. Grade the Stage 1
    reasoning (differential, discriminating tests, predicted results, interim
    management) separately from Stage 2 (final diagnosis, management, disposition).
+   A test the learner did not order is graded and taught as rule 10 of `standards.md`
+   says: say it was not ordered and why it should have been, give the result marked as
+   unseen, and what it would have changed. Write for a clinician (rule 11): no rule numbers
+   or names of the skill's own files and steps.
 3. **How the differential separates**: a compact table, typically 3–4 rows:
    diagnosis | features for | features against | test that separates | expected result.
    Include the incidental findings and say why they were noise.
@@ -107,7 +124,9 @@ an answer only for not matching the wording of the key.
 ### D. Gap summary
 - New gaps, written precisely enough to re-test: the decision point, the correct rule,
   and what the learner did instead.
-- Prior gaps re-tested: resolved, partly resolved or persisting.
+- Prior gaps re-tested: resolved, partly resolved or persisting. A gap counts as re-tested
+  only if an item asked about its decision point; that item carries `retests` in its key
+  header, and so in the round record, and only then can the gap close (`state_schema.md` §2, §4).
 - Transfer gaps: knowledge shown in one item but not applied in another.
 - Calibration notes: confident and wrong (a misconception, highest priority), correct
   but guessed (not yet mastered), unsure but correct (likely to be stronger than they
@@ -123,11 +142,59 @@ an answer only for not matching the wording of the key.
   erratum.
 
 ### E. Further reading (optional, short)
-At most two items, each with a reason it fits the gap and an estimated reading time,
+At most two items, each with a reason it fits the gap, an estimated reading time and its link,
 pointed at the specific part: "ESC 2023 endocarditis guideline, section 9 (indications
 for surgery) and its surgery table — about 8 minutes". Use verified sources (the learner's
 `resource_preferences`, e.g. free only, apply; flag paid sources). `templates/resource_library.md`
 lists dependable starting points by domain.
+
+The same pointers also go into `round.json` as `reading` (`state_schema.md` §2), one entry
+each: the topic it serves, the title, the link to the document, the section, the minutes and
+the reason. `save` writes them into the session document and the learner's page lists them
+under "Reading & listening", where they can be marked as done. No pointer → an empty list.
+
+### E2. Listening (when `listening.on` is true in the `start` output)
+One podcast episode per topic of the round, 15 to 90 minutes, as specific as possible to the
+gap the learner showed on that topic, straight after Further reading:
+
+> **Listening**
+> - **Atrial fibrillation** — <show>, "<episode title>" (52 min): when to start
+>   anticoagulation after surgery, the step you were unsure of.
+>   https://open.spotify.com/episode/<id>
+
+Each line: the topic, the show, the title, the length, one line on why it fits what the
+learner did, and the Spotify link on its own. How each pick is chosen, topic by topic:
+
+1. **Name the gap**: what the learner actually missed or was unsure of on the topic (for a
+   correct, sure answer: the point the item tested).
+2. **A candidate covers it** → give it, with no new search. The kit's `## Listening` section
+   (rule 8 of `standards.md`) holds up to three per topic, each with the failure point it
+   matches; the one that matches the learner's gap is the pick.
+3. **No candidate covers it** (an unforeseen gap, or a kit without candidates) → search for
+   an episode on that specific gap: allowed now, since the part's answers are in (rule 1.3;
+   the short questions' topics from turn 2 on, behind the scenes; the case's only after its
+   last answer). One batch of searches for all such topics and one batch of fetches, by the
+   routes of `evidence_check.md` §6, and the same verification: only an episode whose own
+   Spotify page was reached, with the title and the length read from it. Never build or
+   guess a link.
+4. **Nothing better found** → the best of the candidates. **No candidate either** → say so
+   plainly in the section ("No suitable episode found for <topic>"), and give no link.
+
+The learner's sources always hold (`listening.trusted` and `listening.avoid` in the `start`
+output): prefer a trusted show where it fits the gap as well, never pick an avoided one.
+Spotify has no link that saves an episode to the library: the link opens the episode in the
+app, and one tap there saves it; promise nothing more (say so once, the first time the
+section appears).
+
+The picks also go into `round.json` as `listening` (`state_schema.md` §2), one entry per
+topic that got one, so that `save` writes them into the session document (the page lists
+them with the reading pointers); an empty list when no topic got one.
+
+`listening.ask_sources` true → the learner has not been asked for their shows yet: end the
+section with one line, once: "Tell me any podcasts you trust, or want me to avoid, and I'll
+keep to them; say 'listening off' if you'd rather not have this section." What they answer
+goes into the reflection JSON as `podcast_sources` (`state_schema.md` §3); no answer needs
+nothing, and it is not asked again.
 
 ### F. Reflection prompt (ends the final message)
 See §6. The round is recorded right after this message (reflection pending) and updated when
@@ -199,14 +266,15 @@ Use this wording, adapted to the round's topics:
 How the reply is used (`reflect` command; see `state_schema.md` §3–4):
 - Comfort per topic is compared with the graded mastery. Feeling secure while scoring
   low (comfort ≥ mastery + 2) marks the topic **overconfident**: it is not advanced and
-  returns within three days. Scoring well while feeling unsure marks it
+  returns after three days. Scoring well while feeling unsure marks it
   **underconfident**: it advances, but returns sooner to consolidate.
 - Shaky areas named in the free text become open gaps with source `self`. If they belong
   to a topic that was not tested, that topic is created or pulled forward to within a
   week. Map each one to a blueprint ID; if none fits, create a new ID in the blueprint's
   style and tell the learner.
 - Comfort ratings feed the domain self-ratings that weight how often new topics from each
-  domain are sampled.
+  domain are sampled. A high rating lowers a domain's share only as far as the answers in
+  that domain bear it out (`state_schema.md` §4).
 
 After the reply, say in one line how it changed the plan, without naming future dates
 per topic, for example: "Noted — the anticoagulation reversal question you raised is now
@@ -226,37 +294,50 @@ Use `both_defensible` or `upheld` as appropriate. If the dispute changes the cod
 the final position. The review reports dispute outcomes honestly; a learner who is often
 right is telling you something about the grading.
 
+### 7.1 A score the learner sets, a gap the learner closes
+
+"Record it as 4" or "close that gap" is not a dispute: the learner is not arguing the
+evidence, they are deciding what their record says. It is their record, so do it, without
+arguing and without changing your grading. Never write it as a dispute outcome (your
+grading did not change), and never edit the ledger by hand.
+
+- **Before the close**, in the reflection JSON (`state_schema.md` §3):
+  `"learner_scores": [{"item": "Q2", "type": "mcq", "topic": "CARD-03", "score": 4, "note": "the learner's words"}]`
+  and `"learner_closed_gaps": [{"gap": "G0007", "note": "…"}]` (a gap by its id, or
+  `{"topic": "CARD-03"}` for one this round opened).
+- **After the close** (also in a later conversation, after reading the store with the
+  session's document and `open`): `python3 cme.py override --work <work> --scores '[…]'
+  --close-gaps '[…]'` with the same entries (`--session <id>` for a round other than the
+  last), then publish its `files`.
+
+What the engine does with it: the item keeps both scores, `graded` (yours) and `mastery`
+(the learner's, marked `set_by: learner`); the topic is scheduled with the learner's score
+and the round's score follows it; the change is a `grade_changes` entry with outcome
+`learner_set`. A gap closed this way moves to `resolved` marked `closed_by: learner` and
+gets **no retest**; the topic still comes back when its score says so. The session document
+gets a "Set by the learner" section naming both scores and who closed the gap, so the log
+does not depend on what you write in part B. A learner-set score does not close the gap on
+that point: it stays open unless the learner asks for that too (say so in one line). The
+review counts these apart from disputes.
+
+If the learner gives a reason that is about the evidence ("the guideline says otherwise"),
+it is a dispute: re-check first, and use this path only if they still want their own score
+after your grading stands.
+
 ## 8. The log needs the feedback verbatim
 
 Part A of the log copies both feedback messages exactly as sent (`session_log.md` §2): write
-part 1 to `feedback_questions.md` and part 2 to `feedback.md` right after sending each, while
-the learner reads. Keep tables and headings in plain Markdown so the copy renders well on the
+part 1 to `feedback_questions.md` and part 2 to `feedback.md` in the work folder right after
+sending each, while the learner reads; `cme.py save` finds them there. Keep tables and headings in plain Markdown so the copy renders well on the
 page.
 
 ## 9. Feedback kits: notes made while the learner answers
 
 Feedback is written when the answers are in, but most of its substance does not depend on
 them. That substance is put into a kit when the items are written, by whoever writes them
-(`author.md`), so that grading is quick and the feedback can be written straight away. A kit
-is notes for the grader, not prose to paste: terse, sealed with the items, never shown.
-
-`kit_questions.md`, per item:
-
-- the reveal line (topic, blueprint ID, why it was chosen, any prior gap it re-tests);
-- MCQ: the decisive datum in the stem; one line per distractor (wrong here because …, right
-  when …); focused: the decisive point and the tempting wrong turn;
-- the briefing in outline: the rule, the why in a sentence, the evidence to cite (as on the
-  verification list; figures to be confirmed), how it applies to this patient;
-- the two-line version for a correct, sure answer (§4).
-
-`kit_case.md`:
-
-- the reveal line, and the drill if there is one;
-- the model answer in one paragraph;
-- the rubric for each stage, as a checklist to mark ✓ ◐ ✗;
-- the differential table (§2 C.3), complete, with the incidental findings and why they are noise;
-- a briefing outline for each rubric element a learner could plausibly miss;
-- one to three pearls or pitfalls; up to two reading pointers (§2 E).
+(`author.md`), so that grading is quick and the feedback can be written straight away. What
+`kit_questions.md` and `kit_case.md` hold is rule 8 of `standards.md`; their `## Listening`
+sections hold the candidate episodes for §2 E2.
 
 At grading, correct the kit's figures and sources from the evidence check before using them,
 mark the rubric against what the learner wrote, scale each briefing to the answer (§4) and

@@ -6,7 +6,7 @@ in the mix the learner chooses. Rounds are graded against current evidence, foll
 reflection that feeds spaced repetition, logged verbatim, and periodically analysed for
 reasoning patterns.
 
-Current version: **4.3.1**. Full skill documentation: [`skills/clinical-cme/README.md`](skills/clinical-cme/README.md).
+Current version: **5.0.0**. Full skill documentation: [`skills/clinical-cme/README.md`](skills/clinical-cme/README.md).
 
 ## Install
 
@@ -22,7 +22,9 @@ The skill holds no personal data; each learner's first run creates their own pri
 ## Repo layout
 
 ```
-skills/clinical-cme/   the skill (SKILL.md, scripts/, references/, templates/, legacy/)
+skills/clinical-cme/   the skill (SKILL.md, scripts/, references/, templates/)
+tests/                 pytest suite for cme.py and the simulation harness
+sim/                   simulation harness: examiner agent + learner persona in Claude Code (sim/README.md)
 docs/agents/           issue tracker, triage labels and domain-doc config for agent workflows
 docs/adr/              architecture decision records
 CLAUDE.md              working notes for agents in this repo

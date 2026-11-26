@@ -1,0 +1,678 @@
+{
+ "ledger_after_record": {
+  "agg": {
+   "art": {
+    "DDX": [
+     1.0,
+     1
+    ],
+    "DG": [
+     1.0,
+     1
+    ],
+    "META": [
+     1.0,
+     1
+    ],
+    "MGMT": [
+     1.0,
+     1
+    ],
+    "PR": [
+     1.0,
+     1
+    ],
+    "TEST": [
+     1.0,
+     1
+    ]
+   },
+   "art_focused": {
+    "DDX": [
+     0.0,
+     0
+    ],
+    "DG": [
+     0.0,
+     0
+    ],
+    "META": [
+     0.0,
+     0
+    ],
+    "MGMT": [
+     0.0,
+     0
+    ],
+    "PR": [
+     0.0,
+     0
+    ],
+    "TEST": [
+     0.0,
+     0
+    ]
+   },
+   "brier": [
+    0.22000000000000003,
+    4
+   ],
+   "calibration": {
+    "guess": [
+     0,
+     0.0
+    ],
+    "sure": [
+     2,
+     2.0
+    ],
+    "unsure": [
+     2,
+     1.8
+    ]
+   },
+   "disputes": {
+    "both_defensible": 0,
+    "learner_right": 0,
+    "upheld": 0
+   },
+   "drills": {
+    "avoided": 0,
+    "fell_for": 0,
+    "partial": 0
+   },
+   "errors": {
+    "art_domain": {},
+    "bias": {},
+    "category": {},
+    "knowledge_type": {},
+    "severity": {}
+   },
+   "focused": 0,
+   "focused_mastery_sum": 0.0,
+   "idea": [
+    10,
+    1,
+    1
+   ],
+   "items": 4,
+   "mcq_correct": 3,
+   "mcqs": 3,
+   "minutes": 40,
+   "reading_minutes": 0,
+   "reflection_skipped": 0,
+   "score_n": 1,
+   "score_sum": 4.75,
+   "sessions": 1
+  },
+  "block": {
+   "chosen": "auto",
+   "last": "2026-11-20",
+   "length": 12,
+   "reason": "Cardiology: nothing tested yet, not yet a theme",
+   "round": 1,
+   "started": "2026-11-20",
+   "theme": "CARD"
+  },
+  "blocks": [],
+  "domain_self_ratings": {},
+  "gaps": [],
+  "gen": 2,
+  "next_id": "S0002",
+  "resolved": [],
+  "session": {
+   "block": {
+    "length": 12,
+    "round": 1,
+    "theme": "CARD"
+   },
+   "case": {
+    "diagnosis": "Example diagnosis: Venous thromboembolism — PE (see also PULM/HEME)",
+    "patient": "Example patient 1",
+    "presentation": "Example presentation 1",
+    "setting": "ward",
+    "topic": "CARD-08"
+   },
+   "date": "2026-11-20",
+   "drill": null,
+   "ended_at": null,
+   "focused": 0,
+   "format": "unfolding",
+   "grade_changes": [],
+   "id": "S0001",
+   "items": [
+    {
+     "coding": {
+      "art": {
+       "DDX": 2,
+       "DG": 2,
+       "META": 1,
+       "MGMT": 2,
+       "PR": 2,
+       "TEST": 2
+      },
+      "errors": [],
+      "idea": {
+       "A": 2,
+       "D": 2,
+       "E": 2,
+       "I": 4
+      }
+     },
+     "confidence": "unsure",
+     "mastery": 4,
+     "topic": "CARD-08",
+     "type": "case"
+    },
+    {
+     "coding": {
+      "errors": []
+     },
+     "confidence": "sure",
+     "correct": true,
+     "mastery": 5,
+     "stem": "Example MCQ stem 1.1",
+     "topic": "CARD-01",
+     "type": "mcq"
+    },
+    {
+     "coding": {
+      "errors": []
+     },
+     "confidence": "unsure",
+     "correct": true,
+     "mastery": 5,
+     "stem": "Example MCQ stem 1.2",
+     "topic": "CARD-02",
+     "type": "mcq"
+    },
+    {
+     "coding": {
+      "errors": []
+     },
+     "confidence": "sure",
+     "correct": true,
+     "mastery": 5,
+     "stem": "Example MCQ stem 1.3",
+     "topic": "CARD-06",
+     "type": "mcq"
+    }
+   ],
+   "key_learning": [],
+   "mcq_correct": 3,
+   "mcqs": 3,
+   "minutes": 40,
+   "reading_minutes": null,
+   "reflection": null,
+   "score": 4.75,
+   "self_comfort": {},
+   "self_performance": null,
+   "started_at": null,
+   "steps_before": {
+    "CARD-01": 0,
+    "CARD-02": 0,
+    "CARD-06": 0,
+    "CARD-08": 0
+   },
+   "summary": "Synthetic round 1 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "title": "Example round S0001",
+   "topics": [
+    "CARD-08",
+    "CARD-01",
+    "CARD-02",
+    "CARD-06"
+   ],
+   "why": {
+    "CARD-01": "new",
+    "CARD-02": "new",
+    "CARD-06": "new",
+    "CARD-08": "new"
+   }
+  },
+  "session_ids": [
+   "S0001"
+  ],
+  "unreflected": "S0001",
+  "updated": "2026-11-20"
+ },
+ "ledger_after_reflect": {
+  "agg": {
+   "art": {
+    "DDX": [
+     1.0,
+     1
+    ],
+    "DG": [
+     1.0,
+     1
+    ],
+    "META": [
+     1.0,
+     1
+    ],
+    "MGMT": [
+     1.0,
+     1
+    ],
+    "PR": [
+     1.0,
+     1
+    ],
+    "TEST": [
+     1.0,
+     1
+    ]
+   },
+   "art_focused": {
+    "DDX": [
+     0.0,
+     0
+    ],
+    "DG": [
+     0.0,
+     0
+    ],
+    "META": [
+     0.0,
+     0
+    ],
+    "MGMT": [
+     0.0,
+     0
+    ],
+    "PR": [
+     0.0,
+     0
+    ],
+    "TEST": [
+     0.0,
+     0
+    ]
+   },
+   "brier": [
+    0.22000000000000003,
+    4
+   ],
+   "calibration": {
+    "guess": [
+     0,
+     0.0
+    ],
+    "sure": [
+     2,
+     2.0
+    ],
+    "unsure": [
+     2,
+     1.8
+    ]
+   },
+   "disputes": {
+    "both_defensible": 0,
+    "learner_right": 0,
+    "upheld": 0
+   },
+   "drills": {
+    "avoided": 0,
+    "fell_for": 0,
+    "partial": 0
+   },
+   "errors": {
+    "art_domain": {},
+    "bias": {},
+    "category": {},
+    "knowledge_type": {},
+    "severity": {}
+   },
+   "focused": 0,
+   "focused_mastery_sum": 0.0,
+   "idea": [
+    10,
+    1,
+    1
+   ],
+   "items": 4,
+   "mcq_correct": 3,
+   "mcqs": 3,
+   "minutes": 40,
+   "reading_minutes": 0,
+   "reflection_skipped": 0,
+   "score_n": 1,
+   "score_sum": 4.75,
+   "sessions": 1
+  },
+  "block": {
+   "chosen": "auto",
+   "last": "2026-11-20",
+   "length": 12,
+   "reason": "Cardiology: nothing tested yet, not yet a theme",
+   "round": 1,
+   "started": "2026-11-20",
+   "theme": "CARD"
+  },
+  "blocks": [],
+  "domain_self_ratings": {
+   "CARD": 3.9
+  },
+  "gaps": [],
+  "gen": 3,
+  "next_id": "S0002",
+  "resolved": [],
+  "session": {
+   "block": {
+    "length": 12,
+    "round": 1,
+    "theme": "CARD"
+   },
+   "case": {
+    "diagnosis": "Example diagnosis: Venous thromboembolism — PE (see also PULM/HEME)",
+    "patient": "Example patient 1",
+    "presentation": "Example presentation 1",
+    "setting": "ward",
+    "topic": "CARD-08"
+   },
+   "date": "2026-11-20",
+   "drill": null,
+   "ended_at": null,
+   "focused": 0,
+   "format": "unfolding",
+   "grade_changes": [],
+   "id": "S0001",
+   "items": [
+    {
+     "coding": {
+      "art": {
+       "DDX": 2,
+       "DG": 2,
+       "META": 1,
+       "MGMT": 2,
+       "PR": 2,
+       "TEST": 2
+      },
+      "errors": [],
+      "idea": {
+       "A": 2,
+       "D": 2,
+       "E": 2,
+       "I": 4
+      }
+     },
+     "confidence": "unsure",
+     "mastery": 4,
+     "topic": "CARD-08",
+     "type": "case"
+    },
+    {
+     "coding": {
+      "errors": []
+     },
+     "confidence": "sure",
+     "correct": true,
+     "mastery": 5,
+     "stem": "Example MCQ stem 1.1",
+     "topic": "CARD-01",
+     "type": "mcq"
+    },
+    {
+     "coding": {
+      "errors": []
+     },
+     "confidence": "unsure",
+     "correct": true,
+     "mastery": 5,
+     "stem": "Example MCQ stem 1.2",
+     "topic": "CARD-02",
+     "type": "mcq"
+    },
+    {
+     "coding": {
+      "errors": []
+     },
+     "confidence": "sure",
+     "correct": true,
+     "mastery": 5,
+     "stem": "Example MCQ stem 1.3",
+     "topic": "CARD-06",
+     "type": "mcq"
+    }
+   ],
+   "key_learning": [],
+   "mcq_correct": 3,
+   "mcqs": 3,
+   "minutes": 40,
+   "reading_minutes": null,
+   "reflection": {
+    "gaps": "Example: what felt shaky in round 1",
+    "skipped": false,
+    "solid": "Example: what felt solid in round 1"
+   },
+   "score": 4.75,
+   "self_comfort": {
+    "CARD-01": 4,
+    "CARD-02": 2,
+    "CARD-06": 5,
+    "CARD-08": 4
+   },
+   "self_performance": 3,
+   "started_at": null,
+   "steps_before": {
+    "CARD-01": 0,
+    "CARD-02": 0,
+    "CARD-06": 0,
+    "CARD-08": 0
+   },
+   "summary": "Synthetic round 1 of an example ledger.",
+   "tags": [
+    "example"
+   ],
+   "title": "Example round S0001",
+   "topics": [
+    "CARD-08",
+    "CARD-01",
+    "CARD-02",
+    "CARD-06"
+   ],
+   "why": {
+    "CARD-01": "new",
+    "CARD-02": "new",
+    "CARD-06": "new",
+    "CARD-08": "new"
+   }
+  },
+  "session_ids": [
+   "S0001"
+  ],
+  "unreflected": null,
+  "updated": "2026-11-21"
+ },
+ "record": {
+  "errata_ids": [],
+  "errata_to_log": [],
+  "gen": 2,
+  "next_id": "S0002",
+  "open_gaps": 0,
+  "reflection_pending": true,
+  "score": 4.75,
+  "session_id": "S0001",
+  "topics": {
+   "CARD-01": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "CARD-02": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "CARD-06": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "CARD-08": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 4.0,
+    "misconception": false,
+    "step": 1
+   }
+  },
+  "warnings": []
+ },
+ "reflect": {
+  "errata_ids": [],
+  "errata_to_log": [],
+  "gen": 3,
+  "open_gaps": 0,
+  "session_id": "S0001",
+  "topics": {
+   "CARD-01": {
+    "calibration": "aligned",
+    "comfort": 4,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "CARD-02": {
+    "calibration": "underconfident",
+    "comfort": 2,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "CARD-06": {
+    "calibration": "aligned",
+    "comfort": 5,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "CARD-08": {
+    "calibration": "aligned",
+    "comfort": 4,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 4.0,
+    "misconception": false,
+    "step": 1
+   }
+  },
+  "warnings": []
+ },
+ "reflection": {
+  "gaps": "Example: what felt shaky in round 1",
+  "performance": 3,
+  "solid": "Example: what felt solid in round 1",
+  "topic_comfort": {
+   "CARD-01": 4,
+   "CARD-02": 2,
+   "CARD-06": 5,
+   "CARD-08": 4
+  }
+ },
+ "round": {
+  "case": {
+   "diagnosis": "Example diagnosis: Venous thromboembolism — PE (see also PULM/HEME)",
+   "patient": "Example patient 1",
+   "presentation": "Example presentation 1",
+   "setting": "ward"
+  },
+  "case_format": "unfolding",
+  "gaps": [],
+  "items": [
+   {
+    "coding": {
+     "art": {
+      "DDX": 2,
+      "DG": 2,
+      "META": 1,
+      "MGMT": 2,
+      "PR": 2,
+      "TEST": 2
+     },
+     "errors": [],
+     "idea": {
+      "A": 2,
+      "D": 2,
+      "E": 2,
+      "I": 4
+     }
+    },
+    "confidence": "unsure",
+    "mastery": 4,
+    "topic": "CARD-08",
+    "type": "case"
+   },
+   {
+    "coding": {
+     "errors": []
+    },
+    "confidence": "sure",
+    "correct": true,
+    "mastery": 5,
+    "stem_summary": "Example MCQ stem 1.1",
+    "topic": "CARD-01",
+    "type": "mcq"
+   },
+   {
+    "coding": {
+     "errors": []
+    },
+    "confidence": "unsure",
+    "correct": true,
+    "mastery": 5,
+    "stem_summary": "Example MCQ stem 1.2",
+    "topic": "CARD-02",
+    "type": "mcq"
+   },
+   {
+    "coding": {
+     "errors": []
+    },
+    "confidence": "sure",
+    "correct": true,
+    "mastery": 5,
+    "stem_summary": "Example MCQ stem 1.3",
+    "topic": "CARD-06",
+    "type": "mcq"
+   }
+  ],
+  "log_id": "S0001",
+  "minutes": 40,
+  "selection_reasons": {
+   "CARD-01": "new",
+   "CARD-02": "new",
+   "CARD-06": "new",
+   "CARD-08": "new"
+  },
+  "summary": "Synthetic round 1 of an example ledger.",
+  "tags": [
+   "example"
+  ],
+  "title": "Example round S0001"
+ }
+}

@@ -1,0 +1,245 @@
+{
+ "after_record": {
+  "PULM-04": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     3.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
+   "last": "2026-11-20",
+   "mastery": 3.0,
+   "step": 0
+  },
+  "PULM-06": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     2.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Pulmonary embolism (management)",
+   "last": "2026-11-20",
+   "mastery": 2.0,
+   "step": 0
+  },
+  "PULM-07": {
+   "attempts": 4,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "PULM",
+   "due": "2026-11-27",
+   "history": [
+    [
+     "2026-09-01",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-09-03",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-09-07",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-11-20",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Sepsis & septic shock",
+   "last": "2026-11-20",
+   "mastery": 5.0,
+   "step": 2
+  },
+  "RENAL-06": {
+   "attempts": 2,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "RENAL",
+   "due": "2026-11-27",
+   "history": [
+    [
+     "2026-09-01",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-11-20",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "CKD inpatient management, indications for dialysis",
+   "last": "2026-11-20",
+   "mastery": 5.0,
+   "step": 2
+  }
+ },
+ "after_reflect": {
+  "PULM-04": {
+   "attempts": 1,
+   "calibration": "overconfident",
+   "comfort": 5,
+   "domain": "PULM",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     3.0,
+     5,
+     "overconfident"
+    ]
+   ],
+   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
+   "last": "2026-11-20",
+   "mastery": 3.0,
+   "step": 0
+  },
+  "PULM-06": {
+   "attempts": 1,
+   "calibration": "aligned",
+   "comfort": 2,
+   "domain": "PULM",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-11-20",
+     2.0,
+     2,
+     "aligned"
+    ]
+   ],
+   "label": "Pulmonary embolism (management)",
+   "last": "2026-11-20",
+   "mastery": 2.0,
+   "step": 0
+  },
+  "PULM-07": {
+   "attempts": 4,
+   "calibration": "underconfident",
+   "comfort": 2,
+   "domain": "PULM",
+   "due": "2026-11-24",
+   "history": [
+    [
+     "2026-09-01",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-09-03",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-09-07",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-11-20",
+     5.0,
+     2,
+     "underconfident"
+    ]
+   ],
+   "label": "Sepsis & septic shock",
+   "last": "2026-11-20",
+   "mastery": 5.0,
+   "step": 2
+  },
+  "RENAL-06": {
+   "attempts": 2,
+   "calibration": "aligned",
+   "comfort": 5,
+   "domain": "RENAL",
+   "due": "2026-11-27",
+   "history": [
+    [
+     "2026-09-01",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-11-20",
+     5.0,
+     5,
+     "aligned"
+    ]
+   ],
+   "label": "CKD inpatient management, indications for dialysis",
+   "last": "2026-11-20",
+   "mastery": 5.0,
+   "step": 2
+  }
+ },
+ "date": "2026-11-20",
+ "due_before": [
+  {
+   "due": "2026-09-04",
+   "topic": "RENAL-06"
+  },
+  {
+   "due": "2026-09-06",
+   "topic": "RENAL-02"
+  },
+  {
+   "due": "2026-09-06",
+   "topic": "RHEUM-04"
+  },
+  {
+   "due": "2026-09-09",
+   "topic": "PULM-07"
+  },
+  {
+   "due": "2026-09-11",
+   "topic": "GI-06"
+  },
+  {
+   "due": "2026-09-13",
+   "topic": "NEURO-05"
+  },
+  {
+   "due": "2026-09-14",
+   "topic": "ID-05"
+  },
+  {
+   "due": "2026-09-17",
+   "topic": "GEN-09"
+  },
+  {
+   "due": "2026-09-17",
+   "topic": "HEME-04"
+  }
+ ]
+}
