@@ -3,7 +3,7 @@ name: clinical-cme
 description: "Blinded clinical self-assessment rounds for physicians: MCQs, focused questions (a mini-case with one free-text decision) and a full case, in the mix the learner chooses, with evidence-based feedback, reflection-informed spaced repetition, a full session log and periodic deep analysis of reasoning. The learner's ledger lives in a store they own (their own private artifact page in the Claude app, otherwise a folder or files they keep), so rounds work across devices. Use for 'quiz me', a CME round, CME setup/review, or finding or exporting past CME cases."
 ---
 
-# Clinical CME — continuous clinical self-evaluation (version 4.3.1)
+# Clinical CME — continuous clinical self-evaluation (version 5.0.0)
 
 Each session is one short round, in the mix the learner chose (`config.mcqs`, `config.focused`,
 `config.case`): the **short questions** on unrelated topics (MCQs, and **focused questions**:

@@ -75,4 +75,4 @@ def test_testing_note_takes_the_session_and_the_store_check_from_the_work_folder
     assert [f["as"] for f in out["files"]][:2] == ["data/sessions/S0001.json", "data/testing/S0001.json"]
     assert out["files"][-1]["as"] == "data/state.json"
     note = work.read_json("publish", "data", "testing", "S0001.json")
-    assert note["feedback"] == fb and note["store_check"]["ok"] and note["skill_version"] == "4.3.1"
+    assert note["feedback"] == fb and note["store_check"]["ok"] and note["skill_version"] == "5.0.0"
