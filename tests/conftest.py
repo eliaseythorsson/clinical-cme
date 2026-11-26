@@ -53,6 +53,11 @@ treat
 """
 
 
+# The mix these tests set up with (three MCQs and the case, 20-minute sessions): the suite was
+# written around it. What a new learner gets by default is tested in tests/test_learner_settings.py.
+MIX = {"mcqs": 3, "focused": 0, "case": True, "session_minutes": 20}
+
+
 class Work:
     """A scratch work folder, with the learner's folder store read into store/ as a session has
     it, plus a helper that runs cme.py and parses its JSON output."""
@@ -117,11 +122,12 @@ class Work:
                 full = self.p(name)
                 shutil.rmtree(full) if os.path.isdir(full) else os.remove(full)
 
-    def init(self, today="2026-11-01", config=None, profile=None):
+    def init(self, today="2026-11-01", config=None, profile=None, mix=MIX):
         """Set up a new learner and publish the first ledger into the store copy; returns the
-        ledger's path there."""
+        ledger's path there. The round mix is MIX unless `config` says otherwise (`mix=None`:
+        the engine's own default for a new learner)."""
         self.run("--today", today, "init", "--work", self.path, "--blueprint", BLUEPRINT,
-                 "--config", json.dumps(config or {}), "--profile", json.dumps(profile or {}))
+                 "--config", json.dumps(dict(mix or {}, **(config or {}))), "--profile", json.dumps(profile or {}))
         self.publish()
         self.forget_job()
         return self.ledger

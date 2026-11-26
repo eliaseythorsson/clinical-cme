@@ -96,12 +96,14 @@ import zlib
 
 SCHEMA = 4
 SKILL_VERSION = "4.3.1"
-PAGE_VERSION = "5.1.0"   # templates/page.html carries <meta name="cme-page-version" content="5.1.0">
+PAGE_VERSION = "5.2.0"   # templates/page.html carries <meta name="cme-page-version" content="5.2.0">
 
 DEFAULT_CONFIG = {
-    "session_minutes": 20,
-    "mcqs": 3,
-    "focused": 0,                        # focused questions per round (mini-case, one free-text question)
+    # The mix a new learner starts with: one focused question and the case, about 35 minutes
+    # (MINUTES_PER). MCQs are the learner's choice (onboarding.md §2).
+    "session_minutes": 35,
+    "mcqs": 0,
+    "focused": 1,                        # focused questions per round (mini-case, one free-text question)
     "case": True,
     "round_set_at": None,                # when the round mix (mcqs/focused/case) was last set; see apply_prefs
     "case_format": "unfolding",          # unfolding | discriminate | alternate
@@ -123,18 +125,40 @@ DEFAULT_CONFIG = {
     "reminders": False,
     "resource_preferences": {"free_only": False, "formats": ["guidelines", "review articles"]},
 }
+# A ledger written before the mix was a setting of its own has no `mcqs`, `focused` or `case`: it
+# keeps the mix every round had then, whatever a new learner's default becomes.
+LEGACY_MIX = {"mcqs": 3, "focused": 0, "case": True}
 DEFAULT_PROFILE = {
-    "display_name": None, "role": None, "specialty": "Internal/hospital medicine", "subspecialty": None,
+    "display_name": None, "specialty": "Internal/hospital medicine", "subspecialty": None,
+    # Where you are / where you're aiming: the learner's own paragraphs, which the author pitches
+    # to (standards.md rule 4), and when each was last written (setup, a chat, or the page).
+    "journey": "", "journey_set_at": None, "aim": "", "aim_set_at": None,
+    # Display only, derived by the assistant from the paragraphs; None: not derived yet.
+    "journey_label": None, "aim_tags": None,
     "practice_setting": [], "goals": [], "strengths": [], "weaknesses": [],
     "domain_self_ratings": {}, "domain_emphasis": {}, "notes": "", "onboarded_at": None,
 }
+# The two open questions, word for word the same at setup (onboarding.md §2) and on the page.
+JOURNEY_QUESTION = ("In a few sentences, describe where you are in your training or career and how you'd "
+                    "rate your own knowledge and clinical skills: for example your stage, your specialty, "
+                    "how independently you work, and what kinds of decisions you're comfortable making.")
+AIM_QUESTION = ("What do you want these rounds to help you achieve? For example an exam you're preparing "
+                "for, the level you want to reach, where you want to be stronger, or anything else.")
+STAGE_LABELS = ("medical student", "intern", "resident", "fellow", "attending", "senior attending")
+AIM_TAGS = ("exam", "independent practice", "specialist-level decisions outside own specialty",
+            "keep up to date", "teach")
+PARAGRAPHS = (("journey", "journey_label", "where you are"), ("aim", "aim_tags", "where you're aiming"))
+PARAGRAPH_MAX = 4000     # characters kept of a paragraph
 # Settings that cannot change what a round contains (its plan, its items, its keys, its feedback
 # notes): changing only these keeps the round prepared ahead. Every other setting, including one
 # this list has never heard of, sets it aside. `round_set_at` is here because it only dates the
 # mix: the mix itself (mcqs, focused, case) is not. See state_schema.md §8.
 CONTENT_NEUTRAL_CONFIG = ("testing", "reminders", "prepare_task", "prepare_ahead", "helpers", "show_coding",
                           "target_sessions_per_week", "review_interval_days", "round_set_at")
-CONTENT_NEUTRAL_PROFILE = ("display_name", "onboarded_at")
+# The labels are display only (never used to write an item), and the `_set_at` stamps only date
+# the paragraphs: the paragraphs themselves are not here.
+CONTENT_NEUTRAL_PROFILE = ("display_name", "onboarded_at", "journey_label", "aim_tags",
+                           "journey_set_at", "aim_set_at")
 SELF_RATING_FACTOR = {1: 1.6, 2: 1.3, 3: 1.0, 4: 0.8, 5: 0.6}
 MIN_RETURN_DAYS = 3      # no tested topic and no open gap comes back sooner than this (ADR 0003)
 # Drill-down limit (ADR 0003): no topic is in more than this many rounds in a row, and a topic
@@ -344,33 +368,44 @@ def mix_text(counts):
 
 
 def apply_prefs(state, prefs, warnings=None):
-    """Apply the round mix the learner set on their page (database document cme/prefs).
+    """Apply what the learner set on their page (database document cme/prefs): the round mix
+    and the two paragraphs, where you are and where you're aiming.
 
     prefs = {"round": {"mcqs": 2, "focused": 1, "case": true}, "base": <config.round_set_at the
-    page saw>, "updated": "<ISO time of the change>"}. The learner's latest explicit choice wins:
+    page saw>, "updated": "<ISO time of the change>",
+    "journey": {"text": "…", "updated": "<ISO time>"}, "aim": {"text": "…", "updated": "<ISO time>"}};
+    every part is optional. The learner's latest explicit choice wins. The mix:
     - `base` equals the ledger's round_set_at: nothing changed the mix since the page saw it, so
       the page's mix is applied;
     - `updated` equals round_set_at: this document was applied before, nothing to do;
     - otherwise the mix was set elsewhere (in a chat, or by an earlier page document) after the
       page loaded: the document is applied only if its `updated` is later than round_set_at,
       and an older one is ignored.
-    Applying sets round_set_at to `updated`, so a document is applied once. An invalid page
-    setting is ignored with a warning, never fatal. Returns the changes applied."""
+    Applying sets round_set_at to `updated`, so a document is applied once. A paragraph
+    (apply_paragraphs) goes by its own `updated` in the same way. An invalid page setting is
+    ignored with a warning, never fatal. Returns the changes applied: the mix settings that
+    changed, and "journey" / "aim": "updated" for a new paragraph."""
     if not prefs:
         return {}
     warnings = warnings if warnings is not None else []
-    if not isinstance(prefs, dict) or not isinstance(prefs.get("round"), dict) or not prefs.get("updated"):
+    if not isinstance(prefs, dict):
         warnings.append("page settings ignored: expected {round: {...}, base, updated}")
         return {}
+    paragraphs = apply_paragraphs(state, prefs, warnings)
+    if "round" not in prefs and any(k in prefs for k, _, _ in PARAGRAPHS):
+        return paragraphs       # a document that holds paragraphs only
+    if not isinstance(prefs.get("round"), dict) or not prefs.get("updated"):
+        warnings.append("page settings ignored: expected {round: {...}, base, updated}")
+        return paragraphs
     cfg = state["config"]
     set_at = cfg.get("round_set_at")
     if prefs.get("base") != set_at:
         if str(prefs["updated"]) == set_at:
-            return {}     # applied before
+            return paragraphs     # applied before
         mine, theirs = parse_stamp(str(prefs["updated"])), parse_stamp(set_at)
         if set_at is not None and not (mine and theirs and mine > theirs):
-            return {}     # overtaken by a later change in a chat
-    trial = {k: cfg.get(k, DEFAULT_CONFIG[k]) for k in ("mcqs", "focused", "case")}
+            return paragraphs     # overtaken by a later change in a chat
+    trial = {k: cfg.get(k, LEGACY_MIX[k]) for k in ("mcqs", "focused", "case")}
     for k in ("mcqs", "focused", "case"):
         if k in prefs["round"]:
             trial[k] = prefs["round"][k]
@@ -384,11 +419,126 @@ def apply_prefs(state, prefs, warnings=None):
         ok = False
     if not ok:
         warnings.append("page settings ignored: invalid round mix %s" % json.dumps(prefs["round"]))
-        return {}
-    changes = {k: v for k, v in trial.items() if cfg.get(k, DEFAULT_CONFIG[k]) != v}
+        return paragraphs
+    changes = {k: v for k, v in trial.items() if cfg.get(k, LEGACY_MIX[k]) != v}
     cfg.update(trial)
     cfg["round_set_at"] = str(prefs["updated"])
+    changes.update(paragraphs)
     return changes or {"unchanged": True}
+
+
+def apply_paragraphs(state, prefs, warnings):
+    """The paragraphs the learner wrote on their page ("Update" under where you are / where
+    you're aiming): prefs["journey"] / prefs["aim"] = {"text": "…", "updated": "<ISO time>"}.
+    One is applied when its `updated` is later than the time the ledger's paragraph was last
+    written (profile.journey_set_at / aim_set_at; none: never dated), so it is applied once and
+    a later change made in a chat wins. Applying keeps the learner's words as they are, dates
+    the paragraph and clears its label for the assistant to derive again. Returns
+    {"journey": "updated", …} for those applied."""
+    prof = state.setdefault("profile", {})
+    done = {}
+    for key, label, name in PARAGRAPHS:
+        doc = prefs.get(key)
+        if doc is None:
+            continue
+        text = doc.get("text") if isinstance(doc, dict) else None
+        stamp = parse_stamp(doc.get("updated")) if isinstance(doc, dict) else None
+        if not isinstance(text, str) or not text.strip() or not stamp:
+            warnings.append("page settings ignored: %s needs {text, updated} (%s)" % (key, name))
+            continue
+        set_at = prof.get(key + "_set_at")
+        theirs = parse_stamp(set_at)
+        if set_at is not None and not (theirs and stamp > theirs):
+            continue        # applied before, or overtaken by a later change in a chat
+        text = text.strip()[:PARAGRAPH_MAX]
+        prof[key + "_set_at"] = str(doc["updated"])
+        if text != (prof.get(key) or "").strip():
+            prof[key] = text
+            prof[label] = None
+            done[key] = "updated"
+    return done
+
+
+def paragraphs_changed(changes):
+    """The paragraphs among the changes apply_prefs returned, in the learner's terms."""
+    return [name for key, _, name in PARAGRAPHS if key in (changes or {})]
+
+
+STAGE_FROM_ROLE = (      # an old `role`, read for a display label only; first match wins
+    ("medical student", r"student"), ("intern", r"\bintern\b|foundation"),
+    ("resident", r"resident|registrar|trainee|house officer"), ("fellow", r"fellow"),
+    ("senior attending", r"senior (attending|consultant|physician|specialist)|chief|professor"),
+    ("attending", r"attending|consultant|hospitalist|specialist|internist|physician"))
+
+
+def migrate_profile(st):
+    """A ledger from before the paragraphs: fold `role` and `notes` into `journey`, and `goals`
+    into `aim`, where the paragraph is still empty, in the learner's own words (nothing is
+    rephrased or dropped). The old fields stay as they are and are no longer read for the
+    pitch. A stage label is read off `role` when that names a stage; otherwise the labels are
+    left for the assistant (`labels_needed`). Changes `st` in place; a no-op afterwards."""
+    prof = st.get("profile")
+    if not isinstance(prof, dict):
+        return st
+    def words(v):
+        if isinstance(v, (list, tuple)):
+            return [x.strip() for x in v if isinstance(x, str) and x.strip()]
+        return [v.strip()] if isinstance(v, str) and v.strip() else []
+    if not words(prof.get("journey")):
+        parts = words(prof.get("role")) + words(prof.get("notes"))
+        if parts:
+            prof["journey"] = "\n\n".join(parts)
+            if not prof.get("journey_label"):
+                role = " ".join(words(prof.get("role"))).lower()
+                prof["journey_label"] = next((lab for lab, rx in STAGE_FROM_ROLE if role and re.search(rx, role)), None)
+    if not words(prof.get("aim")):
+        parts = words(prof.get("goals"))
+        if parts:
+            prof["aim"] = "\n".join(parts)
+            prof.setdefault("aim_tags", None)
+    return st
+
+
+def check_paragraphs(prof):
+    """Validate the paragraphs and their labels in a profile (after a change). Dies with a plain
+    message."""
+    for key, _, name in PARAGRAPHS:
+        v = prof.get(key)
+        if v is not None and not isinstance(v, str):
+            die("%s (%s) must be text: the learner's own paragraph" % (key, name))
+        if isinstance(v, str) and len(v) > PARAGRAPH_MAX:
+            die("%s (%s) is longer than %d characters" % (key, name, PARAGRAPH_MAX))
+    label = prof.get("journey_label")
+    if label is not None and label not in STAGE_LABELS:
+        die("journey_label must be one of: %s (or null)" % ", ".join(STAGE_LABELS))
+    tags = prof.get("aim_tags")
+    if tags is not None and (not isinstance(tags, list) or any(t not in AIM_TAGS for t in tags)):
+        die("aim_tags must be a list of: %s (an empty list when none fits, or null)" % "; ".join(AIM_TAGS))
+
+
+def set_paragraphs(prof, was, changes):
+    """After `changes` were merged into profile `prof` (which was `was`): a paragraph that got new
+    words is dated now, so an older page setting no longer applies, and loses its label unless
+    the same change gives one."""
+    for key, label, _ in PARAGRAPHS:
+        if key in changes and (prof.get(key) or "") != (was.get(key) or ""):
+            if key + "_set_at" not in changes:
+                prof[key + "_set_at"] = now_ts()
+            if label not in changes:
+                prof[label] = None
+
+
+def labels_needed(st):
+    """What the assistant still has to derive for display: for each paragraph that has words and
+    no label yet, the paragraph and the labels to choose from. None when nothing is needed."""
+    prof = st.get("profile") or {}
+    out = {}
+    for key, label, name in PARAGRAPHS:
+        if isinstance(prof.get(key), str) and prof[key].strip() and prof.get(label) is None:
+            out[label] = {"from": prof[key], "paragraph": name,
+                          "choose": ("one of" if key == "journey" else "any of"),
+                          "labels": list(STAGE_LABELS if key == "journey" else AIM_TAGS)}
+    return out or None
 
 
 def content_gen(st):
@@ -963,7 +1113,7 @@ def round_minutes(mcqs, focused, case, fmt="unfolding"):
 def mix_estimate(st):
     """(the round mix in force, the minutes a round of it is estimated to take)."""
     cfg = st.get("config") or {}
-    mix = {"mcqs": int(cfg.get("mcqs", DEFAULT_CONFIG["mcqs"]) or 0), "focused": int(cfg.get("focused", 0) or 0),
+    mix = {"mcqs": int(cfg.get("mcqs", LEGACY_MIX["mcqs"]) or 0), "focused": int(cfg.get("focused", 0) or 0),
            "case": bool(cfg.get("case", True))}
     return mix, round_minutes(mix["mcqs"], mix["focused"], mix["case"], next_case_format(st))
 
@@ -1401,7 +1551,9 @@ def plan_round(st, args, today):
         "feedback_depth": cfg.get("feedback_depth"), "show_coding": cfg.get("show_coding", True),
         "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
         "testing": bool(cfg.get("testing", False)),
-        "profile": dict({k: st["profile"].get(k) for k in ("role", "subspecialty", "practice_setting", "notes")},
+        # what the author pitches to (standards.md rule 4): the learner's own paragraphs, never
+        # the labels derived from them
+        "profile": dict({k: st["profile"].get(k) for k in ("journey", "aim", "subspecialty", "practice_setting")},
                         specialty=guideline_context(st)["specialty"]),
         "recent_cases_any_topic": used_cases[-15:],
         # the block: `line` is what the learner is told (theme and position); `mix` is how this
@@ -2329,7 +2481,7 @@ def cmd_stats(args):
         "graded_gaps_never_self_reported": blind,
         "key_learning": learning, "teaching_points_unchecked": unchecked,
         "domain_self_ratings": prof.get("domain_self_ratings"), "domain_emphasis": prof.get("domain_emphasis"),
-        "goals": prof.get("goals"),
+        "journey": prof.get("journey"), "aim": prof.get("aim"), "goals": prof.get("goals"),
         "analysis": {"period": coding_analytics(log),
                      "previous_period": coding_analytics(st["previous"]) if st["previous"] else None,
                      "all_time": agg_analytics(st["agg"])},
@@ -2352,7 +2504,10 @@ def cmd_review(args):
     if rv.get("config_changes"):
         deep_merge(cfg, rv["config_changes"])
     if rv.get("profile_changes"):
+        was = copy.deepcopy(prof)
         deep_merge(prof, rv["profile_changes"])
+        set_paragraphs(prof, was, rv["profile_changes"])
+        check_paragraphs(prof)
     for d, r in (rv.get("domain_self_ratings") or {}).items():
         prof.setdefault("domain_self_ratings", {})[d.upper()] = r
     for d, e in (rv.get("domain_emphasis") or {}).items():
@@ -2440,6 +2595,8 @@ def cmd_settings(args):
     prof_changes = load_json_arg(args.profile) if args.profile else {}
     deep_merge(st["config"], cfg_changes or {})
     deep_merge(st["profile"], prof_changes or {})
+    set_paragraphs(st["profile"], was["profile"] or {}, prof_changes or {})
+    check_paragraphs(st["profile"])
     if any(k in (cfg_changes or {}) for k in ("mcqs", "focused", "case")):
         check_round_mix(st["config"])
         if "round_set_at" not in cfg_changes:
@@ -2461,6 +2618,10 @@ def cmd_settings(args):
     out = {"ok": True, "gen": st["gen"], "config": st["config"], "review": st["review"], **guideline_context(st)}
     mix, minutes = mix_estimate(st)
     out["round"] = {"mix": mix_text(mix), "estimated_minutes": minutes}      # what to confirm a new mix with
+    if any(k in (prof_changes or {}) for k in ("journey", "aim", "journey_label", "aim_tags")):
+        out["profile"] = {k: st["profile"].get(k) for k in ("journey", "journey_label", "aim", "aim_tags")}
+    if labels_needed(st):
+        out["labels_needed"] = labels_needed(st)
     out["prepared"] = ({"kept": False, "changed": affects,
                         "why": "set aside: %s can change what a round contains, so the next round is "
                                "planned and written at its start" % ", ".join(affects)}
@@ -2534,6 +2695,11 @@ def cmd_init(args):
     st = new_state(today)
     deep_merge(st["profile"], load_json_arg(args.profile) or {})
     deep_merge(st["config"], load_json_arg(args.config) or {})
+    migrate_profile(st)         # a profile given in the old fields (role, goals, notes) is folded too
+    check_paragraphs(st["profile"])
+    for key, _, _ in PARAGRAPHS:
+        if (st["profile"].get(key) or "").strip() and not st["profile"].get(key + "_set_at"):
+            st["profile"][key + "_set_at"] = now_ts()
     st["profile"]["onboarded_at"] = iso(today)
     check_round_mix(st["config"])
     st["config"]["round_set_at"] = st["config"].get("round_set_at") or now_ts()
@@ -2554,6 +2720,8 @@ def cmd_init(args):
     out = {"ok": True, "gen": st["gen"], "domains": list(st["blueprint"]), "topics": len(bp_topics(st))}
     mix, minutes = mix_estimate(st)
     out["round"] = {"mix": mix_text(mix), "estimated_minutes": minutes}
+    if labels_needed(st):
+        out["labels_needed"] = labels_needed(st)
     path = publish_ledger(work, info, st, out, empty_prepared=True, fresh_page=bool(args.start_over))
     if not store_file(work, info, "index.html"):        # a new store: the page goes with the first ledger
         publish_text(work, "index.html", read_text(PAGE_TEMPLATE))
@@ -2677,7 +2845,8 @@ def page_doc(st, lists=None):
     """The page file for ledger `st`: what the page may show and nothing else. `lists` are the
     session and review entries carried on (page_lists); the ledger adds the sessions and reviews
     they lack and is the authority on scores, minutes and whether a round was reflected on."""
-    cfg, prof = st.get("config") or {}, st.get("profile") or {}
+    cfg = st.get("config") or {}
+    prof = migrate_profile({"profile": copy.deepcopy(st.get("profile") or {})})["profile"]
     lists = lists or {"sessions": [], "reviews": []}
     sessions = {e["id"]: dict(e) for e in lists["sessions"]}
     for s in (st.get("previous") or []) + (st.get("sessions") or []):
@@ -2717,9 +2886,17 @@ def page_doc(st, lists=None):
         ratings[d] = r.get("rating") if isinstance(r, dict) else r
     review = st.get("review") or {}
     context = guideline_context(st)
+
+    def paragraph(key):
+        text = prof.get(key).strip() if isinstance(prof.get(key), str) else ""
+        return text or None
+    # where you are / where you're aiming: the learner's own words with the labels derived for
+    # display (null until the learner has written the paragraph)
+    level = {"label": prof.get("journey_label"), "text": paragraph("journey")} if paragraph("journey") else None
+    aim = {"tags": list(prof.get("aim_tags") or []), "text": paragraph("aim")} if paragraph("aim") else None
     return {
         "schema": PAGE_SCHEMA, "page_version": PAGE_VERSION, "gen": st.get("gen"), "updated": st.get("updated"),
-        "who": {"name": prof.get("display_name"), "role": prof.get("role"), "specialty": context["specialty"],
+        "who": {"name": prof.get("display_name"), "role": prof.get("journey_label") or prof.get("role"), "specialty": context["specialty"],
                 "subspecialty": prof.get("subspecialty"), "practice": list(prof.get("practice_setting") or [])},
         "totals": {"topics": len(topics),
                    "mean_mastery": round(sum(mastery) / len(mastery), 1) if mastery else None,
@@ -2746,7 +2923,7 @@ def page_doc(st, lists=None):
             "feedback": cfg.get("feedback_depth"), "coding_line": bool(cfg.get("show_coding", True)),
             "review_every_days": cfg.get("review_interval_days"), "reminders": bool(cfg.get("reminders")),
             "emphasis": dict(prof.get("domain_emphasis") or {}), "self_ratings": ratings,
-            "level": None, "aim": None,                  # issue #55: {"label", "text"} each
+            "level": level, "aim": aim,                  # {"label", "text"} and {"tags", "text"}
             "reading": None, "listening": None,          # issue #51
         },
     }
@@ -2780,9 +2957,13 @@ def status_dict(st, path, today):
         "block": status_block(st),
         "round": {"mcqs": cfg.get("mcqs", 3), "focused": cfg.get("focused", 0), "case": bool(cfg.get("case", True)),
                   "minutes": cfg.get("session_minutes"), "item_order": cfg.get("item_order")},
+        # display labels the assistant still has to derive from the learner's paragraphs (None: none)
+        "labels_needed": labels_needed(st),
         "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
         "testing": bool(cfg.get("testing", False)),
         **guideline_context(st),             # what the examiner grades against
+        # the learner's own paragraphs: the examiner pitches the feedback to them (standards.md rule 4)
+        "pitch": {k: (st["profile"].get(k) or None) for k, _, _ in PARAGRAPHS},
         "prepare_task": bool(cfg.get("prepare_task", False)),
         "reminders": cfg.get("reminders"),
         "bytes": os.path.getsize(path),
@@ -2838,8 +3019,18 @@ def cmd_start(args):
     st, path = current_ledger(work, info)
     prefs_warn = []
     prefs_changes = apply_prefs(st, info.get("prefs"), prefs_warn)
+    rewritten = paragraphs_changed(prefs_changes)
+    kept = {}
+    if rewritten:
+        # a paragraph written on the page changes what the author pitches to: it is kept in the
+        # ledger at once (the labels the assistant derives next are set on it), and the round
+        # prepared for the old words is set aside
+        bump_gen(st)
+        st["updated"] = iso(today)
+        path = publish_ledger(work, info, st, kept, empty_prepared=True)
     status = status_dict(st, path, today)
     status.update(extra)
+    status.update(kept)
     status["work"] = os.path.abspath(work)
     info.update({"session_id": st.get("next_id"), "started": iso(today)})
     info.pop("closed", None)
@@ -2857,6 +3048,8 @@ def cmd_start(args):
     plan_out = None
     if args.no_prepared:
         prepared = {"used": False, "why": "--no-prepared was given for this round"}
+    elif rewritten:
+        prepared = {"used": False, "why": "%s changed on the page" % " and ".join(rewritten)}
     else:
         prepared = take_prepared(args, st, today, store_file(work, info, PREPARED_PATH), work, plan_path)
     status["prepared"] = {k: v for k, v in prepared.items()
@@ -2883,6 +3076,9 @@ def cmd_start(args):
     # everything the first message needs, so that nothing else is run or read before it (issue #43)
     status["started_at"] = now_ts()
     status["opening"] = opening_line(status, plan_out, today)
+    if rewritten:
+        status["opening"] += (" This round is written now, for what you wrote on your page about %s."
+                              % " and ".join(rewritten))
     if prepared["used"]:
         ready = prepared["ready"]
         status["prepared"]["unchecked"] = [n for n in SEALED_FILES if n in ready and EVIDENCE_FOR[n] not in ready]
@@ -2935,18 +3131,29 @@ def cmd_prepare(args):
     st, _ = current_ledger(work, info)
     # the round is written for the mix the next `start` will use: a mix set on the page and not
     # yet in the ledger counts here too (in memory only; `start` and `save` apply it for good)
-    apply_prefs(st, info.get("prefs"))
+    rewritten = paragraphs_changed(apply_prefs(st, info.get("prefs")))
     cfg = st["config"]
     why = None
     if not cfg.get("prepare_ahead", True):
         why = "prepare_ahead is off"
     elif st.get("unreflected") and not args.allow_unreflected:
         why = "the last session is still waiting for its reflection"
-    elif args.if_needed and prepared_fits(store_file(work, info, PREPARED_PATH), st, today):
+    elif args.if_needed and not rewritten and prepared_fits(store_file(work, info, PREPARED_PATH), st, today):
         why = "a round is already prepared"
     if why:
         print(json.dumps({"ok": True, "prepare": False, "why": why}))
         return
+    kept = {}
+    if rewritten:
+        # a paragraph written on the page is kept in the ledger here, with its labels cleared: the
+        # round is written for the new words and tied to the ledger that holds them. (A new mix
+        # is only planned with; `start` and `save` keep that.)
+        fresh, _ = current_ledger(work, info)
+        apply_paragraphs(fresh, info.get("prefs") or {}, [])
+        bump_gen(fresh)
+        fresh["updated"] = iso(today)
+        publish_ledger(work, info, fresh, kept, empty_prepared=True)
+        bump_gen(st)            # the ledger planned with is that one, plus a mix still waiting
     ns = argparse.Namespace(focused=None, mcqs=None, no_case=False, domain=None, no_new=False,
                             allow_repeat=False, no_drill=False, force_drill=False, seed=None)
     plan = plan_round(st, ns, today + dt.timedelta(days=1))
@@ -2961,6 +3168,10 @@ def cmd_prepare(args):
                             "(sealed_questions.md, sealed_case.md, kit_questions.md, kit_case.md), "
                             "have each sealed file checked (evidence_questions.md, evidence_case.md), "
                             "then run finish-prepare --work on the same work folder."})
+    if rewritten:
+        summary.update(kept)
+        summary["page_settings_applied"] = {k: "updated" for k, _, name in PARAGRAPHS if name in rewritten}
+        published(work, info, summary)
     print(json.dumps(summary, ensure_ascii=False))
 
 
@@ -4044,7 +4255,7 @@ def current_ledger(work, info):
             "(for a new learner: `init --work %s …`)" % (work, work, work))
     st = load_json(path)
     check_schema(st)
-    return st, path
+    return migrate_profile(st), path
 
 
 def has_session(st, sid):
@@ -4185,6 +4396,7 @@ def open_work(work, store, version, prefs, today, reread=False):
             "set up with `init --work %s …`" % (STATE_PATH, store, work))
     st = load_json(ledger)
     check_schema(st)
+    migrate_profile(st)
     os.makedirs(work, exist_ok=True)
     inside = os.path.relpath(store, os.path.abspath(work)).split(os.sep)[0]
     if inside in JOB_FILES + (EARLIER_DIR,):
@@ -4290,6 +4502,7 @@ def cmd_save(args):
     else:
         st_in, first_run = load_json(in_work(work, BEFORE_SAVE_FILE) or info.get("state") or before), False
         check_schema(st_in)
+        migrate_profile(st_in)
         if has_session(st_in, sid):
             die("the ledger read from the store already holds round %s: start the round again on a fresh "
                 "read of the store (`start --work %s --store DIR`)" % (sid, work))
@@ -4355,6 +4568,7 @@ def cmd_close(args):
     if again:                       # run again after a correction: from the ledger the first run started from
         st = load_json(before)
         check_schema(st)
+        migrate_profile(st)
     st_before = copy.deepcopy(st)
     res = reflect_round(st, load_json_arg(reflection) or {}, today, args.session)
     sid = res["session_id"]

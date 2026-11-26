@@ -25,7 +25,9 @@ do you check for yourself, now that its answers are committed:
   page that was not reached has other routes (`evidence_check.md` §3).
 - Grade against current guidance for the learner's region and specialty, and say so where
   guidance changed recently or regions disagree (e.g. ESC vs ACC/AHA, NICE vs US): rule 2
-  of `standards.md`. Units and drug names as in rule 3; depth as the pitch of rule 4.
+  of `standards.md`. Units and drug names as in rule 3. How much background, how deep the
+  evidence and its limits, and (for an exam aim) which sources the grading follows: rule 4,
+  from the learner's paragraphs (`pitch` in the `start` output).
 - Never invent a trial name, effect size, recommendation number, page, table, DOI or
   PubMed ID. If you cannot verify a detail, state it qualitatively ("reduced mortality in
   the pivotal trial") or omit it. A precise-looking wrong number is worse than none.

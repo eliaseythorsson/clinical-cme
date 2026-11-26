@@ -151,14 +151,13 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
    - `onboarding_needed` → setup. "Prepare only", or a scheduled task asking for it →
      `preparing.md` §3, not a round. Any other request → `requests.md`.
    - `review_due` → offer the progress review in one line; default to after the round.
-   - `last_session.unreflected` → one neutral line: the last session was saved without its
-     reflection and stays recorded that way.
-   - `round_mix` → its `say` after the opening line; else `page_settings_applied` (unless only
-     `unchanged`) → "Using the mix you set on your page: …"; page-settings `warnings` → one line.
+   - `last_session.unreflected` → one neutral line: it was saved without its reflection and stays so.
+   - `round_mix` → its `say` after the opening line; else a mix in `page_settings_applied`
+     → "Using the mix you set on your page: …"; page-settings `warnings` → one line.
    - `opening` → the opening line, word for word. Nothing more specific about the block: not
      which questions are on its theme, not the domain of any other item.
    - keep `started_at` (for `round.json`), `helpers`, `prepared`, `testing`, `speed_settings_new`,
-     `pending_errata_count`, `guideline_region` and `specialty` (rules 2–5 grade with them).
+     `pending_errata_count`, `guideline_region`, `specialty` and `pitch` (rules 2–5 use them).
 3. **Send the first message**: `opening` (after a long gap at most add "Welcome back — N items
    are waiting; we'll start with the most overdue", without scolding or enlarging the round),
    then, with `prepared.used` true, `present` exactly as printed (it ends with its answer
@@ -167,7 +166,8 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
 4. **Behind the scenes**, in this order: start a background checker for each sealed file in
    `prepared.unchecked` (a round written now: each one in `<work>` without an evidence file);
    read `standards.md`, `feedback_guide.md`, `analysis_framework.md` §1 and `store.md` §4
-   (publishing) in one batch; have what `prepared.ready` lacks written (`preparing.md` §6).
+   (publishing) in one batch; have what `prepared.ready` lacks written (`preparing.md` §6);
+   `labels_needed` not null → set the display labels (`requests.md` §1, last row).
 
 ### Turn 2. Question answers in → their feedback, then the case
 

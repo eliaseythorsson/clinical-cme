@@ -100,7 +100,7 @@ context changes a finding.
   "learner_feedback": {"format": "…", "time": "…", "difficulty": "about right", "feedback": "…"},
   "goals": ["…"],
   "config_changes": {"session_minutes": 25, "target_sessions_per_week": 2, "review_interval_days": 60},
-  "profile_changes": {"goals": ["…"]},
+  "profile_changes": {"aim": "the learner's own new paragraph, if what they are aiming at changed"},
   "domain_self_ratings": {"GEN": 2}, "domain_emphasis": {"GEN": 1.5, "RENAL": 0.7},
   "deep_analysis": true,
   "key_figures": {"sessions": 14, "mean_score": 3.4, "brier": 0.21, "errors_per_session": 1.8, "critical_errors": 2},

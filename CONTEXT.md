@@ -129,11 +129,11 @@ The learner's choice of whose guidelines items are written and graded against; a
 _Avoid_: country, locale
 
 **Where you are**:
-The learner's own paragraph on their stage of training or career and how they rate their knowledge and skills; the author pitches items to it. A short stage label (medical student … senior attending) is derived for display only.
+The learner's own paragraph on their stage of training or career and how they rate their knowledge and skills (`profile.journey`); the author pitches items to it and the examiner writes the feedback for it. A short stage label (medical student … senior attending) is derived for display only.
 _Avoid_: level, role (as a fixed category)
 
 **Where you're aiming**:
-The learner's own paragraph on what the rounds should help them achieve (an exam, a level, areas to strengthen); with goal tags derived for display.
+The learner's own paragraph on what the rounds should help them achieve (an exam, a level, areas to strengthen; `profile.aim`); part of the pitch, with goal tags derived for display only.
 _Avoid_: goals list
 
 **Rulebook**:

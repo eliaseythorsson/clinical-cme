@@ -87,9 +87,10 @@ def test_key_header_blocks_are_shown_only_in_the_rulebook_and_the_schema():
 
 def test_slots_for_the_issues_that_build_on_the_rulebook():
     text = read(STANDARDS)
-    for issue in ("#50", "#55"):
+    for issue in ("#50",):
         assert re.search(r"<!-- slot: issue %s\b" % issue, text), issue
     assert "slot: issue #45" not in text          # filled in: see the tests of issue #45 below
+    assert "slot: issue #55" not in text          # filled in: tests/test_learner_settings.py
 
 
 # ---------------------------------------------------------------- issue #45: rules 5–7 finished

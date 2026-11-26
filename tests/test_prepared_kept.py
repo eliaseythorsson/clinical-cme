@@ -24,14 +24,18 @@ NEUTRAL_CONFIG = {
     "round_set_at": "2026-11-01T08:00:00Z",
 }
 CONTENT_CONFIG = {
-    "session_minutes": 30, "mcqs": 2, "focused": 1, "case": False, "case_format": "discriminate",
+    "session_minutes": 30, "mcqs": 2, "focused": 2, "case": False, "case_format": "discriminate",
     "feedback_depth": "standard", "intervals_days": [2, 5, 9, 20, 40, 90], "new_topics_per_round": 0,
     "lab_units": "conventional", "blood_gas_units": "kPa", "guideline_region": "UK",
     "item_order": "case_first", "resource_preferences": {"free_only": True},
 }
-NEUTRAL_PROFILE = {"display_name": "Dr Example", "onboarded_at": "2026-10-01"}
+NEUTRAL_PROFILE = {"display_name": "Dr Example", "onboarded_at": "2026-10-01",
+                   # display labels and the dates of the paragraphs (#55): never used to write an item
+                   "journey_label": "resident", "aim_tags": ["exam"],
+                   "journey_set_at": "2026-10-01T08:00:00Z", "aim_set_at": "2026-10-01T08:00:00Z"}
 CONTENT_PROFILE = {
-    "role": "Senior registrar", "specialty": "Geriatrics", "subspecialty": "Orthogeriatrics",
+    "journey": "Senior registrar in geriatrics, on call alone at night.", "aim": "Pass the specialty exam.",
+    "specialty": "Geriatrics", "subspecialty": "Orthogeriatrics",
     "practice_setting": ["ward"], "goals": ["exam"], "strengths": ["cardiology"], "weaknesses": ["renal"],
     "domain_self_ratings": {"CARD": 2}, "domain_emphasis": {"CARD": 2}, "notes": "prefers short stems",
 }

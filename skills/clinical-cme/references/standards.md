@@ -76,14 +76,36 @@ relevant to the plan's `specialty`.
 
 ## Rule 4. Pitch
 
-Items are pitched to the learner in the plan's profile: the decisions a clinician of that
-role, in that `specialty`, is expected to make unaided (for example a hospitalist attending;
-a senior subspecialty fellow when testing inside the subspecialty). The pitch sets which
-decisions are tested and how much background the feedback gives; it never lowers the
-standard of the key.
+Items are pitched to the learner as they describe themselves, in two paragraphs of their own
+words: `journey` (where you are: stage of training or career, specialty, how independently
+they work, which decisions they are comfortable making) and `aim` (where you're aiming: an
+exam, a level to reach, areas to strengthen). The plan's profile carries both for the
+author; the `start` output gives the examiner the same two as `pitch`. Read both in full,
+with the `specialty`, before writing or grading.
 
-<!-- slot: issue #55. "Role" is replaced by the learner's own paragraphs "where you are" and
-"where you're aiming" (profile.journey, profile.aim); this stays one rule, pitched from them. -->
+1. **Which decisions are tested.** The decisions this learner makes unaided now, and those
+   one step beyond, towards the aim: for a student or intern, recognition, first steps and
+   when to call for help; for a resident, the work-up and management they run on call; for
+   an attending, the decisions with no one to ask, including those at the edge of the
+   specialty; for a senior learner aiming at specialist-level decisions outside their own
+   field, the calls a subspecialist would make. Nothing the learner says they already do
+   comfortably is tested for its own sake, and nothing is tested that their stage never
+   decides.
+2. **How the feedback is written.** Early stages get more background: the mechanism, the
+   reasoning step by step, the terms explained. Senior learners get the evidence instead:
+   the trials behind a recommendation, its strength, where the evidence is thin or disputed
+   and where guidance stops; no textbook background they have not asked for.
+3. **Which sources.** An aim that names an exam is graded against that exam's standard
+   sources (its syllabus, the textbooks and guidelines it examines from), and the feedback
+   says which; where they differ from the guideline of rule 2, both are given and the exam's
+   answer is the one keyed. Every other aim is graded by rule 2.
+4. **What the pitch never does.** It never lowers the standard of the key: the right answer
+   is the same for every learner; the pitch chooses the question and the explanation.
+5. **Only the paragraphs.** The stage label and goal tags kept with the paragraphs
+   (`journey_label`, `aim_tags`) are for display on the learner's page. They are not in the
+   plan and are never used to write, key or grade an item. A paragraph that is empty means
+   the learner has not said: pitch to a clinician practising independently in the plan's
+   `specialty`.
 
 ## Rule 5. Abbreviations
 

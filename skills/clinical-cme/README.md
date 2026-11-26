@@ -56,6 +56,15 @@ waiting for something to be generated.
 - Time estimates come from the engine and are realistic: about 5 minutes per MCQ, 10 per
   focused question, 25 for a case with its feedback (15 for a one-step case).
 - Export is still a full backup; the page now says first that it includes the open gaps.
+- **Where you are, where you're aiming.** Setup asks two open questions and keeps the
+  learner's paragraphs word for word (`profile.journey`, `profile.aim`); items are pitched to
+  them and feedback written for them (`standards.md` rule 4: which decisions are tested, how
+  much background or evidence depth, and an exam's own sources for an exam aim). A stage
+  label and goal tags are derived for display only. The page's Settings tab shows both
+  paragraphs with an Update box each (saved in `cme/prefs`, applied at the next round, which
+  is then written afresh). Older ledgers fold `role`, `goals` and `notes` into the paragraphs
+  unchanged. A new learner starts with one focused question and the case (about 35 minutes);
+  MCQs are added on request.
   `cme.py` (`PAGE_VERSION = "5.1.0"`) upgrades older pages once, at the next save.
 
 ## Page update 5.0.0
