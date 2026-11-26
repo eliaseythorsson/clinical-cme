@@ -87,9 +87,11 @@ def test_key_header_blocks_are_shown_only_in_the_rulebook_and_the_schema():
 
 def test_slots_for_the_issues_that_build_on_the_rulebook():
     text = read(STANDARDS)
-    for issue in ("#50", "#55"):
+    for issue in ("#55",):
         assert re.search(r"<!-- slot: issue %s\b" % issue, text), issue
     assert "slot: issue #45" not in text          # filled in: see the tests of issue #45 below
+    # issue #50 filled its slot in rule 8: the "## Listening" section of the kits
+    assert "slot: issue #50" not in text and "**Listening** (`## Listening`" in text
 
 
 # ---------------------------------------------------------------- issue #45: rules 5–7 finished
@@ -178,7 +180,9 @@ def test_the_header_the_parser_accepts_is_the_one_in_the_rulebook():
 def test_the_kit_sections_of_the_rulebook_are_the_ones_the_lint_requires():
     rule = read(STANDARDS).split("## Rule 8.")[1].split("## Rule 9.")[0]
     assert re.findall(r"^\| `## (.+?)` \|", rule, re.M) == list(cme.KIT_CASE_SECTIONS)
-    assert "`## Q1`" in rule and "## Listening" in rule and "Listening" not in cme.KIT_CASE_SECTIONS
+    # "Listening" is a section of both kits, required unless the plan has listening off (issue #50)
+    assert "`## Q1`" in rule and "`## Listening`" in rule and cme.KIT_LISTENING == "Listening"
+    assert "Listening" not in cme.KIT_CASE_SECTIONS and "slot: issue #50" not in rule
 
 
 # ---------------------------------------------------------------- the lint: definite problems block

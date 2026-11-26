@@ -34,7 +34,7 @@ the conversation, and the keys must be good enough for another clinician to grad
    ID, the reason it was chosen, any open gap to re-test, `aspect_hint` for focused items, a
    `drill` if one applies, `separation` notes, and `already_used` stems and cases; and for the
    round: `case_format`, units, `guideline_region`, `specialty`, `feedback_depth`, the learner's profile,
-   `recent_cases_any_topic`.
+   `recent_cases_any_topic`, `listening` and `podcast_sources`.
 
 Planning notes:
 
@@ -50,6 +50,10 @@ Planning notes:
   clinical context (transfer). Write `retests: <retest_gap.id>` in that item's key header
   (rule 9), as the plan's `how` line says; without it a good answer cannot close the gap.
 - A `drill` is built into its item (`case_design.md` §9, §11.5).
+- Unless the plan's `listening` is false, each kit ends with `## Listening` (rule 8): the
+  `Sources` line from the plan's `podcast_sources`, and one line per topic with the point
+  tested and its likely failure points. You name no episode and search for none: the checker
+  fills in the candidates.
 - Every vignette and stem is clearly different from `already_used` and
   `recent_cases_any_topic`: patient, setting, presentation, twist.
 
@@ -75,6 +79,7 @@ Planning notes:
     item so that it has one best answer under that guidance: the key, the kit, and the stem or
     options if they no longer work, keeping the `present` block complete. Replace every
     `(verify)` in the kits that the check confirmed with the confirmed figure and source.
+    The candidates under `## Listening` are the checker's: leave them as they are.
   - Read `lint.md` in the output folder, if there is one. For each line decide whether the
     rule it names is broken (rule 5: an abbreviation not spelled out at first use; rule 6:
     more than one time anchor) and correct the presented text where it is. A finding that is

@@ -15,14 +15,17 @@ may reach the conversation they see.
 - Your whole reply is the word `done` (or `failed: <a reason without any clinical content>`).
   No summary, no topic, no source names. Everything you found goes in the output file.
 - Give every tool call a neutral description ("Check sources"). Do not create task items.
-- Do not ask questions. Do not edit the list file or any other file than your output file.
+- Do not ask questions. Do not edit the list file or any other file than your output file;
+  the one exception is the `## Listening` section of the kit beside the list file (§6).
 - Work fast: all searches in one parallel batch, all fetches in one parallel batch, one batch
   of other routes for whatever was not reached (§3), then write the file once. Aim to finish
-  within three minutes; after the batch of other routes, write what you have.
+  within three minutes; after the batch of other routes, write what you have. The listening
+  candidates (§6) come after the file is written.
 - **The output file already exists** → this is the retry pass: read it, keep every block that
   is settled, and work only on the claims marked "not verified" (and any block still
   missing), by routes not yet on their `Tried:` line. Then write the whole file again, once,
-  with its end lines recounted.
+  with its end lines recounted. Then complete the listening candidates (§6) of every topic
+  that has fewer than three in form and no `none:` line.
 
 ## 1. What to check
 
@@ -34,7 +37,7 @@ gives the learner's guideline region and specialty: check against them as rule 2
 `standards.md` says. Check those claims, and any other specific number, dose or
 recommendation in the keys that could have changed or that you are not certain of, and that
 the section each reading pointer names exists (rule 8, when the kit is beside the list file).
-Nothing else.
+Nothing else, apart from the listening candidates of §6.
 
 ## 2. How
 
@@ -123,3 +126,51 @@ names the topic, and the learner can see your searches): one batch of searches, 
 fetches, then grade. No file is needed; cite from what you fetched. This is for a part that
 has **no evidence file**. Where a file exists, its list is not run again: search only for
 what the answers raise (`feedback_guide.md` §1).
+
+Listening follows the same rule: the examiner searches for an episode only once the part's
+answers are in, by the routes and the verification of §6 (`feedback_guide.md` §2 E2).
+
+## 6. Listening: candidate podcast episodes
+
+Do this last, after the output file is written, so that the evidence never waits for it. It
+applies when the kit beside the list file (`kit_questions.md` for `sealed_questions.md`,
+`kit_case.md` for `sealed_case.md`) has a `## Listening` section; with no kit yet, or no such
+section, there is nothing to do. What the section holds and the form of a candidate line is
+rule 8 of `standards.md`; this is how the candidates are found.
+
+1. **Read the section.** Its `Sources` line names the shows the learner trusts and the shows
+   to avoid; each topic's line (`Q1 | points: …`) names the point tested and the likely
+   failure points. A topic that already has three candidates in form is left alone.
+2. **Search**, all topics in one parallel batch: for each topic, episodes on its point and
+   on each failure point, first within the trusted shows, then generally. Routes, in order:
+
+   | Route | Use |
+   |---|---|
+   | 1. Spotify itself | a search restricted to `open.spotify.com/episode` with the point's own words; a trusted show's page (`open.spotify.com/show/<id>`) for its episode list |
+   | 2. The show's own site | its episode list or search, for the episode's title, then the title on Spotify |
+   | 3. A podcast directory | Apple Podcasts, Podcast Index or Listen Notes, to find the episode and its length; then the same title on Spotify |
+
+3. **Verify each from its own Spotify page**, all in one parallel batch: fetch
+   `https://open.spotify.com/episode/<id>` and read the show, the title and the length from
+   it. A page that was not reached (a login wall, an error, a page without the episode's
+   title) is "not reached", as in §3: the episode is not kept, whatever a directory says
+   about it. A search result's extract that quotes the Spotify episode page with its title
+   counts as reached for existence; the length must then come from that extract or from the
+   show's own page for the same episode. Never build or guess a link.
+4. **Keep three per topic**: 15 to 90 minutes, a show a physician can learn from (a
+   clinician-led teaching podcast, a journal's or a society's), never one on the avoid list,
+   trusted shows first where they fit the point as well. Prefer the episode that covers a
+   failure point over one that covers the topic at large, and spread the three over
+   different failure points where episodes exist.
+5. **Write them into the kit's section**, one line under each topic's line, changing nothing
+   else in the kit: `- <link> | <show> | <title> | <n> min | covers: … | matches: <the
+   failure point>`. The link ends with the id: drop anything after a `?`. Where fewer than
+   three exist, add `- none: <why>` under that topic; alone, when nothing suitable was
+   found. An honest "none" is better than a weak or unverified episode.
+
+The limits of Spotify are those of rule 8.5: no link saves an episode to the library; it
+opens the episode, and one tap there saves it.
+
+`cme.py finish-prepare` counts, per topic, the candidates that are in form. A kit with a
+topic short of three and no `none:` line, or a line out of form, sends you back once (the
+retry pass above).

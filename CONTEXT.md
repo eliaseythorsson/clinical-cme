@@ -83,6 +83,16 @@ _Avoid_: override (fine for the command), dispute
 **Retest**:
 An item written on an open gap's decision point, in a new clinical context; it names the gap, and only a retest answered well closes it.
 
+**Listening pick**:
+The one podcast episode a topic of the round gets in the final feedback: 15 to 90 minutes, chosen for the gap the learner showed, given as a Spotify link with a one-line reason.
+_Avoid_: recommendation, podcast link
+
+**Candidate episode**:
+One of up to three episodes per topic that the checker finds when the round is prepared and that stay sealed in the kit; the pick is taken from them when one covers the learner's gap.
+
+**Podcast sources**:
+The shows the learner trusts and the shows to avoid; asked once, and always respected.
+
 **Rest**:
 The minimum of three days before a tested topic or a new gap can come back.
 

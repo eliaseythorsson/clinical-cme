@@ -12,14 +12,15 @@ memory: one JSON document, read to a file and written from a file (`store.md` §
               "subspecialty": null, "practice_setting": ["University hospital, inpatient"],
               "goals": ["…"], "strengths": ["…"], "weaknesses": ["…"],
               "domain_self_ratings": {"CARD": 3.8}, "domain_emphasis": {"GEN": 1.5},
-              "notes": "free text", "onboarded_at": "2026-10-08"},
+              "notes": "free text", "onboarded_at": "2026-10-08",
+              "podcast_sources": {"trusted": ["The Curbsiders"], "avoid": []}},
   "config": {"session_minutes": 20, "mcqs": 3, "focused": 0, "case": true, "case_format": "unfolding",
              "round_set_at": "2026-10-08T09:12:00Z",
              "feedback_depth": "detailed", "target_sessions_per_week": 3, "review_interval_days": 42,
              "intervals_days": [1, 3, 7, 16, 35, 90], "new_topics_per_round": 1,
              "lab_units": "SI", "blood_gas_units": "mmHg", "guideline_region": "Iceland/Europe",
              "item_order": "mcqs_first", "helpers": true, "prepare_ahead": true,
-             "show_coding": true, "reminders": false,
+             "show_coding": true, "reminders": false, "listening": true,
              "resource_preferences": {"free_only": false, "formats": ["guidelines"]}},
   "review": {"last": null, "next_due": "2026-11-19", "period_start": "2026-10-08"},
   "blueprint": {"CARD": {"name": "Cardiology", "weight": 1.0, "topics": {"CARD-01": "Acute coronary syndrome"}}},
@@ -58,6 +59,16 @@ Region and specialty: `config.guideline_region` (default "Iceland/Europe") and
 (`onboarding.md` §2) and changed with `settings`. `start`, the plan and `settings` print both
 as `guideline_region` and `specialty`, with the default standing in where a ledger has none;
 the author chooses guidelines by them and the examiner grades by them.
+
+Listening: `config.listening` (true by default, also in a ledger that has no such key) puts a
+`## Listening` section into the kits (`standards.md` rule 8) and a Listening section into the
+final feedback (`feedback_guide.md` §2 E2). `profile.podcast_sources` is `{"trusted": [shows],
+"avoid": [shows]}`, or null while the learner has not been asked: it is asked once, at setup
+or in the first Listening section, and `close` then writes the answer from the reflection, or
+two empty lists when none was given. `start`, `open` and `settings` print `listening`: `{"on",
+"trusted", "avoid", "ask_sources"}`; the plan carries `listening` and `podcast_sources` for
+the author. `settings` stores the lists without blanks or repeats and refuses any other
+shape. Both settings change what a kit holds (§8).
 
 Round mix: `mcqs` (0–10), `focused` (0–6) and `case` (true/false); at least one item.
 `round_set_at` marks the last change of the mix (setup, a chat `settings` change, or a page
@@ -132,7 +143,11 @@ everything the author already wrote down, and writes the result, the **round rec
   "summary": "One or two sentences on the main teaching.",
   "grade_changes": [], "drill": {"code": "bias:premature_closure", "result": "fell_for"},
   "errata": [{"corrects": "S0012", "point": "…", "correction": "…", "source": "…"}],
-  "pending_errata_logged": "all"
+  "pending_errata_logged": "all",
+  "listening": [{"topic": "CARD-03", "link": "https://open.spotify.com/episode/<id, 22 letters and digits>",
+                 "show": "<show>", "title": "<episode title>", "minutes": 52,
+                 "why": "when to start anticoagulation after surgery, the step you were unsure of",
+                 "source": "kit"}]
 }
 ```
 
@@ -226,6 +241,13 @@ The round record, as `save` writes it to `record.json`. A
   "sent:questions", "at": "…"}, {"what": "answer:questions", "at": "…"}, …]` (the names of §6.2),
   from which the same figures are computed. With only `started_at` and `ended_at` the minutes
   are their difference, without `timing`, and no duration at all beyond 180 minutes.
+- `listening`: the picks of the feedback's Listening section (`feedback_guide.md` §2 E2), one
+  per topic that got one: the blueprint ID, the Spotify episode link, the show, the title, the
+  minutes, the one-line reason, and `source` (`kit`: a candidate prepared with the round;
+  `search`: found after grading). An empty list when no topic got one; no key at all with
+  listening off. `save` moves the list into the session document as its `listening` list (the
+  ledger and `record.json` never hold it), drops anything after the id in a link, and leaves
+  out a pick that is not complete, with a warning naming what to correct.
 - Omit `reflection`: the first save is provisional. `save` can be run again: it starts from the ledger before the round.
 
 ## 3. Reflection JSON (input to `close`)
@@ -239,6 +261,7 @@ The round record, as `save` writes it to `record.json`. A
  "items": [{"type": "case", "topic": "RENAL-02", "mastery": 3.5}],
  "learner_scores": [{"item": "Q2", "type": "mcq", "topic": "CARD-03", "score": 4, "note": "the learner's words"}],
  "learner_closed_gaps": [{"gap": "G0007", "note": "the learner's words"}],
+ "podcast_sources": {"trusted": ["The Curbsiders"], "avoid": []},
  "errata": [], "key_learning": [], "resolved": []}
 ```
 
@@ -253,6 +276,10 @@ The round record, as `save` writes it to `record.json`. A
 - `learner_closed_gaps`: gaps the learner asks to close, by id (`{"gap": "G0007"}`) or by topic
   (`{"topic": "RENAL-02"}`, also for a gap this round opened). `close` stops with an error,
   writing nothing, when a named item or gap does not exist.
+- `podcast_sources`: only when the learner named shows to trust or to avoid in reply to the
+  one-time question of the Listening section (`feedback_guide.md` §2 E2); `close` writes it to
+  the profile. Leave the key out otherwise: `close` then notes that the question was asked.
+  A later change is a settings change (`requests.md` §1).
 - `{"skipped": true}` records the round without a reflection.
 
 ## 4. Spacing rules (applied by `save` and `close`)
@@ -671,12 +698,13 @@ was prepared moves the generation (below), so that round is no longer used.
 
 **Settings: two groups.** `settings` prints `prepared`: `{"kept": true, "why": …}` or
 `{"kept": false, "changed": […], "why": …}`, where `changed` names the settings that set it
-aside. What counts is the values that changed, not the keys that were sent.
+aside. What counts is the values that changed, not the keys that were sent; `listening` and
+`podcast_sources` count as they take effect (on, and no shows named, in a ledger without them).
 
 | Group | Settings | Prepared round |
 |---|---|---|
 | Cannot change what a round contains | config: `testing`, `reminders`, `prepare_task`, `prepare_ahead`, `helpers`, `show_coding`, `target_sessions_per_week`, `review_interval_days` (and `round_set_at` on its own); profile: `display_name`, `onboarded_at`. Also `snooze`. | kept, untouched; the next `start` uses it and puts today's `testing`, `helpers`, `prepare_ahead` and `show_coding` into its plan |
-| Can change the plan, the items or the feedback notes | everything else, including any setting not listed above: the mix (`mcqs`, `focused`, `case`), `session_minutes`, `case_format`, `item_order`, `feedback_depth`, `intervals_days`, `new_topics_per_round`, `lab_units`, `blood_gas_units`, `guideline_region`, `resource_preferences`; every other profile field (`specialty`, `role`, `subspecialty`, `practice_setting`, `goals`, `strengths`, `weaknesses`, `domain_self_ratings`, `domain_emphasis`, `notes`); a blueprint that differs from the current one | set aside (emptied), and the output says which setting did it |
+| Can change the plan, the items or the feedback notes | everything else, including any setting not listed above: the mix (`mcqs`, `focused`, `case`), `session_minutes`, `case_format`, `item_order`, `feedback_depth`, `intervals_days`, `new_topics_per_round`, `lab_units`, `blood_gas_units`, `guideline_region`, `resource_preferences`, `listening`; every other profile field (`specialty`, `role`, `subspecialty`, `practice_setting`, `goals`, `strengths`, `weaknesses`, `domain_self_ratings`, `domain_emphasis`, `notes`, `podcast_sources`); a blueprint that differs from the current one | set aside (emptied), and the output says which setting did it |
 
 **The generation it is tied to.** `gen` counts every write of the ledger, also a change of the
 first group. A prepared round is therefore tied to `content_gen`: the generation of the last
