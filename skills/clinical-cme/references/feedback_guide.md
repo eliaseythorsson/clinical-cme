@@ -11,14 +11,18 @@ Feedback comes in two parts — the short questions' as soon as they are answere
 after its last answer — and each rests on evidence checked for that part
 (`references/evidence_check.md`). Where a checker has done the check — when the round was
 prepared, or while the learner was answering — its file (`evidence_questions.md`,
-`evidence_case.md`) is ready: read it and grade. Its `Checked:` line gives the date; a
-prepared round can be up to 30 days old, so if you know or suspect that guidance on a point
-has changed since then, search that point once the answers are in. Otherwise that part's answers are now committed, so you may check for yourself.
+`evidence_case.md`) is ready: read it and grade, **without running the verification list
+again** — the checker has already retried what it could not reach (`evidence_check.md` §3).
+Its `Checked:` line gives the date and how many claims are not verified; a prepared round can
+be up to 30 days old, so if you know or suspect that guidance on a point has changed since
+then, search that point once the answers are in. Only where a part has **no evidence file**
+do you check for yourself, now that its answers are committed:
 
 - Check every specific claim you are about to make that could have changed or that you
   are not certain of: guideline recommendations and their class/level, thresholds,
   doses, trial results, approval status. Use web search and fetch the primary source
-  (society guideline, journal article, PubMed record) rather than a secondary summary.
+  (society guideline, journal article, PubMed record) rather than a secondary summary; a
+  page that was not reached has other routes (`evidence_check.md` §3).
 - Grade against current guidance for the learner's region and specialty, and say so where
   guidance changed recently or regions disagree (e.g. ESC vs ACC/AHA, NICE vs US): rule 2
   of `standards.md`. Units and drug names as in rule 3; depth as the pitch of rule 4.
@@ -29,28 +33,34 @@ has changed since then, search that point once the answers are in. Otherwise tha
   matters.
 - Keep searches efficient: typically 2–6 per part. They are listed in advance in the sealed
   files ("verification list": the questions' in `sealed_questions.md`, the case's in
-  `sealed_case.md`): run a part's list in one parallel batch, then fetch the primary sources
-  you will cite, also in one batch. Never run them yourself before that part's answers are in.
-- After a helper's check, search again only for what the learner's answers raise that the file
+  `sealed_case.md`). With no evidence file for a part, run its list in one parallel batch,
+  then fetch the primary sources you will cite, also in one batch. Never run them yourself
+  before that part's answers are in.
+- After a helper's check, search only for what the learner's answers raise that the file
   does not cover (a stated uncertainty, an unexpected but defensible answer). A claim the file
-  marks "not verified" is stated qualitatively or left out. If the file says a key is
-  contradicted by current guidance, correct the key before grading and grade against the
-  guidance.
+  marks "not verified" is stated qualitatively or left out; search it yourself only if the
+  learner's answer turns on it. If the file says a key is contradicted by current guidance,
+  correct the key before grading and grade against the guidance.
 
 ## 2. Structure of the feedback
 
-Two messages, each sent the moment its part is graded. Each opens with the one-line
-glossary of the abbreviations it uses (rule 5.3).
+Two messages, each sent the moment its part is graded. **Every feedback message starts with
+the glossary line** of rule 5.3: one line, "Abbreviations: …", above the reveal, listing the
+abbreviations that message uses, those on the rule's list excepted. Each message's line is
+complete on its own: an abbreviation explained in the first message is explained again in the
+second if it is used there. The line is part of the message as sent, so it is logged with it
+(§8). A message that uses no abbreviation has no line.
 
-- **Part 1, after the short questions are answered**: A (for these items only), B, B2. It
-  closes with one line on the score so far and "The case follows." No gap summary, no reading
-  list, no reflection prompt, and nothing about the case (rule 1.5). The case is
-  sent straight after it.
-- **Part 2, after the case's last answer**: A (for the case), C, D for the **whole round**
-  (short questions included), E, F.
+- **Part 1, after the short questions are answered**: glossary line, A (for these items
+  only), B, B2. It closes with one line on the score so far and "The case follows." No gap
+  summary, no reading list, no reflection prompt, and nothing about the case (rule 1.5). The
+  case is sent straight after it.
+- **Part 2, after the case's last answer**: glossary line, A (for the case), C, D for the
+  **whole round** (short questions included), E, F.
 
 A round without a case has one message: A, B, B2, D, E, F. With `case_first`, one message at
-the end: A, C, B, B2, D, E, F. Leave out any section the round did not have.
+the end: A, C, B, B2, D, E, F. Either starts with its glossary line. Leave out any section the
+round did not have.
 
 ### A. Reveal
 For each item of the part: the topic (blueprint ID and label), and why it was chosen in plain words,
