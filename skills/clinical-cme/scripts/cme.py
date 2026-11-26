@@ -1,53 +1,64 @@
 #!/usr/bin/env python3
 """clinical-cme v4.3.1 state engine (standard library only, Python 3.8+).
 
-The learner's scheduling memory is ONE JSON document, the state; each round also has a session
-document, and an index lists the sessions for the page. This script never talks to a store or
-to any assistant tool: the assistant fetches the files from wherever the learner's store is
-(see references/store.md), runs a command here, and puts the files it writes back. Every
-command that writes takes --out, --out-dir or --work and prints, for each file, its store path ("as",
-e.g. data/state.json).
+The learner's scheduling memory is ONE JSON document, the ledger (state.json); each round also
+has a session document, and an index lists the sessions for the page. This script never talks
+to a store or to any assistant tool: the assistant reads the learner's store into a local folder
+(the store copy; see references/store.md), opens a work folder on it, and from then on every
+command takes only that work folder, `--work W`.
 
-Session (fast path):
-  start   STATE --work W [plan options] [--prefs J] [--prepared PREPARED.json]
-                                                  neutral status + plan in one call (no topics); with a
-                                                  valid prepared round, also the questions to present.
-                                                  W is the round's work folder: the plan is W/plan.json
+Every command that writes puts its files into the publish set, W/publish/ (store paths:
+data/state.json, data/sessions/…), and prints the whole set as `files` ({"as": store path,
+"path": local file}, in write order, the ledger last) with `publish`, the path of its manifest
+W/publish.json ({"version": the store version read, "files": […]}). The assistant publishes
+whatever the set lists; it is cumulative, so a failed publish is covered by the next one.
+
+A job (one work folder):
+  open    --work W --store DIR [--version V] [--prefs J]
+                                                  set W up for any job from DIR, the store as just read
+                                                  (data/state.json … or the files side by side);
+                                                  prints neutral status and counts, never topics
+  start   --work W [--store DIR [--version V]] [--prefs J] [plan options] [--no-prepared]
+                                                  a round: with --store it opens W first. Neutral status +
+                                                  plan (W/plan.json; no topics); with a prepared round in
+                                                  the store that still fits, also the questions to present
+                                                  plan options: --mcqs N --focused N --no-case --domain D --no-new
   answer  --work W --part questions|case|final|notes|reflection [--file F | --text T]
                                                   append the learner's answer to W/answers.md (default: stdin)
+  present --work W --block questions|case|bank    print only the text to show the learner
   save    --work W                                record the graded round + session doc (part A) + index,
-                                                  from the files in W by their fixed names, into W/out1
-                                                  round.json names each item's key ("key": "Q1") and holds
-                                                  the grading; the rest comes from the key headers
-  keys    DIR|SEALED.. [--plan PLAN]              check the key headers of sealed files (no content printed)
-  close   --work W [--reflection J]               apply the reflection + part B + index, into W/out2
-                                                  (every file save and close use can still be named by a flag)
-  addendum --doc SESSION.json --md ADD.md --out-dir D
-  prepare STATE --out NEXT_PLAN [--if-needed PREPARED.json] [--allow-unreflected]
-                                                  after the close: plan the NEXT round (prints counts only)
-  finish-prepare STATE --work W [--revised] [--no-evidence]
-                                                  after the checkers: check the key headers, count contradicted
-                                                  keys (a bad header or a missing evidence file is an error),
-                                                  stash the round when it is clean
-  stash   STATE --plan NEXT_PLAN --dir DRAFTS --out-dir D   the stashing step of finish-prepare alone
-  present SEALED.. --block questions|case|stage2  print only the text to show the learner
+                                                  from the files in W by their fixed names. round.json names
+                                                  each item's key ("key": "Q1") and holds the grading; the
+                                                  rest comes from the key headers. Can be run again
+  close   --work W [--reflection J] [--session ID]
+                                                  apply the reflection (W/reflection.json) + part B (W/B.md)
+  prepare --work W [--if-needed] [--allow-unreflected]
+                                                  plan the NEXT round into W/next/plan.json (counts only)
+  finish-prepare --work W [--revised] [--no-evidence]
+                                                  after the checkers: check the key headers in W/next, count
+                                                  contradicted keys (a bad header or a missing evidence file
+                                                  is an error), pack the round as data/prepared.json
+  keys    DIR|SEALED.. [--plan PLAN]              the author's check of key headers (no content printed)
+  addendum --work W --md ADD.md [--session ID]    append to a session document (default: the last session)
+  verify  --work W --store CHECK_DIR              testing mode: the publish set against a fresh re-read
+  testing-note --work W --feedback J              testing mode: the learner's feedback + the store check
 
-Other:
-  status  STATE | plan STATE --out PLAN | record | reflect | doc   (the single steps of start, save and close)
-  stats   STATE [--all]                           figures and coded analysis for a progress review
-  review  STATE --review REVIEW.json --out NEXT   record a completed review; starts a new period
-  review-doc --md REPORT.md [--headline H] [--state S --index IDX] --out-dir D
-  snooze  STATE --days N --out NEXT
-  settings STATE [--config JSON] [--profile JSON] [--blueprint F] --out-dir D
-                                                  change settings and put the ledger in the layout, ready to save
-  theme   STATE [--set DOMAIN | --another] --out-dir D
-                                                  the learner changes the block's theme (a named domain, or the
-                                                  next proposal); alone: the block and the domains to choose from
-  place   STATE [--index IDX] --out-dir D          put a state from review/snooze/init in the layout
-  init    --profile JSON --config JSON --blueprint FILE(.json|.md) --out STATE
+Settings, review, setup (each on an open work folder):
+  settings --work W [--config J] [--profile J] [--blueprint F]
+  theme   --work W [--set DOMAIN | --another]     the learner changes the block's theme (a named domain, or
+                                                  the next proposal); alone: the block and the choices
+  stats   --work W                                figures and coded analysis for a progress review
+  review  --work W --review REVIEW.json           record a completed review; starts a new period
+  review-doc --work W --md REPORT.md [--headline H] [--date D] [--title T]
+  snooze  --work W [--days N]
+  init    --work W --profile J --config J --blueprint FILE(.json|.md) [--start-over]
+                                                  setup: the first ledger (W needs no store yet), index and page
+
+Maintenance, outside the protocol (their own files and folders):
+  validate STATE | validate --work W
   import  EXPORT.json --out-dir D                 page export {state, sessions, reviews} -> file layout
   reindex ROOT                                    rebuild ROOT/data/index.json
-  blueprint-md FILE --out BP.json | validate STATE
+  blueprint-md FILE --out BP.json
 
 Add `--today YYYY-MM-DD` before the command to fix the date.
 """
@@ -561,13 +572,6 @@ def review_status(state, today):
     if today >= due + dt.timedelta(days=REVIEW_GRACE_DAYS):
         return True, iso(due)
     return False, iso(due)
-
-
-def cmd_status(args):
-    today = today_from(args)
-    st = load_json(args.state)
-    check_schema(st)
-    print(json.dumps(status_dict(st, args.state, today), ensure_ascii=False))
 
 
 def check_schema(st):
@@ -1304,16 +1308,6 @@ def plan_summary(plan, out):
             "block": (plan.get("block") or {}).get("line")}
 
 
-def cmd_plan(args):
-    today = today_from(args)
-    st = load_json(args.state)
-    check_schema(st)
-    apply_prefs(st, load_json_arg(getattr(args, "prefs", None)))   # warnings: shown by start
-    plan = plan_round(st, args, today)
-    save_json(plan, args.out)
-    print(json.dumps(plan_summary(plan, args.out)))
-
-
 # ---------------------------------------------------------------- record
 
 def validate_round(rnd):
@@ -1791,15 +1785,6 @@ def report(out, size, result):
     return dict({"ok": True, "out": out, "bytes": size}, **result)
 
 
-def cmd_record(args):
-    today = today_from(args)
-    st = load_json(args.state)
-    check_schema(st)
-    res = record_round(st, load_json_arg(args.round), today)
-    size = save_json(st, args.out)
-    print(json.dumps(report(args.out, size, res), indent=1, ensure_ascii=False))
-
-
 def reflect_round(st, refl, today, session=None):
     """Apply the reflection `refl` to the unreflected session of ledger `st` (or to `session`),
     changing `st` in place. Returns what reflect and close report about it."""
@@ -1831,40 +1816,6 @@ def reflect_round(st, refl, today, session=None):
             "topics": summary, "open_gaps": len(st["gaps"]), "errata_ids": errata_ids,
             "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
             "warnings": warnings}
-
-
-def cmd_reflect(args):
-    today = today_from(args)
-    st = load_json(args.state)
-    check_schema(st)
-    res = reflect_round(st, load_json_arg(args.reflection) or {}, today, args.session)
-    size = save_json(st, args.out)
-    print(json.dumps(report(args.out, size, res), indent=1, ensure_ascii=False))
-
-
-# ---------------------------------------------------------------- session document
-
-def cmd_doc(args):
-    with open(args.md, "r", encoding="utf-8") as fh:
-        md = fh.read()
-    if args.part == "A":
-        rnd = load_json_arg(args.round) or {}
-        st = load_json(args.state) if args.state else None
-        sid = args.id or rnd.get("log_id") or rnd.get("id") or (st or {}).get("next_id")
-        if not sid:
-            die("part A needs --id, or --round with log_id, or --state")
-        doc = {"id": sid, "date": rnd.get("date") or iso(today_from(args)),
-               "title": rnd.get("title"), "summary": rnd.get("summary"), "tags": rnd.get("tags") or [],
-               "topics": sorted({it.get("topic") for it in rnd.get("items") or [] if it.get("topic")}),
-               "score": None, "format": round_format(rnd), "drill": (rnd.get("drill") or {}).get("code"),
-               "transcript": md, "closing": None, "reflected": False}
-        if rnd.get("items"):
-            ms = [adjusted_item_mastery(it)[0] for it in rnd["items"]]
-            doc["score"] = round(sum(ms) / len(ms), 2)
-    else:
-        doc = {"closing": md, "reflected": True}
-    save_json(doc, args.out)
-    print(json.dumps({"ok": True, "out": args.out, "part": args.part, "chars": len(md)}))
 
 
 # ---------------------------------------------------------------- stats
@@ -1974,8 +1925,7 @@ def agg_analytics(agg):
 
 def cmd_stats(args):
     today = today_from(args)
-    st = load_json(args.state)
-    check_schema(st)
+    st, _ = current_ledger(*job(args))
     cfg, prof, rv = st["config"], st["profile"], st.get("review") or {}
     log = st["sessions"]
     start = parse_date(rv.get("period_start")) or parse_date(st.get("created"))
@@ -2060,8 +2010,8 @@ def cmd_stats(args):
 
 def cmd_review(args):
     today = today_from(args)
-    st = load_json(args.state)
-    check_schema(st)
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
     rv = load_json_arg(args.review) or {}
     prof, cfg = st["profile"], st["config"]
     if rv.get("config_changes"):
@@ -2118,31 +2068,32 @@ def cmd_review(args):
     compact(st)
     st["gen"] = int(st.get("gen") or 0) + 1
     st["updated"] = iso(today)
-    size = save_json(st, args.out)
-    print(json.dumps({"ok": True, "out": args.out, "bytes": size, "gen": st["gen"], "reviews": len(st["reviews"]),
-                      "next_review_due": iso(next_due), "drills": st["drills"],
-                      "pending_errata": [e["id"] for e in st["pending_errata"]], "warnings": warnings}, indent=1))
+    out = {"ok": True, "gen": st["gen"], "reviews": len(st["reviews"]),
+           "next_review_due": iso(next_due), "drills": st["drills"],
+           "pending_errata": [e["id"] for e in st["pending_errata"]], "warnings": warnings}
+    path = publish_ledger(work, info, st, out, empty_prepared=True)
+    out.update({"out": path, "bytes": os.path.getsize(path)})
+    print(json.dumps(published(work, info, out), indent=1, ensure_ascii=False))
 
 
 def cmd_snooze(args):
     today = today_from(args)
-    st = load_json(args.state)
-    check_schema(st)
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
     st["review"]["next_due"] = iso(today + dt.timedelta(days=args.days))
     st["gen"] = int(st.get("gen") or 0) + 1
     st["updated"] = iso(today)
-    save_json(st, args.out)
-    print(json.dumps({"ok": True, "out": args.out, "gen": st["gen"], "next_review_due": st["review"]["next_due"]}))
+    out = {"ok": True, "gen": st["gen"], "next_review_due": st["review"]["next_due"]}
+    publish_ledger(work, info, st, out, empty_prepared=True)
+    print(json.dumps(published(work, info, out), ensure_ascii=False))
 
 
 def cmd_settings(args):
-    """Change settings. With --out-dir the changed ledger goes straight into the file layout
-    (what `place` does), so a settings change is one command."""
-    if not args.out and not args.out_dir:
-        die("settings needs --out-dir STORE_FILES (the changed ledger in the file layout, ready to save) or --out FILE")
+    """Change settings: the changed ledger goes into the publish set, with the index, an emptied
+    prepared round and the page if it is out of date, so a settings change is one command."""
     today = today_from(args)
-    st = load_json(args.state)
-    check_schema(st)
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
     cfg_changes = load_json_arg(args.config) if args.config else {}
     prof_changes = load_json_arg(args.profile) if args.profile else {}
     deep_merge(st["config"], cfg_changes or {})
@@ -2155,33 +2106,22 @@ def cmd_settings(args):
         anchor = parse_date(st["review"].get("last")) or parse_date(st["review"].get("period_start")) or today
         st["review"]["next_due"] = iso(anchor + dt.timedelta(days=int(st["config"]["review_interval_days"])))
     if args.blueprint:
-        text = open(args.blueprint, encoding="utf-8").read()
-        bp = json.loads(text) if args.blueprint.endswith(".json") else blueprint_from_md(text)
-        st["blueprint"] = bp
+        st["blueprint"] = read_blueprint(args.blueprint)
     st["gen"] = int(st.get("gen") or 0) + 1
     st["updated"] = iso(today)
     out = {"ok": True, "gen": st["gen"], "config": st["config"], "review": st["review"], **guideline_context(st)}
-    if args.out:
-        save_json(st, args.out)
-        out["out"] = args.out
-    if args.out_dir:
-        # straight into the file layout, ready to save: the index and the page are the ones read
-        # with the ledger unless named
-        index = args.index or beside_ledger(args.state, "index.json")
-        page = args.page or beside_ledger(args.state, "index.html")
-        placed = place_state(st, args.out_dir, index=index, page=page)
-        out.update({k: v for k, v in placed.items() if k not in ("ok", "gen")})
-    print(json.dumps(out, ensure_ascii=False))
+    publish_ledger(work, info, st, out, empty_prepared=True)
+    print(json.dumps(published(work, info, out), ensure_ascii=False))
 
 
 def cmd_theme(args):
     """The learner changes the theme of the block: `--set DOMAIN` (an id, a name or part of one)
     or `--another` (the next proposal). With neither, prints the block, the proposal and the
-    domains to choose from, and writes nothing. Like `settings`, --out-dir puts the changed
-    ledger straight into the file layout."""
+    domains to choose from, and writes nothing. Like `settings`, the changed ledger goes into
+    the publish set."""
     today = today_from(args)
-    st = load_json(args.state)
-    check_schema(st)
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
     if not args.set and not args.another:
         p = propose_theme(st) or {"ranking": []}
         bp = st.get("blueprint") or {}
@@ -2193,50 +2133,73 @@ def cmd_theme(args):
         return
     if args.set and args.another:
         die("theme takes --set DOMAIN or --another, not both")
-    if not args.out and not args.out_dir:
-        die("theme needs --out-dir STORE_FILES (the changed ledger in the file layout, ready to save) or --out FILE")
     res = change_theme(st, theme=args.set, another=args.another)
     block = status_block(st)
     out = {"ok": True, "changed": res["changed"], "block": block, "was": res["was"],
            "say": ("New block: %s. Round 1 of %d." % (res["reason"], block["length"])) if res["changed"]
                   else "%s is already the theme. %s." % (block["name"], block["line"])}
     if res["warnings"]:
-        out["warnings"] = res["warnings"]
+        out["warnings"] = list(res["warnings"])
     if res["changed"]:
         st["gen"] = int(st.get("gen") or 0) + 1
         st["updated"] = iso(today)
         out["gen"] = st["gen"]
-        if args.out:
-            save_json(st, args.out)
-            out["out"] = args.out
-        if args.out_dir:
-            placed = place_state(st, args.out_dir, index=args.index or beside_ledger(args.state, "index.json"),
-                                 page=args.page or beside_ledger(args.state, "index.html"))
-            out["warnings"] = list(out.get("warnings") or []) + list(placed.get("warnings") or [])
-            out.update({k: v for k, v in placed.items() if k not in ("ok", "gen", "warnings")})
-            if not out["warnings"]:
-                del out["warnings"]
+        publish_ledger(work, info, st, out, empty_prepared=True)
+        published(work, info, out)
     print(json.dumps(out, ensure_ascii=False))
 
 
 # ---------------------------------------------------------------- init, blueprint
 
+def read_blueprint(path):
+    try:
+        text = read_text(path)
+    except OSError:
+        die("blueprint not found: %s" % path)
+    if path.endswith(".json"):
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as e:
+            die("invalid JSON in %s: %s" % (path, e))
+    return blueprint_from_md(text)
+
+
 def cmd_init(args):
+    """Setup: the first ledger of a new learner, written into the publish set of the work folder
+    with an empty index, no prepared round and the page. The work folder needs no store yet; if
+    one was read into it with `open` and already holds a ledger, --start-over is needed."""
     today = today_from(args)
+    work = args.work
+    os.makedirs(work, exist_ok=True)
+    info = work_info(work)
+    if info.get("state") and os.path.isfile(info["state"]) and not args.start_over:
+        die("the store read into this work folder already holds a ledger: change it with `settings`, "
+            "or pass --start-over if the learner asked to start again from nothing")
     st = new_state(today)
     deep_merge(st["profile"], load_json_arg(args.profile) or {})
     deep_merge(st["config"], load_json_arg(args.config) or {})
     st["profile"]["onboarded_at"] = iso(today)
     check_round_mix(st["config"])
     st["config"]["round_set_at"] = st["config"].get("round_set_at") or now_ts()
-    text = open(args.blueprint, encoding="utf-8").read()
-    st["blueprint"] = json.loads(text) if args.blueprint.endswith(".json") else blueprint_from_md(text)
+    st["blueprint"] = read_blueprint(args.blueprint)
     iv = int(st["config"].get("review_interval_days") or 42)
     st["review"] = {"last": None, "next_due": iso(today + dt.timedelta(days=iv)), "period_start": iso(today)}
     st["gen"] = 1
-    size = save_json(st, args.out)
-    print(json.dumps({"ok": True, "out": args.out, "bytes": size, "domains": list(st["blueprint"]),
-                      "topics": len(bp_topics(st))}))
+    if not info:
+        info = {"store": None, "state": None, "version": None, "prefs": None}
+    info.update({"session_id": st["next_id"], "started": iso(today)})
+    if args.start_over:         # nothing of the old ledger is carried on: not its index, not this job's files
+        info["state"] = None
+        for rel in (STATE_PATH, INDEX_PATH):
+            if in_work(work, os.path.join(PUBLISH_DIR, rel)):
+                os.remove(os.path.join(work, PUBLISH_DIR, rel))
+    save_json(info, os.path.join(work, WORK_FILE))
+    out = {"ok": True, "gen": st["gen"], "domains": list(st["blueprint"]), "topics": len(bp_topics(st))}
+    path = publish_ledger(work, info, st, out, empty_prepared=True, fresh_index=bool(args.start_over))
+    if not store_file(work, info, "index.html"):        # a new store: the page goes with the first ledger
+        publish_text(work, "index.html", read_text(PAGE_TEMPLATE))
+    out.update({"out": path, "bytes": os.path.getsize(path), "work": os.path.abspath(work)})
+    print(json.dumps(published(work, info, out), ensure_ascii=False))
 
 
 def cmd_blueprint_md(args):
@@ -2246,8 +2209,14 @@ def cmd_blueprint_md(args):
 
 
 def cmd_validate(args):
-    st = load_json(args.state)
-    check_schema(st)
+    if args.work:
+        st, path = current_ledger(*job(args))
+    elif args.state:
+        path = args.state
+        st = load_json(path)
+        check_schema(st)
+    else:
+        die("validate needs --work WORK_FOLDER (or a ledger file)")
     problems = []
     seen = set()
     for s in st["sessions"] + st["previous"]:
@@ -2262,7 +2231,7 @@ def cmd_validate(args):
     for g in st["gaps"]:
         if g.get("topic") not in st["topics"]:
             problems.append("gap for unknown topic %s" % g.get("topic"))
-    size = os.path.getsize(args.state)
+    size = os.path.getsize(path)
     print(json.dumps({"ok": not problems, "bytes": size, "sessions": len(st["sessions"]),
                       "previous": len(st["previous"]), "topics": len(st["topics"]), "problems": problems}))
     return 0 if not problems else 1
@@ -2282,13 +2251,6 @@ def session_path(sid):
 
 def review_path(date):
     return "data/reviews/%s.json" % date
-
-
-def write_out(out_dir, rel, obj):
-    path = os.path.join(out_dir, rel)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    save_json(obj, path)
-    return {"as": rel, "path": os.path.abspath(path)}
 
 
 INDEX_SESSION_KEYS = ("id", "date", "title", "summary", "tags", "topics", "score", "format", "drill", "reflected")
@@ -2406,50 +2368,73 @@ def status_block(st):
     return out
 
 
-def cmd_start(args):
-    """status + plan in one call. Prints neutral status and plan counts only (no topics)."""
+def plan_options_given(args):
+    return any((getattr(args, "mcqs", None) is not None, getattr(args, "focused", None) is not None,
+                args.no_case, args.domain, args.no_new, args.allow_repeat, args.no_drill, args.force_drill,
+                args.seed is not None))
+
+
+def cmd_open(args):
+    """Set up the work folder for one job from the local copy of the learner's store. Prints
+    neutral status and counts only (never topics)."""
     today = today_from(args)
-    work = getattr(args, "work", None) or args.work_dir
-    if not args.out:
-        if not work:
-            die("start needs --work WORK_FOLDER (or --out PLAN.json)")
-        args.out = os.path.join(work, "plan.json")
-    work = work or os.path.dirname(os.path.abspath(args.out))
-    args.work_dir = work
-    st = load_json(args.state)
-    check_schema(st)
-    prefs_warn = []
-    prefs = load_json_arg(args.prefs)
-    prefs_changes = apply_prefs(st, prefs, prefs_warn)
-    status = status_dict(st, args.state, today)
-    if not status["onboarding_needed"]:
-        os.makedirs(work, exist_ok=True)
-        ledger = os.path.abspath(args.state)
-        set_aside = set_aside_earlier_round(work)
+    info, st, extra = open_work(args.work, args.store, args.version, load_json_arg(args.prefs), today)
+    status = status_dict(st, info["state"], today)
+    status.update(extra)
+    print(json.dumps(status, ensure_ascii=False))
+
+
+def cmd_start(args):
+    """Start a round in the work folder: neutral status and plan counts (never topics) and, with
+    a prepared round that still fits, the first part to present. With --store the work folder
+    is opened first (what `open` does); without, the round continues the job that is open."""
+    today = today_from(args)
+    work = args.work
+    extra = {}
+    if args.store:
+        info, _, extra = open_work(work, args.store, args.version, load_json_arg(args.prefs), today)
+    else:
+        info = job(args)[1]
+        if args.prefs:
+            info["prefs"] = load_json_arg(args.prefs)
+        if args.version:
+            info["version"] = args.version
+        set_aside = set_aside_round(work)       # a round after another job here: its files must not mix
         if set_aside:
-            status["earlier_round_set_aside"] = set_aside
-            if not os.path.isfile(ledger):      # the ledger was the earlier round's own output
-                ledger = os.path.join(set_aside, os.path.relpath(ledger, os.path.abspath(work)))
-        save_json({"state": ledger, "session_id": st.get("next_id"),
-                   "started": iso(today), "prefs": prefs}, os.path.join(work, WORK_FILE))
-        status["work"] = os.path.abspath(work)
+            extra["earlier_set_aside"] = set_aside
+    st, path = current_ledger(work, info)
+    prefs_warn = []
+    prefs_changes = apply_prefs(st, info.get("prefs"), prefs_warn)
+    status = status_dict(st, path, today)
+    status.update(extra)
+    status["work"] = os.path.abspath(work)
+    info.update({"session_id": st.get("next_id"), "started": iso(today)})
+    info.pop("closed", None)
+    save_json(info, os.path.join(work, WORK_FILE))
+    publish_set(work, info)
     if prefs_changes:
         status["page_settings_applied"] = prefs_changes
     if prefs_warn:
-        status["warnings"] = prefs_warn
+        status["warnings"] = list(status.get("warnings") or []) + prefs_warn
+    if status["onboarding_needed"]:
+        status["plan"] = None
+        print(json.dumps(status, ensure_ascii=False))
+        return
+    plan_path = os.path.join(work, PLAN_FILE)
     plan_out = None
-    prepared = None
-    if getattr(args, "prepared", None) and not status["onboarding_needed"]:
-        prepared = take_prepared(args, st, today)
-        status["prepared"] = {k: v for k, v in prepared.items()
-                              if k in ("used", "why", "made", "ready", "present_block", "work_dir")}
-        if prepared["used"]:
-            plan_out = prepared["summary"]
-            status["present"] = prepared["present"]
-    if not status["onboarding_needed"] and plan_out is None:
+    if args.no_prepared:
+        prepared = {"used": False, "why": "--no-prepared was given for this round"}
+    else:
+        prepared = take_prepared(args, st, today, store_file(work, info, PREPARED_PATH), work, plan_path)
+    status["prepared"] = {k: v for k, v in prepared.items()
+                          if k in ("used", "why", "made", "ready", "present_block")}
+    if prepared["used"]:
+        plan_out = prepared["summary"]
+        status["present"] = prepared["present"]
+    else:
         plan = plan_round(st, args, today)
-        save_json(plan, args.out)
-        plan_out = plan_summary(plan, args.out)
+        save_json(plan, plan_path)
+        plan_out = plan_summary(plan, plan_path)
     status["plan"] = plan_out
     print(json.dumps(status, ensure_ascii=False))
 
@@ -2472,19 +2457,20 @@ def plan_counts(st, args=None):
 
 
 def cmd_prepare(args):
-    """After the close: plan the NEXT round as of tomorrow, so that the whole round (short
-    questions, case, feedback notes) can be drafted now and the next session starts with
+    """After the close (or in a prepare-only job): plan the NEXT round as of tomorrow from the
+    current ledger of the work folder, into <work>/next/plan.json, so that the whole round
+    (short questions, case, feedback notes) can be drafted now and the next session starts with
     nothing to write. Prints counts only."""
     today = today_from(args)
-    st = load_json(args.state)
-    check_schema(st)
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
     cfg = st["config"]
     why = None
     if not cfg.get("prepare_ahead", True):
         why = "prepare_ahead is off"
     elif st.get("unreflected") and not args.allow_unreflected:
         why = "the last session is still waiting for its reflection"
-    elif args.if_needed and prepared_fits(args.if_needed, st, today):
+    elif args.if_needed and prepared_fits(store_file(work, info, PREPARED_PATH), st, today):
         why = "a round is already prepared"
     if why:
         print(json.dumps({"ok": True, "prepare": False, "why": why}))
@@ -2492,14 +2478,17 @@ def cmd_prepare(args):
     ns = argparse.Namespace(focused=None, mcqs=None, no_case=False, domain=None, no_new=False,
                             allow_repeat=False, no_drill=False, force_drill=False, seed=None)
     plan = plan_round(st, ns, today + dt.timedelta(days=1))
-    summary = plan_summary(plan, args.out)
+    folder = os.path.join(work, NEXT_DIR)
+    os.makedirs(folder, exist_ok=True)
+    out = os.path.join(folder, PLAN_FILE)
+    summary = plan_summary(plan, out)
     plan["prepared"] = {"gen": st.get("gen"), "made": iso(today), "session_id": st.get("next_id")}
-    save_json(plan, args.out)
-    summary.update({"prepare": True, "gen": st.get("gen"),
-                    "note": "Sealed: have the whole round drafted for this plan into one folder "
+    save_json(plan, out)
+    summary.update({"prepare": True, "gen": st.get("gen"), "folder": os.path.abspath(folder),
+                    "note": "Sealed: have the whole round drafted for this plan into this folder "
                             "(sealed_questions.md, sealed_case.md, kit_questions.md, kit_case.md), "
                             "have each sealed file checked (evidence_questions.md, evidence_case.md), "
-                            "then run finish-prepare on it."})
+                            "then run finish-prepare --work on the same work folder."})
     print(json.dumps(summary, ensure_ascii=False))
 
 
@@ -2544,45 +2533,26 @@ def prepared_round_files(plan, folder):
     return files, has, warnings
 
 
-def plan_for_stash(st, plan_path):
+def plan_for_prepared(st, plan_path):
     plan = load_json(plan_path)
     meta = plan.get("prepared") or {}
     if meta.get("gen") != st.get("gen"):
-        die("this plan was not made by `prepare` from this ledger (gen %s, ledger %s)" % (meta.get("gen"), st.get("gen")))
+        die("this plan was not made by `prepare` from this ledger (gen %s, ledger %s): run `prepare` again"
+            % (meta.get("gen"), st.get("gen")))
     return plan
 
 
-def stash_round(st, plan, files, has, warnings, out_dir):
-    """Write the prepared round (data/prepared.json) into out_dir; returns what to print."""
-    os.makedirs(out_dir, exist_ok=True)
-    doc = {"v": 2, "gen": st.get("gen"), "made": (plan.get("prepared") or {}).get("made"),
-           "session_id": st.get("next_id"), "counts": plan.get("counts") or {}, "has": has,
-           "payload": pack({"plan": plan, "files": files})}
-    f = write_out(out_dir, PREPARED_PATH, doc)
-    out = {"ok": True, "gen": st.get("gen"), "has": has, "files": [f]}
-    if warnings:
-        out["warnings"] = warnings
-    return out
-
-
-def cmd_stash(args):
-    """Keep the round drafted for next time in the store (data/prepared.json): the plan, the
-    sealed short questions, the sealed case and the feedback notes, whichever were drafted.
-    A single step of `finish-prepare`, which also reads the evidence check first."""
-    st = load_json(args.state)
-    check_schema(st)
-    plan = plan_for_stash(st, args.plan)
-    files, has, warnings = prepared_round_files(plan, args.dir)
-    print(json.dumps(stash_round(st, plan, files, has, warnings, args.out_dir), ensure_ascii=False))
+def prepared_doc(st, plan, files, has):
+    """The prepared round as it is kept in the store (data/prepared.json), packed."""
+    return {"v": 2, "gen": st.get("gen"), "made": (plan.get("prepared") or {}).get("made"),
+            "session_id": st.get("next_id"), "counts": plan.get("counts") or {}, "has": has,
+            "payload": pack({"plan": plan, "files": files})}
 
 
 # The last line of an evidence file, as references/evidence_check.md §3 prescribes it.
 CONTRADICTED_RE = re.compile(r"^[ \t>*_`-]*Keys contradicted[ \t*_`]*:[ \t*_`]*(\d+)[ \t*_`.]*$", re.M | re.I)
 EVIDENCE_FOR = {"sealed_questions.md": "evidence_questions.md", "sealed_case.md": "evidence_case.md"}
 NEXT_DIR = "next"                       # in the work folder: the next round's plan and drafts
-STASH_DIR = "out3"                      # what finish-prepare writes
-
-
 def contradicted_keys(text):
     """The number on an evidence file's `Keys contradicted: <n>` line (the last one, if the
     file was written twice), or None when the file has no such line."""
@@ -2591,21 +2561,20 @@ def contradicted_keys(text):
 
 
 def cmd_finish_prepare(args):
-    """After the checkers: check the key headers of the sealed files, read the evidence files'
-    counts of contradicted keys and, when the round is clean (or was revised), stash it. A
-    missing or malformed key header stops the command, so that it is not found only at `save`,
-    in the middle of the round. An evidence file that is missing, empty or without its count
-    line stops it too: it is never read as "nothing contradicted".
+    """After the checkers: check the key headers of the sealed files in <work>/next, read the
+    evidence files' counts of contradicted keys and, when the round is clean (or was revised),
+    pack it and add it to the publish set as data/prepared.json. A missing or malformed key
+    header stops the command, so that it is not found only at `save`, in the middle of the
+    round. An evidence file that is missing, empty or without its count line stops it too: it
+    is never read as "nothing contradicted".
     Prints counts, file names and the names of keys and fields only."""
-    work = args.work
-    plan_path = args.plan or (os.path.join(work, NEXT_DIR, "plan.json") if work else None)
-    folder = args.dir or (os.path.join(work, NEXT_DIR) if work else None)
-    out_dir = args.out_dir or (os.path.join(work, STASH_DIR) if work else None)
-    if not (plan_path and folder and out_dir):
-        die("finish-prepare needs --work WORK_FOLDER (or --plan, --dir and --out-dir)")
-    st = load_json(args.state)
-    check_schema(st)
-    plan = plan_for_stash(st, plan_path)
+    work, info = job(args)
+    folder = os.path.join(work, NEXT_DIR)
+    plan_path = os.path.join(folder, PLAN_FILE)
+    if not os.path.isfile(plan_path):
+        die("no plan in %s: run `prepare --work %s` first" % (folder, work))
+    st, _ = current_ledger(work, info)
+    plan = plan_for_prepared(st, plan_path)
     files, has, warnings = prepared_round_files(plan, folder)
     _, key_problems = check_key_headers([os.path.join(folder, n) for n in SEALED_FILES if n in files], plan)
     if key_problems:
@@ -2641,33 +2610,42 @@ def cmd_finish_prepare(args):
         out.update({"evidence": per_file, "contradicted": total, "revise": bool(total) and not args.revised})
         if args.revised:
             out["revised"] = True
+    if warnings:
+        out["warnings"] = warnings
     if out["revise"]:
         out.update({"stashed": False,
                     "next": "start the author once more with Parts `revise` on this folder, wait for it, "
                             "then run this command again with --revised"})
-        if warnings:
-            out["warnings"] = warnings
         print(json.dumps(out, ensure_ascii=False))
         return
-    stashed = stash_round(st, plan, files, has, warnings, out_dir)
-    out.update(stashed)
-    out["stashed"] = True
-    print(json.dumps(out, ensure_ascii=False))
+    publish_json(work, PREPARED_PATH, prepared_doc(st, plan, files, has))
+    out.update({"gen": st.get("gen"), "has": has, "stashed": True})
+    print(json.dumps(published(work, info, out), ensure_ascii=False))
 
 
 def cmd_present(args):
-    """Print only the text the learner is to see (one present block) from sealed files, so the
-    assistant can send it without opening the keys. `--block bank` prints the case's results bank
-    (results, course, Stage 2 questions), which is all that is needed to send Stage 2."""
-    pres = blocks(args.files, BANK_RE if args.block == "bank" else PRESENT_RE)
+    """Print only the text the learner is to see (one present block) from the sealed files of
+    the work folder, so the assistant can send it without opening the keys. `--block bank`
+    prints the case's results bank (results, course, Stage 2 questions), which is all that is
+    needed to send Stage 2."""
+    files = list(args.files or [])
+    if not files:
+        if not args.work:
+            die("present needs --work WORK_FOLDER")
+        files = [p for p in (in_work(args.work, n) for n in SEALED_FILES) if p]
+        if not files:
+            die("no sealed files (%s) in the work folder %s" % (", ".join(SEALED_FILES), args.work))
+    pres = blocks(files, BANK_RE if args.block == "bank" else PRESENT_RE)
     body = pres.get(args.block)
     if not body:
-        die("no <!-- present: %s --> block in %s" % (args.block, ", ".join(args.files)))
+        die("no <!-- present: %s --> block in %s" % (args.block, ", ".join(files)))
     sys.stdout.write(body.strip() + "\n")
 
 
 def prepared_fits(path, st, today):
     """Is the prepared round in `path` still usable for this ledger with its normal mix?"""
+    if not path:
+        return False
     try:
         with open(path, "r", encoding="utf-8") as fh:
             doc = json.load(fh)
@@ -2679,23 +2657,22 @@ def prepared_fits(path, st, today):
                 and made and 0 <= (today - made).days <= PREPARED_MAX_AGE_DAYS)
 
 
-def take_prepared(args, st, today):
-    """Use the round prepared at the last close if it still fits: same ledger generation, same
-    mix, no one-off options, not too old, none of its topics tested today."""
+def take_prepared(args, st, today, path, work, plan_path):
+    """Use the round prepared at the last close (`path`, the store's data/prepared.json) if it
+    still fits: same ledger generation, same mix, no one-off options, not too old, none of its
+    topics tested today. Its plan goes to `plan_path`, its files into the work folder."""
     def no(why):
         return {"used": False, "why": why}
-    if not os.path.exists(args.prepared):
+    if not path or not os.path.exists(path):
         return no("no prepared round")
     try:
-        with open(args.prepared, "r", encoding="utf-8") as fh:
+        with open(path, "r", encoding="utf-8") as fh:
             doc = json.load(fh)
     except (ValueError, OSError):
         return no("unreadable")
     if not isinstance(doc, dict) or not doc.get("payload"):
         return no("no prepared round")
-    if any((getattr(args, "mcqs", None) is not None, getattr(args, "focused", None) is not None,
-            args.no_case, args.domain, args.no_new, args.allow_repeat, args.no_drill, args.force_drill,
-            args.seed is not None)):
+    if plan_options_given(args):
         return no("one-off options were given for this round")
     if doc.get("gen") != st.get("gen") or doc.get("session_id") != st.get("next_id"):
         return no("the ledger changed since it was prepared")
@@ -2724,9 +2701,7 @@ def take_prepared(args, st, today):
             return no("one of its topics was tested today")
     plan["date"] = iso(today)
     plan["prepared"] = dict(plan.get("prepared") or {}, used=True)
-    save_json(plan, args.out)
-    work = args.work_dir or os.path.dirname(os.path.abspath(args.out))
-    os.makedirs(work, exist_ok=True)
+    save_json(plan, plan_path)
     written = []
     for name in PREPARED_FILES:
         if files.get(name):
@@ -2735,13 +2710,12 @@ def take_prepared(args, st, today):
             written.append(name)
     items = plan.get("items") or []
     counts = plan.get("counts") or {}
-    summary = {"ok": True, "out": args.out, "items": len(items), "mcqs": counts.get("mcqs"),
+    summary = {"ok": True, "out": plan_path, "items": len(items), "mcqs": counts.get("mcqs"),
                "focused": counts.get("focused"), "case": counts.get("case"),
                "case_format": plan.get("case_format"), "estimated_minutes": plan.get("estimated_minutes"),
                "item_order": plan.get("item_order"), "session_id": st.get("next_id"), "prepared": True}
     return {"used": True, "made": doc.get("made"), "summary": summary, "ready": written,
-            "present": first, "present_block": "questions" if q_text else "case",
-            "work_dir": os.path.abspath(work)}
+            "present": first, "present_block": "questions" if q_text else "case"}
 
 
 PRESENT_RE = re.compile(r"<!--\s*present:\s*([a-z0-9_]+)\s*-->\s*\n(.*?)\n?\s*<!--\s*/present\s*-->", re.S)
@@ -2849,27 +2823,23 @@ def version_tuple(v):
     return tuple(int(x) for x in re.findall(r"\d+", v or "0"))
 
 
-def page_upgrade(out_dir, live_page, warnings):
+def page_upgrade(work, info, warnings):
     """If the learner's live page (index.html, read with the ledger) is older than this skill's
-    template, write the template as out_dir/index.html so it is published with the save."""
+    template, put the template into the publish set so it is published with the ledger.
+    Returns {"from", "to"} when it did."""
+    live_page = store_file(work, info, "index.html")
     if not live_page:
         return None
     try:
-        with open(live_page, "r", encoding="utf-8") as fh:
-            m = PAGE_VERSION_RE.search(fh.read())
+        m = PAGE_VERSION_RE.search(read_text(live_page))
     except OSError:
-        warnings.append("--page: could not read %s; the page was not checked" % live_page)
+        warnings.append("could not read %s; the page was not checked" % live_page)
         return None
     live = m.group(1) if m else "0"
     if version_tuple(live) >= version_tuple(PAGE_VERSION):
         return None
-    with open(PAGE_TEMPLATE, "r", encoding="utf-8") as fh:
-        html = fh.read()
-    path = os.path.join(out_dir, "index.html")
-    with open(path, "w", encoding="utf-8") as fh:
-        fh.write(html)
-    return {"as": "index.html", "path": os.path.abspath(path),
-            "page_upgrade": {"from": live, "to": PAGE_VERSION}}
+    publish_text(work, "index.html", read_text(PAGE_TEMPLATE))
+    return {"from": live, "to": PAGE_VERSION}
 
 
 # ---------------------------------------------------------------- structured keys
@@ -3113,11 +3083,26 @@ def cmd_keys(args):
 
 # ---------------------------------------------------------------- the work folder
 #
-# One round is worked on in one scratch folder. `start` notes there where the ledger is;
-# `answer` adds the learner's answers part by part; `save` and `close` find everything else by
-# these names, so no command line has to list the round's files.
+# One job is worked on in one scratch folder: a round, or a settings change, a theme change,
+# a review, or preparing the next round. `open` (or `start --store`) notes there where the
+# local copy of the learner's store is; from then on every command needs only `--work`.
+#
+#   <work>/work.json      what `open` noted: the store copy, the ledger as read, the session id
+#   <work>/plan.json, sealed_*.md, kit_*.md, evidence_*.md, answers.md, stage2.md,
+#          feedback_questions.md, feedback.md, round.json, reflection.json, B.md
+#                         the files of the round, each under its fixed name
+#   <work>/next/          the next round: its plan and drafts (`prepare`, `finish-prepare`)
+#   <work>/publish/       the publish set: the newest version of every store file this job
+#                         changed, at its store path (data/state.json, data/sessions/…)
+#   <work>/publish.json   the publish set's manifest: the store version read and the files
+#                         in write order, the ledger last
+#   <work>/earlier/<n>/   the files of an earlier job in the same folder, set aside
+#
+# The current ledger of a job is the one in the publish set, or the one read while nothing
+# has been written. Any other store file is looked up in the publish set first, then in the
+# store copy.
 
-WORK_FILE = "work.json"                 # written by start: where the ledger is, the page settings
+WORK_FILE = "work.json"                 # written by open/start: the store copy, the ledger read, the page settings
 ANSWERS_FILE = "answers.md"             # written by answer, one block per part
 ANSWER_PARTS = ("questions", "case", "final", "notes", "reflection")
 SEALED_FILES = ("sealed_questions.md", "sealed_case.md")
@@ -3126,14 +3111,25 @@ FEEDBACK_QUESTIONS_FILE = "feedback_questions.md"
 FEEDBACK_FILE = "feedback.md"
 ROUND_FILE = "round.json"
 REFLECTION_FILE = "reflection.json"
+PART_A_FILE = "A.md"                    # written by save: part A as it went into the session document
 PART_B_FILE = "B.md"
-SAVE_DIR = "out1"                       # what save writes; close reads it
-CLOSE_DIR = "out2"                      # what close writes
+BEFORE_SAVE_FILE = "before_save.json"   # the ledger as it was before this round was recorded (save can run again)
+BEFORE_CLOSE_FILE = "before_close.json"  # the ledger as save left it (close can run again)
+VERIFY_FILE = "verify.json"
+PUBLISH_DIR = "publish"
+PUBLISH_FILE = "publish.json"
+EARLIER_DIR = "earlier"
+# what one round leaves in the work folder, and what a whole job leaves
 ROUND_FILES = PREPARED_FILES + (ANSWERS_FILE, STAGE2_FILE, FEEDBACK_QUESTIONS_FILE, FEEDBACK_FILE, ROUND_FILE,
-                                RECORD_FILE, REFLECTION_FILE, PART_B_FILE, "verify.json")
-ROUND_DIRS = (SAVE_DIR, CLOSE_DIR, "out3", "next", "check")
+                                RECORD_FILE, REFLECTION_FILE, PART_A_FILE, PART_B_FILE, BEFORE_SAVE_FILE,
+                                BEFORE_CLOSE_FILE, VERIFY_FILE, PLAN_FILE, NEXT_DIR)
+JOB_FILES = ROUND_FILES + (WORK_FILE, PUBLISH_FILE, PUBLISH_DIR)
 REFLECTION_HEADING_RE = re.compile(r"^###\s+Reflection\b", re.M)
 ANSWER_MARK_RE = re.compile(r"<!--\s*/?\s*answers\b")
+# The write order of the publish set: log entries before the index that lists them, the
+# ledger last, so an interrupted write never leaves a ledger that points at a missing file.
+PUBLISH_FIRST = ("data/sessions/", "data/reviews/", "data/testing/")
+PUBLISH_LAST = (INDEX_PATH, "index.html", PREPARED_PATH, STATE_PATH)
 
 
 def read_text(path):
@@ -3142,56 +3138,213 @@ def read_text(path):
 
 
 def work_info(work):
-    """What `start` noted in the work folder ({} when start was not run there)."""
+    """What `open` noted in the work folder ({} when no job was opened there)."""
     path = os.path.join(work, WORK_FILE)
     info = load_json(path) if os.path.isfile(path) else {}
     return info if isinstance(info, dict) else {}
 
 
+def job(args):
+    """(work folder, what `open` noted there) for a command that works on an open job."""
+    work = args.work
+    info = work_info(work)
+    if not info:
+        die("no job is open in the work folder %s: read the store into a folder and run `open --work %s "
+            "--store DIR` first (`start --work %s --store DIR` for a round)" % (work, work, work))
+    return work, info
+
+
 def in_work(work, name):
-    """The path of a file of the round in the work folder, or None when it is not there."""
+    """The path of a file in the work folder, or None when it is not there."""
     path = os.path.join(work, name) if work else None
     return path if path and os.path.isfile(path) else None
 
 
-def find_ledger(work, info):
-    """The ledger this round started from: where `start` read it, else the usual places."""
-    cands = [info.get("state"), os.path.join(work, "store", "state.json"), os.path.join(work, "store", STATE_PATH)]
-    for path in cands:
-        if path and os.path.isfile(path):
-            return path
-    die("no ledger found for the work folder %s: run `start STATE --work %s` first, or name it (save STATE …)"
-        % (work, work))
-
-
-def beside_ledger(state_path, *names):
-    """A file of the store read together with the ledger: beside it, or one folder up when the
-    ledger sits in data/ (the page, index.html)."""
-    here = os.path.dirname(os.path.abspath(state_path))
-    dirs = [here] + ([os.path.dirname(here)] if os.path.basename(here) == "data" else [])
-    for d in dirs:
-        path = os.path.join(d, *names)
-        if os.path.isfile(path):
-            return path
-    return None
-
-
-def set_aside_earlier_round(work):
-    """A second round in the same work folder: move the files of the round before it into
-    earlier/<n>/, so its answers and feedback cannot end up in the new round's log. Nothing
-    happens in a folder where no round has got as far as an answer or a save."""
-    if not any(os.path.exists(os.path.join(work, n)) for n in (ANSWERS_FILE, SAVE_DIR, CLOSE_DIR)):
+def store_copy_file(store, rel):
+    """A store file in a local copy of the store: at its store path, or flat (the data/ folder
+    left out, or the bare file name), as a read tool may have saved it."""
+    if not store:
         return None
-    earlier = os.path.join(work, "earlier")
+    cands = [os.path.join(store, *rel.split("/"))]
+    if rel.startswith("data/"):
+        cands.append(os.path.join(store, *rel.split("/")[1:]))
+    cands.append(os.path.join(store, os.path.basename(rel)))
+    return next((p for p in cands if os.path.isfile(p)), None)
+
+
+def store_file(work, info, rel):
+    """The newest version this job has of a store file: the publish set's, else the store
+    copy's, else None."""
+    return in_work(work, os.path.join(PUBLISH_DIR, *rel.split("/"))) or store_copy_file(info.get("store"), rel)
+
+
+def current_ledger(work, info):
+    """(ledger, its path): the ledger in the publish set, else the ledger as it was read."""
+    path = in_work(work, os.path.join(PUBLISH_DIR, *STATE_PATH.split("/"))) or info.get("state")
+    if not path or not os.path.isfile(path):
+        die("no ledger in the work folder %s: run `open --work %s --store DIR` on a fresh read of the store "
+            "(for a new learner: `init --work %s …`)" % (work, work, work))
+    st = load_json(path)
+    check_schema(st)
+    return st, path
+
+
+def has_session(st, sid):
+    return any(s.get("id") == sid for s in (st.get("sessions") or []) + (st.get("previous") or []))
+
+
+def publish_path(work, rel):
+    path = os.path.abspath(os.path.join(work, PUBLISH_DIR, *rel.split("/")))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return path
+
+
+def publish_json(work, rel, obj):
+    """Put a JSON document into the publish set at its store path; returns the local path."""
+    path = publish_path(work, rel)
+    save_json(obj, path)
+    return path
+
+
+def publish_text(work, rel, text):
+    path = publish_path(work, rel)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text)
+    return path
+
+
+def publish_order(rel):
+    if rel in PUBLISH_LAST:
+        return (2, PUBLISH_LAST.index(rel), rel)
+    return (0 if rel.startswith(PUBLISH_FIRST) else 1, 0, rel)
+
+
+def publish_set(work, info):
+    """Rebuild the manifest (<work>/publish.json) from what the publish set holds and return its
+    files, [{"as": store path, "path": local file}], in write order: the ledger last."""
+    root = os.path.join(work, PUBLISH_DIR)
+    rels = []
+    for folder, _, names in os.walk(root):
+        for n in names:
+            if not n.startswith("."):
+                rels.append(os.path.relpath(os.path.join(folder, n), root).replace(os.sep, "/"))
+    files = [{"as": rel, "path": os.path.abspath(os.path.join(root, *rel.split("/")))}
+             for rel in sorted(rels, key=publish_order)]
+    save_json({"version": info.get("version"), "files": files}, os.path.join(work, PUBLISH_FILE))
+    return files
+
+
+def published(work, info, out):
+    """Add the whole publish set to what a writing command prints: `files` in write order and
+    `publish`, the manifest's path. Whoever carries files to the store publishes all of it."""
+    out["files"] = publish_set(work, info)
+    out["publish"] = os.path.abspath(os.path.join(work, PUBLISH_FILE))
+    return out
+
+
+def publish_ledger(work, info, st, out, session=None, review=None, empty_prepared=False, fresh_index=False):
+    """Put the ledger `st` into the publish set with what goes with it: the index (with a new
+    session or review document, which is put there too), an emptied prepared round when the
+    change makes the prepared one unusable, and the page if the learner's is out of date.
+    Notes `page_upgraded` and warnings in `out`; returns the ledger's local path."""
+    path = publish_json(work, STATE_PATH, st)
+    idx = load_index(None if fresh_index else store_file(work, info, INDEX_PATH), st)
+    if session:
+        publish_json(work, session_path(session["id"]), session)
+        index_put_session(idx, session)
+    if review:
+        publish_json(work, review_path(review["date"]), review)
+        index_put_review(idx, review)
+    publish_json(work, INDEX_PATH, finish_index(idx, st))
+    if empty_prepared:
+        publish_json(work, PREPARED_PATH, {"v": 1, "empty": True})
+    warnings = []
+    up = page_upgrade(work, info, warnings)
+    if up:
+        out["page_upgraded"] = up
+    if warnings:
+        out["warnings"] = list(out.get("warnings") or []) + warnings
+    return path
+
+
+def set_aside(work, names):
+    """Move the named files and folders of the work folder into earlier/<n>/; returns that
+    folder, or None when none of them is there."""
+    there = [n for n in names if os.path.exists(os.path.join(work, n))]
+    if not there:
+        return None
+    earlier = os.path.join(work, EARLIER_DIR)
     n = 1
     while os.path.exists(os.path.join(earlier, str(n))):
         n += 1
     dest = os.path.join(earlier, str(n))
     os.makedirs(dest)
-    for name in ROUND_FILES + ROUND_DIRS + (WORK_FILE,):
-        if os.path.exists(os.path.join(work, name)):
-            os.replace(os.path.join(work, name), os.path.join(dest, name))
+    for name in there:
+        os.replace(os.path.join(work, name), os.path.join(dest, name))
     return os.path.abspath(dest)
+
+
+def set_aside_earlier_job(work):
+    """A new job in a work folder that holds an earlier one: move everything of the earlier job
+    (its answers and feedback, its publish set, its next round) into earlier/<n>/, so nothing
+    of it can end up in the new job's log or publish set. Nothing happens in a folder where no
+    job has got as far as an answer, a draft of the next round or a written file."""
+    if not any(os.path.exists(os.path.join(work, n)) for n in (ANSWERS_FILE, RECORD_FILE, PUBLISH_DIR, NEXT_DIR)):
+        return None
+    return set_aside(work, JOB_FILES)
+
+
+def set_aside_round(work):
+    """A round started in a job that already holds a round's files (a late reflection closed
+    first, or a second round): move the earlier round's files aside. The publish set stays:
+    it is the job's, and the new round continues from its ledger."""
+    if not any(os.path.exists(os.path.join(work, n)) for n in (ANSWERS_FILE, RECORD_FILE)):
+        return None
+    return set_aside(work, ROUND_FILES)
+
+
+def open_work(work, store, version, prefs, today):
+    """Set up the work folder for one job from `store`, the local copy of the learner's store
+    as it was just read (the store's layout, or its files side by side). Returns (what was
+    noted in work.json, the ledger, what to add to the printed status)."""
+    store = os.path.abspath(store)
+    if not os.path.isdir(store):
+        die("the store copy %s is not a folder: read the store's files into a folder first" % store)
+    ledger = store_copy_file(store, STATE_PATH)
+    if not ledger:
+        die("no ledger (%s, or state.json) in the store copy %s. A new learner has none yet: "
+            "set up with `init --work %s …`" % (STATE_PATH, store, work))
+    st = load_json(ledger)
+    check_schema(st)
+    os.makedirs(work, exist_ok=True)
+    inside = os.path.relpath(store, os.path.abspath(work)).split(os.sep)[0]
+    if inside in JOB_FILES + (EARLIER_DIR,):
+        die("the store copy cannot be %s inside the work folder: that name is the engine's. "
+            "Read the store into another folder, for example <work>/store" % inside)
+    extra = {"work": os.path.abspath(work), "store": store, "store_version": version,
+             "store_layout": "data" if ledger.endswith(os.path.join("data", "state.json")) else "flat",
+             "store_files": [rel for rel in (STATE_PATH, INDEX_PATH, PREPARED_PATH, "index.html")
+                             if store_copy_file(store, rel)]}
+    earlier = in_work(work, os.path.join(PUBLISH_DIR, *STATE_PATH.split("/")))
+    earlier_gen = None
+    if earlier:
+        try:
+            earlier_gen = int(load_json(earlier).get("gen") or 0)
+        except (CmeError, AttributeError, TypeError, ValueError):
+            earlier_gen = None
+    aside = set_aside_earlier_job(work)
+    if aside:
+        extra["earlier_set_aside"] = aside
+        if earlier_gen is not None and earlier_gen > int(st.get("gen") or 0):
+            extra["warnings"] = ["the store copy (gen %s) is older than the ledger the earlier job in this work "
+                                 "folder wrote (gen %s): read the store again if that job was published; if its "
+                                 "publish failed, its files are in %s"
+                                 % (st.get("gen"), earlier_gen, os.path.join(aside, PUBLISH_DIR))]
+    info = {"store": store, "state": os.path.abspath(ledger), "session_id": st.get("next_id"),
+            "version": version, "prefs": prefs, "started": iso(today)}
+    save_json(info, os.path.join(work, WORK_FILE))
+    publish_set(work, info)
+    return info, st, extra
 
 
 def answer_blocks(path):
@@ -3236,170 +3389,127 @@ def cmd_answer(args):
 
 
 def cmd_save(args):
-    """First save after the feedback: record + session document (part A) + index, in one go.
-    With --work everything is found in the work folder by its fixed name; a flag names a file
-    that is somewhere else."""
-    work = getattr(args, "work", None)
-    info = work_info(work) if work else {}
-    state_path = args.state or (find_ledger(work, info) if work else None)
-    if not state_path:
-        die("save needs --work WORK_FOLDER (or the ledger and the round's files by name)")
-    round_src = args.round or in_work(work, ROUND_FILE)
+    """First save after the feedback: record the round, the session document (part A) and the
+    index, in one go, into the publish set. Everything is found in the work folder by its fixed
+    name. It starts from the ledger as it was before this round: the current ledger (so a
+    settings change made earlier in the same job is kept), or, when that already holds this
+    round, the ledger the first run started from; so it can be run again with the same result."""
+    work, info = job(args)
+    today = today_from(args)
+    round_src = in_work(work, ROUND_FILE)
     if not round_src:
-        die("save needs %s in the work folder (or --round)" % ROUND_FILE)
-    out_dir = args.out_dir or (os.path.join(work, SAVE_DIR) if work else None)
-    if not out_dir:
-        die("save needs --out-dir (or --work)")
-    sealed = args.sealed or [p for p in (in_work(work, n) for n in SEALED_FILES) if p]
-    answers = args.answers or [p for p in (in_work(work, ANSWERS_FILE),) if p]
-    feedback = args.feedback or in_work(work, FEEDBACK_FILE)
-    feedback_questions = args.feedback_questions or in_work(work, FEEDBACK_QUESTIONS_FILE)
+        die("save needs %s in the work folder" % ROUND_FILE)
+    rnd = load_json(round_src) or {}
+    cur, _ = current_ledger(work, info)
+    sid = rnd.get("log_id") or info.get("session_id") or cur.get("next_id")
+    if info.get("closed") == sid:
+        die("round %s is already closed in this work folder: saving it again would undo its reflection" % sid)
+    before = os.path.join(work, BEFORE_SAVE_FILE)
+    if not has_session(cur, sid):
+        st_in, first_run = cur, True
+    else:
+        st_in, first_run = load_json(in_work(work, BEFORE_SAVE_FILE) or info.get("state") or before), False
+        check_schema(st_in)
+        if has_session(st_in, sid):
+            die("the ledger read from the store already holds round %s: start the round again on a fresh "
+                "read of the store (`start --work %s --store DIR`)" % (sid, work))
+    sealed = [p for p in (in_work(work, n) for n in SEALED_FILES) if p]
+    answers = [p for p in (in_work(work, ANSWERS_FILE),) if p]
+    feedback = in_work(work, FEEDBACK_FILE)
+    feedback_questions = in_work(work, FEEDBACK_QUESTIONS_FILE)
     stage2 = in_work(work, STAGE2_FILE)
-    index = args.index or (beside_ledger(state_path, "index.json") if work else None)
-    page = args.page or (beside_ledger(state_path, "index.html") if work else None)
-    prefs = load_json_arg(args.prefs) if args.prefs else info.get("prefs")
-    rnd = load_json_arg(round_src) or {}
-    st_in = load_json(state_path)
-    check_schema(st_in)
-    sid = rnd.get("log_id") or st_in.get("next_id")
     rnd["log_id"] = sid
     if not rnd.get("date"):
-        rnd["date"] = iso(today_from(args))
+        rnd["date"] = iso(today)
     warnings = []
     # the round record: what the author wrote in the key headers + what the examiner graded
     plan_path = in_work(work, PLAN_FILE)
     keys = fill_round_from_keys(rnd, sealed, load_json(plan_path) if plan_path else None)
     if keys:
         warnings.extend(keys.pop("warnings"))
-    os.makedirs(out_dir, exist_ok=True)
-    # the round mix set on the page is kept in the ledger from now on
-    prefs_changes = apply_prefs(st_in, prefs, warnings)
-    if args.md:
-        md = read_text(args.md)
-    else:
-        if not feedback and not feedback_questions:
-            die("save needs the feedback as sent: %s in the work folder (or --feedback), or --md A.md"
-                % FEEDBACK_FILE)
-        md = assemble_part_a(sealed, answers, feedback,
-                             rnd.get("item_order") or st_in["config"].get("item_order"), warnings,
-                             feedback_questions, read_text(stage2) if stage2 else None)
+    if not feedback and not feedback_questions:
+        die("save needs the feedback as sent: %s in the work folder" % FEEDBACK_FILE)
     st = copy.deepcopy(st_in)       # st_in stays the ledger as it was before this round
-    res = record_round(st, copy.deepcopy(rnd), today_from(args))
-    files = [write_out(out_dir, STATE_PATH, st)]
-    rec = report(files[0]["path"], os.path.getsize(files[0]["path"]), res)
+    # the round mix set on the page is kept in the ledger from now on
+    prefs_changes = apply_prefs(st, info.get("prefs"), warnings)
+    md = assemble_part_a(sealed, answers, feedback,
+                         rnd.get("item_order") or st["config"].get("item_order"), warnings,
+                         feedback_questions, read_text(stage2) if stage2 else None)
+    res = record_round(st, copy.deepcopy(rnd), today)
+    if first_run:                   # nothing failed: keep the ledger this round started from
+        save_json(st_in, before)
     doc = session_doc_a(rnd, sid, md)
-    files.append(write_out(out_dir, session_path(sid), doc))
-    idx = load_index(index, st_in)
-    index_put_session(idx, doc)
-    files.append(write_out(out_dir, INDEX_PATH, finish_index(idx, st)))
-    files.append(write_out(out_dir, PREPARED_PATH, {"v": 1, "empty": True}))
-    with open(os.path.join(out_dir, "A.md"), "w", encoding="utf-8") as fh:
+    rec = {}
+    path = publish_ledger(work, info, st, rec, session=doc, empty_prepared=True)
+    rec = report(path, os.path.getsize(path), dict(res, **rec))
+    with open(os.path.join(work, PART_A_FILE), "w", encoding="utf-8") as fh:
         fh.write(md)
-    pf = page_upgrade(out_dir, page, warnings)
-    if pf:
-        files.append(pf)
-        rec["page_upgraded"] = pf["page_upgrade"]
+    if os.path.isfile(os.path.join(work, BEFORE_CLOSE_FILE)):
+        os.remove(os.path.join(work, BEFORE_CLOSE_FILE))
     if prefs_changes:
         rec["page_settings_applied"] = prefs_changes
     if keys:
         rec["keys"] = keys
-    if work:                        # the round record as recorded, beside the examiner's round.json
-        save_json(rnd, os.path.join(work, RECORD_FILE))
+    save_json(rnd, os.path.join(work, RECORD_FILE))     # the round record as recorded, beside round.json
     if block_end(st):
         rec["next_block"] = block_end(st)       # tell the learner its `line` in the closing message
-    rec["files"] = files
     rec["warnings"] = list(rec.get("warnings") or []) + warnings
     rec["transcript_chars"] = len(md)
-    print(json.dumps(rec, indent=1, ensure_ascii=False))
+    print(json.dumps(published(work, info, rec), indent=1, ensure_ascii=False))
 
 
 def cmd_close(args):
-    """Second save after the reflection: reflect + part B into the session document + index.
-    With --work it continues from what `save` wrote there (out1) and reads reflection.json, B.md
-    and the reflection added with `answer`; without a save in this folder (a reflection given
-    at a later session) it starts from the ledger and the session file read from the store."""
-    work = getattr(args, "work", None)
-    info = work_info(work) if work else {}
-    saved = os.path.join(work, SAVE_DIR) if work else None
-    from_save = bool(saved and os.path.isfile(os.path.join(saved, STATE_PATH)))
-    state_path = args.state or (os.path.join(saved, STATE_PATH) if from_save else None) \
-        or (find_ledger(work, info) if work else None)
-    if not state_path:
-        die("close needs --work WORK_FOLDER (or the ledger and the files by name)")
+    """Second save after the reflection: apply the reflection, add part B to the session
+    document, update the index, all into the publish set. It continues from the current ledger
+    (what `save` wrote in this job, or the ledger as read when the reflection is given at a
+    later session) and reads reflection.json, B.md and the reflection added with `answer` from
+    the work folder; the session document comes from the publish set or the store copy."""
+    work, info = job(args)
+    today = today_from(args)
     reflection = args.reflection or in_work(work, REFLECTION_FILE)
     if not reflection:
-        die("close needs the reflection: %s in the work folder, or --reflection" % REFLECTION_FILE)
-    out_dir = args.out_dir or (os.path.join(work, CLOSE_DIR) if work else None)
-    if not out_dir:
-        die("close needs --out-dir (or --work)")
-    md_path = args.md or in_work(work, PART_B_FILE)
-    today = today_from(args)
-    st = load_json(state_path)
-    check_schema(st)
+        die("close needs the reflection: %s in the work folder, or --reflection '<json>'" % REFLECTION_FILE)
+    st, _ = current_ledger(work, info)
+    before = os.path.join(work, BEFORE_CLOSE_FILE)
+    again = not st.get("unreflected") and info.get("closed") and os.path.isfile(before)
+    if again:                       # run again after a correction: from the ledger the first run started from
+        st = load_json(before)
+        check_schema(st)
+    st_before = copy.deepcopy(st)
     res = reflect_round(st, load_json_arg(reflection) or {}, today, args.session)
     sid = res["session_id"]
+    md_path = in_work(work, PART_B_FILE)
     md_b = read_text(md_path) if md_path else ""
     said = "\n\n".join(body for name, body in answer_blocks(in_work(work, ANSWERS_FILE)) if name == "reflection")
     if said and not REFLECTION_HEADING_RE.search(md_b):
         md_b = "### Reflection (verbatim)\n\n%s\n\n%s" % (said, md_b.lstrip("\n"))
     if not md_b.strip():
-        die("close needs part B: %s in the work folder (or --md), or the reflection added with "
+        die("close needs part B: %s in the work folder, or the reflection added with "
             "`answer --part reflection`" % PART_B_FILE)
-    doc_path = args.doc
-    if not doc_path and work:
-        name = "%s.json" % sid
-        doc_path = (in_work(saved, session_path(sid)) if from_save else None) \
-            or beside_ledger(state_path, "sessions", name) or beside_ledger(state_path, name)
-        if not doc_path:
-            die("the session file of %s was not found: read %s from the store into a sessions folder "
-                "beside the ledger first, or name it with --doc" % (sid, session_path(sid)))
-    doc = load_json(doc_path) if doc_path else {"id": sid}
+    doc_path = store_file(work, info, session_path(sid))
+    if not doc_path:
+        die("the session file of %s was not found: read %s from the store into the store copy "
+            "(%s) first" % (sid, session_path(sid), info.get("store")))
+    doc = load_json(doc_path)
     if doc.get("id") and doc["id"] != sid:
         die("session document %s does not match the reflected session %s" % (doc.get("id"), sid))
-    index = args.index
-    page = args.page
-    if work and not index:
-        index = in_work(saved, INDEX_PATH) if from_save else beside_ledger(state_path, "index.json")
-    if work and not page and not from_save:     # after a save here, the page was already checked
-        page = beside_ledger(state_path, "index.html")
-    os.makedirs(out_dir, exist_ok=True)
     doc["closing"] = md_b
     doc["reflected"] = True
     sess = next((s for s in st["sessions"] if s.get("id") == sid), None)
     if sess and isinstance(sess.get("score"), (int, float)):
         doc["score"] = sess["score"]
-    files = [write_out(out_dir, STATE_PATH, st), write_out(out_dir, session_path(sid), doc)]
-    ref = report(files[0]["path"], os.path.getsize(files[0]["path"]), res)
-    idx = load_index(index, st)
-    index_put_session(idx, doc)
-    files.append(write_out(out_dir, INDEX_PATH, finish_index(idx, st)))
-    page_warn = []
-    pf = page_upgrade(out_dir, page, page_warn)
-    if pf:
-        files.append(pf)
-        ref["page_upgraded"] = pf["page_upgrade"]
-    if page_warn:
-        ref["warnings"] = list(ref.get("warnings") or []) + page_warn
+    ref = {}
+    path = publish_ledger(work, info, st, ref, session=doc)
+    page_warn = ref.pop("warnings", [])
+    ref = report(path, os.path.getsize(path), dict(res, **ref))
+    ref["warnings"] = list(ref.get("warnings") or []) + page_warn
+    if not again:
+        save_json(st_before, before)
+    info["closed"] = sid
+    save_json(info, os.path.join(work, WORK_FILE))
     if block_end(st):
         ref["next_block"] = block_end(st)       # tell the learner its `line` in the closing message
-    ref["files"] = files
-    print(json.dumps(ref, indent=1, ensure_ascii=False))
-
-
-TESTING_SKIP = {"A.md"}
-
-
-def written_files(dirs):
-    """Every file a cme.py output folder holds for the store, by its store path; later folders win."""
-    out = {}
-    for d in dirs:
-        for root, _, names in os.walk(d):
-            for n in names:
-                if n.startswith(".") or n in TESTING_SKIP:
-                    continue
-                full = os.path.join(root, n)
-                out[os.path.relpath(full, d).replace(os.sep, "/")] = full
-    return out
+    print(json.dumps(published(work, info, ref), indent=1, ensure_ascii=False))
 
 
 def same_content(a, b):
@@ -3413,50 +3523,80 @@ def same_content(a, b):
 
 
 def cmd_verify(args):
-    """Testing mode: compare what cme.py produced with what the store holds after the save."""
-    work = getattr(args, "work", None)
-    written = args.written or [d for d in (os.path.join(work or "", n) for n in (SAVE_DIR, CLOSE_DIR, "out3"))
-                               if work and os.path.isdir(d)]
-    if not written:
-        die("verify needs --written OUT_DIR… (or --work with the output folders of save and close in it)")
-    if work and not args.out:
-        args.out = os.path.join(work, "verify.json")
-    wanted = written_files(written)
+    """Testing mode: compare the publish set with what the store holds after the save (a fresh
+    read of the store in --store). Writes <work>/verify.json."""
+    work, info = job(args)
+    wanted = publish_set(work, info)
+    if not wanted:
+        die("verify: the publish set of %s is empty, nothing was written in this job" % work)
     missing, mismatched = [], []
-    for rel, src in sorted(wanted.items()):
-        cand = [os.path.join(args.store, rel), os.path.join(args.store, os.path.basename(rel))]
-        got = next((p for p in cand if os.path.isfile(p)), None)
+    for f in wanted:
+        got = store_copy_file(args.store, f["as"])
         if not got:
-            missing.append(rel)
-        elif not same_content(src, got):
-            mismatched.append(rel)
+            missing.append(f["as"])
+        elif not same_content(f["path"], got):
+            mismatched.append(f["as"])
     res = {"ok": not missing and not mismatched, "checked": len(wanted), "missing": missing,
            "mismatched": mismatched}
-    if args.out:
-        save_json(res, args.out)
+    save_json(res, os.path.join(work, VERIFY_FILE))
     print(json.dumps(res, indent=1))
 
 
+def job_session(work, info, st, session=None):
+    """The session a job's note or addendum belongs to: the one named, else this job's round
+    when it is recorded, else the round closed in this job, else the last one in the ledger."""
+    if session:
+        return session
+    for sid in (info.get("session_id"), info.get("closed")):
+        if sid and has_session(st, sid):
+            return sid
+    log = (st.get("previous") or []) + (st.get("sessions") or [])
+    if not log:
+        die("the ledger holds no session yet")
+    return log[-1].get("id")
+
+
 def cmd_testing_note(args):
-    """Testing mode: the learner's quick feedback and the store check, as data/testing/<id>.json."""
+    """Testing mode: the learner's quick feedback and the store check (<work>/verify.json, when
+    `verify` was run), added to the publish set as data/testing/<id>.json."""
     today = today_from(args)
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
+    sid = job_session(work, info, st, args.session)
     fb = load_json_arg(args.feedback) or {}
-    ver = load_json(args.verify) if args.verify and os.path.isfile(args.verify) else None
-    note = {"session": args.session, "date": iso(today), "skill_version": SKILL_VERSION,
-            "feedback": fb, "store_check": ver}
-    os.makedirs(args.out_dir, exist_ok=True)
-    files = [write_out(args.out_dir, "data/testing/%s.json" % args.session, note)]
-    print(json.dumps({"ok": True, "files": files}, indent=1))
+    ver = in_work(work, VERIFY_FILE)
+    note = {"session": sid, "date": iso(today), "skill_version": SKILL_VERSION,
+            "feedback": fb, "store_check": load_json(ver) if ver else None}
+    publish_json(work, "data/testing/%s.json" % sid, note)
+    print(json.dumps(published(work, info, {"ok": True, "session": sid}), indent=1))
 
 
 def cmd_addendum(args):
-    doc = load_json(args.doc)
-    with open(args.md, "r", encoding="utf-8") as fh:
-        add = fh.read().strip()
+    """Append a discussion that continued after the close to a session document (default: the
+    last session), into the publish set."""
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
+    sid = job_session(work, info, st, args.session)
+    doc_path = store_file(work, info, session_path(sid))
+    if not doc_path:
+        die("the session file of %s was not found: read %s from the store into the store copy "
+            "(%s) first" % (sid, session_path(sid), info.get("store")))
+    doc = load_json(doc_path)
+    try:
+        add = read_text(args.md).strip()
+    except OSError:
+        die("file not found: %s" % args.md)
     doc["addendum"] = ((doc.get("addendum") or "").rstrip() + "\n\n" + add).strip() + "\n"
-    os.makedirs(args.out_dir, exist_ok=True)
-    f = write_out(args.out_dir, session_path(doc["id"]), doc)
-    print(json.dumps({"ok": True, "files": [f], "chars": len(doc["addendum"])}))
+    publish_json(work, session_path(doc.get("id") or sid), doc)
+    print(json.dumps(published(work, info, {"ok": True, "session": sid, "chars": len(doc["addendum"])})))
+
+
+def layout_file(root, rel, obj):
+    """Write a store document into a folder in the store's layout (the maintenance tools)."""
+    path = os.path.join(root, *rel.split("/"))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    save_json(obj, path)
+    return {"as": rel, "path": os.path.abspath(path)}
 
 
 def cmd_reindex(args):
@@ -3475,168 +3615,113 @@ def cmd_reindex(args):
     if st:
         add_state_to_index(idx, st)
         finish_index(idx, st)
-    f = write_out(root, INDEX_PATH, idx)
+    f = layout_file(root, INDEX_PATH, idx)
     print(json.dumps({"ok": True, "files": [f], "sessions": len(idx["sessions"]), "reviews": len(idx["reviews"])}))
 
 
 def cmd_import(args):
     """Split a page export ({state, sessions, reviews}) into the file layout, ready to publish
-    or copy."""
+    or copy: session and review files first, the ledger last."""
     src = load_json(args.export)
     state = src.get("state") if isinstance(src, dict) else None
     if not state:
         die("the export has no 'state' (a Clinical CME page export is {state, sessions, reviews})")
     check_schema(state)
     os.makedirs(args.out_dir, exist_ok=True)
-    files = [write_out(args.out_dir, STATE_PATH, state)]
+    files = []
     idx = {"schema": 1, "sessions": [], "reviews": []}
     for d in src.get("sessions") or []:
         if not d.get("id"):
             continue
-        files.append(write_out(args.out_dir, session_path(d["id"]), d))
+        files.append(layout_file(args.out_dir, session_path(d["id"]), d))
         index_put_session(idx, d)
     for r in src.get("reviews") or []:
         date = r.get("date") or r.get("id")
         if not date:
             continue
         r = dict(r, date=date)
-        files.append(write_out(args.out_dir, review_path(date), r))
+        files.append(layout_file(args.out_dir, review_path(date), r))
         index_put_review(idx, r)
     add_state_to_index(idx, state)
-    files.append(write_out(args.out_dir, INDEX_PATH, finish_index(idx, state)))
+    files.append(layout_file(args.out_dir, INDEX_PATH, finish_index(idx, state)))
+    files.append(layout_file(args.out_dir, STATE_PATH, state))
     print(json.dumps({"ok": True, "gen": state.get("gen"), "next_id": state.get("next_id"),
                       "sessions": len(src.get("sessions") or []), "reviews": len(src.get("reviews") or []),
                       "files": files}, indent=1, ensure_ascii=False))
 
 
 def cmd_review_doc(args):
-    """Wrap a review report (Markdown) as data/reviews/<date>.json and add it to the index."""
+    """Wrap a review report (Markdown) as data/reviews/<date>.json and add it to the index, both
+    into the publish set."""
     today = today_from(args)
-    with open(args.md, "r", encoding="utf-8") as fh:
-        report = fh.read()
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
+    try:
+        text = read_text(args.md)
+    except OSError:
+        die("file not found: %s" % args.md)
     date = args.date or iso(today)
     doc = {"date": date, "title": args.title or "CME progress review — %s" % date,
-           "headline": args.headline, "report": report}
-    os.makedirs(args.out_dir, exist_ok=True)
-    files = [write_out(args.out_dir, review_path(date), doc)]
-    if args.index or args.state:
-        st = load_json(args.state) if args.state else None
-        idx = load_index(args.index, st)
-        index_put_review(idx, doc)
-        if st:
-            finish_index(idx, st)
-        files.append(write_out(args.out_dir, INDEX_PATH, idx))
-    print(json.dumps({"ok": True, "doc": "reviews/%s" % date, "files": files}, ensure_ascii=False))
-
-
-def place_state(st, out_dir, index=None, no_index=False, page=None):
-    """Write a ledger into the file layout, with the index, an emptied prepared round and the
-    page if it is out of date. Returns what to print."""
-    os.makedirs(out_dir, exist_ok=True)
-    files = [write_out(out_dir, STATE_PATH, st)]
-    if not no_index:
-        idx = load_index(index, st)
-        files.append(write_out(out_dir, INDEX_PATH, finish_index(idx, st)))
-        files.append(write_out(out_dir, PREPARED_PATH, {"v": 1, "empty": True}))
-    out = {"ok": True, "gen": st.get("gen"), "files": files}
-    warnings = []
-    pf = page_upgrade(out_dir, page, warnings)
-    if pf:
-        files.append(pf)
-        out["page_upgraded"] = pf["page_upgrade"]
-    if warnings:
-        out["warnings"] = warnings
-    return out
-
-
-def cmd_place(args):
-    """Copy a state file produced by review/snooze/init into the file layout, plus the index."""
-    st = load_json(args.state)
-    check_schema(st)
-    print(json.dumps(place_state(st, args.out_dir, index=args.index, no_index=args.no_index, page=args.page),
-                     ensure_ascii=False))
+           "headline": args.headline, "report": text}
+    publish_json(work, review_path(date), doc)
+    idx = load_index(store_file(work, info, INDEX_PATH), st)
+    index_put_review(idx, doc)
+    publish_json(work, INDEX_PATH, finish_index(idx, st))
+    print(json.dumps(published(work, info, {"ok": True, "doc": "reviews/%s" % date}), ensure_ascii=False))
 
 
 # ---------------------------------------------------------------- main
+
+PLAN_FLAGS = ("--allow-repeat", "--no-drill", "--force-drill", "--no-new", "--no-case")
+
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="cme.py", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--today")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    s = sub.add_parser("status"); s.add_argument("state"); s.set_defaults(fn=cmd_status)
-    s = sub.add_parser("start"); s.add_argument("state"); s.add_argument("--out"); s.add_argument("--work")
-    s.add_argument("--prefs"); s.add_argument("--focused", type=int)
-    s.add_argument("--mcqs", type=int); s.add_argument("--no-case", action="store_true")
-    s.add_argument("--domain"); s.add_argument("--no-new", action="store_true")
-    s.add_argument("--allow-repeat", action="store_true"); s.add_argument("--no-drill", action="store_true")
-    s.add_argument("--force-drill", action="store_true"); s.add_argument("--seed", type=int)
-    s.add_argument("--prepared"); s.add_argument("--work-dir"); s.set_defaults(fn=cmd_start)
-    s = sub.add_parser("answer"); s.add_argument("--work", required=True)
-    s.add_argument("--part", required=True, choices=ANSWER_PARTS)
-    s.add_argument("--file"); s.add_argument("--text"); s.set_defaults(fn=cmd_answer)
-    s = sub.add_parser("save"); s.add_argument("state", nargs="?"); s.add_argument("--work"); s.add_argument("--round")
-    s.add_argument("--sealed", nargs="+"); s.add_argument("--answers", nargs="+"); s.add_argument("--feedback")
-    s.add_argument("--feedback-questions")
-    s.add_argument("--md"); s.add_argument("--index"); s.add_argument("--prefs"); s.add_argument("--page")
-    s.add_argument("--out-dir"); s.set_defaults(fn=cmd_save)
-    s = sub.add_parser("keys"); s.add_argument("paths", nargs="+"); s.add_argument("--plan"); s.set_defaults(fn=cmd_keys)
-    s = sub.add_parser("close"); s.add_argument("state", nargs="?"); s.add_argument("--work"); s.add_argument("--reflection")
-    s.add_argument("--md"); s.add_argument("--doc"); s.add_argument("--index"); s.add_argument("--session")
-    s.add_argument("--page")
-    s.add_argument("--out-dir"); s.set_defaults(fn=cmd_close)
-    s = sub.add_parser("addendum"); s.add_argument("--doc", required=True); s.add_argument("--md", required=True)
-    s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_addendum)
-    s = sub.add_parser("prepare"); s.add_argument("state"); s.add_argument("--out", required=True)
-    s.add_argument("--if-needed"); s.add_argument("--allow-unreflected", action="store_true"); s.set_defaults(fn=cmd_prepare)
-    s = sub.add_parser("stash"); s.add_argument("state"); s.add_argument("--plan", required=True)
-    s.add_argument("--dir", required=True); s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_stash)
-    s = sub.add_parser("finish-prepare"); s.add_argument("state"); s.add_argument("--work"); s.add_argument("--plan")
-    s.add_argument("--dir"); s.add_argument("--out-dir"); s.add_argument("--revised", action="store_true")
-    s.add_argument("--no-evidence", action="store_true"); s.set_defaults(fn=cmd_finish_prepare)
-    s = sub.add_parser("present"); s.add_argument("files", nargs="+"); s.add_argument("--block", required=True)
-    s.set_defaults(fn=cmd_present)
-    s = sub.add_parser("verify"); s.add_argument("--written", nargs="+"); s.add_argument("--work")
-    s.add_argument("--store", required=True); s.add_argument("--out"); s.set_defaults(fn=cmd_verify)
-    s = sub.add_parser("testing-note"); s.add_argument("--session", required=True)
-    s.add_argument("--feedback", required=True); s.add_argument("--verify")
-    s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_testing_note)
-    s = sub.add_parser("reindex"); s.add_argument("root"); s.set_defaults(fn=cmd_reindex)
-    s = sub.add_parser("import"); s.add_argument("export"); s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_import)
-    s = sub.add_parser("review-doc"); s.add_argument("--md", required=True); s.add_argument("--date"); s.add_argument("--title")
-    s.add_argument("--headline"); s.add_argument("--state"); s.add_argument("--index"); s.add_argument("--out-dir", required=True)
-    s.set_defaults(fn=cmd_review_doc)
-    s = sub.add_parser("place"); s.add_argument("state"); s.add_argument("--index"); s.add_argument("--no-index", action="store_true")
-    s.add_argument("--page")
-    s.add_argument("--out-dir", required=True); s.set_defaults(fn=cmd_place)
-    s = sub.add_parser("plan"); s.add_argument("state"); s.add_argument("--out", required=True)
-    s.add_argument("--prefs"); s.add_argument("--focused", type=int)
-    s.add_argument("--mcqs", type=int); s.add_argument("--no-case", action="store_true")
-    s.add_argument("--domain"); s.add_argument("--no-new", action="store_true")
-    s.add_argument("--allow-repeat", action="store_true"); s.add_argument("--no-drill", action="store_true")
-    s.add_argument("--force-drill", action="store_true"); s.add_argument("--seed", type=int); s.set_defaults(fn=cmd_plan)
-    s = sub.add_parser("record"); s.add_argument("state"); s.add_argument("--round", required=True)
-    s.add_argument("--out", required=True); s.set_defaults(fn=cmd_record)
-    s = sub.add_parser("reflect"); s.add_argument("state"); s.add_argument("--reflection", required=True)
-    s.add_argument("--session"); s.add_argument("--out", required=True); s.set_defaults(fn=cmd_reflect)
-    s = sub.add_parser("doc"); s.add_argument("--part", choices=("A", "B"), required=True)
-    s.add_argument("--md", required=True); s.add_argument("--out", required=True)
-    s.add_argument("--round"); s.add_argument("--state"); s.add_argument("--id"); s.set_defaults(fn=cmd_doc)
-    s = sub.add_parser("stats"); s.add_argument("state"); s.add_argument("--all", action="store_true"); s.set_defaults(fn=cmd_stats)
-    s = sub.add_parser("review"); s.add_argument("state"); s.add_argument("--review", required=True)
-    s.add_argument("--out", required=True); s.set_defaults(fn=cmd_review)
-    s = sub.add_parser("snooze"); s.add_argument("state"); s.add_argument("--days", type=int, default=7)
-    s.add_argument("--out", required=True); s.set_defaults(fn=cmd_snooze)
-    s = sub.add_parser("settings"); s.add_argument("state"); s.add_argument("--config"); s.add_argument("--profile")
-    s.add_argument("--blueprint"); s.add_argument("--out"); s.add_argument("--out-dir"); s.add_argument("--index")
-    s.add_argument("--page"); s.set_defaults(fn=cmd_settings)
-    s = sub.add_parser("theme"); s.add_argument("state"); s.add_argument("--set"); s.add_argument("--another", action="store_true")
-    s.add_argument("--out"); s.add_argument("--out-dir"); s.add_argument("--index"); s.add_argument("--page")
-    s.set_defaults(fn=cmd_theme)
-    s = sub.add_parser("init"); s.add_argument("--profile", default="{}"); s.add_argument("--config", default="{}")
-    s.add_argument("--blueprint", required=True); s.add_argument("--out", required=True); s.set_defaults(fn=cmd_init)
-    s = sub.add_parser("blueprint-md"); s.add_argument("file"); s.add_argument("--out", required=True); s.set_defaults(fn=cmd_blueprint_md)
-    s = sub.add_parser("validate"); s.add_argument("state"); s.set_defaults(fn=cmd_validate)
+    def command(name, fn, work=True):
+        s = sub.add_parser(name)
+        if work:
+            s.add_argument("--work", required=True)
+        s.set_defaults(fn=fn)
+        return s
+
+    s = command("open", cmd_open); s.add_argument("--store", required=True); s.add_argument("--version")
+    s.add_argument("--prefs")
+    s = command("start", cmd_start); s.add_argument("--store"); s.add_argument("--version"); s.add_argument("--prefs")
+    s.add_argument("--focused", type=int); s.add_argument("--mcqs", type=int); s.add_argument("--domain")
+    s.add_argument("--seed", type=int); s.add_argument("--no-prepared", action="store_true")
+    for flag in PLAN_FLAGS:
+        s.add_argument(flag, action="store_true")
+    s = command("answer", cmd_answer); s.add_argument("--part", required=True, choices=ANSWER_PARTS)
+    s.add_argument("--file"); s.add_argument("--text")
+    s = command("present", cmd_present, work=False); s.add_argument("files", nargs="*"); s.add_argument("--work")
+    s.add_argument("--block", required=True)
+    s = command("save", cmd_save)
+    s = command("close", cmd_close); s.add_argument("--reflection"); s.add_argument("--session")
+    s = command("addendum", cmd_addendum); s.add_argument("--md", required=True); s.add_argument("--session")
+    s = command("prepare", cmd_prepare); s.add_argument("--if-needed", action="store_true")
+    s.add_argument("--allow-unreflected", action="store_true")
+    s = command("finish-prepare", cmd_finish_prepare); s.add_argument("--revised", action="store_true")
+    s.add_argument("--no-evidence", action="store_true")
+    s = command("keys", cmd_keys, work=False); s.add_argument("paths", nargs="+"); s.add_argument("--plan")
+    s = command("verify", cmd_verify); s.add_argument("--store", required=True)
+    s = command("testing-note", cmd_testing_note); s.add_argument("--feedback", required=True); s.add_argument("--session")
+    s = command("stats", cmd_stats); s.add_argument("--all", action="store_true")
+    s = command("review", cmd_review); s.add_argument("--review", required=True)
+    s = command("review-doc", cmd_review_doc); s.add_argument("--md", required=True); s.add_argument("--date")
+    s.add_argument("--title"); s.add_argument("--headline")
+    s = command("snooze", cmd_snooze); s.add_argument("--days", type=int, default=7)
+    s = command("settings", cmd_settings); s.add_argument("--config"); s.add_argument("--profile"); s.add_argument("--blueprint")
+    s = command("theme", cmd_theme); s.add_argument("--set"); s.add_argument("--another", action="store_true")
+    s = command("init", cmd_init); s.add_argument("--profile", default="{}"); s.add_argument("--config", default="{}")
+    s.add_argument("--blueprint", required=True); s.add_argument("--start-over", action="store_true")
+    # maintenance tools, outside the protocol: they take their own files and folders
+    s = command("validate", cmd_validate, work=False); s.add_argument("state", nargs="?"); s.add_argument("--work")
+    s = command("reindex", cmd_reindex, work=False); s.add_argument("root")
+    s = command("import", cmd_import, work=False); s.add_argument("export"); s.add_argument("--out-dir", required=True)
+    s = command("blueprint-md", cmd_blueprint_md, work=False); s.add_argument("file"); s.add_argument("--out", required=True)
 
     for p in sub.choices.values():
         p.add_argument("--today", dest="today_sub")

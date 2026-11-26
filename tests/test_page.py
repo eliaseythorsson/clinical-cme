@@ -80,20 +80,25 @@ def test_template_version_matches_cme():
 
 def test_older_page_is_upgraded_once(tmp_path):
     cme = load_cme()
-    live = tmp_path / "live.html"
-    live.write_text('<meta name="cme-page-version" content="4.2.1">Open gaps', encoding="utf-8")
-    out = tmp_path / "out"
-    out.mkdir()
+    store = tmp_path / "store"
+    store.mkdir()
+    (store / "index.html").write_text('<meta name="cme-page-version" content="4.2.1">Open gaps', encoding="utf-8")
+    work = tmp_path / "work"
+    work.mkdir()
+    info = {"store": str(store)}
     warnings = []
-    entry = cme.page_upgrade(str(out), str(live), warnings)
-    assert entry["page_upgrade"] == {"from": "4.2.1", "to": cme.PAGE_VERSION}
-    new = (out / "index.html").read_text(encoding="utf-8")
+    assert cme.page_upgrade(str(work), info, warnings) == {"from": "4.2.1", "to": cme.PAGE_VERSION}
+    new = (work / "publish" / "index.html").read_text(encoding="utf-8")
     assert new == page_text()
-    # the upgraded page is current, so the next save leaves it alone
-    out2 = tmp_path / "out2"
-    out2.mkdir()
-    assert cme.page_upgrade(str(out2), str(out / "index.html"), warnings) is None
-    assert not (out2 / "index.html").exists()
+    assert cme.publish_set(str(work), info) == [{"as": "index.html", "path": str(work / "publish" / "index.html")}]
+    # the upgraded page is in the publish set and current, so the next save leaves it alone
+    assert cme.page_upgrade(str(work), info, warnings) is None
+    # and so does a later job, once it is in the store
+    (store / "index.html").write_text(new, encoding="utf-8")
+    later = tmp_path / "later"
+    later.mkdir()
+    assert cme.page_upgrade(str(later), info, warnings) is None
+    assert not (later / "publish").exists()
     assert warnings == []
 
 

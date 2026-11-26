@@ -6,6 +6,7 @@ import copy
 import datetime as dt
 import json
 import os
+import shutil
 import subprocess
 import sys
 
@@ -109,17 +110,32 @@ def test_unreflected_ledger_reflecting_or_moving_on():
     assert result["ledger"]["agg"]["reflection_skipped"] == st["agg"]["reflection_skipped"] + 1
 
 
+def store_copy(tmp_path, st, prepared=None):
+    """A folder store holding the ledger `st` (and a prepared round), as a session reads it."""
+    data = tmp_path / "store" / "data"
+    data.mkdir(parents=True)
+    cme.save_json(st, str(data / "state.json"))
+    if prepared:
+        shutil.copy(prepared, str(data / "prepared.json"))
+    return str(tmp_path / "store")
+
+
+def start(tmp_path, today, st, prepared=None, hashseed="0"):
+    work = tmp_path / "work"
+    out = json.loads(run_cme(["--today", today, "start", "--work", str(work),
+                              "--store", store_copy(tmp_path, st, prepared)], hashseed))
+    return out, read(str(work / "plan.json"))
+
+
 def start_with_prepared(tmp_path, today):
-    out = json.loads(run_cme(["--today", today, "start", examples.ledger_path("stale_prepared"),
-                              "--prepared", examples.prepared_path("stale_prepared"),
-                              "--out", str(tmp_path / "plan.json"), "--work-dir", str(tmp_path / "work")]))
-    return out, read(str(tmp_path / "plan.json"))
+    return start(tmp_path, today, examples.load_ledger("stale_prepared"), examples.prepared_path("stale_prepared"))
 
 
 def test_stale_prepared_round_is_not_used_and_a_new_round_is_planned(tmp_path):
     out, plan = start_with_prepared(tmp_path, LEDGERS["stale_prepared"])
     assert out["prepared"] == {"used": False, "why": "too old"}
-    assert "present" not in out and os.listdir(str(tmp_path / "work")) == ["work.json"]   # no drafted files
+    assert "present" not in out                             # no drafted files
+    assert sorted(os.listdir(str(tmp_path / "work"))) == ["plan.json", "publish.json", "work.json"]
     assert "prepared" not in plan
     assert plan == read(examples.expected_path("stale_prepared", "plan"))
 
@@ -135,31 +151,32 @@ def test_round_prepared_before_blocks_is_not_used(tmp_path):
 
 def test_a_newly_prepared_round_is_used_while_it_is_fresh(tmp_path):
     name = "stale_prepared"
-    st, state = examples.load_ledger(name), examples.ledger_path(name)
-    work = tmp_path / "prep"
-    work.mkdir()
-    run_cme(["--today", PREPARED_MADE, "prepare", state, "--out", str(work / "next.json")])
-    for fname, text in examples.sealed_files(st, read(str(work / "next.json"))).items():
-        (work / fname).write_text(text, encoding="utf-8")
-    run_cme(["stash", state, "--plan", str(work / "next.json"), "--dir", str(work), "--out-dir", str(tmp_path / "out")])
+    st = examples.load_ledger(name)
+    work, store = tmp_path / "work", store_copy(tmp_path, st)
+    w = ["--work", str(work)]
+    run_cme(["--today", PREPARED_MADE, "open", *w, "--store", store])
+    run_cme(["--today", PREPARED_MADE, "prepare", *w])
+    for fname, text in examples.sealed_files(st, read(str(work / "next" / "plan.json"))).items():
+        (work / "next" / fname).write_text(text, encoding="utf-8")
+    packed = json.loads(run_cme(["finish-prepare", *w, "--no-evidence"]))
+    for f in packed["files"]:                               # published to the store
+        shutil.copy(f["path"], os.path.join(store, *f["as"].split("/")))
     soon = cme.iso(cme.parse_date(PREPARED_MADE) + dt.timedelta(days=2))
-    out = json.loads(run_cme(["--today", soon, "start", state, "--prepared",
-                              str(tmp_path / "out" / "data" / "prepared.json"),
-                              "--out", str(tmp_path / "plan.json"), "--work-dir", str(tmp_path / "work")]))
-    plan = read(str(tmp_path / "plan.json"))
+    out = json.loads(run_cme(["--today", soon, "start", *w, "--store", store]))
+    plan = read(str(work / "plan.json"))
     assert out["prepared"]["used"] is True and out["prepared"]["made"] == PREPARED_MADE
     assert out["plan"]["prepared"] is True and plan["prepared"]["used"] is True and plan["date"] == soon
     assert plan["block"]["line"] == out["block"]["line"]
-    assert sorted(os.listdir(str(tmp_path / "work"))) == ["kit_case.md", "kit_questions.md", "sealed_case.md",
-                                                         "sealed_questions.md", "work.json"]
+    assert sorted(os.listdir(str(work))) == ["earlier", "kit_case.md", "kit_questions.md", "plan.json", "publish.json",
+                                             "sealed_case.md", "sealed_questions.md", "work.json"]
+    # and it is left alone when the round is asked for without it
+    out = json.loads(run_cme(["--today", soon, "start", *w, "--store", store, "--no-prepared"]))
+    assert out["prepared"]["used"] is False and "present" not in out
 
 
 def test_prepared_round_no_longer_fits_once_the_ledger_has_moved_on(tmp_path):
     after = examples.play("stale_prepared")["ledger"]
-    path = str(tmp_path / "ledger.json")
-    cme.save_json(after, path)
-    out = json.loads(run_cme(["--today", PREPARED_MADE, "start", path, "--prepared",
-                              examples.prepared_path("stale_prepared"), "--out", str(tmp_path / "plan.json")]))
+    out, _ = start(tmp_path, PREPARED_MADE, after, examples.prepared_path("stale_prepared"))
     assert out["prepared"] == {"used": False, "why": "the ledger changed since it was prepared"}
 
 
@@ -179,20 +196,26 @@ def test_plan_and_due_dates_do_not_depend_on_the_process(name, tmp_path):
     """Separate runs of cme.py, with different string hashing, write identical files."""
     today = LEDGERS[name]
     expected = read(examples.expected_path(name, "plan"))
-    rnd = str(tmp_path / "round.json")
-    cme.save_json(read(examples.expected_path(name, "applied"))["round"], rnd)
+    rnd = read(examples.expected_path(name, "applied"))["round"]
     ledgers_after = []
     for seed in ("0", "1", "4242"):
-        plan, out = str(tmp_path / ("plan%s.json" % seed)), str(tmp_path / ("ledger%s.json" % seed))
-        run_cme(["--today", today, "plan", examples.ledger_path(name), "--out", plan], seed)
-        assert read(plan) == expected
-        run_cme(["--today", today, "record", examples.ledger_path(name), "--round", rnd, "--out", out], seed)
-        with open(out, "rb") as fh:
+        folder = tmp_path / seed
+        folder.mkdir()
+        _, plan = start(folder, today, examples.load_ledger(name), hashseed=seed)
+        assert plan == expected
+        cme.save_json(rnd, str(folder / "work" / "round.json"))
+        (folder / "work" / "feedback.md").write_text("Example feedback", encoding="utf-8")
+        saved = json.loads(run_cme(["--today", today, "save", "--work", str(folder / "work")], seed))
+        with open(saved["files"][-1]["path"], "rb") as fh:
             ledgers_after.append(fh.read())
     assert ledgers_after[0] == ledgers_after[1] == ledgers_after[2]
     after = json.loads(ledgers_after[0].decode("utf-8"))
     schedule = read(examples.expected_path(name, "schedule"))["after_record"]
     assert {tid: after["topics"][tid] for tid in schedule} == schedule
+    # and the command writes the ledger the core function gives
+    st = examples.load_ledger(name)
+    cme.record_round(st, copy.deepcopy(rnd), examples.today_of(name))
+    assert after == json.loads(json.dumps(st))
 
 
 @ledgers

@@ -37,11 +37,13 @@ def write_round_files(work, st, plan):
     return rnd
 
 
-def save(work, state, today, out, index=None):
-    sealed = [work.p(n) for n in ("sealed_questions.md", "sealed_case.md") if os.path.exists(work.p(n))]
-    args = ["--today", today, "save", state, "--round", work.p("round.json"), "--sealed", *sealed,
-            "--answers", work.p("answers.md"), "--feedback", work.p("feedback.md"), "--out-dir", work.p(out)]
-    return work.run_json(*(args + (["--index", index] if index else [])))
+def seed(work, st):
+    """The example ledger as the store a session reads; returns the ledger's path in the store copy."""
+    return work.write_ledger(st)
+
+
+def save(work, today):
+    return work.run_json("--today", today, "save", "--work", work.path)
 
 
 # ---- the log only grows
@@ -60,25 +62,31 @@ def test_log_only_grows_over_save_close_and_the_next_save(name, work):
     start = examples.load_ledger(name)
     day = examples.today_of(name)
     days = [cme.iso(day + dt.timedelta(days=n)) for n in (0, 1, 3)]
-    state0 = work.write("ledger.json", start)
+    seed(work, start)
 
+    work.start(days[0])
     plan = cme.plan_round(start, examples.plan_options(), day)
     rnd1 = write_round_files(work, start, plan)
-    sid1 = save(work, state0, days[0], "out1")["session_id"]
-    work.write("refl.json", examples.reflection_for(rnd1))
+    sid1 = save(work, days[0])["session_id"]
+    after_save = work.read_json("publish", "data", "state.json")
+    index1 = work.read_json("publish", "data", "index.json")
+    doc_a = work.read_json("publish", "data", "sessions", sid1 + ".json")
+    work.write("reflection.json", examples.reflection_for(rnd1))
     work.write("B.md", "Example reflection, verbatim")
-    work.run("--today", days[1], "close", work.p("out1", "data", "state.json"), "--reflection", work.p("refl.json"),
-             "--md", work.p("B.md"), "--doc", work.p("out1", "data", "sessions", sid1 + ".json"),
-             "--index", work.p("out1", "data", "index.json"), "--out-dir", work.p("out2"))
-    after_close = work.read_json("out2", "data", "state.json")
+    work.run("--today", days[1], "close", "--work", work.path)
+    after_close = work.read_json("publish", "data", "state.json")
+    index2 = work.read_json("publish", "data", "index.json")
+    doc_b = work.read_json("publish", "data", "sessions", sid1 + ".json")
+    work.publish()
+    # the next session: the store is read again and a new round starts in the same work folder
+    work.start(days[2])
     plan2 = cme.plan_round(after_close, examples.plan_options(), day + dt.timedelta(days=3))
     write_round_files(work, after_close, plan2)
-    sid2 = save(work, work.p("out2", "data", "state.json"), days[2], "out3",
-                index=work.p("out2", "data", "index.json"))["session_id"]
+    sid2 = save(work, days[2])["session_id"]
 
     before_ids = session_ids(start)
-    ledgers_seen = [start] + [work.read_json(o, "data", "state.json") for o in ("out1", "out2", "out3")]
-    indexes = [work.read_json(o, "data", "index.json") for o in ("out1", "out2", "out3")]
+    ledgers_seen = [start, after_save, after_close, work.read_json("publish", "data", "state.json")]
+    indexes = [index1, index2, work.read_json("publish", "data", "index.json")]
 
     # the ledger and the index list every earlier round, in order, then the new ones
     assert [session_ids(st) for st in ledgers_seen] == [
@@ -97,15 +105,13 @@ def test_log_only_grows_over_save_close_and_the_next_save(name, work):
         assert now == old
 
     # the session document: the close adds to it and changes nothing that was there
-    doc_a = work.read_json("out1", "data", "sessions", sid1 + ".json")
-    doc_b = work.read_json("out2", "data", "sessions", sid1 + ".json")
     assert doc_a["closing"] is None and doc_a["reflected"] is False
     assert doc_b["closing"] == "Example reflection, verbatim" and doc_b["reflected"] is True
     grown = ("closing", "reflected", "score")
     assert {k: v for k, v in doc_b.items() if k not in grown} == {k: v for k, v in doc_a.items() if k not in grown}
     assert "Example feedback for %s" % sid1 in doc_b["transcript"]
     # and the next save writes a new document, not the old one again
-    assert [os.path.basename(p) for p in files_under(work.p("out3", "data", "sessions"))] == [sid2 + ".json"]
+    assert [os.path.basename(p) for p in files_under(work.pub("data", "sessions"))] == [sid2 + ".json"]
 
 
 @ledgers
@@ -130,25 +136,23 @@ BAD_ROUNDS = (
 
 
 @ledgers
-def test_failed_commands_leave_the_ledger_and_the_output_folder_untouched(name, work):
-    state = work.write("ledger.json", examples.load_ledger(name))
+def test_failed_commands_leave_the_ledger_and_the_publish_set_untouched(name, work):
+    state = seed(work, examples.load_ledger(name))
     before = read_bytes(state)
-    work.write("fb.md", "x")
-    for i, bad in enumerate(BAD_ROUNDS):
-        r = work.run("--today", LEDGERS[name], "save", state, "--round", json.dumps(bad), "--feedback", work.p("fb.md"),
-                     "--out-dir", work.p("save%d" % i), ok=False)
+    work.open(today=LEDGERS[name])
+    work.write("feedback.md", "x")
+    work.write("B.md", "x")
+    job = sorted(files_under(work.path))
+    for bad in BAD_ROUNDS:
+        work.write("round.json", bad)
+        r = work.run("--today", LEDGERS[name], "save", "--work", work.path, ok=False)
         assert r.returncode == 2 and json.loads(r.stdout)["ok"] is False
-        # written over the ledger itself: still nothing changes
-        r = work.run("--today", LEDGERS[name], "record", state, "--round", json.dumps(bad), "--out", state, ok=False)
-        assert r.returncode == 2
-    r = work.run("--today", LEDGERS[name], "close", state, "--reflection", "{}", "--md", work.p("fb.md"),
-                 "--session", "S9999", "--out-dir", work.p("close"), ok=False)
-    assert r.returncode == 2
-    r = work.run("--today", LEDGERS[name], "reflect", state, "--reflection", "{}", "--session", "S9999",
-                 "--out", state, ok=False)
+    os.remove(work.p("round.json"))
+    r = work.run("--today", LEDGERS[name], "close", "--work", work.path, "--reflection", "{}",
+                 "--session", "S9999", ok=False)
     assert r.returncode == 2
     assert read_bytes(state) == before
-    assert files_under(work.path) == sorted([state, work.p("fb.md")])
+    assert files_under(work.path) == job and work.read_json("publish.json")["files"] == []
 
 
 def test_core_error_before_anything_is_applied_leaves_the_ledger_in_memory_alone():
@@ -184,47 +188,50 @@ def interrupt(monkeypatch, where):
 
 @ledgers
 @pytest.mark.parametrize("where", ["writing", "moving"])
-def test_interrupted_write_over_the_ledger_leaves_it_untouched(name, where, work, monkeypatch):
+def test_interrupted_write_leaves_the_ledger_read_untouched_and_no_half_written_file(name, where, work, monkeypatch):
     st = examples.load_ledger(name)
-    state = work.write("ledger.json", st)
+    state = seed(work, st)
     before = read_bytes(state)
-    rnd = examples.round_for(st, cme.plan_round(st, examples.plan_options(), examples.today_of(name)))
-    work.write("round.json", rnd)
+    work.open(today=LEDGERS[name])
+    write_round_files(work, st, cme.plan_round(st, examples.plan_options(), examples.today_of(name)))
+    job = files_under(work.path)
     interrupt(monkeypatch, where)
     with pytest.raises(Interrupted):
-        cme.main(["--today", LEDGERS[name], "record", state, "--round", work.p("round.json"), "--out", state])
-    if st["unreflected"]:
-        with pytest.raises(Interrupted):
-            cme.main(["--today", LEDGERS[name], "reflect", state, "--reflection", "{}", "--out", state])
+        cme.main(["--today", LEDGERS[name], "save", "--work", work.path])
     monkeypatch.undo()
     assert read_bytes(state) == before
-    assert files_under(work.path) == sorted([state, work.p("round.json")])     # no half-written file left behind
+    assert files_under(work.path) == job                    # no half-written file left behind
     assert cme.main(["validate", state]) == 0
 
 
 @ledgers
-def test_save_interrupted_part_way_leaves_the_ledger_untouched(name, work, monkeypatch):
-    """save writes several files into its output folder; the ledger it read is never one of them."""
+@pytest.mark.parametrize("fails_at", [2, 3, 4])
+def test_save_interrupted_part_way_leaves_the_ledger_untouched_and_can_be_run_again(name, fails_at, work, monkeypatch):
+    """save writes several files into the publish set; the ledger it read is never one of them,
+    and whatever it had written when it stopped, the same save run again gives the whole round."""
     st = examples.load_ledger(name)
-    state = work.write("ledger.json", st)
+    state = seed(work, st)
     before = read_bytes(state)
+    work.open(today=LEDGERS[name])
     write_round_files(work, st, cme.plan_round(st, examples.plan_options(), examples.today_of(name)))
     real, calls = cme.save_json, []
 
-    def second_write_fails(obj, path):
+    def one_write_fails(obj, path):
         calls.append(path)
-        if len(calls) == 2:
+        if len(calls) == fails_at:
             raise Interrupted()
         return real(obj, path)
-    monkeypatch.setattr(cme, "save_json", second_write_fails)
+    monkeypatch.setattr(cme, "save_json", one_write_fails)
     with pytest.raises(Interrupted):
-        cme.main(["--today", LEDGERS[name], "save", state, "--round", work.p("round.json"),
-                  "--sealed", work.p("sealed_questions.md"), work.p("sealed_case.md"),
-                  "--answers", work.p("answers.md"), "--feedback", work.p("feedback.md"), "--out-dir", work.p("out")])
+        cme.main(["--today", LEDGERS[name], "save", "--work", work.path])
     monkeypatch.undo()
-    assert len(calls) == 2 and read_bytes(state) == before
-    # the same save, run again, succeeds from the untouched ledger
-    assert save(work, state, LEDGERS[name], "out_again")["session_id"] == st["next_id"]
+    assert len(calls) == fails_at and read_bytes(state) == before
+    # the same save, run again, succeeds from the ledger as it was before the round
+    saved = save(work, LEDGERS[name])
+    assert saved["session_id"] == st["next_id"] and saved["files"][-1]["as"] == "data/state.json"
+    after = work.read_json("publish", "data", "state.json")
+    assert [s["id"] for s in after["sessions"]].count(st["next_id"]) == 1 and after["gen"] == saved["gen"]
+    assert work.read_json("publish", "data", "sessions", st["next_id"] + ".json")["id"] == st["next_id"]
 
 
 # ---- text printed before the answers are in never contains a key, topic ID or diagnosis
@@ -249,20 +256,22 @@ def assert_blind(text, st, plan=None):
 
 
 @ledgers
-def test_status_start_plan_and_prepare_print_no_topic_gap_or_diagnosis(name, work):
+def test_open_start_and_prepare_print_no_topic_gap_or_diagnosis(name, work):
     st = examples.load_ledger(name)
-    state = work.write("ledger.json", st)
+    seed(work, st)
     today = LEDGERS[name]
+    w = ("--work", work.path)
     printed = [
-        work.run("--today", today, "status", state).stdout,
-        work.run("--today", today, "start", state, "--out", work.p("start.json")).stdout,
-        work.run("--today", today, "plan", state, "--out", work.p("plan.json")).stdout,
-        work.run("--today", today, "prepare", state, "--out", work.p("next.json")).stdout,
-        work.run("--today", today, "prepare", state, "--allow-unreflected", "--out", work.p("next.json")).stdout,
+        work.run("--today", today, "open", *w, "--store", work.store()).stdout,
+        work.run("--today", today, "start", *w).stdout,
+        work.run("--today", today, "start", *w, "--store", work.store()).stdout,
+        work.run("--today", today, "prepare", *w).stdout,
+        work.run("--today", today, "prepare", *w, "--allow-unreflected").stdout,
+        work.run("--today", today, "prepare", *w, "--allow-unreflected", "--if-needed").stdout,
     ]
     plan = work.read_json("plan.json")
     for text in printed:
-        assert_blind(text, st, plan)
+        assert_blind(text.replace(work.path, ""), st, plan)
     # the check has teeth: the plan file, which is not printed, does name the topics
     with pytest.raises(AssertionError):
         assert_blind(json.dumps(plan), st, plan)
@@ -275,8 +284,8 @@ def test_present_prints_only_what_the_learner_may_see(name, work):
     files = examples.sealed_files(st, plan)
     for fname, text in files.items():
         work.write(fname, text)
-    sealed = [work.p("sealed_questions.md"), work.p("sealed_case.md")]
-    shown = {block: work.run("present", *sealed, "--block", block).stdout for block in ("questions", "case", "bank")}
+    shown = {block: work.run("present", "--work", work.path, "--block", block).stdout
+             for block in ("questions", "case", "bank")}
     for text in shown.values():
         assert_blind(text, st, plan)
     assert "Example stem 1" in shown["questions"] and "An example patient presents" in shown["case"]
@@ -285,26 +294,28 @@ def test_present_prints_only_what_the_learner_may_see(name, work):
         assert_blind(files["sealed_case.md"], st, plan)
 
 
-def test_taking_and_stashing_a_prepared_round_prints_only_its_present_block(work):
+def test_packing_and_taking_a_prepared_round_prints_only_its_present_block(work):
     name = "stale_prepared"
     st = examples.load_ledger(name)
-    state = work.write("ledger.json", st)
+    seed(work, st)
     made = PREPARED_MADE
     soon = cme.iso(cme.parse_date(made) + dt.timedelta(days=1))
-    # stashing a newly prepared round
-    work.run("--today", made, "prepare", state, "--out", work.p("next.json"))
-    plan = work.read_json("next.json")
+    # packing a newly prepared round
+    work.open(today=made)
+    work.run("--today", made, "prepare", "--work", work.path)
+    plan = work.read_json("next", "plan.json")
     for fname, text in examples.sealed_files(st, plan).items():
-        work.write(fname, text)
-    r = work.run("stash", state, "--plan", work.p("next.json"), "--dir", work.path, "--out-dir", work.p("out"))
+        work.write(os.path.join("next", fname), text)
+    r = work.run("finish-prepare", "--work", work.path, "--no-evidence")
     assert_blind(r.stdout.replace(work.path, ""), st, plan)
+    assert [f["as"] for f in json.loads(r.stdout)["files"]] == ["data/prepared.json"]
+    stored = read_bytes(work.pub("data", "prepared.json")).decode("utf-8")
+    assert_blind(stored, st, plan)      # packed: not readable at a glance in the store either
+    work.publish()
     # taking it at the next start
-    r = work.run("--today", soon, "start", state, "--prepared", work.p("out", "data", "prepared.json"),
-                 "--out", work.p("plan.json"), "--work-dir", work.p("round"))
+    r = work.run("--today", soon, "start", "--work", work.path, "--store", work.store())
     out = json.loads(r.stdout)
     assert out["prepared"]["used"] is True
     assert out["present"] == "Q1. Example stem 1. A) one B) two C) three\nQ2. Example stem 2. A) one B) two C) three\n" \
                              "Q3. Example stem 3. A) one B) two C) three"
     assert_blind(r.stdout.replace(work.path, ""), st, plan)
-    stored = read_bytes(work.p("out", "data", "prepared.json")).decode("utf-8")
-    assert_blind(stored, st, plan)      # packed: not readable at a glance in the store either

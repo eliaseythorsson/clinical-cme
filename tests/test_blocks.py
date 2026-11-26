@@ -198,8 +198,8 @@ def test_a_block_can_be_started_on_a_chosen_theme():
 @ledgers
 def test_opening_line_names_the_theme_and_position_and_nothing_else(name, work):
     st = examples.load_ledger(name)
-    state = work.write("ledger.json", st)
-    out = work.run_json("--today", LEDGERS[name], "start", state, "--out", work.p("plan.json"))
+    work.write_ledger(st)
+    out = work.start(LEDGERS[name])
     plan = work.read_json("plan.json")
     names = {info["name"] for info in st["blueprint"].values()}
     m = re.match(r"^Block: (.+), round (\d+) of 12$", out["block"]["line"])
