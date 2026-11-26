@@ -41,6 +41,18 @@ run (#48).
 - #50 Podcast picks, prepared ahead (blocked by #44)
 - #51 Reading and listening on the page (blocked by #50)
 
+### Architecture review (2026-11-26)
+
+Grilling session after the real test; report of six candidates. Decisions:
+
+- #52 One work folder per job, one publish set; `open` for non-round jobs; leftover commands removed. Blocks #41 #42 #43 #47.
+- #54 The page reads its own file (`data/page.json`, replaces the index); estimates in the engine (5/10/25 min defaults; blend to own pace over 10 rounds in #47); export warns about gaps; CI runs page tests. After #52; blocks #47 #51.
+- #53 One rulebook + lint at preparation (ADR 0007). Blocks #45 #50.
+- #55 Learner settings: "where you are" and "where you're aiming" as open paragraphs, labels for display, editable on the page; default mix 1 focused + case. After #54 and #53.
+- #56 Shippable plugin: own folder, public marketplace, CC BY-NC 4.0 content + MIT `cme.py`, region fallback "international", saved specialty blueprints, one version source, README environments.
+- #57 The engine handles the store (recognise by content, rebase on conflict, folder adapter). After #52 and the v5 merge.
+- Hosted connector: never (ADR 0008). Automatic difficulty from performance: later, if ever.
+
 ## 3. Version 5, stage A: testable core
 
 - Split `cme.py` into pure core functions (scheduling, planning, applying a round) and thin

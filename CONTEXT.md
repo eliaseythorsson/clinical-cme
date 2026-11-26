@@ -65,6 +65,10 @@ The verbatim, append-only record of every round, one session document each.
 What the ledger keeps of one round: its items with topic, score, confidence and coding, the gaps and the compact case. The state engine builds it from the key headers and the examiner's grading.
 _Avoid_: round JSON (for the assembled record)
 
+**Page file**:
+The file the engine writes for the page (`data/page.json`): exactly what the page may show, already blinded. The page reads nothing else from the store except the prefs it writes.
+_Avoid_: index (it replaces `data/index.json`)
+
 **Page**:
 The learner's own view of their store: past sessions, scores, progress reviews, topics already tested and settings. It never names what a coming round will test (no open gaps, no due topics).
 _Avoid_: dashboard
@@ -79,8 +83,12 @@ An item written on an open gap's decision point, in a new clinical context; it n
 The minimum of three days before a tested topic or a new gap can come back.
 
 **Work folder**:
-The scratch folder in which one round is worked on; every file of the round has a fixed name there, and `save` and `close` need nothing else.
-_Avoid_: temp folder, session folder
+The scratch folder in which one job is worked on (a round, or a settings change, a theme change or preparing the next round, set up with `open`); every file has a fixed name there and every command needs only the work folder.
+_Avoid_: temp folder, session folder, workbench (fine when explaining to the learner)
+
+**Publish set**:
+The one list in the work folder of what the store must hold now: the newest version of every store file that changed, the store version it was read at, and the write order (the ledger last). Every command updates it; whoever carries files to the store publishes all of it.
+_Avoid_: output folder, files list
 
 ## Curriculum
 
@@ -115,6 +123,18 @@ Successive rounds coming back to one topic after wrong answers. Limited: no topi
 **Guideline region**:
 The learner's choice of whose guidelines items are written and graded against; asked at setup, default Iceland/Europe.
 _Avoid_: country, locale
+
+**Where you are**:
+The learner's own paragraph on their stage of training or career and how they rate their knowledge and skills; the author pitches items to it. A short stage label (medical student … senior attending) is derived for display only.
+_Avoid_: level, role (as a fixed category)
+
+**Where you're aiming**:
+The learner's own paragraph on what the rounds should help them achieve (an exam, a level, areas to strengthen); with goal tags derived for display.
+_Avoid_: goals list
+
+**Rulebook**:
+The numbered standards for writing items (`references/standards.md`), the same for every learner; briefs cite its rule numbers. Contrast with settings, which are per learner.
+_Avoid_: guidelines (means clinical guidelines here)
 
 **Specialty**:
 The learner's field of practice, which sets the pitch of items and which guideline applies; asked at setup, default internal/hospital medicine.
