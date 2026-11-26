@@ -1,10 +1,37 @@
-# clinical-cme (version 4.3.1)
+# clinical-cme (version 5.0.0)
 
 Blinded clinical self-assessment rounds for physicians: single-best-answer questions and
 focused questions on unrelated topics, with their feedback, then one clinical case and its
 feedback — in the mix each learner chooses — graded against current evidence, with a one-minute
 reflection that feeds spaced repetition. Every round is coded (reasoning steps, error types,
 biases, calibration) and periodically analysed in a candid progress review.
+
+## What is new in version 5.0
+
+Built from four real rounds in testing mode and an architecture review (issues #41–#57 on
+GitHub; plan in `docs/plan-v5.md`).
+
+- **Themed blocks.** Rounds run in blocks of 12 on one domain (60% theme, 25% due repeats,
+  15% wildcard; the case on the theme), with a capped drill-down and a three-day rest after a
+  miss. The theme is shown; topics stay blind.
+- **Your level and aim in your own words.** Setup asks where you are and where you're aiming
+  as two open questions; items are pitched to your paragraphs, editable on your page.
+- **One work folder per job.** Every command takes only the work folder; one publish set says
+  what to write back to the store, the ledger last.
+- **A rulebook** (`references/standards.md`) for writing items, with a lint at preparation:
+  one time anchor per case, crux tests requested not given, abbreviations defined once with a
+  glossary line in feedback, results not ordered taught as such, no internal jargon.
+- **Evidence checked at preparation** by fallback routes, counted, with one retry.
+- **Podcast picks** prepared ahead (three Spotify candidates per topic), chosen for your actual
+  gap after grading; **reading and listening** collected on a new page tab.
+- **The page reads its own file** (`data/page.json`), already blinded; new estimates (5 min per
+  MCQ, 10 per focused question, 25 per case) blending to your own pace; a time hint after five
+  timed rounds.
+- **Learner overrides** ("record it as 4", "close that gap") kept honestly beside the grading.
+- **Faster start**: no reference reading before the first questions; the engine writes the
+  opening line.
+- Prepared rounds survive settings that don't change their content; the round mix set on the
+  page wins over a prepared round.
 
 ## What is new in version 4.3.1
 

@@ -41,6 +41,14 @@ run (#48).
 - #50 Podcast picks, prepared ahead (blocked by #44)
 - #51 Reading and listening on the page (blocked by #50)
 
+### Status (2026-11-26, evening)
+
+Done on v5-dev and released as 5.0.0: #41–#47, #50–#55 and the simulation fixes (#70: rules 10
+and 11, wider abbreviation list). Live simulation, four personas: all automatic checks pass
+(`sim/reports/2026-11-26-*`). Open: #48 (overnight test, owner), #49 (feedback design, owner),
+#56 (shareable plugin; after a week of the owner's daily testing on 5.0), #57 (engine handles
+the store).
+
 ### Architecture review (2026-11-26)
 
 Grilling session after the real test; report of six candidates. Decisions:
