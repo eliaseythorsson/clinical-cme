@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Clinical CME</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="cme-page-version" content="5.0.0">
+<meta name="cme-page-version" content="5.1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
@@ -199,6 +199,8 @@ dl.kv dt{color:var(--muted)}
 dl.kv dd{overflow-wrap:anywhere}
 dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
 .notice{color:var(--muted);font-size:.85rem;line-height:1.55;padding:0 4px}
+.export-warn{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--warn-bg);border-radius:var(--r);padding:12px 16px;font-size:.88rem}
+.export-warn span{flex:1 1 280px}
 
 @media (prefers-reduced-motion:no-preference){.row,.tab,.btn{transition:background .12s,color .12s,border-color .12s}}
 @media (prefers-reduced-motion:reduce){.switch span,.switch span::after{transition:none}}
@@ -219,6 +221,13 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
       Export data
     </button>
   </header>
+
+  <div class="export-warn" id="export-warn" role="status" hidden>
+    <span id="export-note">The export is a full backup. It includes your ledger, which lists your open gaps and when each topic comes back: leave the file unopened if you want your rounds to stay blind.</span>
+    <button class="btn primary" id="export-go" type="button">Download backup</button>
+    <button class="btn" id="export-cancel" type="button">Cancel</button>
+  </div>
+  <p class="notice" id="legacy" hidden>This page has been updated. Your past sessions are listed below; your progress and settings appear here again after your next round.</p>
 
   <section class="band" aria-label="Summary">
     <div class="cell"><span class="k">Topics tested</span><span class="v" id="t-topics">–</span><span class="n" id="t-topics-n"></span></div>
@@ -319,7 +328,9 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     return `<span class="score ${scoreClass(v)}"><b>${fmtScore(v, dp)}</b><span class="meter"><i style="width:${pct}%"></i></span></span>`;
   }
 
-  let state = null, sessions = [], reviews = [];
+  // Everything shown comes from one file the engine writes, data/page.json (already blinded),
+  // plus the session and review documents opened on demand. The ledger is read by Export only.
+  let page = null, sessions = [], reviews = [];
   let prefs = null;           // cme/prefs in the page database: the round mix set on this page
   let dbRef = null;
   let fullText = false;       // all session files fetched for full-text search
@@ -373,41 +384,34 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
       <circle cx="${x(vals.length - 1)}" cy="${y(last)}" r="2.6" fill="var(--accent)"/>`;
   }
   function renderTiles(){
-    if (!state) return;
-    const topics = state.topics || {};
-    // Counts only, and only of what has been tested: no due count, no open-gap count by name.
-    const mast = Object.values(topics).map(t => t.mastery).filter(x => typeof x === "number");
-    $("t-topics").textContent = Object.keys(topics).length;
-    $("t-topics-n").textContent = mast.length ? "mean mastery " + (mast.reduce((a, b) => a + b, 0) / mast.length).toFixed(1) + " of 5" : "none yet";
-    const sess = state.sessions || [];
-    const per = state.config && state.config.target_sessions_per_week;
-    $("t-sess").textContent = sess.length;
-    const since = state.review && state.review.period_start;
-    $("t-sess-n").textContent = (since ? "since " + shortDate(since) : "this period") + (per ? " · target " + per + "/week" : "");
-    const scores = sess.map(s => s.score).filter(x => typeof x === "number");
-    $("t-score").textContent = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : "–";
+    if (!page) return;
+    const t = page.totals || {}, set = page.settings || {}, w = page.who || {};
+    // Counts only, and only of what has been tested.
+    $("t-topics").textContent = t.topics != null ? t.topics : "–";
+    $("t-topics-n").textContent = t.mean_mastery != null ? "mean mastery " + fmtScore(t.mean_mastery) + " of 5" : "none yet";
+    $("t-sess").textContent = t.sessions != null ? t.sessions : "–";
+    $("t-sess-n").textContent = (t.since ? "since " + shortDate(t.since) : "this period") + (set.per_week ? " · target " + set.per_week + "/week" : "");
+    $("t-score").textContent = fmtScore(t.mean_score);
     const recent = sessions.slice().reverse().map(s => s.score).filter(x => typeof x === "number").slice(-12);
     sparkline(recent);
     if (recent.length > 1) $("t-score-n").textContent = "out of 5 · last " + recent.length + " sessions";
-    const nr = state.review && state.review.next_due;
+    const nr = page.next_review;
     $("t-review").textContent = nr ? shortDate(nr) : "–";
     $("t-review-n").textContent = nr ? (nr <= today ? "due — ask for your progress review" : "in " + daysUntil(nr) + " days") : "";
-    const p = state.profile || {};
-    const who = [p.display_name || p.role, [p.specialty, p.subspecialty].filter(Boolean).join(" · ")].filter(Boolean).join(" · ");
+    const who = [w.name || w.role, [w.specialty, w.subspecialty].filter(Boolean).join(" · ")].filter(Boolean).join(" · ");
     if (who) $("who").textContent = who;
-    // The block's theme is shown on purpose (domain only); which topics come next stays hidden.
-    const b = state.block;
-    if (b && b.theme) {
-      const name = ((state.blueprint || {})[b.theme] || {}).name || b.theme;
-      const done = +b.round || 0, len = +b.length || 12;
-      $("block").textContent = "Block: " + name + " · " + (done >= len ? "finished (" + len + " rounds); the next block starts with your next round"
+    // The block's theme is shown on purpose (domain only); which topics come next is not in the file.
+    const b = page.block;
+    if (b && b.name) {
+      const done = +b.done || 0, len = +b.length || 1;
+      $("block").textContent = "Block: " + b.name + " · " + (done >= len ? "finished (" + len + " rounds); the next block starts with your next round"
         : !done ? "starts with your next round (" + len + " rounds)" : done + " of " + len + " rounds done");
       $("block").hidden = false;
       $("block-bar").style.width = Math.round(100 * Math.min(done, len) / len) + "%";
       $("block-meter").setAttribute("aria-valuenow", Math.min(done, len)); $("block-meter").setAttribute("aria-valuemax", len);
       $("block-meter").hidden = false;
     }
-    $("c-progress").textContent = Object.keys(topics).length || "";
+    $("c-progress").textContent = t.topics || "";
   }
 
   // ---- sessions ----------------------------------------------------------------------------
@@ -461,19 +465,16 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   $("q").addEventListener("input", renderList);
 
   // ---- progress ----------------------------------------------------------------------------
-  // Blinding: this view lists only topics already tested, ordered by when they were last tested.
-  // It must not render state.gaps, a topic's due date, or any order derived from due dates.
+  // The file lists only topics already tested, most recently tested first; it is shown as it comes.
   function renderProgress(){
-    if (!state) return;
-    const topics = state.topics || {};
+    if (!page) return;
+    const rows = page.topics || [];
     const tb = $("topics");
-    const lastKey = (t) => t.last || "";
-    const rows = Object.entries(topics).sort((a, b) => lastKey(a[1]) === lastKey(b[1]) ? (a[0] > b[0] ? 1 : -1) : lastKey(a[1]) < lastKey(b[1]) ? 1 : -1);
     if (!rows.length) { tb.innerHTML = `<tbody><tr><td class="empty">No topics tested yet.</td></tr></tbody>`; return; }
-    tb.innerHTML = `<thead><tr><th>Topic</th><th>Mastery</th><th>Last tested</th><th>Calibration</th></tr></thead><tbody>` + rows.map(([id, t]) => {
+    tb.innerHTML = `<thead><tr><th>Topic</th><th>Mastery</th><th>Last tested</th><th>Calibration</th></tr></thead><tbody>` + rows.map((t) => {
       const m = typeof t.mastery === "number" ? t.mastery : null;
       const cal = t.calibration && t.calibration !== "not_rated" ? t.calibration.replace(/_/g, " ") : "–";
-      return `<tr><td><span class="code">${esc(id)}</span>${esc(t.label || "")}</td>
+      return `<tr><td><span class="code">${esc(t.id)}</span>${esc(t.label || "")}</td>
         <td><span class="mcell"><span class="meter ${scoreClass(m)}"><i style="width:${m != null ? m / 5 * 100 : 0}%"></i></span>${m != null ? esc(m) : "–"}</span></td>
         <td class="num">${t.last ? shortDate(t.last) : "–"}</td>
         <td><span class="cal ${/over/.test(cal) ? "over" : ""}">${esc(cal)}</span></td></tr>`;
@@ -486,7 +487,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     const list = $("r-list"); list.innerHTML = "";
     $("c-reviews").textContent = reviews.length || "";
     if (!reviews.length) {
-      const nr = state && state.review && state.review.next_due;
+      const nr = page && page.next_review;
       list.innerHTML = `<div class="empty">No progress reviews yet.${nr ? " The first is due " + esc(fmtDate(nr)) + "." : ""}</div>`; return;
     }
     reviews.forEach(r => {
@@ -505,30 +506,36 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   $("r-back").addEventListener("click", () => reviewMode(true));
 
   // ---- settings ----------------------------------------------------------------------------
+  const words = (v) => String(v || "").replace(/_/g, " ");
   function renderSettings(){
-    if (!state) { $("settings").innerHTML = ""; return; }
-    const c = state.config || {}, p = state.profile || {};
-    const rows = [["Role", p.role], ["Specialty", [p.specialty, p.subspecialty].filter(Boolean).join(" · ")], ["Setting", (p.practice_setting || []).join(", ")],
-      ["Session length", c.session_minutes ? c.session_minutes + " min" : ""], ["Round", mixText(effectiveMix()) + (mixPending() ? " (from your next round)" : "") + (c.item_order ? ", " + String(c.item_order).replace(/_/g, " ") : "")], ["Case format", c.case_format],
-      ["Feedback", (c.feedback_depth || "") + (c.show_coding ? ", with coding line" : "")], ["Target", c.target_sessions_per_week ? c.target_sessions_per_week + " sessions/week" : ""],
-      ["Review interval", c.review_interval_days ? c.review_interval_days + " days" : ""], ["Units", (c.lab_units || "") + (c.blood_gas_units ? ", gases in " + c.blood_gas_units : "")], ["Guidelines", c.guideline_region],
+    if (!page || !page.settings) { $("settings").innerHTML = ""; return; }
+    const c = page.settings, w = page.who || {}, u = c.units || {};
+    const labelled = (x) => x ? [x.label, x.text].filter(Boolean).join(": ") : "";
+    const rows = [["Role", w.role], ["Specialty", [w.specialty, w.subspecialty].filter(Boolean).join(" · ")], ["Setting", (w.practice || []).join(", ")],
+      ["Session length", c.session_length ? c.session_length + " min" : ""], ["Round", mixText(effectiveMix()) + (mixPending() ? " (from your next round)" : "") + (c.order ? ", " + words(c.order) : "")], ["Case format", c.case_style],
+      ["Feedback", (c.feedback || "") + (c.coding_line ? ", with coding line" : "")], ["Target", c.per_week ? c.per_week + " sessions/week" : ""],
+      ["Review interval", c.review_every_days ? c.review_every_days + " days" : ""], ["Units", (u.labs || "") + (u.gases ? ", gases in " + u.gases : "")], ["Guidelines", c.region],
       ["Reminders", c.reminders ? "On" : "Off"],
-      ["Domain emphasis", Object.entries(p.domain_emphasis || {}).map(([k, v]) => k + " ×" + v).join(", ") || "None"],
-      ["Self-ratings", Object.entries(p.domain_self_ratings || {}).map(([k, v]) => k + " " + v).join(", ")],
-      ["Active drills", (state.drills || []).map(d => d.code).join(", ") || "None"],
-      ["Ledger", "Schema " + state.schema + " · generation " + state.gen + " · next session " + state.next_id]];
+      ["Domain emphasis", Object.entries(c.emphasis || {}).map(([k, v]) => k + " ×" + v).join(", ") || "None"],
+      ["Self-ratings", Object.entries(c.self_ratings || {}).map(([k, v]) => k + " " + v).join(", ")]];
+    // shown once the engine fills them in: where you are, where you're aiming, reading, listening
+    [["Where you are", labelled(c.level)], ["Where you're aiming", labelled(c.aim)], ["Reading", labelled(c.reading)], ["Listening", labelled(c.listening)]]
+      .forEach((r) => { if (r[1]) rows.push(r); });
+    rows.push(["Last saved", page.updated ? fmtDate(page.updated) : ""]);
     $("settings").innerHTML = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v || "–")}</dd>`).join("");
   }
 
   // ---- round mix: MCQs, focused questions, full case ----------------------------------------
   // The page cannot rewrite the ledger; it stores the learner's choice in cme/prefs with the
-  // ledger value it changed (base = config.round_set_at). The skill applies it at the next round
-  // only if the ledger still has that value, so a later change made in a chat wins.
-  const LIMITS = {mcqs: [1, 10], focused: [1, 6]};
-  const ledgerMix = () => { const c = (state && state.config) || {}; return {mcqs: +c.mcqs || 0, focused: +c.focused || 0, case: c.case !== false}; };
-  const baseOf = () => (state && state.config && state.config.round_set_at != null) ? state.config.round_set_at : null;
+  // time the mix in the file was set (base). The skill applies it at the next round only if
+  // nothing has set the mix since, so a later change made in a chat wins. The limits and the
+  // minutes per item come with the file: nothing about them is kept here.
+  const R = () => (page && page.round) || {};
+  const fileMix = () => { const m = R().mix || {}; return {mcqs: +m.mcqs || 0, focused: +m.focused || 0, case: m.case !== false}; };
+  const baseOf = () => R().set_at != null ? R().set_at : null;
   const mixPending = () => !!(prefs && prefs.round && (prefs.base ?? null) === baseOf());
-  const effectiveMix = () => mixPending() ? Object.assign(ledgerMix(), prefs.round) : ledgerMix();
+  const effectiveMix = () => mixPending() ? Object.assign(fileMix(), prefs.round) : fileMix();
+  const limits = (k) => { const l = (R().limits || {})[k] || [0, 0]; return [Math.max(1, +l[0] || 0), +l[1] || 0]; };
   function mixText(m){
     const parts = [];
     if (m.mcqs) parts.push(m.mcqs + (m.mcqs === 1 ? " MCQ" : " MCQs"));
@@ -537,16 +544,16 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     return parts.join(" + ") || "–";
   }
   function estimate(m){
-    const c = (state && state.config) || {};
-    const caseMin = c.case_format === "discriminate" || (+c.session_minutes || 20) <= 12 ? 10 : 15;
-    return 3 * m.mcqs + 5 * m.focused + (m.case ? caseMin : 0);
+    if (same(m, fileMix()) && R().minutes != null) return R().minutes;
+    const per = R().minutes_per;
+    return per ? per.mcq * m.mcqs + per.focused * m.focused + (m.case ? per.case : 0) : null;
   }
   const counts = {mcqs: 3, focused: 1};   // the stepper values, kept while a switch is off
   let saved = null;                        // the mix as last saved or loaded, to enable Save only on change
   const readMix = () => ({mcqs: $("sw-mcq").checked ? counts.mcqs : 0, focused: $("sw-foc").checked ? counts.focused : 0, case: $("sw-case").checked});
   function paintSteppers(){
     [["mcqs", "mcq"], ["focused", "foc"]].forEach(([k, s]) => {
-      const on = $("sw-" + s).checked && !!dbRef, [lo, hi] = LIMITS[k];
+      const on = $("sw-" + s).checked && !!dbRef, [lo, hi] = limits(k);
       $("n-" + s).textContent = counts[k];
       $("st-" + s).classList.toggle("off", !$("sw-" + s).checked);
       $("dn-" + s).disabled = !on || counts[k] <= lo;
@@ -563,16 +570,17 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     paintSteppers();
     const m = readMix();
     const empty = !m.mcqs && !m.focused && !m.case;
-    const sm = state && state.config && state.config.session_minutes;
+    const sm = page && page.settings && page.settings.session_length, est = estimate(m);
     $("mix-est").textContent = empty ? "Choose at least one question type." :
-      "About " + estimate(m) + " minutes with feedback" + (sm ? " · your session length is " + sm + " min" : "") + ".";
+      (est != null ? "About " + est + " minutes with feedback" : "") + (sm ? (est != null ? " · " : "") + "your session length is " + sm + " min" : "") + "." +
+      (R().time_hint ? " " + R().time_hint : "");
     $("mix-save").disabled = !dbRef || empty || same(m, saved);
     if (dbRef && !same(m, saved) && !empty) status("Not saved yet", "pending");
     else if (dbRef && mixPending() && same(m, saved)) status("Saved · applies from your next round", "ok");
     else status("");
   }
   function initMix(){
-    if (!state) { $("mix").hidden = true; return; }
+    if (!page || !page.round) { $("mix").hidden = true; return; }
     $("mix").hidden = false;
     const m = effectiveMix(); saved = m;
     setMix(m);
@@ -585,9 +593,8 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   }
   ["sw-mcq", "sw-foc", "sw-case"].forEach(id => $(id).addEventListener("change", refreshMix));
   [["mcqs", "mcq"], ["focused", "foc"]].forEach(([k, s]) => {
-    const [lo, hi] = LIMITS[k];
-    $("dn-" + s).addEventListener("click", () => { counts[k] = Math.max(lo, counts[k] - 1); refreshMix(); });
-    $("up-" + s).addEventListener("click", () => { counts[k] = Math.min(hi, counts[k] + 1); refreshMix(); });
+    $("dn-" + s).addEventListener("click", () => { counts[k] = Math.max(limits(k)[0], counts[k] - 1); refreshMix(); });
+    $("up-" + s).addEventListener("click", () => { counts[k] = Math.min(limits(k)[1], counts[k] + 1); refreshMix(); });
   });
   let saving = false;
   $("mix-save").addEventListener("click", async () => {
@@ -622,34 +629,47 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   // ---- loading -------------------------------------------------------------------------------
   const byDateDesc = (a, b) => (b.date || "") === (a.date || "") ? (b.id > a.id ? 1 : -1) : (b.date || "") > (a.date || "") ? 1 : -1;
   async function loadFiles(){
-    let idx = null;
-    try { state = await getJSON("data/state.json"); } catch (e) { return false; }
-    try { idx = await getJSON("data/index.json"); } catch (e) { idx = null; }
-    sessions = ((idx && idx.sessions) || (state.previous || []).concat(state.sessions || [])).map(s => Object.assign({}, s));
+    try { page = await getJSON("data/page.json"); } catch (e) { page = null; }
+    if (!page || !Array.isArray(page.sessions)) {
+      // A store last saved before the page had its own file: the list of sessions it had then,
+      // and nothing else, until the next save writes data/page.json.
+      page = null;
+      try { const old = await getJSON("data/index.json"); if (old && Array.isArray(old.sessions)) page = {sessions: old.sessions, reviews: old.reviews || []}; } catch (e) { page = null; }
+      if (page) $("legacy").hidden = false;
+    }
+    if (!page) return false;
+    sessions = page.sessions.map(s => Object.assign({}, s));
     sessions.sort(byDateDesc);
-    reviews = ((idx && idx.reviews) || []).slice().sort((a, b) => (b.date || "") > (a.date || "") ? 1 : -1);
+    reviews = (page.reviews || []).slice().sort((a, b) => (b.date || "") > (a.date || "") ? 1 : -1);
     return true;
+  }
+
+  // Export is a full backup: the ledger (read here and nowhere else), every session and review.
+  async function exportAll(downloads){
+    const ledger = await getJSON("data/state.json");
+    await loadAllSessions();
+    for (const r of reviews) { if (!r.report) { try { Object.assign(r, await getJSON("data/reviews/" + encodeURIComponent(r.date) + ".json")); } catch (e) {} } }
+    const clean = sessions.map(s => { const o = Object.assign({}, s); delete o._full; delete o._missing; return o; });
+    await downloads.save({filename: "clinical-cme-export-" + today + ".json", data: JSON.stringify({state: ledger, sessions: clean, reviews}, null, 1)});
   }
 
   async function load(){
     let ok = false;
     try { ok = await loadFiles(); } catch (e) { ok = false; }
-    if (!ok) { state = null; $("s-list").innerHTML = `<div class="empty">No ledger yet. Say “set up clinical CME” in a chat with your assistant to create it.</div>`; }
+    if (!ok) { page = null; $("s-list").innerHTML = `<div class="empty">No ledger yet. Say “set up clinical CME” in a chat with your assistant to create it.</div>`; }
     renderTiles(); renderProgress(); renderSettings();
     if (ok) renderList();
     renderReviews();
     loadPrefs();
     let downloads = null;
     try { downloads = (window.claude && claude.use) ? await claude.use("downloads") : null; } catch (e) { downloads = null; }
-    if (downloads && state) {
+    if (downloads && page) {
       $("export").hidden = false;
-      $("export").addEventListener("click", async () => {
-        try {
-          await loadAllSessions();
-          for (const r of reviews) { if (!r.report) { try { Object.assign(r, await getJSON("data/reviews/" + encodeURIComponent(r.date) + ".json")); } catch (e) {} } }
-          const clean = sessions.map(s => { const o = Object.assign({}, s); delete o._full; delete o._missing; return o; });
-          await downloads.save({filename: "clinical-cme-export-" + today + ".json", data: JSON.stringify({state, sessions: clean, reviews}, null, 1)});
-        } catch (e) { /* declined or unavailable */ }
+      // First the warning, then the download: the backup shows what the page keeps hidden.
+      $("export").addEventListener("click", () => { $("export-warn").hidden = !$("export-warn").hidden; });
+      $("export-cancel").addEventListener("click", () => { $("export-warn").hidden = true; });
+      $("export-go").addEventListener("click", async () => {
+        try { await exportAll(downloads); $("export-warn").hidden = true; } catch (e) { /* declined or unavailable */ }
       });
     }
   }

@@ -15,14 +15,18 @@ Open this file before that message only when a step there fails or the store is 
 | Document | Path in the store | Written by |
 |---|---|---|
 | Ledger (`state_schema.md` §1), ≤ ~100 KB | `data/state.json` | `cme.py save`, `close`, `settings`, `theme`, `review`, `init` |
-| Index of sessions and reviews, for the page | `data/index.json` | every command that writes the ledger; `review-doc`; `reindex` |
+| Page file: exactly what the page may show, already blinded (`state_schema.md` §7) | `data/page.json` | every command that writes the ledger; `review-doc`; `rebuild-page` |
 | One round: metadata, `transcript` (part A), `closing` (part B), `addendum` | `data/sessions/S0042.json` | `save`, `close`, `addendum` |
 | The page itself | `index.html` | `init`; any command that writes the ledger, when the page is out of date (§4.5) |
 | A progress-review report | `data/reviews/2026-11-20.json` | `review-doc` |
 | The next round, written ahead and packed: questions, case, feedback notes (`state_schema.md` §8) | `data/prepared.json` | `finish-prepare`; who empties it: `state_schema.md` §8 |
 
+The page renders `data/page.json` and nothing else of the store (it opens a session or review
+document when the learner clicks one; only its Export button reads the ledger). A store last
+saved before version 5.1 has `data/index.json` in its place: §6.
+
 One more document lives outside the files: the round mix the learner sets on their page
-(`state_schema.md` §7) is kept by the page as its own settings document, `cme/prefs`. The page
+(`state_schema.md` §7.1) is kept by the page as its own settings document, `cme/prefs`. The page
 writes it; the skill only reads it.
 
 `cme.py` never touches the store. You read the store's files into a local folder, the **store
@@ -56,15 +60,15 @@ session has for the page, run the round from a folder or from carried files (§4
 Pick the first one the session can do **and** that holds this learner's data.
 
 - **The page** (preferred). The learner's private artifact page "Clinical CME" holds the data as
-  files under `data/`, next to the page itself. One read call fetches the ledger and index into
-  local files; one publish call saves the ledger, the session document and the index together,
-  atomically, refused if another device saved in between. The page reads the same files. Works
+  files under `data/`, next to the page itself. One read call fetches the ledger and the page file
+  into local files; one publish call saves the ledger, the session document and the page file
+  together, atomically, refused if another device saved in between. The page shows the page file. Works
   on any device where the learner is signed in.
 - **A folder** the session can read and write as files: its own file system, or a connected
   folder on the learner's computer. Same `data/…` layout inside a folder the learner names, for
   example `Clinical CME/`.
 - **Files carried by the learner.** At the start the learner attaches `state.json` and
-  `index.json`; at the end you hand back the files `cme.py` wrote and ask them to keep them,
+  `page.json`; at the end you hand back the files `cme.py` wrote and ask them to keep them,
   replacing the old ones, and to attach them next time. Slowest for the learner; use it when
   nothing else works.
 
@@ -97,7 +101,7 @@ round, a review):
    order listed. The same list, with the version the store was read at, is in the file the
    command names as `publish` (`<work>/publish.json`: `{"version": …, "files": [{"as", "path"}, …]}`).
    The list is the whole publish set, not only what the last command changed: session, review
-   and testing files first, then `data/index.json`, `index.html`, `data/prepared.json`, and
+   and testing files first, then `data/page.json`, `index.html`, `data/prepared.json`, and
    `data/state.json` last. Publishing it again is harmless, and a publish that failed is
    covered by the next one.
 
@@ -110,13 +114,14 @@ settings change first, or a late reflection closed first): run `start --work <wo
 ### 4.1 The page
 
 - **Read** (one call): the read-files tool with the paths `data/state.json`,
-  `data/index.json`, `data/prepared.json` and `index.html`, asking for them as saved local
+  `data/page.json`, `data/prepared.json` and `index.html`, asking for them as saved local
   files. Copy the saved files into `<work>/store/`: at their store paths
   (`<work>/store/data/state.json`, …) or side by side under their own names
-  (`<work>/store/state.json`, `index.json`, `prepared.json`, `index.html`); `cme.py` finds
-  either. A store last saved by a version before 4.3 has no `data/prepared.json`: if the read
-  is refused because of it, repeat the read without that path (a missing file simply means no
-  prepared round). In the same parallel batch, read the page's settings document `cme/prefs`
+  (`<work>/store/state.json`, `page.json`, `prepared.json`, `index.html`); `cme.py` finds
+  either. An older store lacks `data/page.json` (before 5.1; read `data/index.json` in its
+  place, once: §6) or `data/prepared.json` (before 4.3): if the read is refused because of a
+  missing path, repeat it without that path (no page file: `cme.py` writes one at the next
+  save; no prepared round: none is used). In the same parallel batch, read the page's settings document `cme/prefs`
   (a few bytes of settings, safe to see) and pass it as `--prefs`. Missing, or no tool that
   reads it → no page settings this session. The saved names are chosen by the client: match
   each to its artifact path by the line that reports it, or by the sha256 or size the result
@@ -143,13 +148,13 @@ one your last write left; if it moved, re-read and re-run as for the page.
 
 ### 4.3 Files carried by the learner, and carry-over
 
-- **Read**: the attached `state.json` (and `index.json` if attached; `cme.py` rebuilds what is
+- **Read**: the attached `state.json` (and `page.json` if attached; `cme.py` rebuilds what is
   missing from the ledger). Copy them into `<work>/store/` and open the work folder on it. No
   round is prepared ahead in a carried store: leave `data/prepared.json` out of what you hand
   back.
-- **Write**: hand back `state.json`, `index.json` and the new session file from `files` as
+- **Write**: hand back `state.json`, `page.json` and the new session file from `files` as
   downloads, with one line: "Keep these three files together, replacing the old ones; attach
-  `state.json` and `index.json` next time."
+  `state.json` and `page.json` next time."
 - **Carry-over into the page or a folder**: when attached files have a higher `gen` than the
   store, check with the learner, then save them into the store as a normal write (§4.1–4.2), plus any
   session files they attach.
@@ -179,9 +184,10 @@ set (`page_upgraded` in its output). Before the first publish that carries it:
    version, so pin the publish to it. If the session cannot declare them, publish anyway: the
    page then shows the mix and says to change it in a chat.
 2. Publish `index.html` with the other files in the same call, as usual.
-3. Tell the learner in one line after the close: "Your Clinical CME page was updated: it no
-   longer lists open gaps or upcoming topics, so rounds stay blind; your sessions, scores and
-   progress are all still there."
+3. Tell the learner in one line after the close: "Your Clinical CME page was updated: it
+   shows your sessions, scores and progress as before, never what a coming round will test,
+   and its time estimates are now realistic (about 5 minutes per MCQ, 10 per focused question,
+   25 for a case)."
 
 A folder: copy `index.html` into it like the other files. Carried files: no page; skip.
 
@@ -192,7 +198,7 @@ After the onboarding questions (`onboarding.md` §2):
 1. `python3 cme.py init --work <work> --profile '<json>' --config '<json>' --blueprint
    <skill>/templates/blueprint.json` (or a blueprint drafted for the learner's specialty in the
    same JSON shape, or as Markdown like `templates/blueprint.md`: `init` accepts both). The
-   work folder needs no store yet: `init` writes the first ledger, the index and the page
+   work folder needs no store yet: `init` writes the first ledger, the page file and the page
    (`index.html`) into the publish set and prints them as `files`.
 2. **The page**: create a new artifact in one publish with those `files`, titled **Clinical
    CME**, with a generic icon (a stethoscope or similar) and the description "Your clinical
@@ -213,7 +219,7 @@ its store and continue, or start a fresh ledger in it only if the learner asks t
 ## 6. Recovery
 
 - **A save was refused twice, or the store tool failed**: say so plainly, do not report the
-  round as saved, and hand the learner the files of the publish set (`files`: state, index,
+  round as saved, and hand the learner the files of the publish set (`files`: state, page file,
   session file) as downloads. At the next session, save them as a carry-over
   (§4.3) after checking their `gen` is higher than the store's.
 - **Session saved without a reflection** (the learner left after the feedback): nothing to do.
@@ -225,8 +231,16 @@ its store and continue, or start a fresh ledger in it only if the learner asks t
   <work>` and publish its `files`; then run `start --work <work>` (no `--store`) for today's
   round as usual: it continues from the closed ledger and sets the closed round's files aside.
 - **The artifact cannot be found**: ask for the link. Never create a second ledger silently.
-- **The index is missing or damaged**: `cme.py` rebuilds what it can from the ledger on the next
-  save; `cme.py reindex <folder>` rebuilds it fully from the session files.
+- **The page file is missing or damaged** (the page shows nothing, or lacks sessions): `cme.py`
+  writes it again from the ledger on the next save; sessions too old for the ledger to list
+  come back with `python3 cme.py rebuild-page <folder>`, which rebuilds `data/page.json` from
+  the session and review files and the ledger of a folder in the store's layout (publish the
+  file it prints).
+- **A store from before version 5.1** has `data/index.json` and no `data/page.json`. Nothing to
+  do: read `data/index.json` with the ledger that once, and the next save writes the page
+  file with the index's entries in it and the new page with it. Until then the new page lists
+  the sessions of the old index and says the rest comes with the next round. `data/index.json`
+  is not written any more; it can stay in the store or be deleted.
 - **The ledger is damaged** (a command reports invalid JSON): ask whether they have a recent
   `state.json` from a failed save, or an export from the page's Export button (`python3 cme.py
   import <export> --out-dir <work>/restore` turns it back into the files); otherwise rebuild from the session files (they
@@ -237,4 +251,7 @@ its store and continue, or start a fresh ledger in it only if the learner asks t
 
 "Give me my data": collect `data/` (the page: read all files listed under `data/` into local
 files; a folder: the folder itself) and package it as a zip download.
-The page's Export button gives the same as one JSON file.
+The page's Export button gives the same as one JSON file. Either is a full backup with the
+ledger in it, so say in one line that it shows open gaps and when topics come back: best left
+unopened by a learner who wants the rounds to stay blind (the page says so before it
+downloads).

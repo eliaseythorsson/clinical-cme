@@ -86,6 +86,6 @@ def test_import_takes_a_page_export_only(work):
     export = {"state": work.read_json("publish", "data", "state.json"),
               "sessions": [work.read_json("publish", "data", "sessions", "S0001.json")], "reviews": []}
     out = work.run_json("import", work.write("export.json", export), "--out-dir", work.p("restored"))
-    assert [f["as"] for f in out["files"]] == ["data/sessions/S0001.json", "data/index.json", "data/state.json"]
+    assert [f["as"] for f in out["files"]] == ["data/sessions/S0001.json", "data/page.json", "data/state.json"]
     os.makedirs(work.p("dbdump", "cme"))
     assert work.run("import", work.p("dbdump"), "--out-dir", work.p("x"), ok=False).returncode != 0

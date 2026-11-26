@@ -141,7 +141,7 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
 
 1. **Read the store, in one parallel batch** (before it, one call listing the learner's
    artifacts to find **Clinical CME**, unless a link or folder was given): `data/state.json`,
-   `data/index.json`, `data/prepared.json` and `index.html` as saved local files, never into
+   `data/page.json`, `data/prepared.json` and `index.html` as saved local files, never into
    the conversation, noting the version read; and the page's settings document `cme/prefs`.
    All but the ledger may be missing. No store → ask once (`store.md` §3) or `onboarding.md`.
 2. **One shell call**: copy the saved files into `<work>/store/` and run `python3 cme.py start

@@ -37,7 +37,7 @@ def test_verify_passes_on_a_correct_save(work):
 def test_verify_catches_stale_ledger_and_missing_session(work):
     work.init()
     work.save_round("2026-11-01")
-    check = reread(work, only=("data/state.json", "data/index.json"))     # as the save left the store
+    check = reread(work, only=("data/state.json", "data/page.json"))     # as the save left the store
     work.close_round("2026-11-01")                                        # the close was never written
     res = work.run_json("verify", "--work", work.path, "--store", check)
     assert not res["ok"]

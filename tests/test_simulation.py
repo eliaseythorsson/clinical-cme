@@ -345,7 +345,7 @@ def test_init_seeds_a_folder_store_and_both_briefs(tmp_path):
     st = json.load(open(os.path.join(run, "store", "data", "state.json")))
     assert st["profile"]["onboarded_at"] == TODAY and st["profile"]["specialty"] == "internal medicine"
     assert st["config"]["helpers"] is False and st["config"]["prepare_ahead"] is False
-    assert os.path.isfile(os.path.join(run, "store", "data", "index.json"))
+    assert os.path.isfile(os.path.join(run, "store", "data", "page.json"))
     examiner = open(out["examiner_prompt"]).read()
     learner = open(out["learner_prompt"]).read()
     assert os.path.join(run, "store") in examiner and "SKILL.md" in examiner
@@ -364,7 +364,7 @@ def test_clean_round_passes_every_check_and_the_report_is_written(script):
     assert out["checks"] == {"blinding": True, "saved": True, "log": True}
     assert rep["checks"]["blinding"]["leaks"] == 0
     assert rep["checks"]["blinding"]["seal_lifted_at"] == {"questions": 3, "case": 8}
-    assert rep["checks"]["saved"]["publish_set"] == ["data/sessions/S0001.json", "data/index.json",
+    assert rep["checks"]["saved"]["publish_set"] == ["data/sessions/S0001.json", "data/page.json",
                                                      "data/prepared.json", "data/state.json"]
     assert rep["round"] == {"session": "S0001", "shape": "1 MCQ, 1 focused, case (two stages)", "score": rep["round"]["score"],
                             "confident_misses": 0, "continued_from_earlier_run": False}
