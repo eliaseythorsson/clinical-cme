@@ -37,10 +37,18 @@ A job (one work folder):
   prepare --work W [--if-needed] [--allow-unreflected]
                                                   plan the NEXT round into W/next/plan.json (counts only)
   finish-prepare --work W [--revised] [--no-evidence]
-                                                  after the checkers: check the key headers in W/next, count
-                                                  contradicted keys (a bad header or a missing evidence file
-                                                  is an error), pack the round as data/prepared.json
-  keys    DIR|SEALED.. [--plan PLAN]              the author's check of key headers (no content printed)
+                                                  after the checkers: lint the round in W/next against the
+                                                  rulebook (references/standards.md) and count contradicted
+                                                  keys. A bad key header, a missing kit section or a missing
+                                                  evidence file is an error; an abbreviation that looks
+                                                  undefined or mixed time anchors send the round back to the
+                                                  author once (details in W/next/lint.md), then are accepted
+                                                  with a warning (--revised). Packs the round as
+                                                  data/prepared.json
+  keys    DIR|SEALED.. [--plan PLAN]              the author's check: key headers, kit sections and the same
+                                                  lint (no content printed; details in DIR/lint.md)
+  key-table                                       the key-header table of references/standards.md (rule 9),
+                                                  as generated from the KEY_* definitions
   addendum --work W --md ADD.md [--session ID]    append to a session document (default: the last session)
   verify  --work W --store CHECK_DIR              testing mode: the publish set against a fresh re-read
   testing-note --work W --feedback J              testing mode: the learner's feedback + the store check
@@ -1240,8 +1248,8 @@ def plan_round(st, args, today):
             c["retest_gap"] = {
                 "id": gap_ref(g), "gap": clip(g.get("gap"), CLIP_GAP),
                 "how": "Write this item on the gap's decision point, in a new clinical context, and "
-                       "write the line 'retests: %s' in the item's key header (references/author.md, "
-                       "section 3). Only an item that says so, answered well, closes the gap." % gap_ref(g)}
+                       "write the line 'retests: %s' in the item's key header (references/standards.md, "
+                       "rule 9). Only an item that says so, answered well, closes the gap." % gap_ref(g)}
     used_cases, used_stems = all_sessions_for_novelty(st)
     for c in chosen:
         same = [x for x in used_cases if x.get("topic") == c.get("topic")]
@@ -2565,13 +2573,19 @@ def contradicted_keys(text):
 
 
 def cmd_finish_prepare(args):
-    """After the checkers: check the key headers of the sealed files in <work>/next, read the
-    evidence files' counts of contradicted keys and, when the round is clean (or was revised),
-    pack it and add it to the publish set as data/prepared.json. A missing or malformed key
-    header stops the command, so that it is not found only at `save`, in the middle of the
-    round. An evidence file that is missing, empty or without its count line stops it too: it
-    is never read as "nothing contradicted".
-    Prints counts, file names and the names of keys and fields only."""
+    """After the checkers: lint the round drafted in <work>/next against the rulebook
+    (references/standards.md), read the evidence files' counts of contradicted keys and, when the
+    round is clean (or was revised), pack it and add it to the publish set as data/prepared.json.
+
+    Definite problems stop the command and nothing is stashed: a missing or malformed key header
+    (so that it is not found only at `save`, in the middle of the round), a missing kit or kit
+    section, and an evidence file that is missing, empty or without its count line (never read
+    as "nothing contradicted").
+    Judgement calls (an abbreviation that looks undefined, time anchors that look mixed) go back
+    to the author once, like a contradicted key: `"revise": true`; with --revised whatever is
+    still found is accepted and listed under `warnings`.
+    Prints counts, file names and the names of keys, fields and kit sections only; what the lint
+    found is written to <work>/next/lint.md, which only the author reads."""
     work, info = job(args)
     folder = os.path.join(work, NEXT_DIR)
     plan_path = os.path.join(folder, PLAN_FILE)
@@ -2581,17 +2595,24 @@ def cmd_finish_prepare(args):
     plan = plan_for_prepared(st, plan_path)
     files, has, warnings = prepared_round_files(plan, folder)
     _, key_problems = check_key_headers([os.path.join(folder, n) for n in SEALED_FILES if n in files], plan)
-    if key_problems:
-        die("the key headers are not complete in %s: %s. Nothing was stashed. Have the headers corrected in "
-            "the sealed files (references/author.md, section 3; `keys` runs this check alone), then run this "
-            "command again" % (folder, "; ".join(key_problems)))
+    lint = lint_round(files, plan, kits_required=True)
+    if key_problems or lint["blocking"]:
+        stops = []
+        if key_problems:
+            stops.append("the key headers are not complete in %s: %s" % (folder, "; ".join(key_problems)))
+        if lint["blocking"]:
+            stops.append("the kits are not complete in %s: %s" % (folder, "; ".join(lint["blocking"])))
+        die("%s. Nothing was stashed. Have them corrected in the files (references/standards.md, rule 9 for "
+            "key headers, rule 8 for kits; `keys` runs this check alone), then run this command again"
+            % ". Also, ".join(stops))
     out = {"ok": True}
     if args.no_evidence:
         # no checker was run (no helpers): the evidence is checked at the session, after the answers
         for name in EVIDENCE_FOR.values():
             files.pop(name, None)
         has = [h for h in has if not h.startswith("evidence_")]
-        out.update({"evidence": "not checked", "contradicted": None, "revise": False})
+        out.update({"evidence": "not checked", "contradicted": None})
+        total = 0
     else:
         per_file, problems = {}, []
         for sealed, evidence in EVIDENCE_FOR.items():
@@ -2611,15 +2632,20 @@ def cmd_finish_prepare(args):
                 "again (references/evidence_check.md), or pass --no-evidence if no checker is run in this session"
                 % (folder, "; ".join(problems)))
         total = sum(per_file.values())
-        out.update({"evidence": per_file, "contradicted": total, "revise": bool(total) and not args.revised})
-        if args.revised:
-            out["revised"] = True
+        out.update({"evidence": per_file, "contradicted": total})
+    out["lint"] = lint_summary(lint, write_lint_details(folder, lint))
+    out["revise"] = bool(total or lint["review"]) and not args.revised
+    if args.revised:
+        out["revised"] = True
+        warnings = warnings + ["accepted after one revision: %s" % line for line in lint_lines(lint)]
+    warnings = warnings + lint["notes"]
     if warnings:
         out["warnings"] = warnings
     if out["revise"]:
         out.update({"stashed": False,
-                    "next": "start the author once more with Parts `revise` on this folder, wait for it, "
-                            "then run this command again with --revised"})
+                    "next": "start the author once more with Parts `revise` on this folder (it reads the "
+                            "evidence files and lint.md there), wait for it, then run this command again "
+                            "with --revised"})
         print(json.dumps(out, ensure_ascii=False))
         return
     publish_json(work, PREPARED_PATH, prepared_doc(st, plan, files, has))
@@ -3018,7 +3044,7 @@ def fill_round_from_keys(rnd, sealed, plan=None):
         filled.append(kid)
     if problems:
         die("the round record cannot be built from the keys: " + "; ".join(problems)
-            + ". Correct the header in the sealed file (references/author.md, section 3), or the "
+            + ". Correct the header in the sealed file (references/standards.md, rule 9), or the "
               "\"key\" in round.json, and run save again. Nothing was recorded.")
     if not rnd.get("case_format") and any(is_case(it) for it in items) and (plan or {}).get("case_format"):
         rnd["case_format"] = plan["case_format"]
@@ -3049,7 +3075,7 @@ def check_key_headers(paths, plan=None):
     for name, ids in by_file.items():
         if not ids and present_blocks(read_text(next(p for p in paths if os.path.basename(p) == name))):
             problems.append("%s: no key header; each item needs one ('<!-- key: Q1 -->' … '<!-- /key -->', "
-                            "references/author.md section 3)" % name)
+                            "references/standards.md rule 9)" % name)
     if plan:
         want = plan.get("counts") or {}
         have = {"mcqs": 0, "focused": 0, "case": 0}
@@ -3066,13 +3092,289 @@ def check_key_headers(paths, plan=None):
     return by_file, problems
 
 
+# What each field holds, for the table of references/standards.md (rule 9). The table there is
+# printed by `key-table` from the KEY_* definitions above and these notes; tests/test_standards.py
+# fails when the two differ, so the rulebook cannot drift from what the engine reads.
+KEY_FIELD_NOTES = {
+    "type": "`mcq`, `focused` or `case`",
+    "topic": "the blueprint ID (for a `new_in_domain` item, the one you chose)",
+    "label": "the topic's label in the blueprint",
+    "reason": "the plan's `reason_code` for the item, copied as it is",
+    "stem_summary": "about ten words on what the stem asks, for the list of stems already used",
+    "aspect": "one of " + ", ".join("`%s`" % a for a in FOCUSED_ASPECTS),
+    "patient": "age and sex (\"74F\")",
+    "setting": "where the case takes place (\"ED\")",
+    "presentation": "the presenting problem (\"confusion after a marathon\")",
+    "diagnosis": "the final diagnosis",
+    "twist": "what makes this case different from others on the topic",
+    "domain": "the domain code, only when the topic ID does not start with it",
+    "retests": "the plan's `retest_gap.id`, on an item written on that gap's decision point; "
+               "otherwise leave the line out",
+}
+KEY_TABLE_OPEN = "<!-- key-header-table: generated by `cme.py key-table`; do not edit by hand -->"
+KEY_TABLE_CLOSE = "<!-- /key-header-table -->"
+
+
+def key_header_fields():
+    """Every field a key header can have, in the order of the table."""
+    seen = []
+    for f in (KEY_COMMON + tuple(f for t in KEY_TYPES for f in KEY_REQUIRED[t])
+              + tuple(f for t in KEY_TYPES for f in KEY_OPTIONAL[t]) + KEY_ANY):
+        if f not in seen:
+            seen.append(f)
+    return seen
+
+
+def key_header_table():
+    """The key-header table of the rulebook, as Markdown, from the KEY_* definitions."""
+    def cell(field, typ):
+        if field in KEY_COMMON or field in KEY_REQUIRED[typ]:
+            return "required"
+        if field in KEY_OPTIONAL[typ] or field in KEY_ANY:
+            return "optional"
+        return "–"
+    lines = ["| Field | MCQ | Focused question | Case | What to write |", "|---|---|---|---|---|"]
+    for f in key_header_fields():
+        lines.append("| `%s` | %s | %s | %s | %s |" % (f, cell(f, "mcq"), cell(f, "focused"), cell(f, "case"),
+                                                       KEY_FIELD_NOTES[f]))
+    return "\n".join(lines)
+
+
+def cmd_key_table(args):
+    """Print the key-header table for references/standards.md (between its two markers)."""
+    sys.stdout.write("%s\n%s\n%s\n" % (KEY_TABLE_OPEN, key_header_table(), KEY_TABLE_CLOSE))
+
+
+# ---------------------------------------------------------------- the lint of a written round
+#
+# The rulebook (references/standards.md) holds the rules for writing items. What can be checked
+# mechanically is checked here, by `finish-prepare` (a round prepared ahead) and by `keys` (the
+# author's own check), in two categories:
+#
+#   blocking   definite problems: a malformed key header (rule 9, check_key_headers) and a kit
+#              or kit section that is missing (rule 8). Nothing is stashed.
+#   review     judgement calls, found by heuristics: an abbreviation in the presented text that
+#              is not spelled out at first use (rule 5) and time anchors that look mixed
+#              (rule 6). The author revises once; what is still found is accepted with a warning.
+#
+# The lint prints file names, key ids, section names and counts only. What it found (the
+# abbreviations, the phrases) names content, so it goes to lint.md beside the sealed files.
+
+STANDARDS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                              "references", "standards.md")
+LINT_FILE = "lint.md"
+KIT_FOR = {"sealed_questions.md": "kit_questions.md", "sealed_case.md": "kit_case.md"}
+# Rule 8: the sections a kit must have, each under a Markdown heading that starts with the name.
+# kit_questions.md has one heading per question ("## Q1") instead, and "Reading" only in a round
+# without a case. Reserved for issue #50 (podcast candidates): a "Listening" section, not yet required.
+KIT_CASE_SECTIONS = ("Reveal", "Model answer", "Rubric", "Differential", "Briefing", "Pearls", "Reading")
+KIT_READING = "Reading"
+HEADING_RE = re.compile(r"^[ \t]{0,3}#{1,6}[ \t]*(.+?)[ \t#:]*$", re.M)
+
+# Rule 5: the abbreviations that need no spelling out are listed in the rulebook, between these
+# two markers. That list is the only source: there is no copy of it here.
+ABBREVIATIONS_RE = re.compile(r"<!--\s*common-abbreviations\s*-->(.*?)<!--\s*/common-abbreviations\s*-->", re.S)
+ABBREVIATION_RE = re.compile(r"(?<![A-Za-z0-9])([A-Z]{2,6})s?(?![A-Za-z0-9])")
+ROMAN_RE = re.compile(r"^[IVX]+$")
+
+# Rule 6: phrases that count from now, and phrases that count from a numbered day.
+_NUM = r"(?:\d+|an?|one|two|three|four|five|six|seven|eight|nine|ten|twelve|few|several|couple of)"
+_ORD = r"(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)"
+TIME_NOW_RE = re.compile(
+    r"\b" + _NUM + r"\s+(?:minutes?|mins?|hours?|hrs?|days?|nights?|weeks?)\s+ago\b"
+    r"|\bsince\s+(?:this\s+morning|yesterday|last\s+night|last\s+week)\b"
+    r"|\b(?:this\s+morning|yesterday|last\s+night|earlier\s+today)\b", re.I)
+TIME_DAY_RE = re.compile(
+    r"\bday\s*\d+\b|\bday\s+(?:zero|one|two|three|four|five|six|seven|eight|nine|ten)\b"
+    r"|\b(?:hospital|admission|post-?operative|post-?op|treatment|ICU)\s+day\b"
+    r"|\b" + _ORD + r"\s+(?:hospital\s+|admission\s+|post-?operative\s+)?day\b|\bPOD\s*\d+\b", re.I)
+QUESTION_START_RE = re.compile(r"(?m)^(?=[ \t>*_#]{0,6}(?:Question|Q)[ \t]*\d+)")
+
+
+def common_abbreviations(path=None):
+    """The abbreviations the rulebook lists as needing no spelling out (rule 5), or None when the
+    rulebook or its list cannot be read."""
+    try:
+        m = ABBREVIATIONS_RE.search(read_text(path or STANDARDS_FILE))
+    except OSError:
+        return None
+    if not m:
+        return None
+    return {w for w in re.split(r"[\s,;]+", m.group(1).strip()) if w}
+
+
+def kit_headings(text):
+    return [h.strip().strip("*_`").strip().lower() for h in HEADING_RE.findall(text or "")]
+
+
+def kit_problems(files, plan=None, kits_required=True):
+    """Rule 8, the mechanical part: every kit is there and has its sections. Names files, key ids
+    and section names only."""
+    problems = []
+    for sealed, kit in KIT_FOR.items():
+        if sealed not in files or not present_blocks(files[sealed]):
+            continue
+        if kit not in files:
+            if kits_required:
+                problems.append("%s is missing" % kit)
+            continue
+        heads = kit_headings(files[kit])
+        if kit == "kit_case.md":
+            want = list(KIT_CASE_SECTIONS)
+        else:
+            ids = [k for k in parse_key_headers(files[sealed], sealed)[0] if k != "case"]
+            missing = [k for k in ids if not any(re.match(r"%s\b" % re.escape(k.lower()), h) for h in heads)]
+            if missing:
+                problems.append("%s: no section for %s (one heading per question, '## Q1')"
+                                % (kit, ", ".join(missing)))
+            counts = (plan or {}).get("counts") or {}
+            want = [KIT_READING] if plan and not counts.get("case") else []
+        missing = [name for name in want if not any(h.startswith(name.lower().rstrip("s")) for h in heads)]
+        if missing:
+            problems.append("%s: section%s %s missing (a heading for each: %s)"
+                            % (kit, "" if len(missing) == 1 else "s", ", ".join("'%s'" % m for m in missing),
+                               ", ".join("'## %s'" % m for m in missing)))
+    return problems
+
+
+def presented_text(files):
+    """The text the learner is shown, in the order of a session: [(file, block, text)]. The
+    results bank counts: Stage 2 is assembled from it."""
+    out = []
+    q = present_blocks(files.get("sealed_questions.md")).get("questions")
+    if q:
+        out.append(("sealed_questions.md", "questions", q))
+    case = files.get("sealed_case.md")
+    c = present_blocks(case).get("case")
+    if c:
+        out.append(("sealed_case.md", "case", c))
+        bank = "\n".join(v for _, v in BANK_RE.findall(case or "")).strip()
+        if bank:
+            out.append(("sealed_case.md", "bank", bank))
+    return out
+
+
+def undefined_abbreviations(blocks_in_order, common):
+    """Rule 5 as a heuristic: all-caps tokens of two to six letters (a plural s allowed) that are
+    not on the rulebook's list and, where the session first shows them, have neither an expansion
+    in brackets after them ("ABC (…)") nor stand in brackets after one ("… (ABC)").
+    [(file, block, token)], each token once."""
+    seen, found = set(), []
+    for name, block, text in blocks_in_order:
+        for m in ABBREVIATION_RE.finditer(text):
+            token = m.group(1)
+            if token in seen:
+                continue
+            seen.add(token)
+            if token in common or ROMAN_RE.match(token):
+                continue
+            if re.match(r"s?[ \t]*\(", text[m.end(1):]) or re.search(r"\([ \t]*$", text[:m.start(1)]):
+                continue
+            found.append((name, block, token))
+    return found
+
+
+def mixed_time_anchors(blocks_in_order):
+    """Rule 6 as a heuristic: one case (or one short question) that counts time both from now
+    ("3 hours ago", "since this morning") and from a numbered day ("day 3", "hospital day").
+    [(file, where, [phrases from now], [phrases by day])]."""
+    units = []
+    case = [(n, t) for n, b, t in blocks_in_order if n == "sealed_case.md"]
+    for name, block, text in blocks_in_order:
+        if block == "questions":
+            for i, part in enumerate([p for p in QUESTION_START_RE.split(text) if p.strip()], 1):
+                m = re.match(r"[ \t>*_#]*(?:Question|Q)[ \t]*(\d+)", part)
+                units.append((name, "question %s" % (m.group(1) if m else i), part))
+    if case:
+        units.append(("sealed_case.md", "the case (present block and bank)", "\n".join(t for _, t in case)))
+    found = []
+    for name, where, text in units:
+        now = sorted({m.group(0).lower() for m in TIME_NOW_RE.finditer(text)})
+        day = sorted({m.group(0).lower() for m in TIME_DAY_RE.finditer(text)})
+        if now and day:
+            found.append((name, where, now, day))
+    return found
+
+
+def lint_round(files, plan=None, kits_required=True, standards=None):
+    """Lint a written round ({file name: text}) against the rulebook: {"blocking": [...],
+    "review": [...], "notes": [...]}. Key headers are checked separately (check_key_headers)."""
+    lint = {"blocking": kit_problems(files, plan, kits_required), "review": [], "notes": []}
+    shown = presented_text(files)
+    common = common_abbreviations(standards)
+    if common is None:
+        lint["notes"].append("the abbreviation list of references/standards.md (rule 5) could not be read: "
+                             "abbreviations were not checked")
+    else:
+        for name, block, token in undefined_abbreviations(shown, common):
+            lint["review"].append({"rule": 5, "file": name, "where": "%s block" % block, "detail": token})
+    for name, where, now, day in mixed_time_anchors(shown):
+        lint["review"].append({"rule": 6, "file": name, "where": where,
+                               "detail": "from now: %s; by numbered day: %s"
+                                         % (", ".join('"%s"' % x for x in now), ", ".join('"%s"' % x for x in day))})
+    return lint
+
+
+def lint_lines(lint):
+    """The judgement calls as lines that name no content: file, rule and a count."""
+    lines = []
+    for name in sorted({r["file"] for r in lint["review"]}):
+        n5 = sum(1 for r in lint["review"] if r["file"] == name and r["rule"] == 5)
+        n6 = sum(1 for r in lint["review"] if r["file"] == name and r["rule"] == 6)
+        if n5:
+            lines.append("%s: %d abbreviation%s not spelled out at first use (references/standards.md, rule 5)"
+                         % (name, n5, "" if n5 == 1 else "s"))
+        if n6:
+            lines.append("%s: time anchors look mixed in %d place%s (references/standards.md, rule 6)"
+                         % (name, n6, "" if n6 == 1 else "s"))
+    return lines
+
+
+def lint_summary(lint, details=None):
+    out = {"abbreviations": sum(1 for r in lint["review"] if r["rule"] == 5),
+           "time_anchors": sum(1 for r in lint["review"] if r["rule"] == 6)}
+    if lint["review"]:
+        out["where"] = lint_lines(lint)
+        if details:
+            out["details"] = details
+    return out
+
+
+def write_lint_details(folder, lint):
+    """Write what the lint found to <folder>/lint.md for the author (it names content, so it is
+    never printed), or remove an earlier one when nothing is found. Returns the path or None."""
+    path = os.path.join(folder, LINT_FILE)
+    if not lint["review"]:
+        if os.path.exists(path):
+            os.remove(path)
+        return None
+    titles = {5: "Rule 5: abbreviations not spelled out at first use in the presented text",
+              6: "Rule 6: more than one time anchor in one case or question"}
+    lines = ["# Lint: judgement calls (references/standards.md)", "",
+             "Sealed like the keys: this file names content. Only the author reads it.",
+             "Each line is a heuristic's finding: correct the text where the rule is broken, leave it "
+             "where the finding is wrong.", ""]
+    for rule in (5, 6):
+        rows = [r for r in lint["review"] if r["rule"] == rule]
+        if rows:
+            lines += ["## %s" % titles[rule], ""]
+            lines += ["- %s, %s: %s" % (r["file"], r["where"], r["detail"]) for r in rows]
+            lines.append("")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines))
+    return os.path.abspath(path)
+
+
 def cmd_keys(args):
-    """Check the key headers of sealed files (the author's last step; `finish-prepare` runs the
-    same check before it stashes). Prints which keys each file has and what is wrong with them;
-    never a topic or any other value."""
-    paths = []
+    """The author's last step (`finish-prepare` runs the same checks before it stashes): check the
+    key headers of sealed files and, for a folder, the kits' sections and the lint's judgement
+    calls. Prints which keys each file has, `problems` (what would stop `finish-prepare`) and
+    `review` (counts of what the lint would send back; the findings themselves go to lint.md in
+    the folder); never a topic or any other value."""
+    paths, folder = [], None
     for p in args.paths:
         if os.path.isdir(p):
+            folder = folder or p
             paths += [os.path.join(p, n) for n in SEALED_FILES if os.path.isfile(os.path.join(p, n))]
         elif os.path.isfile(p):
             paths.append(p)
@@ -3080,8 +3382,24 @@ def cmd_keys(args):
             die("not found: %s" % p)
     if not paths:
         die("no sealed files (%s) in %s" % (", ".join(SEALED_FILES), ", ".join(args.paths)))
-    by_file, problems = check_key_headers(paths, load_json(args.plan) if args.plan else None)
-    print(json.dumps({"ok": not problems, "keys": by_file, "problems": problems}, indent=1, ensure_ascii=False))
+    plan = load_json(args.plan) if args.plan else None
+    by_file, problems = check_key_headers(paths, plan)
+    files = {os.path.basename(p): read_text(p) for p in paths}
+    if folder:
+        for kit in KIT_FOR.values():
+            if os.path.isfile(os.path.join(folder, kit)):
+                files[kit] = read_text(os.path.join(folder, kit))
+    # a kit not written yet (Parts: questions) is no problem here; finish-prepare requires it
+    lint = lint_round(files, plan, kits_required=False)
+    problems = problems + lint["blocking"]
+    out = {"ok": not problems, "keys": by_file, "problems": problems, "review": lint_lines(lint)}
+    if folder:
+        details = write_lint_details(folder, lint)
+        if details:
+            out["details"] = details
+    if lint["notes"]:
+        out["warnings"] = lint["notes"]
+    print(json.dumps(out, indent=1, ensure_ascii=False))
     return 0 if not problems else 1
 
 
@@ -3724,6 +4042,7 @@ def main(argv=None):
     s = command("finish-prepare", cmd_finish_prepare); s.add_argument("--revised", action="store_true")
     s.add_argument("--no-evidence", action="store_true")
     s = command("keys", cmd_keys, work=False); s.add_argument("paths", nargs="+"); s.add_argument("--plan")
+    s = command("key-table", cmd_key_table, work=False)
     s = command("verify", cmd_verify); s.add_argument("--store", required=True)
     s = command("testing-note", cmd_testing_note); s.add_argument("--feedback", required=True); s.add_argument("--session")
     s = command("stats", cmd_stats); s.add_argument("--all", action="store_true")

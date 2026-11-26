@@ -4,4 +4,6 @@ Every rule for writing items (blinding, guideline region, units, pitch, abbrevia
 
 `finish-prepare` lints a prepared round while nobody waits. Definite problems (a missing kit section, a malformed key header) block the stash. Judgement calls (an abbreviation that looks undefined, timings that look mixed) go back to the author for one revision, then are accepted with a warning, so a round is never left unprepared over a heuristic.
 
+As built (#53): the table of rule 9 is printed by `cme.py key-table` from `KEY_*` and a test compares it with the rulebook's copy. The list of abbreviations that need no spelling out lives only in the rulebook (rule 5), where the lint reads it; `cme.py` has no copy. The lint prints names and counts only: what it found names content, so it goes to `lint.md` beside the sealed files, for the author. The one revision is the same pass as for a contradicted key (`finish-prepare --revised`). Kits got fixed headings (rule 8) so that "a missing kit section" is something a script can see.
+
 Rules are what makes any item good and are the same for every learner. What differs per learner (their level and aim in their own words, region, specialty, round mix) is settings, kept in the ledger and changeable on the page; the rulebook has one rule saying how items are pitched to them.

@@ -117,7 +117,7 @@ def test_gaps_are_numbered_and_the_plan_names_the_gap_to_retest(work):
     assert item["retest_gap"]["id"] == gid and item["retest_gap"]["gap"] == "missed the point"
     # the author is told where the gap is named: the item's key header (issue #36), not the round JSON
     how = item["retest_gap"]["how"]
-    assert "'retests: G0001' in the item's key header" in how and "author.md" in how
+    assert "'retests: G0001' in the item's key header" in how and "standards.md" in how
     assert "round JSON" not in how and "round.json" not in how
 
 
