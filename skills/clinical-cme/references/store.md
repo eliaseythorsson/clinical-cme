@@ -14,7 +14,7 @@ data through the conversation.
 | One round: metadata, `transcript` (part A), `closing` (part B), `addendum` | `data/sessions/S0042.json` | `save`, `close`, `addendum` |
 | The page itself | `index.html` | `init`; any command that writes the ledger, when the page is out of date (§4.5) |
 | A progress-review report | `data/reviews/2026-11-20.json` | `review-doc` |
-| The next round, written ahead and packed: questions, case, feedback notes (`state_schema.md` §8) | `data/prepared.json` | `finish-prepare`; emptied by `save`, `settings`, `theme` and `review` |
+| The next round, written ahead and packed: questions, case, feedback notes (`state_schema.md` §8) | `data/prepared.json` | `finish-prepare`; who empties it: `state_schema.md` §8 |
 
 One more document lives outside the files: the round mix the learner sets on their page
 (`state_schema.md` §7) is kept by the page as its own settings document, `cme/prefs`. The page

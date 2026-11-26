@@ -149,8 +149,8 @@ independent tool calls, and end the turn with one short line ("Answer when ready
    - `review_due` → offer the progress review in one line; default to after the round.
    - `last_session.unreflected` → one neutral line: the last session was saved without its
      reflection and stays recorded that way.
-   - `page_settings_applied` (unless it only reports `unchanged`) → say so in the opening line
-     ("Using the mix you set on your page: …"); `warnings` about page settings → one line.
+   - `round_mix` → its `say` in the opening line; else `page_settings_applied` (unless only
+     `unchanged`) → "Using the mix you set on your page: …"; page-settings `warnings` → one line.
    - `block.line` → into the opening line word for word; with `block.starts` true, add
      `block.reason` ("New block: …"). The learner is told the theme and the position, nothing
      more specific: not which questions are on the theme, not the domain of any other item.
