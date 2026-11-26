@@ -49,9 +49,12 @@ next round, written and source-checked in advance). The skill holds no learner d
 If tools load on demand, search **once**, early, for all you will need. Give every tool call
 a neutral description ("Read the ledger", "Prepare the round", "Check sources", "File the
 answers", "Update today's round", "Save the round"). Run `python3 <skill>/scripts/cme.py
-<command> …` with one scratch folder `<work>` per round: every file of the round has a fixed
-name there and the commands find them (`state_schema.md` §6, §6.1). Never write learner data
-into the skill's folder. This file covers what needs judgement; the rest is in the references:
+<command> …` with one **work folder** `<work>` per job: `start --store` (a round) or `open`
+(anything else) sets it up from the store as read, and every later command takes only `--work
+<work>` and finds each file by its fixed name (`state_schema.md` §6, §6.1). A command that
+writes prints the **publish set** as `files`: all the store must hold now; publish all of it
+(`store.md` §4). Never write learner data into the skill's folder. This file covers what
+needs judgement; the rest is in the references:
 
 | Reference | Read when |
 |---|---|
@@ -137,10 +140,10 @@ independent tool calls, and end the turn with one short line ("Answer when ready
    `<work>/store/` (`store.md` §3–4: `data/state.json`, `data/index.json`,
    `data/prepared.json`, `index.html`, and the page's settings document `cme/prefs`; the last
    two may be missing). No store → ask once (`store.md` §3); first-timers → `onboarding.md`.
-2. `python3 cme.py start <work>/store/state.json --work <work> --prepared
-   <work>/store/prepared.json` (plus `--prefs '<the cme/prefs JSON>'` when it exists, and the
-   one-round options of `requests.md` §3 if the learner asked for a special round). It prints
-   neutral status and counts (`estimated_minutes` is a guide), never topics. Route on it:
+2. `python3 cme.py start --work <work> --store <work>/store --version <version read>` (plus
+   `--prefs '<the cme/prefs JSON>'` when it exists, and the one-round options of `requests.md`
+   §3 for a special round). It prints neutral status and counts (`estimated_minutes` is a
+   guide), never topics. Route on it:
    - `onboarding_needed` → setup. "Prepare only", or a scheduled task asking for it →
      `preparing.md` §3, not a round. Any other request → `requests.md`.
    - `review_due` → offer the progress review in one line; default to after the round.
@@ -172,7 +175,7 @@ An answer is final once given; a later change request is noted in the log and th
 graded. If answers are missing, ask once; proceed if the learner says so.
 
 1. **In one batch**: read `<work>/sealed_questions.md`, `kit_questions.md` and
-   `evidence_questions.md`, and run `cme.py present <work>/sealed_case.md --block case` (the
+   `evidence_questions.md`, and run `cme.py present --work <work> --block case` (the
    case file itself stays unopened). No evidence file → run the questions' verification list
    now (`evidence_check.md` §4). Add a search only for something the answers raise.
 2. **Grade and code** the short questions against the evidence, using the key and the kit as
@@ -194,7 +197,7 @@ graded. If answers are missing, ask once; proceed if the learner says so.
 
 ### Turn 3. Stage 1 answer in → Stage 2 (unfolding cases)
 
-1. `python3 cme.py present <work>/sealed_case.md --block bank`. It prints only the results
+1. `python3 cme.py present --work <work> --block bank`. It prints only the results
    bank: no key, no diagnosis. Do not open `sealed_case.md`, `kit_case.md` or
    `evidence_case.md` until the final answers are in.
 2. **Send Stage 2** without grading, comment, hint or reaction, assembled from the bank: the
@@ -220,7 +223,7 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    write `<work>/feedback.md`, the final feedback exactly as sent; complete
    `<work>/round.json` with the grading only (`state_schema.md` §2; no `reflection` key).
    `save` fills in the rest from the key headers and the plan: do not copy it.
-5. `python3 cme.py save --work <work>`, then put back every file in its `files` list in one
+5. `python3 cme.py save --work <work>`, then publish every file in its `files` list in one
    write (`store.md` §4; `index.html` among them → `store.md` §4.5 once). Fix any `warnings`,
    or an `error` about a key header (`state_schema.md` §2), and run the same command again.
    A save that fails: never report the round as saved and never retype a ledger (`store.md` §6).
@@ -243,9 +246,9 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    fits the target frequency. `next_block` printed → add its `line` word for word.
    `speed_settings_new` → `preparing.md` §5. `testing` → `requests.md` §2. Offer no reminders
    and start no other round unless asked.
-4. **Behind the scenes**: save the `files` that `close` printed; if that write fails, tell
+4. **Behind the scenes**: publish the `files` that `close` printed; if that write fails, tell
    the learner at once. Then prepare the next round, saying nothing about it: `preparing.md`
-   §2. If the discussion continues afterwards, append it (`session_log.md` §4) and save.
+   §2. If the discussion continues afterwards, append it (`session_log.md` §4) and publish.
 
 ## Boundaries
 

@@ -40,22 +40,24 @@ def test_core_errors_raise_instead_of_exiting(work):
 
 
 def test_main_returns_the_exit_code_and_prints_the_error(work, capsys):
-    assert cme.main(["status", work.p("missing.json")]) == 2
+    assert cme.main(["validate", work.p("missing.json")]) == 2
     assert json.loads(capsys.readouterr().out) == {"ok": False, "error": "file not found: %s" % work.p("missing.json")}
-    assert cme.main(["status", work.init()]) == 0
+    assert cme.main(["validate", work.init()]) == 0
 
 
 def test_command_line_error_is_one_json_line_with_exit_code_2(work):
-    state = work.init()
+    work.init()
+    work.open()
+    w = ("--work", work.path)
+    work.write("round.json", {"items": []})
+    work.write("feedback.md", "x")
+    work.write("B.md", "x")
     for args, message in (
-        (("status", "missing.json"), "file not found: missing.json"),
-        (("--today", "garbage", "status", state), "--today must be YYYY-MM-DD"),
-        (("--today", "2026-11-01", "start", state, "--out", work.p("plan.json"), "--mcqs", "99"),
-         "--mcqs must be between 0 and 10"),
-        (("--today", "2026-11-01", "save", state, "--round", '{"items": []}', "--feedback", work.write("fb.md", "x"),
-          "--out-dir", work.p("out")), "round JSON must contain a non-empty 'items' list"),
-        (("--today", "2026-11-01", "close", state, "--reflection", "{}", "--md", work.write("B.md", "x"),
-          "--out-dir", work.p("out")), "no unreflected session to update (last: None)"),
+        (("validate", "missing.json"), "file not found: missing.json"),
+        (("--today", "garbage", "start", *w), "--today must be YYYY-MM-DD"),
+        (("--today", "2026-11-01", "start", *w, "--mcqs", "99"), "--mcqs must be between 0 and 10"),
+        (("--today", "2026-11-01", "save", *w), "round JSON must contain a non-empty 'items' list"),
+        (("--today", "2026-11-01", "close", *w, "--reflection", "{}"), "no unreflected session to update (last: None)"),
     ):
         r = work.run(*args, ok=False)
         assert r.returncode == 2, args
@@ -66,7 +68,7 @@ def test_command_line_error_is_one_json_line_with_exit_code_2(work):
 def test_validate_exits_1_on_problems_and_still_prints_them(work):
     state = work.init()
     assert work.run("validate", state).returncode == 0
-    st = work.read_json("state.json")
+    st = work.read_ledger()
     st["gaps"].append({"topic": "ZZ-99", "gap": "x"})
     r = work.run("validate", work.write("broken.json", st), ok=False)
     assert r.returncode == 1
@@ -103,58 +105,57 @@ def test_record_and_reflect_are_silent_and_change_the_ledger_in_place(work, caps
 
 # ---- the commands built on them behave as before
 
-def test_start_prints_one_line_and_writes_the_same_plan_as_plan(work):
+def test_start_prints_one_line_and_writes_the_plan_plan_round_makes(work):
     state = work.init()
-    r = work.run("--today", "2026-11-01", "start", state, "--out", work.p("a.json"))
+    r = work.run("--today", "2026-11-01", "start", "--work", work.path, "--store", work.store())
     assert len(stdout_lines(r)) == 1
-    summary = json.loads(r.stdout)["plan"]
-    assert summary == work.run_json("--today", "2026-11-01", "plan", state, "--out", work.p("a.json"))
-    work.run("--today", "2026-11-01", "plan", state, "--out", work.p("b.json"))
-    assert work.read_json("a.json") == work.read_json("b.json")
+    out = json.loads(r.stdout)
+    plan = cme.plan_round(cme.load_json(state), argparse.Namespace(**PLAN_OPTIONS), TODAY)
+    assert work.read_json("plan.json") == json.loads(json.dumps(plan))
+    assert out["plan"] == cme.plan_summary(plan, work.p("plan.json"))
 
 
 def test_save_and_close_match_record_and_reflect(work):
-    state = work.init()
+    st = ledger(work)
     saved = work.save_round("2026-11-01")
-    work.write("round.json", ROUND)
-    rec = work.run_json("--today", "2026-11-01", "record", state, "--round", work.p("round.json"),
-                        "--out", work.p("rec.json"))
-    assert work.read_json("out1", "data", "state.json") == work.read_json("rec.json")
-    assert saved["bytes"] == rec["bytes"] == os.path.getsize(work.p("rec.json"))
+    rec = cme.record_round(st, copy.deepcopy(ROUND), TODAY)
+    assert work.read_json("publish", "data", "state.json") == json.loads(json.dumps(st))
+    assert saved["out"] == work.pub("data", "state.json") and saved["bytes"] == os.path.getsize(saved["out"])
     assert list(saved)[:3] == ["ok", "out", "bytes"]
     for k in ("gen", "session_id", "next_id", "score", "topics", "open_gaps", "reflection_pending"):
         assert saved[k] == rec[k]
 
     closed = work.close_round("2026-11-03")
-    ref = work.run_json("--today", "2026-11-03", "reflect", work.p("rec.json"), "--reflection", work.p("refl.json"),
-                        "--out", work.p("ref.json"))
-    assert work.read_json("out2", "data", "state.json") == work.read_json("ref.json")
-    assert closed["bytes"] == ref["bytes"]
+    ref = cme.reflect_round(st, dict(REFLECTION), dt.date(2026, 11, 3))
+    assert work.read_json("publish", "data", "state.json") == json.loads(json.dumps(st))
+    assert closed["bytes"] == os.path.getsize(closed["out"])
     for k in ("gen", "session_id", "topics", "open_gaps"):
         assert closed[k] == ref[k]
 
 
 def test_failed_save_and_close_leave_no_files(work):
-    state = work.init()
-    prefs = json.dumps({"round": {"mcqs": 4}, "base": work.read_json("state.json")["config"]["round_set_at"],
+    work.init()
+    prefs = json.dumps({"round": {"mcqs": 4}, "base": work.read_ledger()["config"]["round_set_at"],
                         "updated": "2026-11-01T10:00"})
-    work.run("--today", "2026-11-01", "save", state, "--round", '{"items": []}', "--prefs", prefs,
-             "--feedback", work.write("fb.md", "x"), "--out-dir", work.p("bad_save"), ok=False)
-    work.run("--today", "2026-11-01", "close", state, "--reflection", "{}", "--md", work.write("B.md", "x"),
-             "--out-dir", work.p("bad_close"), ok=False)
-    for d in ("bad_save", "bad_close"):
-        assert [n for _, _, names in os.walk(work.p(d)) for n in names] == []
+    work.open("--prefs", prefs)
+    work.write("round.json", {"items": []})
+    work.write("feedback.md", "x")
+    work.write("B.md", "x")
+    work.run("--today", "2026-11-01", "save", "--work", work.path, ok=False)
+    work.run("--today", "2026-11-01", "close", "--work", work.path, "--reflection", "{}", ok=False)
+    assert not os.path.exists(work.pub())
+    assert work.read_json("publish.json")["files"] == []
+    assert not os.path.exists(work.p("before_save.json")) and not os.path.exists(work.p("before_close.json"))
 
 
 def test_prepare_plans_tomorrow_and_marks_the_plan(work):
     work.init()
     work.save_round("2026-11-01")
     work.close_round("2026-11-01")
-    state = work.p("out2", "data", "state.json")
-    r = work.run("--today", "2026-11-01", "prepare", state, "--out", work.p("next.json"))
+    r = work.run("--today", "2026-11-01", "prepare", "--work", work.path)
     assert len(stdout_lines(r)) == 1
     summary = json.loads(r.stdout)
-    plan = work.read_json("next.json")
+    plan = work.read_json("next", "plan.json")
     assert summary["prepare"] is True and summary["session_id"] == "S0002"
     assert plan["date"] == "2026-11-02"
     assert plan["prepared"] == {"gen": summary["gen"], "made": "2026-11-01", "session_id": "S0002"}

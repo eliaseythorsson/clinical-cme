@@ -209,7 +209,7 @@ the standard check-in only. Expect 15–30 minutes of work and a report of 1,500
 
 ### 2.1 Gather
 
-1. `python3 cme.py stats STATE`. Its `analysis` block holds the coded aggregates for this
+1. `python3 cme.py stats --work <work>`. Its `analysis` block holds the coded aggregates for this
    period, the previous period and all time. It also lists critical errors, bias evidence,
    long-open gaps, repeated confident errors, blind spots, drill results, disputes and previous
    reviews. Use these figures; never estimate numbers in prose.
@@ -329,8 +329,8 @@ relationship, explore reactions, explore content, coach for change.
 
 - Save the report as the store document `reviews/<YYYY-MM-DD>` (template below;
   `progress_review.md` §3).
-- Record the review with `cme.py review STATE --review REVIEW.json --out NEXT` and `set` the
-  state, including `doc`, `deep_analysis: true`, `headline`, `key_figures`, `change_plan`,
+- Record the review with `cme.py review --work <work> --review REVIEW.json` and publish its
+  `files`; the review JSON includes `doc`, `deep_analysis: true`, `headline`, `key_figures`, `change_plan`,
   `drill_targets` and `teaching_point_checks`. Never write to the session log during a review.
 
 ### 2.6 Report template

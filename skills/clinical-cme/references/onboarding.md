@@ -129,7 +129,7 @@ alternate instead. The learner can always pick other numbers.
 
 ## 3. Create the ledger and the page
 
-`store.md` §5: `cme.py init` with the answers (the config holds `mcqs`, `focused`, `case`), `cme.py place`, then create the store: where the
+`store.md` §5: `cme.py init --work <work>` with the answers (the config holds `mcqs`, `focused`, `case`), then create the store from the `files` it prints: where the
 app can host a private page with files, publish `templates/page.html` with the ledger
 files as the page "Clinical CME" and pin it; otherwise a folder the learner names or files
 they keep. Ask which only if more than one is possible and the learner has a preference;

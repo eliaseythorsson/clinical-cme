@@ -175,7 +175,7 @@ class Script:
         self.store = os.path.join(self.run, "store")
         self.n = 0
         self.filed = set()
-        cme("--today", TODAY, "start", os.path.join(self.store, "data", "state.json"), "--work", self.work)
+        self.put("start.json", cme("--today", TODAY, "start", "--work", self.work, "--store", self.store))
 
     def p(self, *parts):
         return os.path.join(self.work, *parts)
@@ -204,14 +204,17 @@ class Script:
         self.clock += after
         return sim_json("next", "--run", self.run, "--after", role, "--ts", str(self.clock))
 
-    def store_files(self, out_dir, skip=()):
-        for root, _, names in os.walk(os.path.join(out_dir, "data")):
-            for n in names:
-                if n in skip:
-                    continue
-                dest = os.path.join(self.store, os.path.relpath(os.path.join(root, n), out_dir))
-                os.makedirs(os.path.dirname(dest), exist_ok=True)
-                shutil.copyfile(os.path.join(root, n), dest)
+    def store_files(self, skip=()):
+        """Publish: every file of the publish set into the folder store, in the manifest's order."""
+        with open(self.p("publish.json"), encoding="utf-8") as fh:
+            manifest = json.load(fh)
+        assert manifest["files"][-1]["as"] == "data/state.json"
+        for f in manifest["files"]:
+            if os.path.basename(f["as"]) in skip:
+                continue
+            dest = os.path.join(self.store, *f["as"].split("/"))
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            shutil.copyfile(f["path"], dest)
 
     def open_round(self):
         """Turns 1 and 2: the questions, their answers, their feedback, and the case presented."""
@@ -225,14 +228,14 @@ class Script:
         # turn 1: questions out
         opening = "Today's round: two questions, then one case."
         if "no_block_line" not in self.faults:
-            opening += " " + json.loads(cme("--today", TODAY, "status", os.path.join(self.store, "data", "state.json")))["block"]["line"] + "."
+            opening += " " + json.load(open(self.p("start.json")))["block"]["line"] + "."
         if "leak_id" in self.faults:
             opening += " (Q1 is HEME-01.)"
         if "leak_key" in self.faults:
             opening += " Correct: B, because the ferritin settles it in this setting."
         if "topic_word" in self.faults:
             opening += " Think about anaemia."
-        self.send("examiner", opening + "\n\n" + cme("present", self.p("sealed_questions.md"), "--block", "questions"), 20)
+        self.send("examiner", opening + "\n\n" + cme("present", "--work", self.work, "--block", "questions"), 20)
         assert self.turn_end("examiner", 5)["deliver_to"] == "learner"
         # turn 2: answers -> feedback, then the case
         self.send("learner", ANSWERS["questions"], 60)
@@ -241,7 +244,7 @@ class Script:
         if "leak_diagnosis" in self.faults:
             fbq = fbq.replace("The case follows.", "The case follows (it is fictitious  secretitis).")
         self.send("examiner", fbq, 30)
-        self.send("examiner", cme("present", self.p("sealed_case.md"), "--block", "case"), 1)
+        self.send("examiner", cme("present", "--work", self.work, "--block", "case"), 1)
         self.answer("questions")
         self.put("feedback_questions.md", fbq)
         self.turn_end("examiner", 9)
@@ -275,7 +278,7 @@ class Script:
                 self.answer(part, logged[part])
         self.put("round.json", rnd)
         cme("--today", TODAY, "save", "--work", self.work)
-        self.store_files(self.p("out1"))
+        self.store_files()
         assert self.turn_end("examiner", 15)["round_closed"] is False
 
     def close(self, reflection=None, part_b=PART_B, reflection_text=ANSWERS["reflection"]):
@@ -287,7 +290,7 @@ class Script:
         self.put("B.md", part_b)
         cme("--today", TODAY, "close", "--work", self.work)
         self.send("examiner", CLOSE, 25)
-        self.store_files(self.p("out2"), skip=("S0001.json",) if "session_not_saved" in self.faults else ())
+        self.store_files(skip=("S0001.json",) if "session_not_saved" in self.faults else ())
         assert self.turn_end("examiner", 10)["stop"] is False
         last = self.turn_end("learner", 5)          # the learner has nothing to add
         assert last["stop"] is True and last["round_closed"] is True
@@ -361,7 +364,8 @@ def test_clean_round_passes_every_check_and_the_report_is_written(script):
     assert out["checks"] == {"blinding": True, "saved": True, "log": True}
     assert rep["checks"]["blinding"]["leaks"] == 0
     assert rep["checks"]["blinding"]["seal_lifted_at"] == {"questions": 3, "case": 8}
-    assert rep["checks"]["saved"]["output_folders"] == ["out1", "out2"]
+    assert rep["checks"]["saved"]["publish_set"] == ["data/sessions/S0001.json", "data/index.json",
+                                                     "data/prepared.json", "data/state.json"]
     assert rep["round"] == {"session": "S0001", "shape": "1 MCQ, 1 focused, case (two stages)", "score": rep["round"]["score"],
                             "confident_misses": 0, "continued_from_earlier_run": False}
     assert rep["quality"] == {"score": 4, "note": "sound"}

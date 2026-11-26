@@ -1,13 +1,13 @@
 """Issue #11: one command finishes preparing a round (`finish-prepare`: read the evidence check,
-say whether the author must revise, stash when clean), and one command changes settings and puts
-the changed ledger into the file layout (`settings --out-dir`)."""
+say whether the author must revise, pack the round when clean), and one command changes settings.
+Both work on the work folder alone and write into its publish set (issue #52)."""
 import json
 import os
 
 import pytest
 
 import examples
-from conftest import BLUEPRINT, Work
+from conftest import Work
 from examples import cme
 
 DAY = "2026-11-02"
@@ -27,12 +27,10 @@ class Next(Work):
     """A work folder in which the next round was planned and drafted into next/."""
 
     def setup(self, config=None):
-        self.run("--today", DAY, "init", "--blueprint", BLUEPRINT, "--config", json.dumps(config or {}),
-                 "--out", self.p("state.json"))
-        self.ledger = self.p("state.json")
-        os.makedirs(self.p("next"))
-        self.run("--today", DAY, "prepare", self.ledger, "--out", self.p("next", "plan.json"))
-        st, plan = self.read_json("state.json"), self.read_json("next", "plan.json")
+        self.init(today=DAY, config=config)
+        self.open(today=DAY)
+        self.run("--today", DAY, "prepare", "--work", self.path)
+        st, plan = self.read_ledger(), self.read_json("next", "plan.json")
         for name, text in examples.sealed_files(st, plan).items():
             self.write(os.path.join("next", name), text)
         return self
@@ -44,14 +42,14 @@ class Next(Work):
         return self
 
     def finish(self, *extra, ok=True):
-        r = self.run("finish-prepare", self.ledger, "--work", self.path, *extra, ok=ok)
+        r = self.run("finish-prepare", "--work", self.path, *extra, ok=ok)
         return r, json.loads(r.stdout)
 
     def stashed(self):
-        return os.path.isfile(self.p("out3", "data", "prepared.json"))
+        return os.path.isfile(self.pub("data", "prepared.json"))
 
     def payload(self):
-        return cme.unpack(self.read_json("out3", "data", "prepared.json")["payload"])
+        return cme.unpack(self.read_json("publish", "data", "prepared.json")["payload"])
 
 
 @pytest.fixture
@@ -69,16 +67,45 @@ def test_a_clean_round_is_stashed_in_the_same_command(nxt):
     assert set(out["has"]) == {"questions", "case", "kit_questions", "kit_case", "evidence_questions", "evidence_case"}
     files = nxt.payload()["files"]
     assert set(files) == set(cme.PREPARED_FILES)
-    # the stashed round is one `start` takes
-    r = nxt.run_json("--today", "2026-11-03", "start", nxt.ledger, "--work", nxt.p("round"),
-                     "--prepared", nxt.p("out3", "data", "prepared.json"))
+    assert out["publish"] == nxt.p("publish.json") and nxt.read_json("publish.json")["files"] == out["files"]
+    # the prepared round, once published, is one `start` takes
+    nxt.publish()
+    r = nxt.start("2026-11-03")
     assert r["prepared"]["used"] is True and "evidence_case.md" in r["prepared"]["ready"]
 
 
-def test_it_writes_what_stash_writes(nxt):
+def test_prepare_and_finish_prepare_follow_the_current_ledger_without_being_given_one(tmp_path):
+    """A settings change earlier in the same job: the next round is planned and packed for the
+    changed ledger, which neither command was told about."""
+    nxt = Next(tmp_path)
+    nxt.init(today=DAY)
+    nxt.open(today=DAY)
+    changed = nxt.run_json("--today", DAY, "settings", "--work", nxt.path, "--config", '{"mcqs": 2}')
+    out = nxt.run_json("--today", DAY, "prepare", "--work", nxt.path)
+    assert out["gen"] == changed["gen"] and out["mcqs"] == 2 and out["out"] == nxt.p("next", "plan.json")
+    st, plan = nxt.read_json("publish", "data", "state.json"), nxt.read_json("next", "plan.json")
+    for name, text in examples.sealed_files(st, plan).items():
+        nxt.write(os.path.join("next", name), text)
+    _, done = nxt.check().finish()
+    assert done["stashed"] is True and done["gen"] == changed["gen"]
+    assert [f["as"] for f in done["files"]] == ["data/index.json", "data/prepared.json", "data/state.json"]
+    assert nxt.read_json("publish", "data", "prepared.json")["gen"] == changed["gen"]
+    # neither command has a place for a ledger path
+    for cmd in ("prepare", "finish-prepare"):
+        r = nxt.run(cmd, nxt.ledger, "--work", nxt.path, ok=False)
+        assert r.returncode == 2 and "unrecognized arguments" in r.stderr
+        r = nxt.run(cmd, ok=False)
+        assert r.returncode == 2 and "--work" in r.stderr
+
+
+def test_prepare_if_needed_finds_the_prepared_round_itself(nxt):
     nxt.check().finish()
-    nxt.run("stash", nxt.ledger, "--plan", nxt.p("next", "plan.json"), "--dir", nxt.p("next"), "--out-dir", nxt.p("alt"))
-    assert nxt.read_json("out3", "data", "prepared.json") == nxt.read_json("alt", "data", "prepared.json")
+    again = nxt.run_json("--today", DAY, "prepare", "--work", nxt.path, "--if-needed")
+    assert again == {"ok": True, "prepare": False, "why": "a round is already prepared"}
+    nxt.publish()
+    nxt.open(today=DAY)                                       # a later prepare-only session
+    again = nxt.run_json("--today", DAY, "prepare", "--work", nxt.path, "--if-needed")
+    assert again["prepare"] is False
 
 
 @pytest.mark.parametrize("missing", ["questions", "case"])
@@ -121,7 +148,7 @@ def test_contradicted_keys_are_counted_and_the_author_must_revise(nxt):
 
 
 def test_nothing_of_the_content_is_printed(nxt):
-    st, plan = nxt.read_json("state.json"), nxt.read_json("next", "plan.json")
+    st, plan = nxt.read_ledger(), nxt.read_json("next", "plan.json")
     labels = [t["label"] for t in cme.bp_topics(st).values()]
     for extra in ((), ("--revised",)):
         r, _ = nxt.check(questions=1).finish(*extra)
@@ -172,24 +199,26 @@ def test_a_case_that_was_not_written_needs_no_evidence(nxt):
     assert any("sealed_case.md" in w for w in out["warnings"])
 
 
-def test_a_missing_first_part_or_another_ledgers_plan_stops_it(nxt):
+def test_a_missing_first_part_or_a_plan_for_another_ledger_stops_it(nxt):
     nxt.check()
-    nxt.run("--today", DAY, "settings", nxt.ledger, "--config", '{"testing": true}', "--out", nxt.p("other.json"))
-    r = nxt.run("finish-prepare", nxt.p("other.json"), "--work", nxt.path, ok=False)
-    assert r.returncode != 0 and "not made by `prepare` from this ledger" in r.stdout
+    nxt.run("--today", DAY, "settings", "--work", nxt.path, "--config", '{"testing": true}')   # the ledger moved on
+    r, out = nxt.finish(ok=False)
+    assert r.returncode != 0 and "not made by `prepare` from this ledger" in out["error"]
+    assert not nxt.stashed() or nxt.read_json("publish", "data", "prepared.json") == {"v": 1, "empty": True}
+    nxt.run("--today", DAY, "prepare", "--work", nxt.path)
     os.remove(nxt.p("next", "sealed_questions.md"))
     r, out = nxt.finish(ok=False)
     assert r.returncode != 0 and "sealed_questions.md" in out["error"]
-    assert not nxt.stashed()
 
 
-def test_the_files_can_be_named_instead_of_the_work_folder(nxt):
-    nxt.check()
-    out = nxt.run_json("finish-prepare", nxt.ledger, "--plan", nxt.p("next", "plan.json"), "--dir", nxt.p("next"),
-                       "--out-dir", nxt.p("elsewhere"))
-    assert out["stashed"] is True and os.path.isfile(nxt.p("elsewhere", "data", "prepared.json"))
-    r = nxt.run("finish-prepare", nxt.ledger, ok=False)
-    assert r.returncode != 0 and "--work" in r.stdout
+def test_finish_prepare_needs_a_plan_made_by_prepare_in_this_work_folder(tmp_path):
+    w = Next(tmp_path)
+    w.init(today=DAY)
+    r = w.run("finish-prepare", "--work", w.path, ok=False)
+    assert "no job is open" in json.loads(r.stdout)["error"]
+    w.open(today=DAY)
+    r = w.run("finish-prepare", "--work", w.path, ok=False)
+    assert "run `prepare --work" in json.loads(r.stdout)["error"]
 
 
 # ---------------------------------------------------------------- finish-prepare checks the key headers (issue #36)
@@ -206,7 +235,7 @@ def refused(nxt, *extra):
     r, out = nxt.finish(*extra, ok=False)
     assert r.returncode != 0 and out["ok"] is False and "stashed" not in out
     assert "Nothing was stashed" in out["error"] and "key headers" in out["error"]
-    assert not nxt.stashed() and not os.path.exists(nxt.p("out3"))
+    assert not nxt.stashed() and not os.path.exists(nxt.pub())
     return out["error"]
 
 
@@ -289,74 +318,79 @@ def test_a_case_that_was_not_written_needs_no_header(nxt):
 
 @pytest.fixture
 def store(tmp_path):
-    """A work folder with the learner's store read into store/, one session in its index."""
+    """A work folder opened on the learner's store, which has one session in its index."""
     w = Work(tmp_path)
     w.init()
     w.save_round("2026-11-01")
-    os.makedirs(w.p("store"))
-    os.replace(w.p("out1", "data"), w.p("store", "data"))
-    w.ledger = w.p("store", "data", "state.json")
+    w.publish()
+    w.forget_job()
+    w.open()
     return w
 
 
-def test_settings_changes_and_places_in_one_command(store):
-    before = store.read_json("store", "data", "state.json")
-    out = store.run_json("--today", "2026-11-02", "settings", store.ledger, "--config", '{"focused": 2}',
-                         "--profile", '{"specialty": "Geriatrics"}', "--out-dir", store.p("outS"))
+def settings(w, *args, today="2026-11-02", ok=True):
+    r = w.run("--today", today, "settings", "--work", w.path, *args, ok=ok)
+    return json.loads(r.stdout) if ok else r
+
+
+def test_settings_changes_the_ledger_into_the_publish_set_in_one_command(store):
+    before = store.read_ledger()
+    out = settings(store, "--config", '{"focused": 2}', "--profile", '{"specialty": "Geriatrics"}')
     assert out["ok"] and out["gen"] == before["gen"] + 1 and out["config"]["focused"] == 2
     assert out["specialty"] == "Geriatrics"
-    assert [f["as"] for f in out["files"]] == ["data/state.json", "data/index.json", "data/prepared.json"]
-    placed = store.read_json("outS", "data", "state.json")
+    assert [f["as"] for f in out["files"]] == ["data/index.json", "data/prepared.json", "data/state.json"]
+    assert all(f["path"].startswith(store.pub()) for f in out["files"])
+    placed = store.read_json("publish", "data", "state.json")
     assert placed["config"]["focused"] == 2 and placed["profile"]["specialty"] == "Geriatrics"
     assert placed["gen"] == out["gen"]
     # the index read with the ledger is carried over, and the prepared round is set aside
-    assert [s["id"] for s in store.read_json("outS", "data", "index.json")["sessions"]] == ["S0001"]
-    assert store.read_json("outS", "data", "index.json")["sessions"][0]["title"] == "t"
-    assert store.read_json("outS", "data", "prepared.json") == {"v": 1, "empty": True}
-    assert store.read_json("store", "data", "state.json") == before      # the ledger as read is untouched
+    assert [s["id"] for s in store.read_json("publish", "data", "index.json")["sessions"]] == ["S0001"]
+    assert store.read_json("publish", "data", "index.json")["sessions"][0]["title"] == "t"
+    assert store.read_json("publish", "data", "prepared.json") == {"v": 1, "empty": True}
+    assert store.read_ledger() == before                    # the ledger as read is untouched
 
 
-def test_one_command_gives_what_settings_then_place_gave(store):
-    args = ("--config", '{"mcqs": 4, "round_set_at": "2026-11-02T10:00:00"}', "--profile", '{"lab_units": "SI"}')
-    store.run("--today", "2026-11-02", "settings", store.ledger, *args, "--out", store.p("s.json"))
-    store.run("place", store.p("s.json"), "--index", store.p("store", "data", "index.json"), "--out-dir", store.p("two"))
-    store.run("--today", "2026-11-02", "settings", store.ledger, *args, "--out-dir", store.p("one"))
-    for name in ("state.json", "index.json", "prepared.json"):
-        assert store.read_json("one", "data", name) == store.read_json("two", "data", name)
+def test_a_second_settings_change_in_the_same_job_builds_on_the_first(store):
+    first = settings(store, "--config", '{"mcqs": 4}')
+    second = settings(store, "--profile", '{"lab_units": "SI"}')
+    st = store.read_json("publish", "data", "state.json")
+    assert second["gen"] == first["gen"] + 1 == st["gen"]
+    assert st["config"]["mcqs"] == 4 and st["profile"]["lab_units"] == "SI"
+    assert second["files"] == first["files"]                # one publish set, the newest version of each file
 
 
 def test_settings_upgrades_an_old_page_read_with_the_ledger(store):
-    with open(store.p("store", "index.html"), "w") as fh:
+    with open(store.store("index.html"), "w") as fh:
         fh.write('<meta name="cme-page-version" content="1.0.0">')
-    out = store.run_json("settings", store.ledger, "--config", '{"testing": true}', "--out-dir", store.p("outS"))
+    out = settings(store, "--config", '{"testing": true}')
     assert out["page_upgraded"] == {"from": "1.0.0", "to": cme.PAGE_VERSION}
-    assert [f["as"] for f in out["files"]][-1] == "index.html" and os.path.isfile(store.p("outS", "index.html"))
+    assert [f["as"] for f in out["files"]] == ["data/index.json", "index.html", "data/prepared.json", "data/state.json"]
+    assert os.path.isfile(store.pub("index.html"))
+    again = settings(store, "--config", '{"testing": false}')
+    assert "page_upgraded" not in again and "index.html" in [f["as"] for f in again["files"]]   # still to publish
 
 
-def test_settings_takes_a_named_index_and_a_blueprint(store):
+def test_settings_takes_a_blueprint_and_keeps_the_index_of_the_store(store):
     idx = store.read_json("store", "data", "index.json")
     idx["sessions"][0]["title"] = "renamed"
-    other = store.write("other_index.json", idx)
+    store.write(os.path.join("store", "data", "index.json"), idx)
     bp = store.write("bp.md", "## Cardiology (CARD)\n- CARD-01 Chest pain\n")
-    out = store.run_json("settings", store.ledger, "--blueprint", bp, "--index", other, "--out-dir", store.p("outS"))
+    out = settings(store, "--blueprint", bp)
     assert out["ok"]
-    assert store.read_json("outS", "data", "index.json")["sessions"][0]["title"] == "renamed"
-    assert store.read_json("outS", "data", "state.json")["blueprint"] == cme.blueprint_from_md(open(bp).read())
+    assert store.read_json("publish", "data", "index.json")["sessions"][0]["title"] == "renamed"
+    assert store.read_json("publish", "data", "state.json")["blueprint"] == cme.blueprint_from_md(open(bp).read())
 
 
-def test_a_refused_settings_change_places_nothing(store):
-    r = store.run("settings", store.ledger, "--config", '{"mcqs": 0, "focused": 0, "case": false}',
-                  "--out-dir", store.p("outS"), ok=False)
+def test_a_refused_settings_change_writes_nothing(store):
+    r = settings(store, "--config", '{"mcqs": 0, "focused": 0, "case": false}', ok=False)
     assert r.returncode != 0 and json.loads(r.stdout)["ok"] is False
-    assert not os.path.exists(store.p("outS"))
+    assert not os.path.exists(store.pub()) and store.read_json("publish.json")["files"] == []
 
 
-def test_settings_needs_somewhere_to_write(store):
-    r = store.run("settings", store.ledger, "--config", '{"testing": true}', ok=False)
-    assert r.returncode != 0 and "--out-dir" in r.stdout
-
-
-def test_settings_out_alone_still_writes_one_file(store):
-    out = store.run_json("settings", store.ledger, "--config", '{"testing": true}', "--out", store.p("s.json"))
-    assert out["out"] == store.p("s.json") and "files" not in out
-    assert store.read_json("s.json")["config"]["testing"] is True
+def test_settings_needs_an_open_work_folder_and_takes_no_paths(store, tmp_path_factory):
+    empty = str(tmp_path_factory.mktemp("empty"))
+    r = store.run("settings", "--work", empty, "--config", '{"testing": true}', ok=False)
+    assert r.returncode == 2 and "no job is open" in json.loads(r.stdout)["error"]
+    for flag in ("--out", "--out-dir", "--index", "--page"):
+        r = store.run("settings", "--work", store.path, "--config", '{"testing": true}', flag, store.p("x"), ok=False)
+        assert r.returncode == 2 and "unrecognized arguments" in r.stderr

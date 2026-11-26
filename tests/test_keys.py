@@ -96,12 +96,12 @@ def test_save_builds_the_round_record_from_the_key_headers(rnd):
     assert record["summary"] == "Ferritin first. LP after a normal late CT."
     # the examiner's file is left as written, and the ledger holds the assembled round
     assert rnd.read_json("round.json") == GRADES
-    sess = rnd.read_json("out1", "data", "state.json")["sessions"][-1]
+    sess = rnd.read_json("publish", "data", "state.json")["sessions"][-1]
     assert sorted(sess["topics"]) == ["GEN-11", "HEME-01", "NEURO-04"]
     assert sess["why"]["NEURO-04"] == "new" and sess["case"]["diagnosis"] == "SECRET-DIAGNOSIS"
     stems = {i["topic"]: i.get("stem") for i in sess["items"]}
     assert stems["HEME-01"].startswith("Microcytic")
-    doc = rnd.read_json("out1", "data", "sessions", "S0001.json")
+    doc = rnd.read_json("publish", "data", "sessions", "S0001.json")
     assert doc["title"] == record["title"] and doc["format"] == record["case_format"]
 
 
@@ -144,7 +144,7 @@ def fails(rnd):
     assert r.returncode != 0
     out = json.loads(r.stdout)
     assert out["ok"] is False
-    assert not os.path.exists(rnd.p("out1", "data", "state.json")), "nothing may be recorded"
+    assert not os.path.exists(rnd.pub("data", "state.json")), "nothing may be recorded"
     return out["error"]
 
 
@@ -216,7 +216,7 @@ def test_headers_are_read_leniently(rnd):
 def test_present_never_prints_a_header(rnd):
     play(rnd)
     for name, block in (("sealed_questions.md", "questions"), ("sealed_case.md", "case"), ("sealed_case.md", "bank")):
-        shown = rnd.run("present", rnd.p(name), "--block", block).stdout
+        shown = rnd.run("present", "--work", rnd.path, "--block", block).stdout
         assert "key:" not in shown and "HEME-01" not in shown and "SECRET-DIAGNOSIS" not in shown
 
 

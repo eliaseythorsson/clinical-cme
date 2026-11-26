@@ -245,11 +245,13 @@ def cmd_init(args):
         config = (read_json(rp(run, "store", "data", "state.json")) or {}).get("config") or config
     else:
         today = ["--today", args.today] if args.today else []
-        tmp = rp(run, "work", ".seed.json")
-        run_cme(skill, *today, "init", "--blueprint", os.path.join(skill, "templates", "blueprint.json"),
-                "--profile", json.dumps(profile), "--config", json.dumps(config), "--out", tmp)
-        run_cme(skill, "place", tmp, "--out-dir", rp(run, "store"))
-        os.remove(tmp)
+        # set the learner up as the skill does (init into a work folder), then publish to the folder store
+        seed = rp(run, ".seed")
+        out = json.loads(run_cme(skill, *today, "init", "--work", seed,
+                                 "--blueprint", os.path.join(skill, "templates", "blueprint.json"),
+                                 "--profile", json.dumps(profile), "--config", json.dumps(config)))
+        publish_to_folder(out["files"], rp(run, "store"))
+        shutil.rmtree(seed)
     # the ledger as the round found it: the stopped check compares the case topic's schedule with it
     shutil.copyfile(rp(run, "store", "data", "state.json"), rp(run, "ledger_at_start.json"))
     meta = {"run": run, "persona": persona, "persona_file": persona_path, "expect": expect, "skill": skill,
@@ -555,27 +557,30 @@ def check_blinding(rnd):
 
 # ---------------------------------------------------------------- check 2: every file saved
 
-def output_folders(work):
-    """The cme.py output folders in the work folder (each holds a data/ tree), oldest first."""
-    out = []
-    for name in sorted(os.listdir(work)) if os.path.isdir(work) else []:
-        d = os.path.join(work, name)
-        if os.path.isdir(os.path.join(d, "data")):
-            newest = max((os.path.getmtime(os.path.join(r, f)) for r, _, fs in os.walk(d) for f in fs), default=0)
-            out.append((newest, d))
-    return [d for _, d in sorted(out)]
+def publish_to_folder(files, store):
+    """Carry a publish set (the `files` a cme.py command printed) to a folder store, in its order."""
+    for f in files:
+        dest = os.path.join(store, *f["as"].split("/"))
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        shutil.copyfile(f["path"], dest)
+
+
+def publish_set(work):
+    """The store paths in the work folder's publish set (publish.json), in write order."""
+    manifest = read_json(os.path.join(work, "publish.json")) or {}
+    return [f.get("as") for f in manifest.get("files") or [] if isinstance(f, dict) and f.get("as")]
 
 
 def check_saved(rnd):
     """The store holds what cme.py produced, and the round in it is whole."""
     problems = []
     verify = None
-    outs = output_folders(rnd.work)
-    if not outs:
-        problems.append("no cme.py output folders in the work folder: cannot compare them with the store")
+    wanted = publish_set(rnd.work)
+    if not wanted:
+        problems.append("no publish set in the work folder: cannot compare what cme.py wrote with the store")
     else:
         try:
-            verify = json.loads(run_cme(rnd.meta.get("skill") or DEFAULT_SKILL, "verify", "--written", *outs,
+            verify = json.loads(run_cme(rnd.meta.get("skill") or DEFAULT_SKILL, "verify", "--work", rnd.work,
                                         "--store", rnd.store))
         except (SimError, ValueError) as e:
             problems.append(str(e))
@@ -603,7 +608,7 @@ def check_saved(rnd):
         problems.append("the index does not list %s" % rnd.sid)
     elif idx.get("gen") != st.get("gen"):
         problems.append("the index (gen %s) is older than the ledger (gen %s)" % (idx.get("gen"), st.get("gen")))
-    return {"ok": not problems, "session": rnd.sid, "output_folders": [os.path.basename(d) for d in outs],
+    return {"ok": not problems, "session": rnd.sid, "publish_set": wanted,
             "files_compared": (verify or {}).get("checked"), "problems": problems}
 
 
@@ -936,7 +941,7 @@ def report_markdown(rep):
         % (mark(c["blinding"]["ok"]), c["blinding"]["leaks"], c["blinding"]["to_review"], c["blinding"]["terms_checked"]),
         "| Every file saved | %s | %s file(s) compared with the store (%s) |"
         % (mark(c["saved"]["ok"]), c["saved"].get("files_compared") if c["saved"].get("files_compared") is not None else "no",
-           ", ".join(c["saved"]["output_folders"]) or "no output folders"),
+           ", ".join(c["saved"].get("publish_set") or c["saved"].get("output_folders") or []) or "no publish set"),
         "| Log complete and verbatim | %s | sections: %s |" % (mark(c["log"]["ok"]), ", ".join(c["log"]["sections"]) or "none"),
     ]
     if "dispute" in c:

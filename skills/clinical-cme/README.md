@@ -28,7 +28,7 @@ waiting for something to be generated.
   out the moment Stage 1 is answered), and the notes for both feedbacks — and kept, packed, in
   the store (`data/prepared.json`; `cme.py prepare`, `finish-prepare`), together with the checked
   evidence for it, so a key that current guidance contradicts is corrected before the round
-  is ever played. The next session reads the store and presents (`start --prepared`,
+  is ever played. The next session reads the store and presents (`start` finds it in the store copy,
   `present`); nothing is written or looked up before the learner starts, before the case
   appears, or before either feedback. An optional nightly scheduled task (`prepare_task`;
   `references/preparing.md` §3–4) prepares a round whenever none is ready. A prepared round is used only if the ledger and the mix are

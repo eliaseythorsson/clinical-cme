@@ -9,12 +9,15 @@ all count, and they are checked automatically afterwards.
 What is particular to this session:
 
 - **The learner's first message** is in `{messages}/001-learner.md`. Read it now.
-- **The store** is a folder (store kind C in `references/store.md`): `{store}`, with the usual
-  `data/…` layout. The learner is already set up; there is no page and no page database.
-- **Your scratch folder `<work>`** is `{work}`. Keep every file of the round there, under the
-  names the protocol uses (`sealed_questions.md`, `answers.md`, `round.json`, `out1`, …), and
-  delete none of them when you finish. Run `start` on `{store}/data/state.json` with
-  `--work {work}`; `save` and `close` then find the store's files from there.
+- **The store** is a folder (`references/store.md` §4.2): `{store}`, with the usual `data/…`
+  layout. The learner is already set up; there is no page database. The folder is its own
+  store copy: nothing has to be read into another folder first.
+- **Your work folder `<work>`** is `{work}`. Start the round with `start --work {work} --store
+  {store}`; every later command takes only `--work {work}`. Keep every file of the round there,
+  under the names the protocol uses (`sealed_questions.md`, `answers.md`, `round.json`, …), and
+  delete none of them when you finish, the publish set (`publish/`, `publish.json`) included.
+  To save, copy every file a command lists in `files` into `{store}` at its `as` path, in the
+  order listed (the ledger last).
 - **Sending a message to the learner**: write the message to a file under `{work}/outbox/`
   (a new file per message) and run
   `python3 {simulate} send --run {run} --role examiner --file <that file>`.

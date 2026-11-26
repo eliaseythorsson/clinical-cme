@@ -27,7 +27,7 @@ If some of the period's older sessions have no transcript (only scores, gaps and
 
 ## 1. Gather
 
-1. Read the ledger into a file (`store.md` §4), then `python3 cme.py stats <state>`. Use only these figures and the
+1. Read the store and `open` the work folder (`store.md` §4), then `python3 cme.py stats --work <work>`. Use only these figures and the
    state; never estimate numbers in prose. It lists the period's session IDs.
 2. With the deep analysis on: take the period's session IDs from `stats` (or the index), and
    read those session documents into local files in `<work>/period` (the page: the read-files
@@ -79,12 +79,12 @@ context changes a finding.
 1. **Report.** With the deep analysis, write the final report (Markdown, template in
    `analysis_framework.md` §2.6) to `<work>/report.md`, wrap it as
    `{"date": "…", "title": "CME progress review — <date>", "headline": "…", "report": "<markdown>"}`
-   `python3 cme.py review-doc --md <work>/report.md --headline "<headline>" --state <state>
-   --index <work>/store/index.json --out-dir <work>/outR`. The page renders it. Offer a shareable document
-   (for an appraisal or revalidation portfolio) if they want one.
-2. **Review JSON** → `python3 cme.py review <state> --review review.json --out next.json` →
-   `python3 cme.py place next.json --index <work>/outR/data/index.json --out-dir <work>/outR` →
-   save every file in `<work>/outR` in one write (`store.md` §4):
+   `python3 cme.py review-doc --work <work> --md <work>/report.md --headline "<headline>"`.
+   The page renders it. Offer a shareable document (for an appraisal or revalidation
+   portfolio) if they want one.
+2. **Review JSON** → `python3 cme.py review --work <work> --review <work>/review.json` →
+   publish every file in its `files` in one write (`store.md` §4; the report from step 1 is
+   among them):
 
 ```json
 {
@@ -116,6 +116,7 @@ context changes a finding.
 ## After the review is saved
 
 Recording a review changes the ledger, which sets aside any round prepared ahead. If the
-review ran at the end of a session, prepare the next round now, from the ledger the review
-wrote (`preparing.md` §2), after your last message of the review.
+review ran at the end of a session, prepare the next round now, in the same work folder
+(`preparing.md` §2: it plans from the ledger the review wrote), after your last message of
+the review.
 

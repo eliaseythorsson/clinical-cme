@@ -4,6 +4,7 @@ area), at the end of a block or in the middle of one; the opening line of a bloc
 reason for its theme."""
 import copy
 import datetime as dt
+import json
 import os
 
 import pytest
@@ -20,7 +21,7 @@ def last_round(st, tmp_path, rounds=cme.BLOCK_LENGTH - 1):
                    "started": "2026-09-01", "last": "2026-10-20", "chosen": "auto"}
     os.makedirs(str(tmp_path))
     w = Work(tmp_path)
-    w.write("state.json", st)
+    w.write_ledger(st)
     return w
 
 
@@ -54,11 +55,12 @@ def test_save_and_close_of_the_last_round_carry_the_proposal_and_earlier_rounds_
 
 def test_the_opening_of_a_new_block_gives_the_reason_and_a_running_block_does_not(work):
     st, today = fresh()
-    state = work.write("state.json", st)
-    out = work.run_json("--today", cme.iso(today), "status", state)
+    work.write_ledger(st)
+    out = work.open(today=cme.iso(today))
     assert out["block"]["starts"] is True and out["block"]["reason"] == "Cardiology: nothing tested yet, not yet a theme"
     play_rounds(st, today, 2)
-    out = work.run_json("--today", cme.iso(today + dt.timedelta(days=9)), "status", work.write("state.json", st))
+    work.write_ledger(st)
+    out = work.open(today=cme.iso(today + dt.timedelta(days=9)))
     assert out["block"]["starts"] is False and "reason" not in out["block"]
 
 
@@ -150,55 +152,66 @@ def test_a_small_domain_can_be_chosen_with_a_warning_and_an_empty_one_cannot():
 
 @pytest.fixture
 def store(tmp_path):
+    """A work folder opened on a store that holds one saved round."""
     w = Work(tmp_path)
     w.init()
     w.save_round("2026-11-01")
-    w.ledger = w.p("out1", "data", "state.json")
+    w.publish()
+    w.forget_job()
+    w.open()
     return w
 
 
-def test_theme_command_changes_and_places_in_one_command(store):
-    before = store.read_json("out1", "data", "state.json")
-    out = store.run_json("--today", "2026-11-02", "theme", store.ledger, "--set", "renal", "--out-dir", store.p("outT"))
+def theme(w, *args, today="2026-11-02", ok=True):
+    r = w.run("--today", today, "theme", "--work", w.path, *args, ok=ok)
+    return json.loads(r.stdout) if ok else r
+
+
+def test_theme_command_changes_the_ledger_into_the_publish_set_in_one_command(store):
+    before = store.read_ledger()
+    out = theme(store, "--set", "renal")
     name = before["blueprint"]["RENAL"]["name"]
     assert out["ok"] and out["changed"] and out["gen"] == before["gen"] + 1
     assert out["block"]["line"] == "Block: %s, round 1 of 12" % name and out["block"]["starts"] is True
     assert out["say"] == "New block: %s: your choice. Round 1 of 12." % name
     assert out["was"]["theme"] == before["block"]["theme"] and out["was"]["round"] == 1
-    assert [f["as"] for f in out["files"]] == ["data/state.json", "data/index.json", "data/prepared.json"]
-    placed = store.read_json("outT", "data", "state.json")
+    assert [f["as"] for f in out["files"]] == ["data/index.json", "data/prepared.json", "data/state.json"]
+    assert out["publish"] == store.p("publish.json")
+    placed = store.read_json("publish", "data", "state.json")
     assert placed["block"]["theme"] == "RENAL" and placed["gen"] == out["gen"] and placed["updated"] == "2026-11-02"
-    assert store.read_json("outT", "data", "prepared.json") == {"v": 1, "empty": True}   # it was for the old theme
-    assert store.read_json("out1", "data", "state.json") == before
-    # and the next start opens the new block
-    start = store.run_json("--today", "2026-11-05", "start", store.p("outT", "data", "state.json"), "--work", store.p("w2"))
+    assert store.read_json("publish", "data", "prepared.json") == {"v": 1, "empty": True}   # it was for the old theme
+    assert store.read_ledger() == before
+    # and a round started in the same job opens the new block
+    start = store.run_json("--today", "2026-11-05", "start", "--work", store.path)
     assert start["block"]["line"] == out["block"]["line"] and start["block"]["reason"] == "%s: your choice" % name
 
 
 def test_theme_command_pick_another_and_plain_listing(store):
-    listing = store.run_json("theme", store.ledger)
+    listing = theme(store)
     assert listing["changed"] is False and "files" not in listing and listing["next_block"] is None
     assert set(listing["choices"][0]) == {"id", "name", "topics"}
-    assert len(listing["choices"]) == len(store.read_json("out1", "data", "state.json")["blueprint"])
-    out = store.run_json("theme", store.ledger, "--another", "--out", store.p("next.json"))
-    cur = store.read_json("out1", "data", "state.json")["block"]["theme"]
-    assert out["changed"] and out["block"]["theme"] != cur and store.read_json("next.json")["block"]["declined"] == [cur]
+    assert len(listing["choices"]) == len(store.read_ledger()["blueprint"])
+    assert not os.path.exists(store.pub())
+    out = theme(store, "--another")
+    cur = store.read_ledger()["block"]["theme"]
+    assert out["changed"] and out["block"]["theme"] != cur
+    assert store.read_json("publish", "data", "state.json")["block"]["declined"] == [cur]
     assert out["say"].startswith("New block: %s: " % out["block"]["name"])
 
 
 def test_theme_command_refusals_write_nothing(store):
-    for args in (("--set", "nope", "--out-dir", store.p("x")), ("--set", "GI"),
-                 ("--set", "GI", "--another", "--out-dir", store.p("x"))):
-        r = store.run("theme", store.ledger, *args, ok=False)
-        assert r.returncode != 0 and not os.path.exists(store.p("x"))
-    cur = store.read_json("out1", "data", "state.json")["block"]["theme"]
-    same = store.run_json("theme", store.ledger, "--set", cur, "--out-dir", store.p("y"))
-    assert same["changed"] is False and "already the theme" in same["say"] and not os.path.exists(store.p("y"))
+    for args in (("--set", "nope"), ("--set", "GI", "--another")):
+        r = theme(store, *args, ok=False)
+        assert r.returncode != 0 and not os.path.exists(store.pub())
+    cur = store.read_ledger()["block"]["theme"]
+    same = theme(store, "--set", cur)
+    assert same["changed"] is False and "already the theme" in same["say"] and not os.path.exists(store.pub())
+    assert "files" not in same
 
 
 def test_theme_output_names_no_topic(store):
-    st = store.read_json("out1", "data", "state.json")
+    st = store.read_ledger()
     labels = {info["label"] for info in cme.bp_topics(st).values()}
-    for args in ((), ("--another", "--out", store.p("n.json")), ("--set", "GI", "--out", store.p("n.json"))):
-        text = store.run("theme", store.ledger, *args).stdout
+    for args in ((), ("--another",), ("--set", "GI")):
+        text = store.run("theme", "--work", store.path, *args).stdout
         assert not any(label in text for label in labels)
