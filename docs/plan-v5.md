@@ -22,6 +22,25 @@ Three real rounds in the Claude app over about a week, on the real ledger, testi
 helpers on, "prepare my rounds overnight" for at least one night. Pass bar: no blinding leak, no
 failed save, no feedback you would distrust, no wait you would notice.
 
+**Result (rounds S0034–S0037, 2026-11-21 → 26; summary on #4).** No blinding leak, no failed
+save (4/4 store checks), feedback trusted. Waits not fully met (S0035: 2 min to short-question
+feedback; S0037: ~35 s to first questions, rising each session). Overnight preparation not yet
+run (#48).
+
+### Issues from the real test
+
+- #41 Keep the prepared round when a setting does not change round content
+- #42 Page round mix and the prepared round agree
+- #43 First questions within 10 seconds
+- #44 Evidence fully checked when the round is prepared
+- #45 Authoring standards: one time anchor, crux tests requested, abbreviations defined once
+- #46 Learner override of a score or gap
+- #47 Real time per round, and a hint (median ~56 min vs ~33 min estimated)
+- #48 Test overnight preparation for one night (human)
+- #49 Pre-written rubric feedback adapted to the answer (design, human; blocked by #44)
+- #50 Podcast picks, prepared ahead (blocked by #44)
+- #51 Reading and listening on the page (blocked by #50)
+
 ## 3. Version 5, stage A: testable core
 
 - Split `cme.py` into pure core functions (scheduling, planning, applying a round) and thin
