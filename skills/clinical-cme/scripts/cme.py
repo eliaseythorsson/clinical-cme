@@ -112,6 +112,13 @@ DEFAULT_PROFILE = {
     "practice_setting": [], "goals": [], "strengths": [], "weaknesses": [],
     "domain_self_ratings": {}, "domain_emphasis": {}, "notes": "", "onboarded_at": None,
 }
+# Settings that cannot change what a round contains (its plan, its items, its keys, its feedback
+# notes): changing only these keeps the round prepared ahead. Every other setting, including one
+# this list has never heard of, sets it aside. `round_set_at` is here because it only dates the
+# mix: the mix itself (mcqs, focused, case) is not. See state_schema.md §8.
+CONTENT_NEUTRAL_CONFIG = ("testing", "reminders", "prepare_task", "prepare_ahead", "helpers", "show_coding",
+                          "target_sessions_per_week", "review_interval_days", "round_set_at")
+CONTENT_NEUTRAL_PROFILE = ("display_name", "onboarded_at")
 SELF_RATING_FACTOR = {1: 1.6, 2: 1.3, 3: 1.0, 4: 0.8, 5: 0.6}
 MIN_RETURN_DAYS = 3      # no tested topic and no open gap comes back sooner than this (ADR 0003)
 # Drill-down limit (ADR 0003): no topic is in more than this many rounds in a row, and a topic
@@ -288,14 +295,45 @@ def check_round_mix(cfg):
         die("a round needs at least one item: MCQs, focused questions or the case")
 
 
+def parse_stamp(v):
+    """An ISO time as written by the page (`...Z`, with milliseconds) or by now_ts(), as an aware
+    datetime; None when it is not one."""
+    if not isinstance(v, str) or not v.strip():
+        return None
+    try:
+        t = dt.datetime.fromisoformat(v.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return t if t.tzinfo else t.replace(tzinfo=dt.timezone.utc)
+
+
+def mix_text(counts):
+    """A round mix in words: "3 MCQs + 1 focused question + the case"."""
+    c = counts or {}
+    m, f = int(c.get("mcqs") or 0), int(c.get("focused") or 0)
+    parts = []
+    if m:
+        parts.append("%d MCQ%s" % (m, "" if m == 1 else "s"))
+    if f:
+        parts.append("%d focused question%s" % (f, "" if f == 1 else "s"))
+    if c.get("case"):
+        parts.append("the case")
+    return " + ".join(parts) or "no items"
+
+
 def apply_prefs(state, prefs, warnings=None):
     """Apply the round mix the learner set on their page (database document cme/prefs).
 
     prefs = {"round": {"mcqs": 2, "focused": 1, "case": true}, "base": <config.round_set_at the
-    page saw>, "updated": "<ISO time of the change>"}. Applied only when `base` still equals the
-    ledger's round_set_at: a change made later in a chat (settings) moves round_set_at, so an older
-    page setting is then ignored, and an applied one is not applied twice. No clocks are compared.
-    An invalid page setting is ignored with a warning, never fatal. Returns the changes applied."""
+    page saw>, "updated": "<ISO time of the change>"}. The learner's latest explicit choice wins:
+    - `base` equals the ledger's round_set_at: nothing changed the mix since the page saw it, so
+      the page's mix is applied;
+    - `updated` equals round_set_at: this document was applied before, nothing to do;
+    - otherwise the mix was set elsewhere (in a chat, or by an earlier page document) after the
+      page loaded: the document is applied only if its `updated` is later than round_set_at,
+      and an older one is ignored.
+    Applying sets round_set_at to `updated`, so a document is applied once. An invalid page
+    setting is ignored with a warning, never fatal. Returns the changes applied."""
     if not prefs:
         return {}
     warnings = warnings if warnings is not None else []
@@ -303,8 +341,13 @@ def apply_prefs(state, prefs, warnings=None):
         warnings.append("page settings ignored: expected {round: {...}, base, updated}")
         return {}
     cfg = state["config"]
-    if prefs.get("base") != cfg.get("round_set_at"):
-        return {}     # already applied, or overtaken by a later change in a chat
+    set_at = cfg.get("round_set_at")
+    if prefs.get("base") != set_at:
+        if str(prefs["updated"]) == set_at:
+            return {}     # applied before
+        mine, theirs = parse_stamp(str(prefs["updated"])), parse_stamp(set_at)
+        if set_at is not None and not (mine and theirs and mine > theirs):
+            return {}     # overtaken by a later change in a chat
     trial = {k: cfg.get(k, DEFAULT_CONFIG[k]) for k in ("mcqs", "focused", "case")}
     for k in ("mcqs", "focused", "case"):
         if k in prefs["round"]:
@@ -324,6 +367,28 @@ def apply_prefs(state, prefs, warnings=None):
     cfg.update(trial)
     cfg["round_set_at"] = str(prefs["updated"])
     return changes or {"unchanged": True}
+
+
+def content_gen(st):
+    """The ledger generation a prepared round is tied to: that of the last change that could
+    alter what a round contains. `gen` itself counts every write; `content_gen` is kept in the
+    ledger only while the two differ (after a content-neutral change), so a ledger without it
+    needs no migration."""
+    g = st.get("content_gen")
+    return int(g) if g is not None else st.get("gen")
+
+
+def bump_gen(st, content=True):
+    """Count one more write of the ledger. `content=False`: a change that cannot alter what a
+    round contains (CONTENT_NEUTRAL_*, postponing a review); the generation a prepared round
+    is tied to stays where it was."""
+    was = content_gen(st)
+    st["gen"] = int(st.get("gen") or 0) + 1
+    if content:
+        st.pop("content_gen", None)
+    else:
+        st["content_gen"] = int(was or 0)
+    return st["gen"]
 
 
 def deep_merge(target, changes):
@@ -1774,7 +1839,7 @@ def record_round(st, rnd, today):
         entry["_round"] = rnd
         st["unreflected"] = entry["id"]
     compact(st)
-    st["gen"] = int(st.get("gen") or 0) + 1
+    bump_gen(st)
     return {"gen": st["gen"], "session_id": entry["id"],
             "next_id": st["next_id"], "score": entry["score"], "topics": summary,
             "errata_ids": errata_ids,
@@ -1814,7 +1879,7 @@ def reflect_round(st, refl, today, session=None):
         entry["block"] = sess["block"]
     st["unreflected"] = None
     compact(st)
-    st["gen"] = int(st.get("gen") or 0) + 1
+    bump_gen(st)
     return {"gen": st["gen"], "session_id": entry["id"],
             "topics": summary, "open_gaps": len(st["gaps"]), "errata_ids": errata_ids,
             "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
@@ -2069,7 +2134,7 @@ def cmd_review(args):
     st["unreflected"] = None
     st["review"] = {"last": iso(today), "next_due": iso(next_due), "period_start": iso(today + dt.timedelta(days=1))}
     compact(st)
-    st["gen"] = int(st.get("gen") or 0) + 1
+    bump_gen(st)
     st["updated"] = iso(today)
     out = {"ok": True, "gen": st["gen"], "reviews": len(st["reviews"]),
            "next_review_due": iso(next_due), "drills": st["drills"],
@@ -2084,19 +2149,26 @@ def cmd_snooze(args):
     work, info = job(args)
     st, _ = current_ledger(work, info)
     st["review"]["next_due"] = iso(today + dt.timedelta(days=args.days))
-    st["gen"] = int(st.get("gen") or 0) + 1
+    bump_gen(st, content=False)     # when the review is due does not change a round: the prepared one stays
     st["updated"] = iso(today)
     out = {"ok": True, "gen": st["gen"], "next_review_due": st["review"]["next_due"]}
-    publish_ledger(work, info, st, out, empty_prepared=True)
+    publish_ledger(work, info, st, out)
     print(json.dumps(published(work, info, out), ensure_ascii=False))
 
 
+def changed_keys(before, after):
+    return sorted(k for k in set(before) | set(after) if before.get(k) != after.get(k))
+
+
 def cmd_settings(args):
-    """Change settings: the changed ledger goes into the publish set, with the index, an emptied
-    prepared round and the page if it is out of date, so a settings change is one command."""
+    """Change settings: the changed ledger goes into the publish set, with the index and the
+    page if it is out of date, so a settings change is one command. A change that can alter
+    what a round contains also empties the prepared round; one that cannot (CONTENT_NEUTRAL_*)
+    keeps it. `prepared` in the output says which, and why."""
     today = today_from(args)
     work, info = job(args)
     st, _ = current_ledger(work, info)
+    was = copy.deepcopy({k: st.get(k) for k in ("config", "profile", "blueprint")})
     cfg_changes = load_json_arg(args.config) if args.config else {}
     prof_changes = load_json_arg(args.profile) if args.profile else {}
     deep_merge(st["config"], cfg_changes or {})
@@ -2110,10 +2182,22 @@ def cmd_settings(args):
         st["review"]["next_due"] = iso(anchor + dt.timedelta(days=int(st["config"]["review_interval_days"])))
     if args.blueprint:
         st["blueprint"] = read_blueprint(args.blueprint)
-    st["gen"] = int(st.get("gen") or 0) + 1
+    # what changed decides whether the round prepared ahead still stands: the values, not the
+    # keys that were sent (setting a value it already has changes nothing)
+    affects = [k for k in changed_keys(was["config"] or {}, st["config"]) if k not in CONTENT_NEUTRAL_CONFIG]
+    affects += ["profile." + k for k in changed_keys(was["profile"] or {}, st["profile"])
+                if k not in CONTENT_NEUTRAL_PROFILE]
+    if args.blueprint and st["blueprint"] != was["blueprint"]:
+        affects.append("blueprint")
+    bump_gen(st, content=bool(affects))
     st["updated"] = iso(today)
     out = {"ok": True, "gen": st["gen"], "config": st["config"], "review": st["review"], **guideline_context(st)}
-    publish_ledger(work, info, st, out, empty_prepared=True)
+    out["prepared"] = ({"kept": False, "changed": affects,
+                        "why": "set aside: %s can change what a round contains, so the next round is "
+                               "planned and written at its start" % ", ".join(affects)}
+                       if affects else
+                       {"kept": True, "why": "kept: nothing that changes what a round contains was changed"})
+    publish_ledger(work, info, st, out, empty_prepared=bool(affects))
     print(json.dumps(published(work, info, out), ensure_ascii=False))
 
 
@@ -2144,7 +2228,7 @@ def cmd_theme(args):
     if res["warnings"]:
         out["warnings"] = list(res["warnings"])
     if res["changed"]:
-        st["gen"] = int(st.get("gen") or 0) + 1
+        bump_gen(st)
         st["updated"] = iso(today)
         out["gen"] = st["gen"]
         publish_ledger(work, info, st, out, empty_prepared=True)
@@ -2188,6 +2272,7 @@ def cmd_init(args):
     iv = int(st["config"].get("review_interval_days") or 42)
     st["review"] = {"last": None, "next_due": iso(today + dt.timedelta(days=iv)), "period_start": iso(today)}
     st["gen"] = 1
+    st.pop("content_gen", None)
     if not info:
         info = {"store": None, "state": None, "version": None, "prefs": None}
     info.update({"session_id": st["next_id"], "started": iso(today)})
@@ -2432,6 +2517,17 @@ def cmd_start(args):
         prepared = take_prepared(args, st, today, store_file(work, info, PREPARED_PATH), work, plan_path)
     status["prepared"] = {k: v for k, v in prepared.items()
                           if k in ("used", "why", "made", "ready", "present_block")}
+    if prepared.get("mix") is not None:
+        # the prepared round was written for another mix than the one in force: the learner's
+        # latest choice wins, the prepared round is set aside, and the round says so
+        used, source = plan_counts(st), ("page" if prefs_changes and "unchanged" not in prefs_changes
+                                         else "settings")
+        status["round_mix"] = {
+            "used": used, "prepared": prepared["mix"], "source": source,
+            "say": "Using the mix %s: %s. The round prepared ahead was written for %s and is set aside, "
+                   "so this round is written now." % (
+                       "you set on your page" if source == "page" else "in your settings",
+                       mix_text(used), mix_text(prepared["mix"]))}
     if prepared["used"]:
         plan_out = prepared["summary"]
         status["present"] = prepared["present"]
@@ -2468,6 +2564,9 @@ def cmd_prepare(args):
     today = today_from(args)
     work, info = job(args)
     st, _ = current_ledger(work, info)
+    # the round is written for the mix the next `start` will use: a mix set on the page and not
+    # yet in the ledger counts here too (in memory only; `start` and `save` apply it for good)
+    apply_prefs(st, info.get("prefs"))
     cfg = st["config"]
     why = None
     if not cfg.get("prepare_ahead", True):
@@ -2486,9 +2585,9 @@ def cmd_prepare(args):
     os.makedirs(folder, exist_ok=True)
     out = os.path.join(folder, PLAN_FILE)
     summary = plan_summary(plan, out)
-    plan["prepared"] = {"gen": st.get("gen"), "made": iso(today), "session_id": st.get("next_id")}
+    plan["prepared"] = {"gen": content_gen(st), "made": iso(today), "session_id": st.get("next_id")}
     save_json(plan, out)
-    summary.update({"prepare": True, "gen": st.get("gen"), "folder": os.path.abspath(folder),
+    summary.update({"prepare": True, "gen": content_gen(st), "folder": os.path.abspath(folder),
                     "note": "Sealed: have the whole round drafted for this plan into this folder "
                             "(sealed_questions.md, sealed_case.md, kit_questions.md, kit_case.md), "
                             "have each sealed file checked (evidence_questions.md, evidence_case.md), "
@@ -2540,15 +2639,15 @@ def prepared_round_files(plan, folder):
 def plan_for_prepared(st, plan_path):
     plan = load_json(plan_path)
     meta = plan.get("prepared") or {}
-    if meta.get("gen") != st.get("gen"):
+    if meta.get("gen") != content_gen(st):
         die("this plan was not made by `prepare` from this ledger (gen %s, ledger %s): run `prepare` again"
-            % (meta.get("gen"), st.get("gen")))
+            % (meta.get("gen"), content_gen(st)))
     return plan
 
 
 def prepared_doc(st, plan, files, has):
     """The prepared round as it is kept in the store (data/prepared.json), packed."""
-    return {"v": 2, "gen": st.get("gen"), "made": (plan.get("prepared") or {}).get("made"),
+    return {"v": 2, "gen": content_gen(st), "made": (plan.get("prepared") or {}).get("made"),
             "session_id": st.get("next_id"), "counts": plan.get("counts") or {}, "has": has,
             "payload": pack({"plan": plan, "files": files})}
 
@@ -2623,7 +2722,7 @@ def cmd_finish_prepare(args):
         print(json.dumps(out, ensure_ascii=False))
         return
     publish_json(work, PREPARED_PATH, prepared_doc(st, plan, files, has))
-    out.update({"gen": st.get("gen"), "has": has, "stashed": True})
+    out.update({"gen": content_gen(st), "has": has, "stashed": True})
     print(json.dumps(published(work, info, out), ensure_ascii=False))
 
 
@@ -2656,17 +2755,19 @@ def prepared_fits(path, st, today):
     except (ValueError, OSError):
         return False
     made = parse_date(doc.get("made")) if isinstance(doc, dict) else None
-    return bool(isinstance(doc, dict) and doc.get("payload") and doc.get("gen") == st.get("gen")
+    return bool(isinstance(doc, dict) and doc.get("payload") and doc.get("gen") == content_gen(st)
                 and doc.get("session_id") == st.get("next_id") and doc.get("counts") == plan_counts(st)
                 and made and 0 <= (today - made).days <= PREPARED_MAX_AGE_DAYS)
 
 
 def take_prepared(args, st, today, path, work, plan_path):
     """Use the round prepared at the last close (`path`, the store's data/prepared.json) if it
-    still fits: same ledger generation, same mix, no one-off options, not too old, none of its
-    topics tested today. Its plan goes to `plan_path`, its files into the work folder."""
-    def no(why):
-        return {"used": False, "why": why}
+    still fits: same mix, nothing that changes a round written to the ledger since
+    (content_gen), no one-off options, not too old, none of its topics tested today. Its plan
+    goes to `plan_path`, its files into the work folder. When it was written for another mix
+    than the ledger now asks for, `mix` in the answer is the mix it was written for."""
+    def no(why, **more):
+        return dict({"used": False, "why": why}, **more)
     if not path or not os.path.exists(path):
         return no("no prepared round")
     try:
@@ -2678,10 +2779,10 @@ def take_prepared(args, st, today, path, work, plan_path):
         return no("no prepared round")
     if plan_options_given(args):
         return no("one-off options were given for this round")
-    if doc.get("gen") != st.get("gen") or doc.get("session_id") != st.get("next_id"):
+    if doc.get("counts") != plan_counts(st):       # before the generation: the more telling reason
+        return no("the round mix changed", mix=doc.get("counts") or {})
+    if doc.get("gen") != content_gen(st) or doc.get("session_id") != st.get("next_id"):
         return no("the ledger changed since it was prepared")
-    if doc.get("counts") != plan_counts(st):
-        return no("the round mix changed")
     made = parse_date(doc.get("made"))
     if not made or (today - made).days > PREPARED_MAX_AGE_DAYS or made > today:
         return no("too old")
@@ -2691,6 +2792,8 @@ def take_prepared(args, st, today, path, work, plan_path):
         files = inner.get("files") or {"sealed_questions.md": inner["sealed"]}
     except Exception:
         return no("unreadable")
+    if (plan.get("counts") or {}) != plan_counts(st):      # the plan itself, not only the label on the pack
+        return no("the round mix changed", mix=plan.get("counts") or {})
     now, was = block_status(st) or {}, plan.get("block") or {}
     if (now.get("theme"), now.get("round")) != (was.get("theme"), was.get("round")):
         return no("it was not prepared for this round of the block")
@@ -2704,6 +2807,10 @@ def take_prepared(args, st, today, path, work, plan_path):
         if t and parse_date(t.get("last")) == today:
             return no("one of its topics was tested today")
     plan["date"] = iso(today)
+    # settings that do not change the round may have changed since: the plan carries today's
+    cfg = st["config"]
+    plan.update({"show_coding": cfg.get("show_coding", True), "helpers": bool(cfg.get("helpers", True)),
+                 "prepare_ahead": bool(cfg.get("prepare_ahead", True)), "testing": bool(cfg.get("testing", False))})
     plan["prepared"] = dict(plan.get("prepared") or {}, used=True)
     save_json(plan, plan_path)
     written = []

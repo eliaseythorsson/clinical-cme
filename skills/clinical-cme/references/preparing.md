@@ -68,8 +68,9 @@ A session whose whole job is to make sure a round is ready. The learner is not t
 nothing, and never write anything about the round's content.
 
 1. Read the store as at the start of a round (SKILL.md, turn 1, step 1: `state.json`,
-   `index.json`, `prepared.json`), then `python3 cme.py open --work <work> --store
-   <work>/store --version <version read>`.
+   `index.json`, `prepared.json`, and `cme/prefs` when it exists), then `python3 cme.py open
+   --work <work> --store <work>/store --version <version read>` (plus `--prefs '<the cme/prefs
+   JSON>'`, so the round is written for the mix set on the page).
 2. `python3 cme.py prepare --work <work> --if-needed --allow-unreflected`. `"prepare": false`
    → reply "A round is already prepared." (or the reason it gives) and stop.
 3. Write, check and finish as in §2, steps 2–4, and publish the `files` (here the one file,
@@ -96,8 +97,8 @@ always ready, even if you close the app early — say 'prepare my rounds overnig
 
 ## 6. A round that was not prepared
 
-`prepared.used` is false in the `start` output (a first round, a changed mix or setting, a
-one-off option, or a preparation that did not finish): the round is written at the session
+`prepared.used` is false in the `start` output (a first round, a changed mix, a setting that
+changes the round (`state_schema.md` §8), a one-off option, or a preparation that did not finish): the round is written at the session
 from `<work>/plan.json`, the first part before the opening message and the rest while the
 learner answers. If `prepared.ready` lists some files, only what is missing is written.
 
