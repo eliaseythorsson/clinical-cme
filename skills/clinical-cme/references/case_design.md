@@ -1,37 +1,17 @@
 # Case and question design
 
-Read this before writing any item: it is the standard for whoever writes them — the author
-agent (`author.md`), or the assistant running the round when there is none. The goal is that the learner reasons from the same
-information a clinician would actually have at that point in the encounter, and that
-nothing in the format, the order of presentation or the choice of tests reveals the
-answer before they commit.
+Read this before writing any item: it is how items are designed, for whoever writes them — the
+author agent (`author.md`), or the assistant running the round when there is none. The rules
+every item must meet are numbered in `standards.md` (the rulebook) and cited here by number.
+The goal is that the learner reasons from the same information a clinician would actually
+have at that point in the encounter, and that nothing in the format, the order of
+presentation or the choice of tests reveals the answer before they commit.
 
 ## 1. Topic blinding
 
-The round is blind part by part: the short questions until all of them are answered (their
-feedback then reveals them), the case until its last answer. Until a part's answers are in:
-
-- Do not name the topic, domain, diagnosis, organ system or blueprint ID.
-- Do not say why the item was chosen (due for review, scored poorly last time, open gap,
-  self-reported gap, new topic). That belongs in the post-answer reveal.
-- Do not title cases ("A case of fever after valve replacement"). Use "Case" and
-  "Question 1–N" (focused questions too: "Question 4 — focused").
-- Keep tool activity neutral. Before answers are in, run no web searches, open no
-  resource files and create no task-list items that name the topic, and keep
-  command descriptions generic ("Read the ledger", "Plan today's items"). Do evidence
-  checks after that part's answers are committed, or hand them to a background checker
-  whose prompt carries no content (SKILL.md, "Roles").
-- The questions' feedback is sent while the case is still sealed. It names the questions'
-  topics and why they were chosen, and nothing about the case: not its topic or domain, not
-  that it is "something different", not why it was chosen.
-- Keep your reasoning neutral too. The learner may see a summary of your thinking, so all
-  drafting happens in the sealed files `sealed_questions.md` and `sealed_case.md` (SKILL.md,
-  "Sealed"). In thinking, items are "the case" and "Q1–Q4"; no diagnosis, topic,
-  finding, test, drug or answer letter appears there until that part's answers are in.
-- If the learner asks for a domain ("give me a cardiology round"), you may acknowledge
-  the domain they chose, but the specific topic stays hidden.
-- Do not preview upcoming topics at the end of a session ("next up: hyponatraemia").
-  Say how many items are due and when.
+Rule 1 (`standards.md`), all of it: the presented text, the blocks, tool activity, reasoning,
+the questions' feedback, a requested domain, no previews. Sections 2–4 below are how an item
+is designed so that its content does not give it away either.
 
 ## 2. Short questions first, and on other topics
 
@@ -98,9 +78,8 @@ clue. Write it as a ward clinician would document it.
 Add the tests a typical emergency department or admitting team orders for the chief
 complaint, whether or not they help: for example CRP, liver panel, albumin, calcium,
 magnesium, phosphate, INR/APTT, troponin, lactate, venous blood gas and urine dipstick.
-Choose them by the presenting problem and setting, never by the answer. Do not
-calculate derived values (anion gap, corrected calcium, A–a gradient, osmolar gap) for
-the learner; leave the raw numbers so they can.
+Choose them by the presenting problem and setting, never by the answer. Raw numbers
+only (rule 3).
 
 **Outpatient cases**: vital signs and BMI, plus "recent routine bloods" a GP would
 have (FBC, basic panel, HbA1c, lipids, TSH, eGFR/urine ACR as appropriate to the
@@ -126,7 +105,7 @@ ACTH level or a cardiac MRI announces the diagnosis.
 - Specialised results (urine electrolytes and osmolality, autoantibodies, hormone
   levels and dynamic tests, genetic tests, specialised imaging, biopsy or cytology,
   CSF beyond basic studies) are not handed over up front. The learner has to ask for
-  them (see §5).
+  them (see §5). The decisive test least of all: rule 7.
 - When a key clue must be present at the start (an exposure, a medication, a family
   history), write it at the same level of detail as the surrounding unremarkable items
   and place it among them. It must never be the only unusual detail in the vignette.
@@ -212,7 +191,7 @@ depth of feedback and the spacing of the topic.
   only on the correct one.
 - When re-testing an open gap (the plan's `retest_gap`), put the same decision point in a new
   clinical context; the aim is to test transfer, not recall of the earlier vignette. The key
-  header names the gap (`retests: G0007`, `author.md` §3).
+  header names the gap (`retests: G0007`, rule 9).
 - MCQs are presented first, on their own. Each stem must stand alone: no "the patient above",
   and no reference to the case.
 - Write the key before the stem (in the sealed file: the correct answer and its one-line
@@ -221,16 +200,8 @@ depth of feedback and the spacing of the topic.
 
 ## 7. Difficulty and conventions
 
-- Pitch items at the learner's stated role and specialty (profile), e.g. a hospitalist
-  attending or a senior subspecialty fellow when testing within the subspecialty.
-- Units follow the plan: `lab_units` (SI by default: mmol/L, µmol/L, g/L, ×10⁹/L) and
-  `blood_gas_units` (mmHg by default for pCO₂ and pO₂; kPa if set).
-- Drug names: international non-proprietary names; add the regional name where it
-  differs if the learner's region uses it.
-- Guidelines: use the plan's `guideline_region` first (set at setup; default
-  "Iceland/Europe": Icelandic national guidance where it exists, otherwise the European
-  societies), in the edition relevant to the plan's `specialty`; where regional guidance
-  differs materially, the feedback says so.
+- Pitch: rule 4. Guidelines: rule 2. Units and drug names: rule 3.
+- Abbreviations: rule 5. Timings: rule 6, one anchor per case.
 - Cases are fictional. Never request or include identifiable patient information.
 
 ## 8. Pre-flight check (in the sealed draft, before sending)
@@ -300,12 +271,9 @@ round JSON.
 
 `plan` lists, for each chosen topic, the cases and MCQ stems already used (`already_used`),
 plus the most recent cases on any topic. A re-test of the same topic must use a different
-patient, setting, presentation and twist; the decision point may be the same (§6). After the
-round, describe the case compactly in its key header so the index stays useful (`patient`
-"74F", `setting` "ED", `presentation` "confusion after a marathon", `diagnosis`
-"exercise-associated hyponatraemia", `twist` "looked hypovolaemic"). Give each MCQ and focused
-question a `stem_summary` (about ten words), and each focused question its `aspect`, in the
-same way (`author.md` §3, "Key headers").
+patient, setting, presentation and twist; the decision point may be the same (§6). The key
+headers keep what later rounds are compared with: the case's compact description, each short
+question's `stem_summary` and each focused question's `aspect` (rule 9).
 
 ## 11. Focused questions (mini-case, one free-text decision)
 
@@ -325,11 +293,11 @@ question on a topic where nothing about prognosis changes care), take the next-b
   matter.
 - Vital signs, and the results a clinician would actually have **at this decision point**: the
   routine set for the setting (§3), abbreviated to what bears on the question and on its
-  plausible alternatives. Raw numbers, units from the plan, no derived values.
+  plausible alternatives. Units as in rule 3.
 - One realistic but non-contributory finding.
-- The rarity budget (§4) holds. One exception: for an `interpretation` question the result to
-  interpret is given — that is the question — but it must be one a team would plausibly have,
-  and the vignette must still fit two or three alternatives.
+- The rarity budget (§4) and rule 7 hold. One exception: for an `interpretation` question the
+  result to interpret is given — that is the question — but it must be one a team would
+  plausibly have, and the vignette must still fit two or three alternatives.
 
 ### 11.2 The lead-in: one decision, open, reasoned
 

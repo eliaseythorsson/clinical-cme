@@ -102,7 +102,8 @@ scripts/cme.py                the state engine (start, present, save, close, pre
 references/store.md           the store: documents, tools, kinds of store, reading/writing,
                               setup, recovery, export
 references/state_schema.md    ledger layout, round and reflection JSON, spacing rules, commands
-references/case_design.md     how cases and MCQs are written (blinding, realism, pre-flight)
+references/standards.md       the rulebook: numbered rules for items, keys and kits; what the lint checks
+references/case_design.md     how cases and MCQs are designed (realism, formats, pre-flight)
 references/feedback_guide.md  grading, evidence briefings, reflection prompt, disputes, feedback kits
 references/author.md          the author's brief: how a round's items and notes are written
 references/evidence_check.md  the checker's brief: how the evidence is verified
