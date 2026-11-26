@@ -230,6 +230,36 @@ Use `both_defensible` or `upheld` as appropriate. If the dispute changes the cod
 the final position. The review reports dispute outcomes honestly; a learner who is often
 right is telling you something about the grading.
 
+### 7.1 A score the learner sets, a gap the learner closes
+
+"Record it as 4" or "close that gap" is not a dispute: the learner is not arguing the
+evidence, they are deciding what their record says. It is their record, so do it, without
+arguing and without changing your grading. Never write it as a dispute outcome (your
+grading did not change), and never edit the ledger by hand.
+
+- **Before the close**, in the reflection JSON (`state_schema.md` §3):
+  `"learner_scores": [{"item": "Q2", "type": "mcq", "topic": "CARD-03", "score": 4, "note": "the learner's words"}]`
+  and `"learner_closed_gaps": [{"gap": "G0007", "note": "…"}]` (a gap by its id, or
+  `{"topic": "CARD-03"}` for one this round opened).
+- **After the close** (also in a later conversation, after reading the store with the
+  session's document and `open`): `python3 cme.py override --work <work> --scores '[…]'
+  --close-gaps '[…]'` with the same entries (`--session <id>` for a round other than the
+  last), then publish its `files`.
+
+What the engine does with it: the item keeps both scores, `graded` (yours) and `mastery`
+(the learner's, marked `set_by: learner`); the topic is scheduled with the learner's score
+and the round's score follows it; the change is a `grade_changes` entry with outcome
+`learner_set`. A gap closed this way moves to `resolved` marked `closed_by: learner` and
+gets **no retest**; the topic still comes back when its score says so. The session document
+gets a "Set by the learner" section naming both scores and who closed the gap, so the log
+does not depend on what you write in part B. A learner-set score does not close the gap on
+that point: it stays open unless the learner asks for that too (say so in one line). The
+review counts these apart from disputes.
+
+If the learner gives a reason that is about the evidence ("the guideline says otherwise"),
+it is a dispute: re-check first, and use this path only if they still want their own score
+after your grading stands.
+
 ## 8. The log needs the feedback verbatim
 
 Part A of the log copies both feedback messages exactly as sent (`session_log.md` §2): write

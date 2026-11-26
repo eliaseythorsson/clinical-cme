@@ -272,6 +272,12 @@
    "self_comfort": {},
    "self_performance": null,
    "started_at": null,
+   "steps_before": {
+    "PULM-04": 0,
+    "PULM-06": 0,
+    "PULM-07": 1,
+    "RENAL-06": 1
+   },
    "summary": "Synthetic round 5 of an example ledger.",
    "tags": [
     "example"
@@ -582,6 +588,12 @@
    },
    "self_performance": 3,
    "started_at": null,
+   "steps_before": {
+    "PULM-04": 0,
+    "PULM-06": 0,
+    "PULM-07": 1,
+    "RENAL-06": 1
+   },
    "summary": "Synthetic round 5 of an example ledger.",
    "tags": [
     "example"

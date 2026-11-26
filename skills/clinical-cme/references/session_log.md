@@ -72,6 +72,10 @@ a "Reflection" heading is kept as it is.
   scored); calibration notes; drill result. It must agree with the `coding`
   blocks in the round JSON.
 - **Grade changes**: each with from → to, the reason and the outcome. "None." otherwise.
+  A score the learner set or a gap they closed (`feedback_guide.md` §7.1) is not written here
+  by hand: `close` adds a "Set by the learner" section with both scores and who closed the
+  gap (`override` after the close: the same lines in the addendum), and the document keeps
+  them as `learner_changes`.
 
 `cme.py close` puts it into the session document as `closing`, with `reflected: true`.
 

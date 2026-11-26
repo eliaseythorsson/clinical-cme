@@ -301,6 +301,12 @@
    "self_comfort": {},
    "self_performance": null,
    "started_at": null,
+   "steps_before": {
+    "HEME-02": 1,
+    "PULM-02": 1,
+    "PULM-05": 0,
+    "PULM-08": 0
+   },
    "summary": "Synthetic round 7 of an example ledger.",
    "tags": [
     "example"
@@ -642,6 +648,12 @@
    },
    "self_performance": 3,
    "started_at": null,
+   "steps_before": {
+    "HEME-02": 1,
+    "PULM-02": 1,
+    "PULM-05": 0,
+    "PULM-08": 0
+   },
    "summary": "Synthetic round 7 of an example ledger.",
    "tags": [
     "example"
@@ -1152,6 +1164,12 @@
     },
     "self_performance": 3,
     "started_at": null,
+    "steps_before": {
+     "GEN-04": 0,
+     "GI-03": 1,
+     "HEME-06": 0,
+     "NEURO-03": 0
+    },
     "summary": "Synthetic round 6 of an example ledger.",
     "tags": [
      "example"
