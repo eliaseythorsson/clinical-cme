@@ -138,11 +138,16 @@ an answer only for not matching the wording of the key.
   erratum.
 
 ### E. Further reading (optional, short)
-At most two items, each with a reason it fits the gap and an estimated reading time,
+At most two items, each with a reason it fits the gap, an estimated reading time and its link,
 pointed at the specific part: "ESC 2023 endocarditis guideline, section 9 (indications
 for surgery) and its surgery table — about 8 minutes". Use verified sources (the learner's
 `resource_preferences`, e.g. free only, apply; flag paid sources). `templates/resource_library.md`
 lists dependable starting points by domain.
+
+The same pointers also go into `round.json` as `reading` (`state_schema.md` §2), one entry
+each: the topic it serves, the title, the link to the document, the section, the minutes and
+the reason. `save` writes them into the session document and the learner's page lists them
+under "Reading & listening", where they can be marked as done. No pointer → an empty list.
 
 ### E2. Listening (when `listening.on` is true in the `start` output)
 One podcast episode per topic of the round, 15 to 90 minutes, as specific as possible to the
@@ -178,8 +183,8 @@ app, and one tap there saves it; promise nothing more (say so once, the first ti
 section appears).
 
 The picks also go into `round.json` as `listening` (`state_schema.md` §2), one entry per
-topic that got one, so that `save` writes them into the session document; an empty list when
-no topic got one.
+topic that got one, so that `save` writes them into the session document (the page lists
+them with the reading pointers); an empty list when no topic got one.
 
 `listening.ask_sources` true → the learner has not been asked for their shows yet: end the
 section with one line, once: "Tell me any podcasts you trust, or want me to avoid, and I'll

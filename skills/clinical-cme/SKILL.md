@@ -221,7 +221,7 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    to two reading pointers → with `listening.on`, an episode per topic → the reflection prompt).
 4. **Behind the scenes, in one batch**: write `<work>/feedback.md`, the final feedback exactly
    as sent; file change requests and anything else to log with `answer --part notes`; complete
-   `<work>/round.json` with the grading and the `listening` picks only (`state_schema.md` §2;
+   `<work>/round.json` with the grading, `reading` and `listening` only (`state_schema.md` §2;
    no `reflection` key, no times). `save` fills in the rest from the key headers and the plan.
 5. `python3 cme.py save --work <work>`, then publish every file in its `files` list in one
    write (`store.md` §4; `index.html` among them → `store.md` §4.5 once). Fix any `warnings`,

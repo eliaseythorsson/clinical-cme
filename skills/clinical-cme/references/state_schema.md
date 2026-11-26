@@ -171,6 +171,9 @@ everything the author already wrote down, and writes the result, the **round rec
   "grade_changes": [], "drill": {"code": "bias:premature_closure", "result": "fell_for"},
   "errata": [{"corrects": "S0012", "point": "…", "correction": "…", "source": "…"}],
   "pending_errata_logged": "all",
+  "reading": [{"topic": "RENAL-02", "title": "<guideline or article, with its year>", "link": "https://…",
+               "section": "section 9 (indications for surgery) and its table", "minutes": 8,
+               "why": "the thresholds you were unsure of"}],
   "listening": [{"topic": "CARD-03", "link": "https://open.spotify.com/episode/<id, 22 letters and digits>",
                  "show": "<show>", "title": "<episode title>", "minutes": 52,
                  "why": "when to start anticoagulation after surgery, the step you were unsure of",
@@ -268,6 +271,13 @@ The round record, as `save` writes it to `record.json`. A
   "sent:questions", "at": "…"}, {"what": "answer:questions", "at": "…"}, …]` (the names of §6.2),
   from which the same figures are computed. With only `started_at` and `ended_at` the minutes
   are their difference, without `timing`, and no duration at all beyond 180 minutes.
+- `reading`: the pointers of the feedback's Further reading section (`feedback_guide.md` §2
+  E), at most two: the blueprint ID of the topic each serves (one of this round's), the title,
+  the document's own http(s) link, the section to read, the minutes and the one-line reason.
+  An empty list when the feedback gave none. `save` moves the list into the session document
+  as its `reading` list (the ledger and `record.json` never hold it) and leaves out a pointer
+  that is not complete, or a third one, with a warning naming what to correct. The feedback
+  text keeps its Further reading section as before.
 - `listening`: the picks of the feedback's Listening section (`feedback_guide.md` §2 E2), one
   per topic that got one: the blueprint ID, the Spotify episode link, the show, the title, the
   minutes, the one-line reason, and `source` (`kit`: a candidate prepared with the round;
@@ -630,7 +640,7 @@ anything of the prepared round. The page reads nothing else of the store except 
 and review documents the learner opens, and the ledger when the learner exports.
 
 ```json
-{"schema": 1, "page_version": "5.3.0", "gen": 14, "updated": "2026-11-20",
+{"schema": 1, "page_version": "5.4.0", "gen": 14, "updated": "2026-11-20",
  "who": {"name": null, "role": "attending", "specialty": "Internal/hospital medicine", "subspecialty": null, "practice": []},
  "totals": {"topics": 9, "mean_mastery": 3.8, "since": "2026-10-01", "sessions": 4, "mean_score": 3.6},
  "sessions": [{"id": "S0004", "date": "2026-11-20", "title": "…", "summary": "…", "tags": [], "topics": ["GI-06"],
@@ -641,12 +651,15 @@ and review documents the learner opens, and the ledger when the learner exports.
            "timed_rounds": 0, "time_hint": null},
  "block": {"theme": "CARD", "name": "Cardiology", "done": 4, "length": 12},
  "reviews": [{"date": "2026-11-01", "title": "…", "headline": "…"}], "next_review": "2026-12-13",
+ "library": [{"session": "S0004", "date": "2026-11-20", "kind": "reading", "topic": "GI-06", "label": "…",
+              "title": "…", "link": "https://…", "minutes": 8, "section": "section 9 and its table"},
+             {"session": "S0004", "date": "2026-11-20", "kind": "listening", "topic": "GI-06", "label": "…",
+              "title": "…", "link": "https://open.spotify.com/episode/…", "minutes": 52, "show": "…"}],
  "settings": {"session_length": 35, "per_week": 3, "region": "Iceland/Europe", "units": {"labs": "SI", "gases": "mmHg"},
               "case_style": "unfolding", "order": "mcqs_first", "feedback": "detailed", "coding_line": true,
               "review_every_days": 42, "reminders": false, "emphasis": {}, "self_ratings": {},
               "level": {"label": "attending", "text": "Hospitalist for eight years; …"},
-              "aim": {"tags": ["keep up to date"], "text": "Stay current, and …"},
-              "reading": null, "listening": null}}
+              "aim": {"tags": ["keep up to date"], "text": "Stay current, and …"}}}
 ```
 
 - `sessions` (newest first) and `reviews` list the past; a session's `url` is there when its
@@ -674,8 +687,15 @@ and review documents the learner opens, and the ledger when the learner exports.
   derived) or the goal tags derived from it; each is null while the paragraph is empty.
   `who.role` is the stage label (an old `role` until there is one). Nothing else of the
   profile's paragraphs is in the file.
-- Empty until their issues fill them: `settings.reading` and `settings.listening` (#51). The
-  page shows each once it is not null.
+- `library`: what the page's "Reading & listening" view lists, the `reading` pointers and
+  `listening` picks of saved session documents (§2), newest session first and in the order
+  the feedback gave them: the session and its date, the `kind`, the topic with its label, the
+  title, the link, the minutes, and the `section` (reading) or the `show` (listening). The
+  reasons stay in the session document. It is carried on from the page file like `sessions`
+  (`rebuild-page` reads it from the session files) and holds the last 100 entries. Nothing
+  in it comes from the plan, a prepared round or the gaps: only from sessions already saved.
+  A page file from before 5.4 has no `library`, and the view says so in one line. Whether an
+  entry is done is kept by the page in the viewer's own browser, never in the store.
 
 The names in the page file are the page's own, not the ledger's: the page knows no ledger
 field. `schema` changes when a page would misread the file; `page_version` is the

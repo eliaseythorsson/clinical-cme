@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Clinical CME</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="cme-page-version" content="5.3.0">
+<meta name="cme-page-version" content="5.4.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
@@ -210,6 +210,19 @@ dl.kv dt,dl.kv dd{margin:0;padding:9px 0;border-top:1px solid var(--line)}
 dl.kv dt{color:var(--muted)}
 dl.kv dd{overflow-wrap:anywhere}
 dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
+/* reading & listening: one simple list per session, a done mark kept in this browser */
+.lib-group{display:flex;flex-direction:column;gap:8px}
+.lib-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;font-size:.84rem;color:var(--muted);padding:0 4px}
+.lib-h b{color:var(--ink);font-weight:500;overflow-wrap:anywhere}
+.lib-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center;padding:12px 18px;border-top:1px solid var(--line)}
+.lib-item:first-child{border-top:0}
+.lib-item .body{display:flex;flex-direction:column;gap:3px;min-width:0}
+.lib-item a{color:var(--accent);font-weight:500;line-height:1.35;overflow-wrap:anywhere;text-underline-offset:2px}
+.lib-item .s{color:var(--muted);font-size:.84rem;overflow-wrap:anywhere}
+.lib-item.done a{color:var(--muted);text-decoration:line-through}
+.lib-item .chip{font-family:var(--sans)}
+.lib-done{font-size:.82rem;padding:6px 11px;min-height:36px;white-space:nowrap}
+.lib-done[aria-pressed="true"]{background:var(--good-bg);color:var(--good);border-color:transparent}
 .notice{color:var(--muted);font-size:.85rem;line-height:1.55;padding:0 4px}
 .export-warn{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--warn-bg);border-radius:var(--r);padding:12px 16px;font-size:.88rem}
 .export-warn span{flex:1 1 280px}
@@ -252,6 +265,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     <div class="tabs" role="tablist" aria-label="Views">
       <button class="tab" role="tab" id="tab-sessions" data-view="sessions" aria-controls="v-sessions" aria-selected="true">Sessions <span class="c" id="c-sessions"></span></button>
       <button class="tab" role="tab" id="tab-progress" data-view="progress" aria-controls="v-progress" aria-selected="false" tabindex="-1">Progress <span class="c" id="c-progress"></span></button>
+      <button class="tab" role="tab" id="tab-library" data-view="library" aria-controls="v-library" aria-selected="false" tabindex="-1">Reading &amp; listening <span class="c" id="c-library"></span></button>
       <button class="tab" role="tab" id="tab-reviews" data-view="reviews" aria-controls="v-reviews" aria-selected="false" tabindex="-1">Reviews <span class="c" id="c-reviews"></span></button>
       <button class="tab" role="tab" id="tab-settings" data-view="settings" aria-controls="v-settings" aria-selected="false" tabindex="-1">Settings</button>
     </div>
@@ -271,6 +285,12 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     <div class="section-h"><h2>Topics tested so far</h2><span class="aside">Most recently tested first</span></div>
     <p class="note">What comes next stays hidden, so each round tests what you know rather than what you just looked up. Points you missed are in the feedback of past sessions and come back unannounced.</p>
     <div class="tbl-wrap"><table class="plain" id="topics"></table></div>
+  </section>
+
+  <section class="panel" id="v-library" role="tabpanel" aria-labelledby="tab-library" hidden>
+    <div class="section-h"><h2>Reading &amp; listening</h2><span class="aside" id="lib-count"></span></div>
+    <p class="note" id="lib-note">The reading pointers and podcast episodes from your feedback, newest session first. Links open in a new tab; what you mark as done is remembered in this browser only.</p>
+    <div id="lib-list"></div>
   </section>
 
   <section class="panel" id="v-reviews" role="tabpanel" aria-labelledby="tab-reviews" hidden>
@@ -383,7 +403,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   }
 
   // ---- views -----------------------------------------------------------------------------
-  const views = ["sessions", "progress", "reviews", "settings"];
+  const views = ["sessions", "progress", "library", "reviews", "settings"];
   const tabs = () => Array.from(document.querySelectorAll(".tabs [role=tab]"));
   function show(view, focus){
     views.forEach(v => { $("v-" + v).hidden = v !== view; });
@@ -515,6 +535,59 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     }).join("") + `</tbody>`;
   }
 
+  // ---- reading & listening ------------------------------------------------------------------
+  // The file's `library`: the reading pointers and podcast picks of past sessions, newest first.
+  // Done / not done is a convenience of this browser: kept in its own storage where there is
+  // one (otherwise for this visit only) and never written to the store.
+  const DONE_KEY = "cme-library-done";
+  let done = {};
+  try { const raw = window.localStorage.getItem(DONE_KEY); const o = raw ? JSON.parse(raw) : null; if (o && typeof o === "object") done = o; } catch (e) { done = {}; }
+  const keepDone = () => { try { window.localStorage.setItem(DONE_KEY, JSON.stringify(done)); } catch (e) { /* no storage here: this visit only */ } };
+  const libKey = (x) => [x.session, x.kind, x.link].join("|");
+  const webLink = (u) => /^https?:\/\//i.test(String(u || "")) ? String(u) : "";
+  function renderLibrary(){
+    const list = $("lib-list"); list.innerHTML = "";
+    const items = page && Array.isArray(page.library) ? page.library : null;
+    if (!items || !items.length) {
+      $("c-library").textContent = ""; $("lib-count").textContent = "";
+      list.innerHTML = `<div class="list"><div class="empty">${!page ? "Nothing here yet."
+        : !items ? "Nothing listed yet: reading and listening from your rounds appear here after your next round."
+        : "No reading or listening yet. The pointers and episodes from each round's feedback are collected here."}</div></div>`;
+      return;
+    }
+    const left = items.filter(x => !done[libKey(x)]).length;
+    $("c-library").textContent = left || "";
+    $("lib-count").textContent = left ? left + " of " + items.length + " to do" : "All " + items.length + " done";
+    const titles = {}; sessions.forEach(s => { titles[s.id] = s.title; });
+    let group = null, box = null;
+    items.forEach((x, i) => {
+      if (x.session !== group) {
+        group = x.session;
+        const g = document.createElement("div"); g.className = "lib-group";
+        g.innerHTML = `<div class="lib-h"><span>${esc(shortDate(x.date))} · ${esc(x.session)}</span><b>${esc(titles[x.session] || "")}</b></div>`;
+        box = document.createElement("div"); box.className = "list";
+        g.appendChild(box); list.appendChild(g);
+      }
+      const isDone = !!done[libKey(x)], href = webLink(x.link), listen = x.kind === "listening";
+      const row = document.createElement("div"); row.className = "lib-item" + (isDone ? " done" : "");
+      const body = document.createElement("div"); body.className = "body";
+      const detail = [listen ? x.show : x.section, x.minutes ? "about " + x.minutes + " min" : ""].filter(Boolean).join(" · ");
+      body.innerHTML = `<span class="chips"><span class="chip">${listen ? "Listen" : "Read"}</span>${x.label || x.topic ? `<span class="chip note">${esc(x.label || x.topic)}</span>` : ""}</span>
+        ${href ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(x.title || href)}</a>` : `<span class="t">${esc(x.title || "")}</span>`}
+        ${detail ? `<span class="s">${esc(detail)}</span>` : ""}`;
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "btn lib-done"; b.id = "lib-done-" + i;
+      b.setAttribute("aria-pressed", String(isDone));
+      b.setAttribute("aria-label", (isDone ? "Done: " : "Mark as done: ") + (x.title || ""));
+      b.textContent = isDone ? "✓ Done" : "Mark done";
+      b.addEventListener("click", () => {
+        if (done[libKey(x)]) delete done[libKey(x)]; else done[libKey(x)] = 1;
+        keepDone(); renderLibrary();
+      });
+      row.appendChild(body); row.appendChild(b); box.appendChild(row);
+    });
+  }
+
   // ---- reviews -----------------------------------------------------------------------------
   function reviewMode(on){ $("r-list").hidden = !on; $("r-back").hidden = on; $("r-detail").hidden = on; }
   function renderReviews(){
@@ -544,7 +617,6 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   function renderSettings(){
     if (!page || !page.settings) { $("settings").innerHTML = ""; return; }
     const c = page.settings, w = page.who || {}, u = c.units || {};
-    const labelled = (x) => x ? [x.label, x.text].filter(Boolean).join(": ") : "";
     const rows = [["Specialty", [w.specialty, w.subspecialty].filter(Boolean).join(" · ")], ["Setting", (w.practice || []).join(", ")],
       ["Session length", c.session_length ? c.session_length + " min" : ""], ["Round", mixText(effectiveMix()) + (mixPending() ? " (from your next round)" : "") + (c.order ? ", " + words(c.order) : "")], ["Case format", c.case_style],
       ["Feedback", (c.feedback || "") + (c.coding_line ? ", with coding line" : "")], ["Target", c.per_week ? c.per_week + " sessions/week" : ""],
@@ -552,9 +624,6 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
       ["Reminders", c.reminders ? "On" : "Off"],
       ["Domain emphasis", Object.entries(c.emphasis || {}).map(([k, v]) => k + " ×" + v).join(", ") || "None"],
       ["Self-ratings", Object.entries(c.self_ratings || {}).map(([k, v]) => k + " " + v).join(", ")]];
-    // shown once the engine fills them in: reading, listening
-    [["Reading", labelled(c.reading)], ["Listening", labelled(c.listening)]]
-      .forEach((r) => { if (r[1]) rows.push(r); });
     rows.push(["Last saved", page.updated ? fmtDate(page.updated) : ""]);
     $("settings").innerHTML = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v || "–")}</dd>`).join("");
   }
@@ -742,7 +811,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     if (!ok) { page = null; $("s-list").innerHTML = `<div class="empty">No ledger yet. Say “set up clinical CME” in a chat with your assistant to create it.</div>`; }
     renderTiles(); renderProgress(); renderSettings(); renderAbout();
     if (ok) renderList();
-    renderReviews();
+    renderReviews(); renderLibrary();
     loadPrefs();
     let downloads = null;
     try { downloads = (window.claude && claude.use) ? await claude.use("downloads") : null; } catch (e) { downloads = null; }
