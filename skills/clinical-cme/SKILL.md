@@ -130,9 +130,10 @@ keep it free of that part's content:
 ## Session flow
 
 Five learner turns with an unfolding case; fewer with a one-step case or none. In every turn:
-**send first, file afterwards**. When answers arrive, only reading what you need and grading
-come before your message; then, behind the scenes in the same turn, do what is listed, batch
-independent tool calls, and end the turn with one short line ("Answer when ready.").
+**send first, file afterwards**. When answers arrive, only filing them (`answer`), reading what
+you need and grading come before your message; then, behind the scenes, do what is listed in
+batches and end the turn with one short line ("Answer when ready."). `cme.py` times the round
+from when `answer` runs and when a file "exactly as sent" is written: write it right after sending.
 
 ### Turn 1. Start → questions out
 
@@ -157,8 +158,8 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
      `unchanged`) → "Using the mix you set on your page: …"; page-settings `warnings` → one line.
    - `opening` → the opening line, word for word. Nothing more specific about the block: not
      which questions are on its theme, not the domain of any other item.
-   - keep `started_at` (for `round.json`), `helpers`, `prepared`, `testing`, `speed_settings_new`,
-     `pending_errata_count`, `guideline_region` and `specialty` (rules 2–5 grade with them).
+   - keep `helpers`, `prepared`, `testing`, `speed_settings_new`, `pending_errata_count`,
+     `guideline_region` and `specialty` (rules 2–5 grade with them).
 3. **Send the first message**: `opening` (after a long gap at most add "Welcome back — N items
    are waiting; we'll start with the most overdue", without scolding or enlarging the round),
    then, with `prepared.used` true, `present` exactly as printed (it ends with its answer
@@ -174,19 +175,19 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
 An answer is final once given; a later change request is noted in the log and the original
 graded. If answers are missing, ask once; proceed if the learner says so.
 
-1. **In one batch**: read `<work>/sealed_questions.md`, `kit_questions.md` and
-   `evidence_questions.md`, and run `cme.py present --work <work> --block case` (the
-   case file itself stays unopened). No evidence file → run the questions' verification list
-   now (`evidence_check.md` §5). With one, search only for something the answers raise.
+1. **In one batch**: `python3 cme.py answer --work <work> --part questions` (the learner's
+   message on standard input, exactly as written); read `<work>/sealed_questions.md`,
+   `kit_questions.md` and `evidence_questions.md`; run `cme.py present --work <work> --block
+   case` (the case file itself stays unopened). No evidence file → run the questions'
+   verification list now (`evidence_check.md` §5); with one, search only for what the answers raise.
 2. **Grade and code** the short questions against the evidence, using the key and the kit as
    the author's view (`feedback_guide.md` §2 part 1; `analysis_framework.md` §1).
 3. **Send the questions' feedback** (glossary line, rule 5.3 → reveal of these items → MCQs →
    focused questions; no gap summary or reflection prompt yet; nothing that touches the case;
    it ends "The case follows."), and **straight after it the case**, exactly as printed.
-4. **Behind the scenes, in one batch**: `python3 cme.py answer --work <work> --part questions`
-   (the learner's message on standard input, exactly as written); write
-   `<work>/feedback_questions.md` (the feedback exactly as sent) and `<work>/round.json` with
-   the short questions' grading (`state_schema.md` §2), to be completed after the case.
+4. **Behind the scenes, in one batch**: write `<work>/feedback_questions.md` (the feedback
+   exactly as sent) and `<work>/round.json` with the short questions' grading
+   (`state_schema.md` §2), to be completed after the case.
 
 - No case in the round → this is the final feedback: send it complete (gap summary and
   reflection prompt included, as `feedback.md`) and go to turn 4, step 4.
@@ -197,32 +198,31 @@ graded. If answers are missing, ask once; proceed if the learner says so.
 
 ### Turn 3. Stage 1 answer in → Stage 2 (unfolding cases)
 
-1. `python3 cme.py present --work <work> --block bank`. It prints only the results
-   bank: no key, no diagnosis. Do not open `sealed_case.md`, `kit_case.md` or
-   `evidence_case.md` until the final answers are in.
+1. **In one batch**: `cme.py answer --work <work> --part case` (the Stage 1 answer) and
+   `cme.py present --work <work> --block bank`: only the results bank, no key, no diagnosis.
+   Do not open `sealed_case.md`, `kit_case.md` or `evidence_case.md` until the final answers are in.
 2. **Send Stage 2** without grading, comment, hint or reaction, assembled from the bank: the
    results of every test the learner ordered (normal, non-specific and abnormal alike); the
    tests its line "Add if not ordered" names, if not ordered, as "Results also available
    (ordered by the admitting team)"; the course; the Stage 2 questions. A test that is not in
    the bank gets a realistic result written on the spot, consistent with what the bank shows.
-3. **Behind the scenes, in one batch**: write `<work>/stage2.md`, the text exactly as sent, and
-   file the Stage 1 answer with `cme.py answer --work <work> --part case`.
+3. **Behind the scenes**: write `<work>/stage2.md`, the text exactly as sent.
 
 ### Turn 4. Final answers in → case feedback, first save
 
-1. **In one batch** read `sealed_case.md`, `kit_case.md` and `evidence_case.md` now (only
-   with no evidence file: run the case's verification list); the round is no longer sealed.
+1. **In one batch** file the last answers (`answer --part final`; `--part case` for a one-step
+   case) and read `sealed_case.md`, `kit_case.md` and `evidence_case.md` now (only with no
+   evidence file: run the case's verification list); the round is no longer sealed.
 2. **Grade** against current guidance for the learner's region and specialty (rule 2);
    watch for transfer gaps and calibration across the whole round; code the case (ART steps
    and Revised-IDEA; an error record for every missed or partial element).
 3. **Send the final feedback** (`feedback_guide.md` §2 part 2: glossary line → case reveal →
    case → gap summary for the whole round with mastery 0–5 per topic and the coding line → up
    to two reading pointers → the reflection prompt).
-4. **Behind the scenes, in one batch**: file the last answers (`answer --part final`; `--part
-   case` for a one-step case; change requests and anything else to log with `--part notes`);
-   write `<work>/feedback.md`, the final feedback exactly as sent; complete
-   `<work>/round.json` with the grading only (`state_schema.md` §2; no `reflection` key).
-   `save` fills in the rest from the key headers and the plan: do not copy it.
+4. **Behind the scenes, in one batch**: write `<work>/feedback.md`, the final feedback exactly
+   as sent; file change requests and anything else to log with `answer --part notes`; complete
+   `<work>/round.json` with the grading only (`state_schema.md` §2; no `reflection` key, no
+   times). `save` fills in the rest from the key headers and the plan: do not copy it.
 5. `python3 cme.py save --work <work>`, then publish every file in its `files` list in one
    write (`store.md` §4; `index.html` among them → `store.md` §4.5 once). Fix any `warnings`,
    or an `error` about a key header (`state_schema.md` §2), and run the same command again.
@@ -244,9 +244,9 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    score, session ID, the number of items due over the next few days, not their names; "1
    correction to an earlier session was added to your log" if errata were written); in one
    line how the reflection changed the plan, without dates per topic; when the next session
-   fits the target frequency. `next_block` printed → add its `line` word for word.
-   `speed_settings_new` → `preparing.md` §5. `testing` → `requests.md` §2. Offer no reminders
-   and start no other round unless asked.
+   fits the target frequency. `next_block` printed → add its `line` word for word; `time_hint`
+   printed → add it as one line. `speed_settings_new` → `preparing.md` §5. `testing` →
+   `requests.md` §2. Offer no reminders and start no other round unless asked.
 4. **Behind the scenes**: publish the `files` that `close` printed; if that write fails, tell
    the learner at once. Then prepare the next round, saying nothing about it: `preparing.md`
    §2. If the discussion continues afterwards, append it (`session_log.md` §4) and publish.

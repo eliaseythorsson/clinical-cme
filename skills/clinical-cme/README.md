@@ -45,6 +45,17 @@ waiting for something to be generated.
 - Leaner sealed drafts (one-line pre-flight record, keys before stems), so a round that could
   not be prepared still starts quickly.
 
+## Page update 5.2.0
+
+- Real time per round. `cme.py` notes when each step of a round happens and records the
+  round's active time, split into answering, waiting and reading, with idle stretches cut (no
+  more 180-minute sessions when a chat is left open). Nobody types a time.
+- Estimates move from the defaults to the learner's own pace over ten timed rounds; the page
+  and the opening line then say "based on your last N rounds".
+- From five timed rounds the close and the page show a hint: the median round against the
+  budget, and the one change to the mix that would fit it best.
+  `cme.py` (`PAGE_VERSION = "5.2.0"`) upgrades older pages once, at the next save.
+
 ## Page update 5.1.0
 
 - The page reads its own file. `cme.py` writes `data/page.json` with every ledger: exactly what

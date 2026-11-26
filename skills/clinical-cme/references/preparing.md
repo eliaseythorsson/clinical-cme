@@ -119,8 +119,8 @@ learner answers. If `prepared.ready` lists some files, only what is missing is w
 
 - **The first part, before anything is sent.** With an author: start one (Plan
   `<work>/plan.json`, Write into `<work>`, Parts `questions`; `case` if the round has no short
-  questions), wait, then `python3 cme.py present <work>/sealed_questions.md --block questions`
-  (or `sealed_case.md --block case`) prints the text to send. Without an author: read
+  questions), wait, then `python3 cme.py present --work <work> --block questions` (or `--block
+  case`) prints the text to send and notes that it went out. Without an author: read
   `author.md`, `standards.md`, `case_design.md` and `plan.json` (never paste it) and write
   `<work>/sealed_questions.md` yourself (`author.md` §3), in the file and not in your
   reasoning; its `present` block is the text.

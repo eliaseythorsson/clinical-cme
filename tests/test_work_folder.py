@@ -266,6 +266,7 @@ def test_answer_appends_and_never_rewrites_what_is_there(rnd):
     assert rnd.answer("questions")["parts"] == ["questions"]
     first = open(rnd.p("answers.md"), "rb").read()
     out = rnd.answer("case")
+    assert out.pop("at").endswith("Z")                      # when the answer arrived: the round's clock
     assert out == {"ok": True, "part": "case", "chars": len(SAID["case"]), "parts": ["questions", "case"]}
     assert open(rnd.p("answers.md"), "rb").read().startswith(first)
     assert SAID["case"] in open(rnd.p("answers.md")).read()          # blank line and typos kept

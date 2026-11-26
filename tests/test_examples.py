@@ -135,7 +135,7 @@ def test_stale_prepared_round_is_not_used_and_a_new_round_is_planned(tmp_path):
     out, plan = start_with_prepared(tmp_path, LEDGERS["stale_prepared"])
     assert out["prepared"] == {"used": False, "why": "too old"}
     assert "present" not in out                             # no drafted files
-    assert sorted(os.listdir(str(tmp_path / "work"))) == ["plan.json", "publish.json", "work.json"]
+    assert sorted(os.listdir(str(tmp_path / "work"))) == ["plan.json", "publish.json", "times.json", "work.json"]
     assert "prepared" not in plan
     assert plan == read(examples.expected_path("stale_prepared", "plan"))
 
@@ -168,7 +168,7 @@ def test_a_newly_prepared_round_is_used_while_it_is_fresh(tmp_path):
     assert out["plan"]["prepared"] is True and plan["prepared"]["used"] is True and plan["date"] == soon
     assert plan["block"]["line"] == out["block"]["line"]
     assert sorted(os.listdir(str(work))) == ["earlier", "kit_case.md", "kit_questions.md", "plan.json", "publish.json",
-                                             "sealed_case.md", "sealed_questions.md", "work.json"]
+                                             "sealed_case.md", "sealed_questions.md", "times.json", "work.json"]
     # and it is left alone when the round is asked for without it
     out = json.loads(run_cme(["--today", soon, "start", *w, "--store", store, "--no-prepared"]))
     assert out["prepared"]["used"] is False and "present" not in out
