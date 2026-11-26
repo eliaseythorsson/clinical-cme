@@ -83,7 +83,7 @@ A session whose whole job is to make sure a round is ready. The learner is not t
 nothing, and never write anything about the round's content.
 
 1. Read the store as at the start of a round (SKILL.md, turn 1, step 1: `state.json`,
-   `index.json`, `prepared.json`, and `cme/prefs` when it exists), then `python3 cme.py open
+   `page.json`, `prepared.json`, and `cme/prefs` when it exists), then `python3 cme.py open
    --work <work> --store <work>/store --version <version read>` (plus `--prefs '<the cme/prefs
    JSON>'`, so the round is written for the mix set on the page).
 2. `python3 cme.py prepare --work <work> --if-needed --allow-unreflected`. `"prepare": false`

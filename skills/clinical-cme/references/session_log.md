@@ -111,8 +111,8 @@ An erratum corrects an earlier teaching point. Two sources:
 
 ## 6. Search and teaching export
 
-- **Finding cases**: `data/index.json` has id, date, title, summary, tags and topics for every
-  session; filter it in Python. For words inside transcripts, read the session files into local
+- **Finding cases**: `data/page.json` lists id, date, title, summary, tags and topics for every
+  session (`sessions`); filter it in Python. For words inside transcripts, read the session files into local
   files and search them. Answer with a short table (ID, date, title). The learner can also use the page.
 - **Teaching export** ("make S0042 into a teaching case"):
   1. Read the session document into a local file. Check the content is still current (a quick guideline check

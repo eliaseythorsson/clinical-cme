@@ -610,13 +610,13 @@ def check_saved(rnd):
         problems.append("no session document data/sessions/%s.json in the store" % rnd.sid)
     elif rnd.doc is not None and not rnd.doc.get("reflected"):
         problems.append("session document %s was never closed (reflected is false)" % rnd.sid)
-    idx = read_json(rp(rnd.store, "data", "index.json"))
+    idx = read_json(rp(rnd.store, "data", "page.json"))
     if idx is None:
-        problems.append("no readable index at store/data/index.json")
+        problems.append("no readable page file at store/data/page.json")
     elif rnd.sid and not any(e.get("id") == rnd.sid for e in idx.get("sessions") or []):
-        problems.append("the index does not list %s" % rnd.sid)
+        problems.append("the page file does not list %s" % rnd.sid)
     elif idx.get("gen") != st.get("gen"):
-        problems.append("the index (gen %s) is older than the ledger (gen %s)" % (idx.get("gen"), st.get("gen")))
+        problems.append("the page file (gen %s) is older than the ledger (gen %s)" % (idx.get("gen"), st.get("gen")))
     return {"ok": not problems, "session": rnd.sid, "publish_set": wanted,
             "files_compared": (verify or {}).get("checked"), "problems": problems}
 

@@ -66,7 +66,7 @@ What the ledger keeps of one round: its items with topic, score, confidence and 
 _Avoid_: round JSON (for the assembled record)
 
 **Page file**:
-The file the engine writes for the page (`data/page.json`): exactly what the page may show, already blinded. The page reads nothing else from the store except the prefs it writes.
+The file the engine writes for the page (`data/page.json`): exactly what the page may show, already blinded. It is all the page renders, apart from the prefs it writes itself and the session or review document the learner opens; only Export reads the ledger.
 _Avoid_: index (it replaces `data/index.json`)
 
 **Page**:

@@ -69,13 +69,13 @@ def test_log_only_grows_over_save_close_and_the_next_save(name, work):
     rnd1 = write_round_files(work, start, plan)
     sid1 = save(work, days[0])["session_id"]
     after_save = work.read_json("publish", "data", "state.json")
-    index1 = work.read_json("publish", "data", "index.json")
+    page1 = work.read_json("publish", "data", "page.json")
     doc_a = work.read_json("publish", "data", "sessions", sid1 + ".json")
     work.write("reflection.json", examples.reflection_for(rnd1))
     work.write("B.md", "Example reflection, verbatim")
     work.run("--today", days[1], "close", "--work", work.path)
     after_close = work.read_json("publish", "data", "state.json")
-    index2 = work.read_json("publish", "data", "index.json")
+    page2 = work.read_json("publish", "data", "page.json")
     doc_b = work.read_json("publish", "data", "sessions", sid1 + ".json")
     work.publish()
     # the next session: the store is read again and a new round starts in the same work folder
@@ -86,12 +86,13 @@ def test_log_only_grows_over_save_close_and_the_next_save(name, work):
 
     before_ids = session_ids(start)
     ledgers_seen = [start, after_save, after_close, work.read_json("publish", "data", "state.json")]
-    indexes = [index1, index2, work.read_json("publish", "data", "index.json")]
+    pages = [page1, page2, work.read_json("publish", "data", "page.json")]
 
-    # the ledger and the index list every earlier round, in order, then the new ones
+    # the ledger and the page file list every earlier round, in order, then the new ones (the page
+    # file newest first)
     assert [session_ids(st) for st in ledgers_seen] == [
         before_ids, before_ids + [sid1], before_ids + [sid1], before_ids + [sid1, sid2]]
-    assert [[e["id"] for e in idx["sessions"]] for idx in indexes] == [
+    assert [[e["id"] for e in reversed(page["sessions"])] for page in pages] == [
         before_ids + [sid1], before_ids + [sid1], before_ids + [sid1, sid2]]
     assert sid1 not in before_ids and sid2 not in before_ids + [sid1]
 
@@ -101,7 +102,7 @@ def test_log_only_grows_over_save_close_and_the_next_save(name, work):
             assert settled(now) == settled(old)
             if old["id"] != start["unreflected"]:
                 assert now == old
-    for old, now in zip(indexes[0]["sessions"][:-1], indexes[2]["sessions"]):
+    for old, now in zip(pages[0]["sessions"][1:], pages[2]["sessions"][2:]):      # newest first
         assert now == old
 
     # the session document: the close adds to it and changes nothing that was there
