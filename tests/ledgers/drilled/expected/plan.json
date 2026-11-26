@@ -21,6 +21,7 @@
  },
  "date": "2026-10-22",
  "estimated_minutes": 45,
+ "evidence_ladder": true,
  "feedback_depth": "detailed",
  "guideline_region": "Iceland/Europe",
  "helpers": true,
@@ -36,6 +37,12 @@
      "topic": "CARD-08"
     }
    ],
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 1,
+    "level": 2,
+    "name": "studies"
+   },
    "domain": "CARD",
    "label": "Venous thromboembolism — PE (see also PULM/HEME)",
    "reason": "spaced review due 2026-10-04; last 5.0/5 on 2026-10-01",
@@ -85,6 +92,12 @@
      "topic": "CARD-07"
     }
    ],
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 1,
+    "level": 2,
+    "name": "studies"
+   },
    "domain": "CARD",
    "label": "Pericardial disease, myocarditis",
    "reason": "spaced review due 2026-10-07; last 5.0/5 on 2026-10-04",
@@ -104,6 +117,12 @@
      "topic": "CARD-06"
     }
    ],
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 1,
+    "level": 2,
+    "name": "studies"
+   },
    "domain": "CARD",
    "label": "Hypertensive emergency/urgency",
    "reason": "spaced review due 2026-10-13; last 5.0/5 on 2026-10-10",

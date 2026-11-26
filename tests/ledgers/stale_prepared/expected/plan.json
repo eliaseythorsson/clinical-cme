@@ -21,6 +21,7 @@
  },
  "date": "2026-11-20",
  "estimated_minutes": 45,
+ "evidence_ladder": true,
  "feedback_depth": "detailed",
  "guideline_region": "Iceland/Europe",
  "helpers": true,
@@ -53,6 +54,12 @@
      "topic": "PULM-07"
     }
    ],
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 1,
+    "level": 2,
+    "name": "studies"
+   },
    "domain": "PULM",
    "label": "Sepsis & septic shock",
    "reason": "spaced review due 2026-09-09; last 5.0/5 on 2026-09-07",
@@ -73,6 +80,12 @@
    ],
    "aspect_hint": "disposition",
    "aspect_note": "Suggested aspect (least recently tested). If this item re-tests an open gap, ask about the gap's decision point instead, whatever its aspect.",
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 1,
+    "level": 2,
+    "name": "studies"
+   },
    "domain": "RENAL",
    "label": "CKD inpatient management, indications for dialysis",
    "reason": "spaced review due 2026-09-04; last 5.0/5 on 2026-09-01",

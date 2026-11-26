@@ -261,11 +261,17 @@ def listening_section(kids, candidates=3):
     return "\n".join(lines) + "\n"
 
 
+def deeper(planned):
+    """The kit's 'Deeper' notes for an item the plan gives an evidence depth (rule 8), else nothing."""
+    return "Deeper: SEALED study, its design and limits (verify)\n" if planned.get("depth") else ""
+
+
 def sealed_files(st, plan):
     """{file name: text} for `plan`. Everything the learner must not see before answering sits
     outside the present and bank blocks and carries the word SEALED; each key starts with its
     key header, and the kits have the sections of the rulebook (references/standards.md, rule 8),
-    the "Listening" section among them unless the plan has listening off."""
+    the "Listening" section among them unless the plan has listening off, and "Deeper" notes for
+    an item the plan gives an evidence depth."""
     listening = plan.get("listening") is not False
     labels = cme.bp_topics(st)
     shorts = [it for it in plan["items"] if it["slot"] != "case"]
@@ -279,8 +285,8 @@ def sealed_files(st, plan):
         stems = ["Q%d. Example stem %d. A) one B) two C) three" % (i + 1, i + 1) for i in range(len(shorts))]
         files["sealed_questions.md"] = ("%s\n<!-- present: questions -->\n%s\n<!-- /present -->\n"
                                         % ("\n".join(headed), "\n".join(stems)))
-        files["kit_questions.md"] = "".join("## Q%d\nSEALED feedback notes: %s\n\n" % (i + 1, key)
-                                            for i, key in enumerate(keys))
+        files["kit_questions.md"] = "".join("## Q%d\nSEALED feedback notes: %s\n%s\n" % (i + 1, key, deeper(it))
+                                            for i, (it, key) in enumerate(zip(shorts, keys)))
         if not case:
             files["kit_questions.md"] += "## Reading\nSEALED reading pointer (verify)\n"
         if listening:
@@ -294,6 +300,8 @@ def sealed_files(st, plan):
             % (key_header("case", st, case, taken), label, case.get("topic") or case["domain"]))
         files["kit_case.md"] = "".join("## %s\nSEALED feedback notes for the case: Example diagnosis: %s\n\n"
                                        % (name, label) for name in cme.KIT_CASE_SECTIONS)
+        if case.get("depth"):
+            files["kit_case.md"] += "## Deeper\n%s\n" % deeper(case)
         if listening:
             files["kit_case.md"] += listening_section(["case"])
     return files

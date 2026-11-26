@@ -21,6 +21,7 @@
  },
  "date": "2026-10-19",
  "estimated_minutes": 40,
+ "evidence_ladder": true,
  "feedback_depth": "detailed",
  "guideline_region": "Iceland/Europe",
  "helpers": true,
@@ -52,6 +53,12 @@
      "topic": "PULM-02"
     }
    ],
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 1,
+    "level": 2,
+    "name": "studies"
+   },
    "domain": "PULM",
    "label": "COPD exacerbation",
    "reason": "spaced review due 2026-10-16; last 5.0/5 on 2026-10-14",
@@ -77,6 +84,12 @@
      "topic": "HEME-02"
     }
    ],
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 1,
+    "level": 2,
+    "name": "studies"
+   },
    "domain": "HEME",
    "label": "Thrombocytopenia, HIT, TTP/HUS",
    "reason": "spaced review due 2026-10-11; last 5.0/5 on 2026-10-09",

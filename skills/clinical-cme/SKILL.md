@@ -178,10 +178,10 @@ graded. If answers are missing, ask once; proceed if the learner says so.
 1. **In one batch**: `python3 cme.py answer --work <work> --part questions` (the learner's
    message on standard input, exactly as written); read `<work>/sealed_questions.md`,
    `kit_questions.md` and `evidence_questions.md`; run `cme.py present --work <work> --block
-   case` (the case file itself stays unopened). No evidence file → run the questions'
-   verification list now (`evidence_check.md` §5); with one, search only for what the answers raise.
-2. **Grade and code** the short questions against the evidence, using the key and the kit as
-   the author's view (`feedback_guide.md` §2 part 1; `analysis_framework.md` §1).
+   case` (the case file stays unopened). No evidence file → run the questions' verification
+   list now (`evidence_check.md` §5); with one, search only for what the answers raise.
+2. **Grade and code** the short questions against the evidence, the key and kit being the author's
+   view (`feedback_guide.md` §2 part 1; §4.1 for `depth` as `answer` printed it; `analysis_framework.md` §1).
 3. **Send the questions' feedback** (glossary line, rule 5.3 → reveal of these items → MCQs →
    focused questions; no gap summary or reflection prompt yet; nothing that touches the case;
    it ends "The case follows."), and **straight after it the case**, exactly as printed.
@@ -215,7 +215,7 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    evidence file: run the case's verification list); the round is no longer sealed.
 2. **Grade** against current guidance for the learner's region and specialty (rule 2);
    watch for transfer gaps and calibration across the whole round; code the case (ART steps
-   and Revised-IDEA; an error record for every missed or partial element).
+   and Revised-IDEA; an error record for every missed or partial element); `depth` as in turn 2.
 3. **Send the final feedback** (`feedback_guide.md` §2 part 2: glossary line → case reveal →
    case → gap summary for the whole round with mastery 0–5 per topic and the coding line → up
    to two reading pointers → with `listening.on`, an episode per topic → the reflection prompt).

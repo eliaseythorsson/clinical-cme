@@ -29,6 +29,7 @@ CONTENT_CONFIG = {
     "lab_units": "conventional", "blood_gas_units": "kPa", "guideline_region": "UK",
     "item_order": "case_first", "resource_preferences": {"free_only": True},
     "listening": False,                                 # no "## Listening" in the kits (issue #50)
+    "evidence_ladder": False,                           # no "Deeper" notes in the kits
 }
 NEUTRAL_PROFILE = {"display_name": "Dr Example", "onboarded_at": "2026-10-01",
                    # display labels and the dates of the paragraphs (#55): never used to write an item
