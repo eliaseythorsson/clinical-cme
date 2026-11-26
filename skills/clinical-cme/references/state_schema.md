@@ -73,7 +73,7 @@ shape. Both settings change what a kit holds (§8).
 Round mix: `mcqs` (0–10), `focused` (0–6) and `case` (true/false); at least one item.
 `round_set_at` marks the last change of the mix (setup, a chat `settings` change, or a page
 setting applied). The learner can also change the mix on their page; the page stores it as its
-own settings document, `cme/prefs` (§7), and the next round applies it.
+own settings document, `cme/prefs` (§7.1), and the next round applies it.
 
 A session entry:
 
@@ -467,13 +467,13 @@ order with the ledger last) and `publish`, the path of the manifest `W/publish.j
 
 | Command | Use |
 |---|---|
-| `open --work W --store DIR [--version V] [--prefs J] [--reread]` | Set up the work folder for any job from `DIR`, the local copy of the store as just read: the store's layout (`DIR/data/state.json`, `DIR/data/index.json`, `DIR/data/prepared.json`, `DIR/index.html`, `DIR/data/sessions/<id>.json`) or the files side by side (`DIR/state.json`, …). Writes `W/work.json` and an empty manifest carrying `V`, the store version read. If `W` holds an earlier job (answers, a publish set, drafts of a next round), its files are first moved to `W/earlier/<n>/` (`earlier_set_aside`). Prints neutral status: `gen`, `next_id`, counts, `review_due`, `testing`, the block; never a topic. `--reread`: the same job on a fresh read after a refused publish (`store.md` §4.1): the job's own files stay, the publish set is dropped, and the job's commands are run again. |
-| `start --work W [--store DIR [--version V]] [--prefs J] [plan options] [--no-prepared]` | Start a round. With `--store` it does what `open` does first; without, it continues the job that is open (a settings change or a late reflection earlier in the same conversation), from the ledger that job wrote. The plan is written to `W/plan.json`. Prints the neutral status with the plan's counts (MCQs, focused, case, `estimated_minutes`) under `plan`, plus `helpers`, `prepare_ahead` and `speed_settings_new`. No topic names. With a plan it also prints what the first message needs, so that nothing else is run or read before it: `opening` (the opening line, word for word: the mix, the minutes, the block's line, with its reason when a block starts, and the last saved session) and `started_at` (the time for `round.json`). `--prefs` is the page's `cme/prefs` document (§7); `page_settings_applied` says when it changed the mix, and `round_mix` when a prepared round was written for another mix than the one in force (§8). The prepared round is read from the store copy (§8): when it still fits, `prepared.used` is true, `present` holds the first part's text to send (`prepared.present_block` says which) and the drafted files (`prepared.ready`: `sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) are written into the work folder, with `prepared.unchecked` naming the sealed files that came without an evidence file (start a checker for each); otherwise `prepared.why` says why not and the round is planned as usual. Plan options, for this round only: `--mcqs N`, `--focused N`, `--no-case`, `--domain CODE`, `--no-new`, `--allow-repeat`, `--no-drill`. |
+| `open --work W --store DIR [--version V] [--prefs J] [--reread]` | Set up the work folder for any job from `DIR`, the local copy of the store as just read: the store's layout (`DIR/data/state.json`, `DIR/data/page.json`, `DIR/data/prepared.json`, `DIR/index.html`, `DIR/data/sessions/<id>.json`) or the files side by side (`DIR/state.json`, …). Writes `W/work.json` and an empty manifest carrying `V`, the store version read. If `W` holds an earlier job (answers, a publish set, drafts of a next round), its files are first moved to `W/earlier/<n>/` (`earlier_set_aside`). Prints neutral status: `gen`, `next_id`, counts, `review_due`, `testing`, the block; never a topic. `--reread`: the same job on a fresh read after a refused publish (`store.md` §4.1): the job's own files stay, the publish set is dropped, and the job's commands are run again. |
+| `start --work W [--store DIR [--version V]] [--prefs J] [plan options] [--no-prepared]` | Start a round. With `--store` it does what `open` does first; without, it continues the job that is open (a settings change or a late reflection earlier in the same conversation), from the ledger that job wrote. The plan is written to `W/plan.json`. Prints the neutral status with the plan's counts (MCQs, focused, case, `estimated_minutes`) under `plan`, plus `helpers`, `prepare_ahead` and `speed_settings_new`. No topic names. With a plan it also prints what the first message needs, so that nothing else is run or read before it: `opening` (the opening line, word for word: the mix, the minutes, the block's line, with its reason when a block starts, and the last saved session) and `started_at` (the time for `round.json`). `--prefs` is the page's `cme/prefs` document (§7.1); `page_settings_applied` says when it changed the mix, and `round_mix` when a prepared round was written for another mix than the one in force (§8). The prepared round is read from the store copy (§8): when it still fits, `prepared.used` is true, `present` holds the first part's text to send (`prepared.present_block` says which) and the drafted files (`prepared.ready`: `sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) are written into the work folder, with `prepared.unchecked` naming the sealed files that came without an evidence file (start a checker for each); otherwise `prepared.why` says why not and the round is planned as usual. Plan options, for this round only: `--mcqs N`, `--focused N`, `--no-case`, `--domain CODE`, `--no-new`, `--allow-repeat`, `--no-drill`. |
 | `present --work W --block questions\|case\|bank` | Print only the text the learner is to see from the sealed files in `W` (one `present` block, or the case's results bank), so it can be sent without opening the keys. |
 | `answer --work W --part questions\|case\|final\|notes\|reflection [--file F \| --text T]` | Append what the learner answered for one part to `W/answers.md`, exactly as given (default: standard input). Earlier parts are never rewritten; the same text for the same part is added once; a second message for a part is added after the first. Prints the part names filed so far, never the text. |
-| `save --work W` | First save after the final feedback: the round is recorded in the ledger, the session document is written (part A assembled in the order of the round from the sealed `present` blocks, Stage 2 as sent, the answers, the questions' feedback and the final feedback), with the index and an emptied `data/prepared.json`. Everything is found by its fixed name (§6.1); the page settings given at the start are applied so the mix is kept in the ledger. Prints per-topic next due, warnings, `errata_to_log`, and `files`. If the learner's `index.html` is older than the skill's template, the new one joins the publish set (`page_upgraded`). It starts from the ledger as it was before this round (a settings change made earlier in the same job is kept), so it can be run again with the same result. |
-| `close --work W [--reflection J] [--session ID]` | Second save: the reflection is applied and part B goes into the session document, with the index. It continues from the current ledger: the one `save` wrote in this job, or, for a reflection given at a later session, the ledger as read; the session document then comes from the store copy (`data/sessions/<id>.json`), and the command stops if it was not read. The reflection JSON is `W/reflection.json` unless given inline. Can be run again after a correction to `B.md`. |
-| `override --work W [--scores J] [--close-gaps J] [--session ID]` | After the close: a score the learner sets themselves and a gap closed at the learner's request (the entries of `learner_scores` and `learner_closed_gaps`, §3). Writes the ledger, the session document (`learner_changes`, a "Set by the learner" addendum) and the index into the publish set. Refused while the round is unreflected (use the reflection JSON) and, for scores, for a round from before the last review |
+| `save --work W` | First save after the final feedback: the round is recorded in the ledger, the session document is written (part A assembled in the order of the round from the sealed `present` blocks, Stage 2 as sent, the answers, the questions' feedback and the final feedback), with the page file (§7) and an emptied `data/prepared.json`. Everything is found by its fixed name (§6.1); the page settings given at the start are applied so the mix is kept in the ledger. Prints per-topic next due, warnings, `errata_to_log`, and `files`. If the learner's `index.html` is older than the skill's template, the new one joins the publish set (`page_upgraded`). It starts from the ledger as it was before this round (a settings change made earlier in the same job is kept), so it can be run again with the same result. |
+| `close --work W [--reflection J] [--session ID]` | Second save: the reflection is applied and part B goes into the session document, with the page file. It continues from the current ledger: the one `save` wrote in this job, or, for a reflection given at a later session, the ledger as read; the session document then comes from the store copy (`data/sessions/<id>.json`), and the command stops if it was not read. The reflection JSON is `W/reflection.json` unless given inline. Can be run again after a correction to `B.md`. |
+| `override --work W [--scores J] [--close-gaps J] [--session ID]` | After the close: a score the learner sets themselves and a gap closed at the learner's request (the entries of `learner_scores` and `learner_closed_gaps`, §3). Writes the ledger, the session document (`learner_changes`, a "Set by the learner" addendum) and the page file into the publish set. Refused while the round is unreflected (use the reflection JSON) and, for scores, for a round from before the last review |
 | `addendum --work W --md ADD.md [--session ID]` | Append later discussion to a session document (default: the last session; the document comes from the publish set or the store copy). |
 | `prepare --work W [--if-needed] [--allow-unreflected]` | Plan the next round (as of tomorrow) from the current ledger, into `W/next/plan.json`. Prints counts only, or `"prepare": false` with the reason (setting off, reflection pending, or — with `--if-needed` — a usable round is already prepared in the store). `--allow-unreflected` plans although the last session has no reflection yet (the scheduled task uses it). |
 | `finish-prepare --work W [--revised] [--no-evidence]` | After the checkers: finish preparing the round planned in `W/next/plan.json` and drafted in `W/next`. First lints it against the rulebook (`standards.md`, "The lint"). **Blocking**: the key headers of the sealed files against the plan, as `keys --plan` checks them, and the kits and their sections (rule 8); a problem is an error (exit 2, nothing stashed) that lists every one by file, key, field or section, whatever the evidence says and also with `--no-evidence` or `--revised`. **Judgement calls** (an abbreviation that looks undefined, rule 5; time anchors that look mixed, rule 6): counted in `lint` (`abbreviations`, `time_anchors`, `where` by file, `details`: the path of `W/next/lint.md`, where the findings are written for the author and never printed). Then reads the last two lines of each evidence file (`Checked: <date>, <n> claims, <n> not verified` and `Keys contradicted: <n>`, `evidence_check.md` §4) for every sealed part the round has, and prints counts and file names only: `evidence` (keys contradicted per file), `contradicted` (the total), `not_verified` (per file: `claims`, `not_verified`, and `untried`, the "not verified" blocks without a `Tried:` line; `not_verified` is the larger of the line's number and the blocks so marked), `not_verified_total`, `claims_total`, `recheck` (the evidence files that go back to their checker: more than a third of the file's claims not verified, or any `untried`), `revise` and `stashed`. Nothing contradicted, no judgement call and no file to recheck → the round is packed and joins the publish set as `data/prepared.json` (§8) in the same command. Otherwise → `"stashed": false` and a `next` line: the checker retries the files in `recheck` once, then the author revises once (`"revise": true` when a key is contradicted or the lint made a judgement call; after a retry it also carries what was confirmed into the kits), and the command is run again with `--revised`, which stashes; what is still found is then listed under `warnings` ("accepted after one revision: …", "accepted after one retry: … n of m claims not verified"). An evidence file that is missing, empty or without either count line in that form (also one that counts no claims, or more not verified than claims) is an error (exit 2, nothing stashed), never a count of zero. `--no-evidence` is for a session that runs no checker: the round is stashed without evidence files, so the sources are checked at the session; the lint runs all the same. The first part's sealed file must be there; a missing case is a warning (it is then written at the next session). |
@@ -483,18 +483,18 @@ order with the ledger last) and `publish`, the path of the manifest `W/publish.j
 | `testing-note --work W --feedback J` | Testing mode: the learner's quick feedback and `W/verify.json`, as `data/testing/<id>.json` for this job's round. |
 | `stats --work W` | Review figures: period, previous period, all time; gaps, calibration, teaching points unchecked, blind spots. Writes nothing. |
 | `review --work W --review REVIEW.json` | Record a review; closes the period. |
-| `review-doc --work W --md REPORT.md [--headline H] [--date D] [--title T]` | A review report as `data/reviews/<date>.json`, added to the index. |
+| `review-doc --work W --md REPORT.md [--headline H] [--date D] [--title T]` | A review report as `data/reviews/<date>.json`, listed in the page file. |
 | `snooze --work W [--days 7]` | Postpone a due review. Keeps the prepared round. |
-| `settings --work W [--config J] [--profile J] [--blueprint FILE]` | Change settings: the changed ledger, the index and the page if it is out of date go into the publish set, with an emptied `data/prepared.json` when the change can alter a round; `prepared` says whether the prepared round was kept and why (§8). A change to `mcqs`, `focused` or `case` is checked (at least one item) and supersedes any older page setting; a refused change writes nothing. |
+| `settings --work W [--config J] [--profile J] [--blueprint FILE]` | Change settings: the changed ledger, the page file and the page if it is out of date go into the publish set, with an emptied `data/prepared.json` when the change can alter a round; `prepared` says whether the prepared round was kept and why (§8). A change to `mcqs`, `focused` or `case` is checked (at least one item) and supersedes any older page setting; a refused change writes nothing. Prints `round`: the mix in force in words and its `estimated_minutes`. |
 | `theme --work W [--set DOMAIN \| --another]` | The learner changes the theme of the block (§4.1): `--set` a domain by id or name, `--another` the next proposal. Prints `block`, `was`, `say` and, like `settings`, the `files` to publish. Alone: the block, the proposal and the domains to choose from; writes nothing. |
-| `init --work W --profile J --config J --blueprint FILE [--start-over]` | Setup: the first ledger, its index and the page, into the publish set. `W` needs no store yet. In a work folder opened on a store that already holds a ledger it stops unless `--start-over` is given. |
+| `init --work W --profile J --config J --blueprint FILE [--start-over]` | Setup: the first ledger, its page file and the page, into the publish set. Prints `round` (the mix in words and its `estimated_minutes`) to confirm the mix with. `W` needs no store yet. In a work folder opened on a store that already holds a ledger it stops unless `--start-over` is given. |
 
 Maintenance tools, outside the protocol; they take their own files and folders:
 
 | Command | Use |
 |---|---|
 | `import EXPORT.json --out-dir D` | A page export into the file layout (`store.md` §6, a damaged ledger). |
-| `reindex ROOT` | Rebuild `ROOT/data/index.json` from the session and review files and the ledger. |
+| `rebuild-page ROOT` | Rebuild `ROOT/data/page.json` (§7) from the session and review files and the ledger of a folder in the store's layout; `reindex` is its old name and still works. |
 | `blueprint-md FILE --out BP.json` | Convert a Markdown blueprint. |
 | `validate STATE` (or `validate --work W`) | Structural check. |
 
@@ -523,14 +523,68 @@ One job is worked on in one scratch folder, and every file has a fixed name ther
 | `earlier/<n>/` | `open`, `start`: the files of an earlier job in the same folder, set aside | nobody |
 
 The **current ledger** of a job is the one in the publish set, or the ledger as read while
-nothing has been written. Any other store file (the index, the page, a session document, the
+nothing has been written. Any other store file (the page file, the page, a session document, the
 prepared round) is looked up in the publish set first, then in the store copy. The write order
-of the publish set is: session, review and testing files, then `data/index.json`, `index.html`,
+of the publish set is: session, review and testing files, then `data/page.json`, `index.html`,
 `data/prepared.json`, and `data/state.json` last.
 
 A `<!-- present: stage2 -->` block in a sealed file is used when there is no `stage2.md`.
 
-## 7. Page settings (`cme/prefs`)
+## 7. The page: its file (`data/page.json`) and its settings (`cme/prefs`)
+
+The page renders one file, the **page file**, which `cme.py` writes from the ledger with every
+command that writes the ledger (`save`, `close`, `override`, `settings`, `theme`, `review`,
+`snooze`, `init`) and with `review-doc`. It holds exactly what the page may show, so the
+blinding of the page is decided in `cme.py` (`page_doc`) and tested there: never an open gap,
+a topic's due date, a topic not yet tested, an active drill, the reason for a theme or
+anything of the prepared round. The page reads nothing else of the store except the session
+and review documents the learner opens, and the ledger when the learner exports.
+
+```json
+{"schema": 1, "page_version": "5.1.0", "gen": 14, "updated": "2026-11-20",
+ "who": {"name": null, "role": "Consultant", "specialty": "Internal/hospital medicine", "subspecialty": null, "practice": []},
+ "totals": {"topics": 9, "mean_mastery": 3.8, "since": "2026-10-01", "sessions": 4, "mean_score": 3.6},
+ "sessions": [{"id": "S0004", "date": "2026-11-20", "title": "…", "summary": "…", "tags": [], "topics": ["GI-06"],
+               "score": 3.5, "minutes": 38, "format": "unfolding", "drill": null, "reflected": true}],
+ "topics": [{"id": "GI-06", "label": "…", "mastery": 4, "last": "2026-11-20", "calibration": "aligned"}],
+ "round": {"mix": {"mcqs": 3, "focused": 0, "case": true}, "set_at": "2026-10-08T09:12:00Z", "minutes": 40,
+           "minutes_per": {"mcq": 5, "focused": 10, "case": 25}, "limits": {"mcqs": [0, 10], "focused": [0, 6]},
+           "time_hint": null},
+ "block": {"theme": "CARD", "name": "Cardiology", "done": 4, "length": 12},
+ "reviews": [{"date": "2026-11-01", "title": "…", "headline": "…"}], "next_review": "2026-12-13",
+ "settings": {"session_length": 20, "per_week": 3, "region": "Iceland/Europe", "units": {"labs": "SI", "gases": "mmHg"},
+              "case_style": "unfolding", "order": "mcqs_first", "feedback": "detailed", "coding_line": true,
+              "review_every_days": 42, "reminders": false, "emphasis": {}, "self_ratings": {},
+              "level": null, "aim": null, "reading": null, "listening": null}}
+```
+
+- `sessions` (newest first) and `reviews` list the past; a session's `url` is there when its
+  transcript is kept elsewhere. The ledger drops old sessions (§5), so these two lists are
+  carried on from the page file as it was read, and the ledger is the authority on `score`,
+  `minutes` and `reflected` for the sessions it still holds. A page file that is missing or
+  unreadable is built from the ledger alone (`store.md` §6; `rebuild-page` reads the session
+  files); a store from before 5.1 has `data/index.json`, whose lists are taken over once.
+- `topics`: only topics already tested, most recently tested first, with the result and the
+  date of the last test. A topic that has a gap but was never tested is not listed.
+- `round`: the mix in force and when it was set (`set_at` is `config.round_set_at`, the `base`
+  of a page setting, below), the estimate for it (`minutes`), the minutes one more item costs
+  (`minutes_per`, the case at the format the next round's case takes) and the limits of the
+  steppers. The estimates are `MINUTES_PER` in `cme.py`: 5 minutes per MCQ, 10 per focused
+  question, 25 for an unfolding case and 15 for a one-step one, feedback included. The page
+  has no figures of its own.
+- `block`: the theme (visible by ADR 0003) and how many of its rounds are done; `totals.since`
+  and `totals.sessions` are the current review period's; `next_review` is when the next
+  progress review is due.
+- Empty until their issues fill them: `settings.level` and `settings.aim` (each `{"label",
+  "text"}`: where the learner is and is aiming, #55), `round.time_hint` (a sentence on the
+  learner's own pace, #47), `settings.reading` and `settings.listening` (#51). The page shows
+  each once it is not null.
+
+The names in the page file are the page's own, not the ledger's: the page knows no ledger
+field. `schema` changes when a page would misread the file; `page_version` is the
+`PAGE_VERSION` of the engine that wrote it.
+
+### 7.1 Page settings (`cme/prefs`)
 
 The page's Settings tab lets the learner switch MCQs, focused questions and the case on or off
 and set the counts. The page cannot rewrite the ledger, so it writes one small document of its
@@ -540,7 +594,7 @@ own:
 {"round": {"mcqs": 2, "focused": 1, "case": true}, "base": "2026-10-08T09:12:00Z", "updated": "2026-11-06T21:40:12.512Z"}
 ```
 
-`base` is the ledger's `config.round_set_at` that the page saw. The learner's latest explicit
+`base` is the ledger's `config.round_set_at` that the page saw (`round.set_at` in the page file). The learner's latest explicit
 choice wins. `start` and `save` apply the document (and `prepare` plans with it, without
 writing it to the ledger):
 
@@ -607,7 +661,7 @@ it alone for one round):
 - none of its topics was tested today.
 
 **Page mix against prepared mix.** The mix in force is the ledger's after the page's document
-(§7) has been applied, whether in this `start` or earlier. When the prepared round was written
+(§7.1) has been applied, whether in this `start` or earlier. When the prepared round was written
 for another mix, the learner's latest choice wins: the prepared round is set aside
 (`prepared.why`: "the round mix changed"), the round is planned for the mix in force, and
 `start` prints `round_mix`: `used`, `prepared` (the two mixes), `source` (`page` when this

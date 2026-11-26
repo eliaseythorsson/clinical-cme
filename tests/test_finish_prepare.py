@@ -96,7 +96,7 @@ def test_prepare_and_finish_prepare_follow_the_current_ledger_without_being_give
         nxt.write(os.path.join("next", name), text)
     _, done = nxt.check().finish()
     assert done["stashed"] is True and done["gen"] == changed["gen"]
-    assert [f["as"] for f in done["files"]] == ["data/index.json", "data/prepared.json", "data/state.json"]
+    assert [f["as"] for f in done["files"]] == ["data/page.json", "data/prepared.json", "data/state.json"]
     assert nxt.read_json("publish", "data", "prepared.json")["gen"] == changed["gen"]
     # neither command has a place for a ledger path
     for cmd in ("prepare", "finish-prepare"):
@@ -458,7 +458,7 @@ def test_a_case_that_was_not_written_needs_no_header(nxt):
 
 @pytest.fixture
 def store(tmp_path):
-    """A work folder opened on the learner's store, which has one session in its index."""
+    """A work folder opened on the learner's store, which has one session in its page file."""
     w = Work(tmp_path)
     w.init()
     w.save_round("2026-11-01")
@@ -478,14 +478,14 @@ def test_settings_changes_the_ledger_into_the_publish_set_in_one_command(store):
     out = settings(store, "--config", '{"focused": 2}', "--profile", '{"specialty": "Geriatrics"}')
     assert out["ok"] and out["gen"] == before["gen"] + 1 and out["config"]["focused"] == 2
     assert out["specialty"] == "Geriatrics"
-    assert [f["as"] for f in out["files"]] == ["data/index.json", "data/prepared.json", "data/state.json"]
+    assert [f["as"] for f in out["files"]] == ["data/page.json", "data/prepared.json", "data/state.json"]
     assert all(f["path"].startswith(store.pub()) for f in out["files"])
     placed = store.read_json("publish", "data", "state.json")
     assert placed["config"]["focused"] == 2 and placed["profile"]["specialty"] == "Geriatrics"
     assert placed["gen"] == out["gen"]
-    # the index read with the ledger is carried over, and the prepared round is set aside
-    assert [s["id"] for s in store.read_json("publish", "data", "index.json")["sessions"]] == ["S0001"]
-    assert store.read_json("publish", "data", "index.json")["sessions"][0]["title"] == "t"
+    # the page file read with the ledger is carried over, and the prepared round is set aside
+    assert [s["id"] for s in store.read_json("publish", "data", "page.json")["sessions"]] == ["S0001"]
+    assert store.read_json("publish", "data", "page.json")["sessions"][0]["title"] == "t"
     assert store.read_json("publish", "data", "prepared.json") == {"v": 1, "empty": True}
     assert store.read_ledger() == before                    # the ledger as read is untouched
 
@@ -504,20 +504,20 @@ def test_settings_upgrades_an_old_page_read_with_the_ledger(store):
         fh.write('<meta name="cme-page-version" content="1.0.0">')
     out = settings(store, "--config", '{"testing": true}')
     assert out["page_upgraded"] == {"from": "1.0.0", "to": cme.PAGE_VERSION}
-    assert [f["as"] for f in out["files"]] == ["data/index.json", "index.html", "data/state.json"]
+    assert [f["as"] for f in out["files"]] == ["data/page.json", "index.html", "data/state.json"]
     assert os.path.isfile(store.pub("index.html"))
     again = settings(store, "--config", '{"testing": false}')
     assert "page_upgraded" not in again and "index.html" in [f["as"] for f in again["files"]]   # still to publish
 
 
-def test_settings_takes_a_blueprint_and_keeps_the_index_of_the_store(store):
-    idx = store.read_json("store", "data", "index.json")
+def test_settings_takes_a_blueprint_and_keeps_the_sessions_listed_in_the_store(store):
+    idx = store.read_json("store", "data", "page.json")
     idx["sessions"][0]["title"] = "renamed"
-    store.write(os.path.join("store", "data", "index.json"), idx)
+    store.write(os.path.join("store", "data", "page.json"), idx)
     bp = store.write("bp.md", "## Cardiology (CARD)\n- CARD-01 Chest pain\n")
     out = settings(store, "--blueprint", bp)
     assert out["ok"]
-    assert store.read_json("publish", "data", "index.json")["sessions"][0]["title"] == "renamed"
+    assert store.read_json("publish", "data", "page.json")["sessions"][0]["title"] == "renamed"
     assert store.read_json("publish", "data", "state.json")["blueprint"] == cme.blueprint_from_md(open(bp).read())
 
 

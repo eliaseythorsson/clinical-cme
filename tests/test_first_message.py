@@ -3,7 +3,7 @@
 Before the first message the assistant makes one `start` call. These tests guard what that call
 costs and what it gives: its time stays flat as sessions pile up (ledgers of 10, 40, 100 and 300
 sessions, grown from an example ledger), it never opens a session document, a review report or
-the index, and it prints everything the first message needs, so nothing else is run or read."""
+the page file, and it prints everything the first message needs, so nothing else is run or read."""
 import copy
 import datetime as dt
 import json
@@ -46,19 +46,19 @@ def grow(st, last, upto, docs):
         cme.record_round(st, copy.deepcopy(rnd), last)
         cme.reflect_round(st, examples.reflection_for(rnd), last)
         entry = st["sessions"][-1]
-        docs[entry["id"]] = dict(cme.index_entry(entry), transcript=TRANSCRIPT, closing="Reflection verbatim")
+        docs[entry["id"]] = dict(cme.page_session(entry), transcript=TRANSCRIPT, closing="Reflection verbatim")
     return last
 
 
 def write_store(root, st, docs):
-    """A page store as a session reads it: ledger, full index, page, every session document."""
+    """A page store as a session reads it: ledger, page file, page, every session document."""
     store = os.path.join(root, "store")
     os.makedirs(os.path.join(store, "data", "sessions"))
     cme.save_json(st, os.path.join(store, "data", "state.json"))
-    idx = cme.load_index(None, st)
+    lists = cme.page_lists(None)
     for doc in docs.values():
-        cme.index_put_session(idx, doc)
-    cme.save_json(cme.finish_index(idx, st), os.path.join(store, "data", "index.json"))
+        cme.page_put_session(lists, doc)
+    cme.save_json(cme.page_doc(st, lists), os.path.join(store, "data", "page.json"))
     shutil.copy(os.path.join(SKILL, "templates", "page.html"), os.path.join(store, "index.html"))
     for sid, doc in docs.items():
         cme.save_json(doc, os.path.join(store, "data", "sessions", sid + ".json"))
@@ -86,7 +86,7 @@ def stores(tmp_path_factory):
     st = examples.load_ledger("mid_curriculum")
     last, docs, out = dt.date.fromisoformat(st["sessions"][-1]["date"]), {}, {}
     for s in st["sessions"]:
-        docs[s["id"]] = dict(cme.index_entry(s), transcript=TRANSCRIPT, closing="Reflection verbatim")
+        docs[s["id"]] = dict(cme.page_session(s), transcript=TRANSCRIPT, closing="Reflection verbatim")
     for n in SIZES:
         last = grow(st, last, n, docs)
         root = str(tmp_path_factory.mktemp("history%d" % n))
@@ -114,7 +114,7 @@ def test_the_stores_grow_with_history_and_the_ledger_stays_capped(stores):
     sizes = {}
     for n, (w, _) in stores.items():
         assert len(os.listdir(w.store("data", "sessions"))) == n
-        assert len(w.read_json("store", "data", "index.json")["sessions"]) == n
+        assert len(w.read_json("store", "data", "page.json")["sessions"]) == n
         st = w.read_ledger()
         assert len(st["sessions"]) + len(st["previous"]) == min(n, cme.CAP_SESSIONS + cme.CAP_PREVIOUS)
         sizes[n] = os.path.getsize(w.ledger)
@@ -133,7 +133,7 @@ def test_time_stays_flat_with_session_history(stores, command):
     assert took[300] < GROWTH_LIMIT * took[10], took
 
 
-def test_start_reads_no_session_document_review_or_index(stores, monkeypatch, capsys):
+def test_start_reads_no_session_document_review_or_page_file(stores, monkeypatch, capsys):
     """`start` in this process, every file it opens noted: of the store it opens the ledger and
     the prepared round, nothing else, and it never lists the sessions folder."""
     w, day = stores[300]
@@ -166,8 +166,8 @@ def test_start_does_not_need_the_session_documents_to_be_readable(stores, tmp_pa
     for name in os.listdir(w.store("data", "sessions")):
         with open(w.store("data", "sessions", name), "w", encoding="utf-8") as fh:
             fh.write("not a session document")
-    with open(w.store("data", "index.json"), "w", encoding="utf-8") as fh:
-        fh.write("not an index")
+    with open(w.store("data", "page.json"), "w", encoding="utf-8") as fh:
+        fh.write("not a page file")
     out = w.start(day)
     assert out["prepared"]["used"] is True and out["present"]
 

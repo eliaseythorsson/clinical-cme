@@ -98,7 +98,7 @@ def test_a_setting_that_cannot_change_the_round_keeps_the_prepared_round(w, flag
     before, packed = w.read_ledger(), stored_prepared(w)
     out = settings(w, flag, json.dumps({key: value}))
     assert out["prepared"]["kept"] is True and out["prepared"]["why"].startswith("kept")
-    assert names(out) == ["data/index.json", "data/state.json"]       # the prepared round is not touched
+    assert names(out) == ["data/page.json", "data/state.json"]       # the prepared round is not touched
     st = w.read_json("publish", "data", "state.json")
     assert st["config" if flag == "--config" else "profile"][key] == value
     assert st["gen"] == before["gen"] + 1 and st["content_gen"] == before["gen"] == packed["gen"]
@@ -116,7 +116,7 @@ def test_a_setting_that_can_change_the_round_sets_the_prepared_round_aside_and_s
     name = key if flag == "--config" else "profile." + key
     assert out["prepared"]["kept"] is False and out["prepared"]["changed"] == [name]
     assert out["prepared"]["why"].startswith("set aside: %s can change" % name)
-    assert names(out) == ["data/index.json", "data/prepared.json", "data/state.json"]
+    assert names(out) == ["data/page.json", "data/prepared.json", "data/state.json"]
     assert w.read_json("publish", "data", "prepared.json") == EMPTY
     st = w.read_json("publish", "data", "state.json")
     assert st["gen"] == before["gen"] + 1 and "content_gen" not in st
@@ -197,7 +197,7 @@ def test_a_real_change_is_not_forgotten_when_the_emptied_prepared_round_never_re
 def test_postponing_a_review_keeps_the_prepared_round(w):
     w.open(today=DAY)
     out = w.run_json("--today", DAY, "snooze", "--work", w.path)
-    assert names(out) == ["data/index.json", "data/state.json"]
+    assert names(out) == ["data/page.json", "data/state.json"]
     assert next_session_start(w)["prepared"]["used"] is True
 
 

@@ -2,7 +2,8 @@
 """clinical-cme v4.3.1 state engine (standard library only, Python 3.8+).
 
 The learner's scheduling memory is ONE JSON document, the ledger (state.json); each round also
-has a session document, and an index lists the sessions for the page. This script never talks
+has a session document, and the page file (data/page.json) holds exactly what the learner's
+page may show. This script never talks
 to a store or to any assistant tool: the assistant reads the learner's store into a local folder
 (the store copy; see references/store.md), opens a work folder on it, and from then on every
 command takes only that work folder, `--work W`.
@@ -28,7 +29,7 @@ A job (one work folder):
   answer  --work W --part questions|case|final|notes|reflection [--file F | --text T]
                                                   append the learner's answer to W/answers.md (default: stdin)
   present --work W --block questions|case|bank    print only the text to show the learner
-  save    --work W                                record the graded round + session doc (part A) + index,
+  save    --work W                                record the graded round + session doc (part A) + page file,
                                                   from the files in W by their fixed names. round.json names
                                                   each item's key ("key": "Q1") and holds the grading; the
                                                   rest comes from the key headers. Can be run again
@@ -68,12 +69,13 @@ Settings, review, setup (each on an open work folder):
   review-doc --work W --md REPORT.md [--headline H] [--date D] [--title T]
   snooze  --work W [--days N]
   init    --work W --profile J --config J --blueprint FILE(.json|.md) [--start-over]
-                                                  setup: the first ledger (W needs no store yet), index and page
+                                                  setup: the first ledger (W needs no store yet), page file and page
 
 Maintenance, outside the protocol (their own files and folders):
   validate STATE | validate --work W
   import  EXPORT.json --out-dir D                 page export {state, sessions, reviews} -> file layout
-  reindex ROOT                                    rebuild ROOT/data/index.json
+  rebuild-page ROOT                               rebuild ROOT/data/page.json from the session and review
+                                                  files and the ledger (`reindex` is the old name)
   blueprint-md FILE --out BP.json
 
 Add `--today YYYY-MM-DD` before the command to fix the date.
@@ -94,7 +96,7 @@ import zlib
 
 SCHEMA = 4
 SKILL_VERSION = "4.3.1"
-PAGE_VERSION = "5.0.0"   # templates/page.html carries <meta name="cme-page-version" content="5.0.0">
+PAGE_VERSION = "5.1.0"   # templates/page.html carries <meta name="cme-page-version" content="5.1.0">
 
 DEFAULT_CONFIG = {
     "session_minutes": 20,
@@ -180,8 +182,9 @@ FOCUSED_ASPECTS = ("diagnosis", "interpretation", "testing", "management", "disp
 # Drills that can be built into a mini-case (used only when the round has no full case).
 FOCUSED_DRILLS_EXCLUDED = ("bias:anchoring", "bias:search_satisficing", "art:PR", "art:DDX")
 ROUND_LIMITS = {"mcqs": (0, 10), "focused": (0, 6)}
-# Rough minutes per item, answering plus reading its feedback; used for the plan's estimate only.
-MINUTES_PER = {"mcq": 3, "focused": 5, "unfolding": 15, "discriminate": 10}
+# Rough minutes per item, answering plus reading its feedback: the plan's estimate and the one
+# the page shows (round_minutes). A one-step case ("discriminate") is shorter than an unfolding one.
+MINUTES_PER = {"mcq": 5, "focused": 10, "unfolding": 25, "discriminate": 15}
 GENERIC_WORDS = {"acute", "chronic", "disease", "disorder", "disorders", "management", "issues",
                  "inpatient", "outpatient", "basics", "common", "general", "emergencies",
                  "emergency", "workup", "assessment", "syndrome", "therapy", "treatment",
@@ -982,6 +985,33 @@ def block_mix(shorts, n):
     return {name: mix[i] for i, (name, _) in enumerate(BLOCK_SHARES)}
 
 
+def next_case_format(st):
+    """The format the next round's case takes: the setting, alternating when asked to, and one
+    step when the session is too short for an unfolding case."""
+    cfg = st.get("config") or {}
+    fmt = cfg.get("case_format", "unfolding")
+    if fmt == "alternate":
+        last_fmt = next((s.get("format") for s in reversed(st.get("sessions") or []) if s.get("format")), None)
+        fmt = "discriminate" if last_fmt == "unfolding" else "unfolding"
+    if int(cfg.get("session_minutes", 20) or 20) <= 12 and fmt == "unfolding":
+        fmt = "discriminate"
+    return fmt
+
+
+def round_minutes(mcqs, focused, case, fmt="unfolding"):
+    """The estimate for a round of this mix, feedback included (MINUTES_PER)."""
+    return (MINUTES_PER["mcq"] * int(mcqs or 0) + MINUTES_PER["focused"] * int(focused or 0)
+            + (MINUTES_PER.get(fmt, MINUTES_PER["unfolding"]) if case else 0))
+
+
+def mix_estimate(st):
+    """(the round mix in force, the minutes a round of it is estimated to take)."""
+    cfg = st.get("config") or {}
+    mix = {"mcqs": int(cfg.get("mcqs", DEFAULT_CONFIG["mcqs"]) or 0), "focused": int(cfg.get("focused", 0) or 0),
+           "case": bool(cfg.get("case", True))}
+    return mix, round_minutes(mix["mcqs"], mix["focused"], mix["case"], next_case_format(st))
+
+
 def all_sessions_for_novelty(state):
     """(cases, stems) from current and previous sessions, oldest first."""
     cases, stems = [], []
@@ -1348,12 +1378,7 @@ def plan_round(st, args, today):
         if item:
             chosen.append(item); used_topics.add(item.get("topic")); used_domains.append(item["domain"])
 
-    fmt = cfg.get("case_format", "unfolding")
-    if fmt == "alternate":
-        last_fmt = next((s.get("format") for s in reversed(log) if s.get("format")), None)
-        fmt = "discriminate" if last_fmt == "unfolding" else "unfolding"
-    if int(cfg.get("session_minutes", 20) or 20) <= 12 and fmt == "unfolding":
-        fmt = "discriminate"
+    fmt = next_case_format(st)
 
     drill = None
     active = [d for d in st.get("drills") or [] if not parse_date(d.get("until")) or parse_date(d["until"]) >= today]
@@ -1407,8 +1432,7 @@ def plan_round(st, args, today):
     by_slot = {k: [c for c in chosen if c["slot"] == k] for k in ("case", "mcq", "focused")}
     present = (by_slot["mcq"] + by_slot["focused"] + by_slot["case"] if order != "case_first"
                else by_slot["case"] + by_slot["mcq"] + by_slot["focused"])
-    est = (MINUTES_PER["mcq"] * len(by_slot["mcq"]) + MINUTES_PER["focused"] * len(by_slot["focused"])
-           + (MINUTES_PER[fmt] if by_slot["case"] else 0))
+    est = round_minutes(len(by_slot["mcq"]), len(by_slot["focused"]), len(by_slot["case"]), fmt)
     plan = {
         "ok": True, "date": iso(today), "session_id": st.get("next_id"),
         "case_format": fmt if by_slot["case"] else None,
@@ -2095,7 +2119,7 @@ def learner_changes_md(changes, heading):
 def cmd_override(args):
     """After the close: the learner sets a score of a closed round themselves (--scores) or
     closes a gap by request (--close-gaps). The ledger, the session document (its
-    `learner_changes` and a line in the addendum) and the index go into the publish set.
+    `learner_changes` and a line in the addendum) and the page file go into the publish set.
     Before the close both belong in the reflection JSON (`learner_scores`,
     `learner_closed_gaps`), which `close` handles the same way."""
     today = today_from(args)
@@ -2462,7 +2486,7 @@ def settings_in_effect(st, section):
 
 
 def cmd_settings(args):
-    """Change settings: the changed ledger goes into the publish set, with the index and the
+    """Change settings: the changed ledger goes into the publish set, with the page file and the
     page if it is out of date, so a settings change is one command. A change that can alter
     what a round contains also empties the prepared round; one that cannot (CONTENT_NEUTRAL_*)
     keeps it. `prepared` in the output says which, and why."""
@@ -2501,6 +2525,8 @@ def cmd_settings(args):
     st["updated"] = iso(today)
     out = {"ok": True, "gen": st["gen"], "config": st["config"], "review": st["review"], **guideline_context(st),
            "listening": listening_status(st)}
+    mix, minutes = mix_estimate(st)
+    out["round"] = {"mix": mix_text(mix), "estimated_minutes": minutes}      # what to confirm a new mix with
     out["prepared"] = ({"kept": False, "changed": affects,
                         "why": "set aside: %s can change what a round contains, so the next round is "
                                "planned and written at its start" % ", ".join(affects)}
@@ -2562,7 +2588,7 @@ def read_blueprint(path):
 
 def cmd_init(args):
     """Setup: the first ledger of a new learner, written into the publish set of the work folder
-    with an empty index, no prepared round and the page. The work folder needs no store yet; if
+    with its page file, no prepared round and the page. The work folder needs no store yet; if
     one was read into it with `open` and already holds a ledger, --start-over is needed."""
     today = today_from(args)
     work = args.work
@@ -2587,14 +2613,16 @@ def cmd_init(args):
     if not info:
         info = {"store": None, "state": None, "version": None, "prefs": None}
     info.update({"session_id": st["next_id"], "started": iso(today)})
-    if args.start_over:         # nothing of the old ledger is carried on: not its index, not this job's files
+    if args.start_over:         # nothing of the old ledger is carried on: not its page file, not this job's files
         info["state"] = None
-        for rel in (STATE_PATH, INDEX_PATH):
+        for rel in (STATE_PATH, PAGE_PATH):
             if in_work(work, os.path.join(PUBLISH_DIR, rel)):
                 os.remove(os.path.join(work, PUBLISH_DIR, rel))
     save_json(info, os.path.join(work, WORK_FILE))
     out = {"ok": True, "gen": st["gen"], "domains": list(st["blueprint"]), "topics": len(bp_topics(st))}
-    path = publish_ledger(work, info, st, out, empty_prepared=True, fresh_index=bool(args.start_over))
+    mix, minutes = mix_estimate(st)
+    out["round"] = {"mix": mix_text(mix), "estimated_minutes": minutes}
+    path = publish_ledger(work, info, st, out, empty_prepared=True, fresh_page=bool(args.start_over))
     if not store_file(work, info, "index.html"):        # a new store: the page goes with the first ledger
         publish_text(work, "index.html", read_text(PAGE_TEMPLATE))
     out.update({"out": path, "bytes": os.path.getsize(path), "work": os.path.abspath(work)})
@@ -2640,8 +2668,10 @@ def cmd_validate(args):
 
 # Every store keeps the same documents, at these relative paths.
 STATE_PATH = "data/state.json"
-INDEX_PATH = "data/index.json"
+PAGE_PATH = "data/page.json"             # the page file: exactly what the page may show (see page_doc)
+OLD_INDEX_PATH = "data/index.json"       # what the page read before page 5.1; read once more, to migrate
 PREPARED_PATH = "data/prepared.json"     # the next round's short questions, drafted ahead (see cmd_prepare)
+PAGE_SCHEMA = 1
 
 
 def session_path(sid):
@@ -2652,71 +2682,142 @@ def review_path(date):
     return "data/reviews/%s.json" % date
 
 
-INDEX_SESSION_KEYS = ("id", "date", "title", "summary", "tags", "topics", "score", "format", "drill", "reflected")
+# ---------------------------------------------------------------- the page file
+#
+# data/page.json is all the page reads of the store, apart from the session and review
+# documents it opens when asked. It is rebuilt from the ledger on every write, so the blinding
+# of the page is decided here and tested in Python: past sessions, topics already tested, the
+# round mix, the block's theme, reviews and settings. Never an open gap, a topic's due date, a
+# topic not yet tested, an active drill, the reason for a theme or the prepared round.
+
+PAGE_SESSION_KEYS = ("id", "date", "title", "summary", "tags", "topics", "score", "minutes", "format", "drill",
+                     "reflected")
 
 
-def index_entry(doc):
-    e = {k: doc.get(k) for k in INDEX_SESSION_KEYS}
+def page_session(doc):
+    """What the page lists of one past session (from its session document or the ledger)."""
+    e = {k: doc.get(k) for k in PAGE_SESSION_KEYS}
+    e["tags"], e["topics"] = list(e["tags"] or []), list(e["topics"] or [])
+    if isinstance(e["drill"], dict):
+        e["drill"] = e["drill"].get("code")
     if doc.get("url"):
         e["url"] = doc["url"]
     return e
 
 
-def load_index(path, state=None):
-    """Read the index if present, then add any session the state knows that the index lacks.
-    The index is rebuildable, so a missing or damaged one never loses log entries."""
-    idx = None
-    if path and os.path.exists(path):
+def page_lists(path, old_index=None):
+    """The lists a page file carries from one write to the next, {"sessions", "reviews"}: from
+    the page file at `path`, else from the index older versions kept (`old_index`), else empty.
+    The ledger drops old sessions (§5 of the schema), so these lists are the only place their
+    entries stay; a missing or damaged file loses nothing the ledger or `rebuild-page` cannot
+    put back."""
+    for p in (path, old_index):
+        if not p or not os.path.exists(p):
+            continue
         try:
-            with open(path, "r", encoding="utf-8") as fh:
-                idx = json.load(fh)
+            with open(p, "r", encoding="utf-8") as fh:
+                doc = json.load(fh)
         except (OSError, json.JSONDecodeError):
-            idx = None
-    if not isinstance(idx, dict):
-        idx = {}
-    idx.setdefault("schema", 1)
-    idx.setdefault("sessions", [])
-    idx.setdefault("reviews", [])
-    return add_state_to_index(idx, state)
+            continue
+        if isinstance(doc, dict) and isinstance(doc.get("sessions"), list):
+            reviews = doc.get("reviews")
+            return {"sessions": [page_session(e) for e in doc["sessions"] if isinstance(e, dict) and e.get("id")],
+                    "reviews": [{k: r.get(k) for k in ("date", "title", "headline")}
+                                for r in (reviews if isinstance(reviews, list) else [])
+                                if isinstance(r, dict) and r.get("date")]}
+    return {"sessions": [], "reviews": []}
 
 
-def add_state_to_index(idx, state):
-    if state:
-        have = {e.get("id") for e in idx["sessions"]}
-        for s in (state.get("previous") or []) + (state.get("sessions") or []):
-            if s.get("id") and s["id"] not in have:
-                d = s.get("drill")
-                idx["sessions"].append({"id": s["id"], "date": s.get("date"), "title": s.get("title"),
-                                        "summary": s.get("summary"), "tags": s.get("tags") or [],
-                                        "topics": s.get("topics") or [], "score": s.get("score"),
-                                        "format": s.get("format"),
-                                        "drill": d.get("code") if isinstance(d, dict) else d,
-                                        "reflected": s.get("id") != state.get("unreflected")})
-        haver = {r.get("date") for r in idx["reviews"]}
-        for r in state.get("reviews") or []:
-            if r.get("date") and r["date"] not in haver and r.get("doc"):
-                idx["reviews"].append({"date": r["date"], "title": "CME progress review — %s" % r["date"],
-                                       "headline": r.get("headline")})
-    return idx
+def page_put_session(lists, doc):
+    e = page_session(doc)
+    old = next((x for x in lists["sessions"] if x.get("id") == e["id"]), None)
+    if old and e.get("minutes") is None:
+        e["minutes"] = old.get("minutes")
+    lists["sessions"] = [x for x in lists["sessions"] if x.get("id") != e["id"]] + [e]
 
 
-def index_put_session(idx, doc):
-    e = index_entry(doc)
-    idx["sessions"] = [x for x in idx["sessions"] if x.get("id") != e["id"]] + [e]
-    idx["sessions"].sort(key=lambda x: (x.get("date") or "", id_num(x.get("id"))))
-
-
-def index_put_review(idx, doc):
+def page_put_review(lists, doc):
     e = {"date": doc.get("date"), "title": doc.get("title"), "headline": doc.get("headline")}
-    idx["reviews"] = [x for x in idx["reviews"] if x.get("date") != e["date"]] + [e]
-    idx["reviews"].sort(key=lambda x: x.get("date") or "")
+    lists["reviews"] = [x for x in lists["reviews"] if x.get("date") != e["date"]] + [e]
 
 
-def finish_index(idx, state):
-    idx["gen"] = state.get("gen")
-    idx["updated"] = state.get("updated")
-    idx["next_id"] = state.get("next_id")
-    return idx
+def page_doc(st, lists=None):
+    """The page file for ledger `st`: what the page may show and nothing else. `lists` are the
+    session and review entries carried on (page_lists); the ledger adds the sessions and reviews
+    they lack and is the authority on scores, minutes and whether a round was reflected on."""
+    cfg, prof = st.get("config") or {}, st.get("profile") or {}
+    lists = lists or {"sessions": [], "reviews": []}
+    sessions = {e["id"]: dict(e) for e in lists["sessions"]}
+    for s in (st.get("previous") or []) + (st.get("sessions") or []):
+        if not s.get("id"):
+            continue
+        e = sessions.setdefault(s["id"], page_session(s))
+        if isinstance(s.get("minutes"), (int, float)):
+            e["minutes"] = s["minutes"]
+        if isinstance(s.get("score"), (int, float)):
+            e["score"] = s["score"]
+        e["reflected"] = s["id"] != st.get("unreflected")
+    sessions = sorted(sessions.values(), key=lambda x: (x.get("date") or "", id_num(x.get("id"))), reverse=True)
+    reviews = {r["date"]: dict(r) for r in lists["reviews"]}
+    for r in st.get("reviews") or []:
+        if r.get("date") and r.get("doc") and r["date"] not in reviews:
+            reviews[r["date"]] = {"date": r["date"], "title": "CME progress review — %s" % r["date"],
+                                  "headline": r.get("headline")}
+    # topics already tested, most recently tested first: never the due date, never an order by it
+    topics = [{"id": tid, "label": t.get("label"), "mastery": t.get("mastery"), "last": t.get("last"),
+               "calibration": t.get("calibration")}
+              for tid, t in (st.get("topics") or {}).items() if t.get("last") or t.get("mastery") is not None]
+    topics.sort(key=lambda t: t["id"])
+    topics.sort(key=lambda t: t["last"] or "", reverse=True)
+    mastery = [t["mastery"] for t in topics if isinstance(t["mastery"], (int, float))]
+    period = [s.get("score") for s in st.get("sessions") or []]
+    scores = [x for x in period if isinstance(x, (int, float))]
+    mix, minutes = mix_estimate(st)
+    block = st.get("block")
+    if isinstance(block, dict) and block.get("theme"):
+        length = int(block.get("length") or BLOCK_LENGTH)
+        block = {"theme": block["theme"], "name": domain_name(st, block["theme"]),
+                 "done": min(int(block.get("round") or 0), length), "length": length}
+    else:
+        block = None
+    ratings = {}
+    for d, r in (prof.get("domain_self_ratings") or {}).items():
+        ratings[d] = r.get("rating") if isinstance(r, dict) else r
+    review = st.get("review") or {}
+    context = guideline_context(st)
+    return {
+        "schema": PAGE_SCHEMA, "page_version": PAGE_VERSION, "gen": st.get("gen"), "updated": st.get("updated"),
+        "who": {"name": prof.get("display_name"), "role": prof.get("role"), "specialty": context["specialty"],
+                "subspecialty": prof.get("subspecialty"), "practice": list(prof.get("practice_setting") or [])},
+        "totals": {"topics": len(topics),
+                   "mean_mastery": round(sum(mastery) / len(mastery), 1) if mastery else None,
+                   "since": review.get("period_start"), "sessions": len(period),
+                   "mean_score": round(sum(scores) / len(scores), 1) if scores else None},
+        "sessions": sessions,
+        "topics": topics,
+        # the mix in force and what it costs: the page shows `minutes`, and prices a mix the
+        # learner is choosing with `minutes_per` (the case already at the next round's format)
+        "round": {"mix": mix, "set_at": cfg.get("round_set_at"),
+                  "minutes": minutes,
+                  "minutes_per": {"mcq": MINUTES_PER["mcq"], "focused": MINUTES_PER["focused"],
+                                  "case": MINUTES_PER[next_case_format(st)]},
+                  "limits": {k: list(v) for k, v in ROUND_LIMITS.items()},
+                  "time_hint": None},                    # issue #47: the learner's own pace
+        "block": block,
+        "reviews": sorted(reviews.values(), key=lambda r: r.get("date") or "", reverse=True),
+        "next_review": review.get("next_due"),
+        "settings": {
+            "session_length": cfg.get("session_minutes"), "per_week": cfg.get("target_sessions_per_week"),
+            "region": context["guideline_region"],
+            "units": {"labs": cfg.get("lab_units"), "gases": cfg.get("blood_gas_units")},
+            "case_style": cfg.get("case_format"), "order": cfg.get("item_order"),
+            "feedback": cfg.get("feedback_depth"), "coding_line": bool(cfg.get("show_coding", True)),
+            "review_every_days": cfg.get("review_interval_days"), "reminders": bool(cfg.get("reminders")),
+            "emphasis": dict(prof.get("domain_emphasis") or {}), "self_ratings": ratings,
+            "level": None, "aim": None,                  # issue #55: {"label", "text"} each
+            "reading": None, "listening": None,          # issue #51
+        },
+    }
 
 
 def status_dict(st, path, today):
@@ -4119,10 +4220,10 @@ ROUND_FILES = PREPARED_FILES + (ANSWERS_FILE, STAGE2_FILE, FEEDBACK_QUESTIONS_FI
 JOB_FILES = ROUND_FILES + (WORK_FILE, PUBLISH_FILE, PUBLISH_DIR)
 REFLECTION_HEADING_RE = re.compile(r"^###\s+Reflection\b", re.M)
 ANSWER_MARK_RE = re.compile(r"<!--\s*/?\s*answers\b")
-# The write order of the publish set: log entries before the index that lists them, the
+# The write order of the publish set: log entries before the page file that lists them, the
 # ledger last, so an interrupted write never leaves a ledger that points at a missing file.
 PUBLISH_FIRST = ("data/sessions/", "data/reviews/", "data/testing/")
-PUBLISH_LAST = (INDEX_PATH, "index.html", PREPARED_PATH, STATE_PATH)
+PUBLISH_LAST = (PAGE_PATH, "index.html", PREPARED_PATH, STATE_PATH)
 
 
 def read_text(path):
@@ -4235,20 +4336,28 @@ def published(work, info, out):
     return out
 
 
-def publish_ledger(work, info, st, out, session=None, review=None, empty_prepared=False, fresh_index=False):
-    """Put the ledger `st` into the publish set with what goes with it: the index (with a new
+def publish_page(work, info, st, session=None, review=None, fresh=False):
+    """Put the page file for the ledger `st` into the publish set (with a new or changed session
+    or review document, which is put there too). The lists of past sessions and reviews are
+    carried on from the page file this job has (`fresh`: from nothing but the ledger)."""
+    lists = page_lists(None if fresh else store_file(work, info, PAGE_PATH),
+                       None if fresh else store_file(work, info, OLD_INDEX_PATH))
+    if session:
+        publish_json(work, session_path(session["id"]), session)
+        page_put_session(lists, session)
+    if review:
+        publish_json(work, review_path(review["date"]), review)
+        page_put_review(lists, review)
+    return publish_json(work, PAGE_PATH, page_doc(st, lists))
+
+
+def publish_ledger(work, info, st, out, session=None, review=None, empty_prepared=False, fresh_page=False):
+    """Put the ledger `st` into the publish set with what goes with it: the page file (with a new
     session or review document, which is put there too), an emptied prepared round when the
     change makes the prepared one unusable, and the page if the learner's is out of date.
     Notes `page_upgraded` and warnings in `out`; returns the ledger's local path."""
     path = publish_json(work, STATE_PATH, st)
-    idx = load_index(None if fresh_index else store_file(work, info, INDEX_PATH), st)
-    if session:
-        publish_json(work, session_path(session["id"]), session)
-        index_put_session(idx, session)
-    if review:
-        publish_json(work, review_path(review["date"]), review)
-        index_put_review(idx, review)
-    publish_json(work, INDEX_PATH, finish_index(idx, st))
+    publish_page(work, info, st, session=session, review=review, fresh=fresh_page)
     if empty_prepared:
         publish_json(work, PREPARED_PATH, {"v": 1, "empty": True})
     warnings = []
@@ -4319,7 +4428,7 @@ def open_work(work, store, version, prefs, today, reread=False):
             "Read the store into another folder, for example <work>/store" % inside)
     extra = {"work": os.path.abspath(work), "store": store, "store_version": version,
              "store_layout": "data" if ledger.endswith(os.path.join("data", "state.json")) else "flat",
-             "store_files": [rel for rel in (STATE_PATH, INDEX_PATH, PREPARED_PATH, "index.html")
+             "store_files": [rel for rel in (STATE_PATH, PAGE_PATH, OLD_INDEX_PATH, PREPARED_PATH, "index.html")
                              if store_copy_file(store, rel)]}
     earlier = in_work(work, os.path.join(PUBLISH_DIR, *STATE_PATH.split("/")))
     earlier_gen = None
@@ -4397,7 +4506,7 @@ def cmd_answer(args):
 
 def cmd_save(args):
     """First save after the feedback: record the round, the session document (part A) and the
-    index, in one go, into the publish set. Everything is found in the work folder by its fixed
+    page file, in one go, into the publish set. Everything is found in the work folder by its fixed
     name. It starts from the ledger as it was before this round: the current ledger (so a
     settings change made earlier in the same job is kept), or, when that already holds this
     round, the ledger the first run started from; so it can be run again with the same result."""
@@ -4472,7 +4581,7 @@ def cmd_save(args):
 
 def cmd_close(args):
     """Second save after the reflection: apply the reflection, add part B to the session
-    document, update the index, all into the publish set. It continues from the current ledger
+    document, update the page file, all into the publish set. It continues from the current ledger
     (what `save` wrote in this job, or the ledger as read when the reflection is given at a
     later session) and reads reflection.json, B.md and the reflection added with `answer` from
     the work folder; the session document comes from the publish set or the store copy."""
@@ -4623,29 +4732,33 @@ def layout_file(root, rel, obj):
     return {"as": rel, "path": os.path.abspath(path)}
 
 
-def cmd_reindex(args):
-    """Rebuild data/index.json from a folder holding data/sessions and data/reviews (and the state)."""
+def cmd_rebuild_page(args):
+    """Maintenance: rebuild data/page.json in a folder holding the store's layout, from the
+    session and review files and the ledger (the old name of this command is `reindex`). A page
+    file or an old index already there supplies the entries of sessions whose files are missing."""
     root = args.root
-    st = load_json(os.path.join(root, STATE_PATH)) if os.path.exists(os.path.join(root, STATE_PATH)) else None
-    idx = {"schema": 1, "sessions": [], "reviews": []}
+    ledger = os.path.join(root, *STATE_PATH.split("/"))
+    if not os.path.exists(ledger):
+        die("no ledger at %s: the page file is built from the ledger and the session files" % ledger)
+    st = load_json(ledger)
+    check_schema(st)
+    lists = page_lists(store_copy_file(root, PAGE_PATH), store_copy_file(root, OLD_INDEX_PATH))
     sdir = os.path.join(root, "data", "sessions")
     for fn in sorted(os.listdir(sdir)) if os.path.isdir(sdir) else []:
         if fn.endswith(".json"):
-            index_put_session(idx, load_json(os.path.join(sdir, fn)))
+            page_put_session(lists, load_json(os.path.join(sdir, fn)))
     rdir = os.path.join(root, "data", "reviews")
     for fn in sorted(os.listdir(rdir)) if os.path.isdir(rdir) else []:
         if fn.endswith(".json"):
-            index_put_review(idx, load_json(os.path.join(rdir, fn)))
-    if st:
-        add_state_to_index(idx, st)
-        finish_index(idx, st)
-    f = layout_file(root, INDEX_PATH, idx)
-    print(json.dumps({"ok": True, "files": [f], "sessions": len(idx["sessions"]), "reviews": len(idx["reviews"])}))
+            page_put_review(lists, load_json(os.path.join(rdir, fn)))
+    page = page_doc(st, lists)
+    f = layout_file(root, PAGE_PATH, page)
+    print(json.dumps({"ok": True, "files": [f], "sessions": len(page["sessions"]), "reviews": len(page["reviews"])}))
 
 
 def cmd_import(args):
     """Split a page export ({state, sessions, reviews}) into the file layout, ready to publish
-    or copy: session and review files first, the ledger last."""
+    or copy: session and review files first, then the page file, the ledger last."""
     src = load_json(args.export)
     state = src.get("state") if isinstance(src, dict) else None
     if not state:
@@ -4653,21 +4766,20 @@ def cmd_import(args):
     check_schema(state)
     os.makedirs(args.out_dir, exist_ok=True)
     files = []
-    idx = {"schema": 1, "sessions": [], "reviews": []}
+    lists = {"sessions": [], "reviews": []}
     for d in src.get("sessions") or []:
         if not d.get("id"):
             continue
         files.append(layout_file(args.out_dir, session_path(d["id"]), d))
-        index_put_session(idx, d)
+        page_put_session(lists, d)
     for r in src.get("reviews") or []:
         date = r.get("date") or r.get("id")
         if not date:
             continue
         r = dict(r, date=date)
         files.append(layout_file(args.out_dir, review_path(date), r))
-        index_put_review(idx, r)
-    add_state_to_index(idx, state)
-    files.append(layout_file(args.out_dir, INDEX_PATH, finish_index(idx, state)))
+        page_put_review(lists, r)
+    files.append(layout_file(args.out_dir, PAGE_PATH, page_doc(state, lists)))
     files.append(layout_file(args.out_dir, STATE_PATH, state))
     print(json.dumps({"ok": True, "gen": state.get("gen"), "next_id": state.get("next_id"),
                       "sessions": len(src.get("sessions") or []), "reviews": len(src.get("reviews") or []),
@@ -4675,8 +4787,8 @@ def cmd_import(args):
 
 
 def cmd_review_doc(args):
-    """Wrap a review report (Markdown) as data/reviews/<date>.json and add it to the index, both
-    into the publish set."""
+    """Wrap a review report (Markdown) as data/reviews/<date>.json and list it in the page file,
+    both into the publish set."""
     today = today_from(args)
     work, info = job(args)
     st, _ = current_ledger(work, info)
@@ -4687,10 +4799,7 @@ def cmd_review_doc(args):
     date = args.date or iso(today)
     doc = {"date": date, "title": args.title or "CME progress review — %s" % date,
            "headline": args.headline, "report": text}
-    publish_json(work, review_path(date), doc)
-    idx = load_index(store_file(work, info, INDEX_PATH), st)
-    index_put_review(idx, doc)
-    publish_json(work, INDEX_PATH, finish_index(idx, st))
+    publish_page(work, info, st, review=doc)
     print(json.dumps(published(work, info, {"ok": True, "doc": "reviews/%s" % date}), ensure_ascii=False))
 
 
@@ -4746,7 +4855,8 @@ def main(argv=None):
     s.add_argument("--blueprint", required=True); s.add_argument("--start-over", action="store_true")
     # maintenance tools, outside the protocol: they take their own files and folders
     s = command("validate", cmd_validate, work=False); s.add_argument("state", nargs="?"); s.add_argument("--work")
-    s = command("reindex", cmd_reindex, work=False); s.add_argument("root")
+    for name in ("rebuild-page", "reindex"):        # reindex: the name it had while the page read an index
+        s = command(name, cmd_rebuild_page, work=False); s.add_argument("root")
     s = command("import", cmd_import, work=False); s.add_argument("export"); s.add_argument("--out-dir", required=True)
     s = command("blueprint-md", cmd_blueprint_md, work=False); s.add_argument("file"); s.add_argument("--out", required=True)
 

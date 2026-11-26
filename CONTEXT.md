@@ -66,7 +66,7 @@ What the ledger keeps of one round: its items with topic, score, confidence and 
 _Avoid_: round JSON (for the assembled record)
 
 **Page file**:
-The file the engine writes for the page (`data/page.json`): exactly what the page may show, already blinded. The page reads nothing else from the store except the prefs it writes.
+The file the engine writes for the page (`data/page.json`): exactly what the page may show, already blinded. It is all the page renders, apart from the prefs it writes itself and the session or review document the learner opens; only Export reads the ledger.
 _Avoid_: index (it replaces `data/index.json`)
 
 **Page**:
@@ -149,6 +149,16 @@ _Avoid_: goals list
 **Rulebook**:
 The numbered standards for writing items (`references/standards.md`), the same for every learner; briefs cite its rule numbers. Contrast with settings, which are per learner.
 _Avoid_: guidelines (means clinical guidelines here)
+
+**Crux test**:
+The decisive test of an item when it is one clinicians often fail to order; its result is requested by the learner, never given in the stem (rule 7 of the rulebook).
+_Avoid_: key test, special test
+
+**Glossary line**:
+The one line "Abbreviations: …" that opens a feedback message and explains the abbreviations it uses (rule 5.3). Presented items have none: there an abbreviation is spelled out at first use.
+
+**Time anchor**:
+The single point a case counts all its timings from: a named event (admission as day 0) or now, never both (rule 6).
 
 **Specialty**:
 The learner's field of practice, which sets the pitch of items and which guideline applies; asked at setup, default internal/hospital medicine.

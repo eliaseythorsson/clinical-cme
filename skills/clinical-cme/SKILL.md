@@ -141,7 +141,7 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
 
 1. **Read the store, in one parallel batch** (before it, one call listing the learner's
    artifacts to find **Clinical CME**, unless a link or folder was given): `data/state.json`,
-   `data/index.json`, `data/prepared.json` and `index.html` as saved local files, never into
+   `data/page.json`, `data/prepared.json` and `index.html` as saved local files, never into
    the conversation, noting the version read; and the page's settings document `cme/prefs`.
    All but the ledger may be missing. No store → ask once (`store.md` §3) or `onboarding.md`.
 2. **One shell call**: copy the saved files into `<work>/store/` and run `python3 cme.py start
@@ -180,9 +180,9 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    now (`evidence_check.md` §5). With one, search only for something the answers raise.
 2. **Grade and code** the short questions against the evidence, using the key and the kit as
    the author's view (`feedback_guide.md` §2 part 1; `analysis_framework.md` §1).
-3. **Send the questions' feedback** (reveal of these items → MCQs → focused questions; no gap
-   summary and no reflection prompt yet; nothing that touches the case; it ends "The case
-   follows."), and **straight after it the case**, exactly as printed.
+3. **Send the questions' feedback** (glossary line, rule 5.3 → reveal of these items → MCQs →
+   focused questions; no gap summary or reflection prompt yet; nothing that touches the case;
+   it ends "The case follows."), and **straight after it the case**, exactly as printed.
 4. **Behind the scenes, in one batch**: `python3 cme.py answer --work <work> --part questions`
    (the learner's message on standard input, exactly as written); write
    `<work>/feedback_questions.md` (the feedback exactly as sent) and `<work>/round.json` with
@@ -215,9 +215,9 @@ graded. If answers are missing, ask once; proceed if the learner says so.
 2. **Grade** against current guidance for the learner's region and specialty (rule 2);
    watch for transfer gaps and calibration across the whole round; code the case (ART steps
    and Revised-IDEA; an error record for every missed or partial element).
-3. **Send the final feedback** (`feedback_guide.md` §2 part 2: case reveal → case → gap summary
-   for the whole round with mastery 0–5 per topic and the coding line → up to two reading
-   pointers → with `listening.on`, a podcast episode per topic (§2 E2) → the reflection prompt).
+3. **Send the final feedback** (`feedback_guide.md` §2 part 2: glossary line → case reveal →
+   case → gap summary for the whole round with mastery 0–5 per topic and the coding line → up
+   to two reading pointers → with `listening.on`, an episode per topic → the reflection prompt).
 4. **Behind the scenes, in one batch**: file the last answers (`answer --part final`; `--part
    case` for a one-step case; change requests and anything else to log with `--part notes`);
    write `<work>/feedback.md`, the final feedback exactly as sent; complete `<work>/round.json`

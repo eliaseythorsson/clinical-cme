@@ -45,6 +45,19 @@ waiting for something to be generated.
 - Leaner sealed drafts (one-line pre-flight record, keys before stems), so a round that could
   not be prepared still starts quickly.
 
+## Page update 5.1.0
+
+- The page reads its own file. `cme.py` writes `data/page.json` with every ledger: exactly what
+  the page may show (past sessions, topics already tested, the round mix with its time
+  estimate, the block's theme, reviews, settings), already blinded and tested in Python. The
+  page no longer reads the ledger, so it cannot show an open gap or a due date; `data/index.json`
+  is gone (`cme.py rebuild-page` replaces `reindex`). A store from before this version gets
+  its page file at the next save.
+- Time estimates come from the engine and are realistic: about 5 minutes per MCQ, 10 per
+  focused question, 25 for a case with its feedback (15 for a one-step case).
+- Export is still a full backup; the page now says first that it includes the open gaps.
+  `cme.py` (`PAGE_VERSION = "5.1.0"`) upgrades older pages once, at the next save.
+
 ## Page update 5.0.0
 
 - The learner's page no longer previews the next round. The "Gaps & topics" view (open gaps by

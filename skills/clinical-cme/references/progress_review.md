@@ -29,7 +29,7 @@ If some of the period's older sessions have no transcript (only scores, gaps and
 
 1. Read the store and `open` the work folder (`store.md` §4), then `python3 cme.py stats --work <work>`. Use only these figures and the
    state; never estimate numbers in prose. It lists the period's session IDs.
-2. With the deep analysis on: take the period's session IDs from `stats` (or the index), and
+2. With the deep analysis on: take the period's session IDs from `stats` (or the page file), and
    read those session documents into local files in `<work>/period` (the page: the read-files
    tool with up to the allowed number of paths per call; a folder: copy) — no transcript enters the conversation unread. Read them in batches of about six
    (`transcript` and `closing` fields), take notes per batch in `<work>/review_notes.md`

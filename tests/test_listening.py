@@ -289,7 +289,7 @@ def test_listening_settings_change_the_kits_so_the_prepared_round_is_set_aside(w
 def test_saying_what_already_holds_keeps_the_prepared_round(w, flag, change):
     packed = stored_prepared(w)
     out = settings(w, flag, json.dumps(change))
-    assert out["prepared"]["kept"] is True and names(out) == ["data/index.json", "data/state.json"]
+    assert out["prepared"]["kept"] is True and "data/prepared.json" not in names(out)
     assert stored_prepared(w) == packed
 
 

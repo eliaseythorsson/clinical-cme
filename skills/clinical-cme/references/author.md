@@ -103,7 +103,8 @@ In this order:
    - Focused question: best answer (two to four sentences); rubric (two to four one-line
      elements); acceptable alternatives and how they score; unacceptable answers
      (`case_design.md` §11.3).
-2. **Pre-flight**: one line (`case_design.md` §8, lines 6 and 10–13).
+2. **Pre-flight**: one line (`case_design.md` §8, lines 6 and 10–16; the last three are
+   rules 5–7).
 3. **Verification list**: one precise search per claim the feedback will rest on (guideline
    and year, threshold or dose, trial), three to six lines.
 4. **The text to present**, exactly as the learner will see it, between
@@ -122,7 +123,8 @@ In this order:
    <one or two other reasonable tests>"; the clinical course to Stage 2; the Stage 2 questions
    (`case_design.md` §5). The examiner reads only this block before the final answers, so it
    holds no diagnosis, no key, no alternatives and no rubric.
-3. **Novelty and pre-flight**: one line each (`case_design.md` §8, lines 1–5 and 7–9; §10).
+3. **Novelty and pre-flight**: one line each (`case_design.md` §8, lines 1–5, 7–9 and 14–16,
+   the last three being rules 5–7; §10).
 4. **Verification list**: three to six precise searches.
 5. **The text to present**: Stage 1 (or the whole one-step case), exactly as the learner will
    see it, between `<!-- present: case -->` and `<!-- /present -->`, headed "Case", ending with
@@ -147,5 +149,7 @@ round"). It prints names and counts only:
   left (`cme.py finish-prepare` runs the same check).
 - `review`: the lint's judgement calls on rules 5 and 6, with the findings in `lint.md` in the
   output folder. Read it, correct what is a real breach, and run the check once more.
+
+No lint checks rule 7: pre-flight line 16 is its only check before the round is played.
 
 (With `Parts: questions` or `case` it checks the files written so far.) Then reply `done`.

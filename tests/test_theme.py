@@ -175,7 +175,7 @@ def test_theme_command_changes_the_ledger_into_the_publish_set_in_one_command(st
     assert out["block"]["line"] == "Block: %s, round 1 of 12" % name and out["block"]["starts"] is True
     assert out["say"] == "New block: %s: your choice. Round 1 of 12." % name
     assert out["was"]["theme"] == before["block"]["theme"] and out["was"]["round"] == 1
-    assert [f["as"] for f in out["files"]] == ["data/index.json", "data/prepared.json", "data/state.json"]
+    assert [f["as"] for f in out["files"]] == ["data/page.json", "data/prepared.json", "data/state.json"]
     assert out["publish"] == store.p("publish.json")
     placed = store.read_json("publish", "data", "state.json")
     assert placed["block"]["theme"] == "RENAL" and placed["gen"] == out["gen"] and placed["updated"] == "2026-11-02"

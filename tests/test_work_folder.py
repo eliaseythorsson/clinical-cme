@@ -19,7 +19,7 @@ SAID = {
 }
 STAGE2 = "Stage 2\n\nCT abdomen: RESULT-TEXT\n\n1. Your diagnosis? 2. Your treatment?\n"
 PART_B = "### Discussion (verbatim)\n\nNone.\n\n### Grade changes\n\nNone.\n\n### Coded analysis\n\nDG 1.\n"
-STATE, INDEX, PREPARED = "data/state.json", "data/index.json", "data/prepared.json"
+STATE, PAGE_FILE, PREPARED = "data/state.json", "data/page.json", "data/prepared.json"
 SESSION = "data/sessions/S0001.json"
 
 
@@ -29,7 +29,7 @@ class Round(Work):
     def setup(self, layout="data", page=False, config=None):
         self.init(today=DAY, config=config)
         if layout == "flat":                    # the store's files read side by side into store/
-            for name in ("state.json", "index.json", "prepared.json"):
+            for name in ("state.json", "page.json", "prepared.json"):
                 shutil.copy(self.store("data", name), self.store(name))
             shutil.copy(self.store("index.html"), self.store("page.html"))
             shutil.rmtree(self.store("data"))
@@ -102,7 +102,7 @@ def test_open_notes_the_store_copy_in_either_layout_and_prints_neutral_status(tm
     out = rnd.run_json("--today", DAY, "open", "--work", rnd.path, "--store", rnd.store(), "--version", "41")
     ledger = rnd.store("data", "state.json") if layout == "data" else rnd.store("state.json")
     assert out["ok"] and out["gen"] == 1 and out["next_id"] == "S0001" and out["store_layout"] == layout
-    assert out["store_files"] == [STATE, INDEX, PREPARED, "index.html"] and out["store_version"] == "41"
+    assert out["store_files"] == [STATE, PAGE_FILE, PREPARED, "index.html"] and out["store_version"] == "41"
     assert out["due_count"] == 0 and out["open_gaps"] == 0 and out["last_session"] is None
     info = rnd.read_json("work.json")
     assert info == {"store": rnd.store(), "state": ledger, "session_id": "S0001", "version": "41",
@@ -110,7 +110,7 @@ def test_open_notes_the_store_copy_in_either_layout_and_prints_neutral_status(tm
     assert rnd.manifest() == {"version": "41", "files": []}             # nothing to publish yet
     # the ledger is found the same way by whatever comes next
     changed = rnd.run_json("settings", "--work", rnd.path, "--config", '{"testing": true}')
-    assert names(changed) == [INDEX, STATE] and rnd.manifest()["version"] == "41"
+    assert names(changed) == [PAGE_FILE, STATE] and rnd.manifest()["version"] == "41"
 
 
 def test_open_prints_no_topic_and_refuses_a_folder_without_a_ledger(rnd, tmp_path_factory):
@@ -157,7 +157,7 @@ def test_full_round_needs_only_the_work_folder_the_dates_and_the_reflection(rnd)
     rnd.play_to_feedback()
     saved = rnd.save()
     assert saved["warnings"] == []
-    assert names(saved) == [SESSION, INDEX, PREPARED, STATE]
+    assert names(saved) == [SESSION, PAGE_FILE, PREPARED, STATE]
     assert all(f["path"].startswith(rnd.pub()) for f in saved["files"])
     assert saved["publish"] == rnd.p("publish.json") and rnd.manifest()["files"] == saved["files"]
     a = sections(rnd.read_json("publish", "data", "sessions", "S0001.json")["transcript"])
@@ -174,7 +174,7 @@ def test_full_round_needs_only_the_work_folder_the_dates_and_the_reflection(rnd)
     rnd.answer("reflection")
     rnd.write("B.md", PART_B)
     closed = rnd.close("2026-11-03")
-    assert names(closed) == [SESSION, INDEX, PREPARED, STATE]
+    assert names(closed) == [SESSION, PAGE_FILE, PREPARED, STATE]
     st = rnd.read_json("publish", "data", "state.json")
     assert st["unreflected"] is None and st["sessions"][-1]["date"] == DAY
     doc = rnd.read_json("publish", "data", "sessions", "S0001.json")
@@ -182,7 +182,7 @@ def test_full_round_needs_only_the_work_folder_the_dates_and_the_reflection(rnd)
     assert list(b) == ["Reflection (verbatim)", "Discussion (verbatim)", "Grade changes", "Coded analysis"]
     assert b["Reflection (verbatim)"] == SAID["reflection"]
     assert doc["reflected"] is True and doc["transcript"].startswith("### Questions")
-    assert [s["reflected"] for s in rnd.read_json("publish", "data", "index.json")["sessions"]] == [True]
+    assert [s["reflected"] for s in rnd.read_json("publish", "data", "page.json")["sessions"]] == [True]
 
 
 def test_start_without_a_store_continues_the_open_job(rnd):
@@ -215,7 +215,7 @@ def test_publish_set_is_cumulative_and_keeps_the_ledger_last(rnd):
     import examples
     rnd.play_to_feedback()
     saved = rnd.save()
-    assert names(saved) == [SESSION, INDEX, PREPARED, STATE]
+    assert names(saved) == [SESSION, PAGE_FILE, PREPARED, STATE]
     rnd.write("B.md", PART_B)
     closed = rnd.close()
     assert names(closed) == names(saved)                     # the same files, newer versions
@@ -228,7 +228,7 @@ def test_publish_set_is_cumulative_and_keeps_the_ledger_last(rnd):
     assert names(packed) == names(saved)
     assert rnd.read_json("publish", "data", "prepared.json")["gen"] == closed["gen"]
     noted = rnd.run_json("--today", DAY, "testing-note", "--work", rnd.path, "--feedback", '{"items": 4}')
-    assert names(noted) == [SESSION, "data/testing/S0001.json", INDEX, PREPARED, STATE]
+    assert names(noted) == [SESSION, "data/testing/S0001.json", PAGE_FILE, PREPARED, STATE]
     for out in (saved, closed, packed, noted):
         assert out["files"][-1]["as"] == STATE and out["publish"] == rnd.p("publish.json")
     manifest = rnd.manifest()
@@ -246,17 +246,17 @@ def test_publish_set_carries_the_store_version_and_the_page_before_the_ledger(tm
     rnd.run_json("--today", DAY, "start", "--work", rnd.path, "--store", rnd.store(), "--version", "v12")
     saved = rnd.play_to_feedback(start=False).save()
     assert saved["page_upgraded"]["from"] == "1.0.0"
-    assert names(saved) == [SESSION, INDEX, "index.html", PREPARED, STATE]
+    assert names(saved) == [SESSION, PAGE_FILE, "index.html", PREPARED, STATE]
     assert rnd.manifest()["version"] == "v12"
 
 
 def test_write_order_puts_log_entries_first_and_the_ledger_last():
     from examples import cme
-    rels = [STATE, PREPARED, "index.html", INDEX, "data/testing/S0002.json", "data/reviews/2026-11-20.json",
+    rels = [STATE, PREPARED, "index.html", PAGE_FILE, "data/testing/S0002.json", "data/reviews/2026-11-20.json",
             "data/sessions/S0002.json", "data/sessions/S0001.json", "data/other.json"]
     assert sorted(rels, key=cme.publish_order) == [
         "data/reviews/2026-11-20.json", "data/sessions/S0001.json", "data/sessions/S0002.json",
-        "data/testing/S0002.json", "data/other.json", INDEX, "index.html", PREPARED, STATE]
+        "data/testing/S0002.json", "data/other.json", PAGE_FILE, "index.html", PREPARED, STATE]
 
 
 # ---- answer
@@ -348,20 +348,20 @@ def test_save_cannot_undo_a_close(rnd):
 
 
 @pytest.mark.parametrize("layout", ["data", "flat"])
-def test_save_finds_index_and_page_in_the_store_copy(tmp_path, layout):
+def test_save_finds_page_file_and_page_in_the_store_copy(tmp_path, layout):
     rnd = Round(tmp_path).setup(layout=layout, page=True)
-    index = rnd.store("data", "index.json") if layout == "data" else rnd.store("index.json")
-    idx = rnd.read_json(index)
-    idx["reviews"] = [{"date": "2026-10-01", "title": "kept"}]
-    rnd.write(os.path.relpath(index, rnd.path), idx)
+    page_file = rnd.store("data", "page.json") if layout == "data" else rnd.store("page.json")
+    idx = rnd.read_json(page_file)
+    idx["reviews"] = [{"date": "2026-10-01", "title": "kept", "headline": None}]
+    rnd.write(os.path.relpath(page_file, rnd.path), idx)
     saved = rnd.play_to_feedback().save()
     assert saved["page_upgraded"]["from"] == "1.0.0" and "index.html" in names(saved)
-    assert rnd.read_json("publish", "data", "index.json")["reviews"] == idx["reviews"]
+    assert rnd.read_json("publish", "data", "page.json")["reviews"] == idx["reviews"]
     rnd.write("B.md", PART_B)
     closed = rnd.close()
     assert "page_upgraded" not in closed                     # checked once, at the save
     assert "index.html" in names(closed)                     # and still in the publish set
-    assert rnd.read_json("publish", "data", "index.json")["reviews"] == idx["reviews"]
+    assert rnd.read_json("publish", "data", "page.json")["reviews"] == idx["reviews"]
 
 
 def test_page_settings_given_at_start_are_kept_by_save(rnd):
@@ -441,7 +441,7 @@ def test_reflection_given_at_a_later_session_closes_from_the_store(rnd, tmp_path
     assert "session file of S0001 was not found" in json.loads(r.stdout)["error"]
     shutil.copy(rnd.store("data", "sessions", "S0001.json"), later.store("data", "sessions", "S0001.json"))
     closed = later.close("2026-11-04")
-    assert names(closed) == [SESSION, INDEX, STATE]
+    assert names(closed) == [SESSION, PAGE_FILE, STATE]
     doc = later.read_json("publish", "data", "sessions", "S0001.json")
     assert doc["reflected"] is True and "### Questions" in doc["transcript"] and doc["date"] == DAY
     assert SAID["reflection"] in doc["closing"]
@@ -458,8 +458,8 @@ def test_reflection_given_at_a_later_session_closes_from_the_store(rnd, tmp_path
     later.write("feedback.md", "fb")
     later.write("round.json", dict(ROUND, log_id="S0002"))
     saved = later.run_json("--today", "2026-11-04", "save", "--work", later.path)
-    assert names(saved) == [SESSION, "data/sessions/S0002.json", INDEX, PREPARED, STATE]
-    idx = later.read_json("publish", "data", "index.json")
+    assert names(saved) == [SESSION, "data/sessions/S0002.json", PAGE_FILE, PREPARED, STATE]
+    idx = later.read_json("publish", "data", "page.json")
     assert sorted((s["id"], s["reflected"]) for s in idx["sessions"]) == [("S0001", True), ("S0002", False)]
     assert "Comfort 4 4 5" not in later.read_json("publish", "data", "sessions", "S0002.json")["transcript"]
     # and that save can be run again: it starts from the ledger the close wrote, not the one read
@@ -514,7 +514,7 @@ def test_reread_after_a_refused_publish_replays_the_job_on_the_fresh_store(rnd, 
     st = rnd.read_json("publish", "data", "state.json")
     assert st["config"]["session_minutes"] == 45 and [s["id"] for s in st["sessions"]] == ["S0001"]
     assert st["unreflected"] is None and closed["gen"] == 4 and rnd.manifest()["version"] == "9"
-    assert names(closed) == [SESSION, INDEX, PREPARED, STATE]
+    assert names(closed) == [SESSION, PAGE_FILE, PREPARED, STATE]
     r = Work(str(tmp_path_factory.mktemp("none")))
     r = r.run("open", "--work", r.path, "--store", rnd.store(), "--reread", ok=False)
     assert "no job is open" in json.loads(r.stdout)["error"]
@@ -527,7 +527,7 @@ def test_init_sets_up_a_work_folder_without_a_store_and_the_first_round_can_star
     out = w.run_json("--today", DAY, "init", "--work", w.path, "--blueprint", BLUEPRINT,
                      "--config", '{"mcqs": 2}', "--profile", '{"specialty": "Geriatrics"}')
     assert out["gen"] == 1 and out["topics"] > 50 and out["work"] == w.path
-    assert names(out) == [INDEX, "index.html", PREPARED, STATE] and w.manifest()["version"] is None
+    assert names(out) == [PAGE_FILE, "index.html", PREPARED, STATE] and w.manifest()["version"] is None
     assert 'name="cme-page-version"' in open(w.pub("index.html"), encoding="utf-8").read()
     st = w.read_json("publish", "data", "state.json")
     assert st["config"]["mcqs"] == 2 and st["profile"]["onboarded_at"] == DAY
@@ -545,9 +545,9 @@ def test_init_does_not_replace_a_ledger_unless_asked_to_start_over(rnd):
     r = rnd.run("init", "--work", rnd.path, "--blueprint", BLUEPRINT, ok=False)
     assert "already holds a ledger" in json.loads(r.stdout)["error"] and not os.path.exists(rnd.pub())
     out = rnd.run_json("--today", "2026-11-05", "init", "--work", rnd.path, "--blueprint", BLUEPRINT, "--start-over")
-    assert names(out) == [INDEX, PREPARED, STATE]
+    assert names(out) == [PAGE_FILE, PREPARED, STATE]
     assert rnd.read_json("publish", "data", "state.json")["sessions"] == []
-    assert rnd.read_json("publish", "data", "index.json")["sessions"] == []
+    assert rnd.read_json("publish", "data", "page.json")["sessions"] == []
 
 
 def test_addendum_goes_to_the_last_session_by_default(rnd):
@@ -578,13 +578,13 @@ def test_review_and_its_report_go_into_one_publish_set(rnd):
     assert stats["sessions"] == 1 and not os.path.exists(rnd.pub())     # read-only
     doc = rnd.run_json("--today", "2026-11-20", "review-doc", "--work", rnd.path, "--md",
                        rnd.write("report.md", "# Review"), "--headline", "Steady")
-    assert doc["doc"] == "reviews/2026-11-20" and names(doc) == ["data/reviews/2026-11-20.json", INDEX]
+    assert doc["doc"] == "reviews/2026-11-20" and names(doc) == ["data/reviews/2026-11-20.json", PAGE_FILE]
     review = {"doc": doc["doc"], "headline": "Steady", "summary": "s", "config_changes": {"session_minutes": 30}}
     out = rnd.run_json("--today", "2026-11-20", "review", "--work", rnd.path, "--review", json.dumps(review))
-    assert names(out) == ["data/reviews/2026-11-20.json", INDEX, PREPARED, STATE]
+    assert names(out) == ["data/reviews/2026-11-20.json", PAGE_FILE, PREPARED, STATE]
     st = rnd.read_json("publish", "data", "state.json")
     assert st["reviews"][-1]["headline"] == "Steady" and st["sessions"] == [] and st["config"]["session_minutes"] == 30
-    idx = rnd.read_json("publish", "data", "index.json")
+    idx = rnd.read_json("publish", "data", "page.json")
     assert [r["headline"] for r in idx["reviews"]] == ["Steady"] and [s["id"] for s in idx["sessions"]] == ["S0001"]
     # the next round is prepared in the same job from the ledger the review wrote
     assert rnd.run_json("--today", "2026-11-20", "prepare", "--work", rnd.path)["gen"] == out["gen"]

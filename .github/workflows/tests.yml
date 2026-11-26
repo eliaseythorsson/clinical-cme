@@ -11,5 +11,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # the page render tests (tests/test_page.py) run the page's script with node; without it
+      # they fail here rather than skip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node --version
       - run: python -m py_compile skills/clinical-cme/scripts/cme.py
       - run: pip install pytest && python -m pytest -q tests

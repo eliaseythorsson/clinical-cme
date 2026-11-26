@@ -77,7 +77,7 @@ init` fills them in when they are left out.
 MCQs + full case):
 - **Single-best-answer questions (MCQs)** — quick knowledge and recognition checks;
 - **Focused questions** — a short case ending in one free-text question on a single decision,
-  graded on your reasoning (about 5 minutes each);
+  graded on your reasoning (about 10 minutes each);
 - **Full case** — history and work-up; differential, tests and management in your own words.
 
 Then: time per session (about 10 · 15–20 · 25–30 min); how often (workdays · three times a week ·
@@ -111,22 +111,26 @@ the library by itself.
 | 15–20 min | 20, unfolding |
 | 25–30 min | 30, unfolding, `feedback_depth` detailed |
 
-The mix sets `mcqs`, `focused` and `case` (about 3 minutes per MCQ, 5 per focused question, 10
-for a one-step case and 15 for an unfolding one, feedback included):
+The mix sets `mcqs`, `focused` and `case`. `cme.py` estimates a round at about 5 minutes per
+MCQ, 10 per focused question, 15 for a one-step case and 25 for an unfolding one, feedback
+included (`MINUTES_PER`; `init` and `settings` print the estimate for the mix as `round`, the
+opening line of every round gives it, and the page shows it). The estimate in each cell:
 
 | Mix chosen | ~10 min | 15–20 min | 25–30 min |
 |---|---|---|---|
-| MCQs + full case (default) | 1 MCQ + case | 3 MCQs + case | 3 MCQs + case |
-| MCQs + focused + full case | 1 focused + case (`mcqs` 0)\* | 1 MCQ + 1 focused + case | 2 MCQs + 1 focused + case |
-| Focused + full case | 1 focused + case | 1 focused + case | 2 focused + case |
-| MCQs + focused | 1 MCQ + 1 focused | 2 MCQs + 2 focused | 3 MCQs + 3 focused |
-| Focused only | 2 focused | 3 focused | 5 focused |
-| MCQs only | 3 MCQs | 5 MCQs | 8 MCQs |
-| Full case only | case | case | case |
+| MCQs + full case (default) | 1 MCQ + case (20) | 3 MCQs + case (40) | 3 MCQs + case (40) |
+| MCQs + focused + full case | 1 focused + case, `mcqs` 0 (25) | 1 MCQ + 1 focused + case (40) | 2 MCQs + 1 focused + case (45) |
+| Focused + full case | 1 focused + case (25) | 1 focused + case (35) | 2 focused + case (45) |
+| MCQs + focused | 1 MCQ + 1 focused (15) | 2 MCQs + 2 focused (30) | 3 MCQs + 3 focused (45) |
+| Focused only | 2 focused (20) | 3 focused (30) | 5 focused (50) |
+| MCQs only | 3 MCQs (15) | 5 MCQs (25) | 8 MCQs (40) |
+| Full case only | case (15) | case (25) | case (25) |
 
-\* Three formats do not fit in ten minutes; say so in one line ("in 10 minutes there is room for
-a focused question and the case; MCQs come back if you lengthen the session") and offer to
-alternate instead. The learner can always pick other numbers.
+A full case takes most of half an hour with its feedback, so most of these run longer than the
+time the learner named. Say the estimate when you confirm the mix ("3 MCQs and the case:
+about 40 minutes with feedback") and offer what fits their time instead: fewer short
+questions, short questions only (2 MCQs ≈ 10 minutes, 4 MCQs or 2 focused ≈ 20), or the case
+alone. The learner chooses; they can always pick other numbers, here or on the page.
 | Guidelines: Iceland/Europe / UK / North America / other | `guideline_region` "Iceland/Europe" / "UK" / "North America" / the learner's words |
 | Specialty | `profile.specialty` (default "Internal/hospital medicine") |
 | Frequency | `target_sessions_per_week` 5 / 3 / 2 / 1 |
@@ -154,7 +158,7 @@ Tell the learner (show this):
 > is how the skill finds it. Everything in it can be exported at any time.
 
 (For a folder or files you keep, say where they are and, for files they keep, to attach `state.json` and
-`index.json` at the start of each session.)
+`page.json` at the start of each session.)
 
 ## 4. Finish setup
 

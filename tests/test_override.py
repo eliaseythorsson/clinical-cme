@@ -123,7 +123,7 @@ def test_override_after_the_close_gives_the_schedule_the_reflection_path_gives(w
     assert out["ok"] and out["session"] == "S0001" and out["topics"]["GEN-11"]["step"] == 1
     assert out["topics"]["GEN-11"]["gap_closed_by_learner"] is True
     assert [f["as"] for f in out["files"]][-1] == "data/state.json"
-    assert {"data/sessions/S0001.json", "data/index.json", "data/prepared.json"} <= {f["as"] for f in out["files"]}
+    assert {"data/sessions/S0001.json", "data/page.json", "data/prepared.json"} <= {f["as"] for f in out["files"]}
     work.publish()
     st = work.read_ledger()
     assert st["gen"] == before["gen"] + 1
@@ -144,7 +144,7 @@ def test_override_after_the_close_gives_the_schedule_the_reflection_path_gives(w
     assert "the examiner's score 2, the learner's score 4" in doc["addendum"]
     assert "Gap G0001 (GEN-11) closed by the learner" in doc["addendum"]
     assert [c["kind"] for c in doc["learner_changes"]] == ["score", "gap"]
-    idx = work.read_json("store", "data", "index.json")
+    idx = work.read_json("store", "data", "page.json")
     assert next(s for s in idx["sessions"] if s["id"] == "S0001")["score"] == out["score"]
 
 

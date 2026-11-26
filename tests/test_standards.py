@@ -87,10 +87,45 @@ def test_key_header_blocks_are_shown_only_in_the_rulebook_and_the_schema():
 
 def test_slots_for_the_issues_that_build_on_the_rulebook():
     text = read(STANDARDS)
-    for issue in ("#45", "#55"):
+    for issue in ("#55",):
         assert re.search(r"<!-- slot: issue %s\b" % issue, text), issue
+    assert "slot: issue #45" not in text          # filled in: see the tests of issue #45 below
     # issue #50 filled its slot in rule 8: the "## Listening" section of the kits
     assert "slot: issue #50" not in text and "**Listening** (`## Listening`" in text
+
+
+# ---------------------------------------------------------------- issue #45: rules 5–7 finished
+
+def rule(n):
+    return flat(read(STANDARDS).split("## Rule %d." % n)[1].split("## Rule %d." % (n + 1))[0])
+
+
+def test_rule_7_says_what_a_crux_test_is_and_carries_its_example():
+    text = rule(7)
+    assert "What counts as a crux test" in text and "How to decide" in text
+    assert "S0037" in text and "valproate" in text and "ammonia" in text
+    assert "aspect `testing`" in text and "Add if not ordered" in text
+
+
+def test_the_pre_flight_has_a_line_for_each_of_rules_5_to_7():
+    design = read(os.path.join(REFERENCES, "case_design.md"))
+    preflight = design.split("## 8. Pre-flight check")[1].split("\n## 9.")[0]
+    assert re.findall(r"^(\d+)\. Rule (\d):", preflight, re.M) == [("14", "5"), ("15", "6"), ("16", "7")]
+    # both sealed files carry them, and the author's brief names the same line numbers
+    assert "lines 6 and 10–16" in flat(preflight) and "lines 1–5, 7–9 and 14–16" in flat(preflight)
+    author = flat(read(os.path.join(REFERENCES, "author.md")))
+    assert "lines 6 and 10–16" in author and "lines 1–5, 7–9 and 14–16" in author
+    # the rules are cited, not restated
+    assert "alanine aminotransferase" not in preflight and "valproate" not in design
+
+
+def test_the_glossary_line_opens_every_feedback_message():
+    assert '"Abbreviations:"' in rule(5)
+    guide = flat(read(os.path.join(REFERENCES, "feedback_guide.md")).split("## 2. Structure")[1].split("### A.")[0])
+    assert "Every feedback message starts with the glossary line" in guide and "rule 5.3" in guide
+    assert guide.count("glossary line, A") == 2
+    skill = flat(read(os.path.join(SKILL, "SKILL.md")))
+    assert "glossary line, rule 5.3 → reveal" in skill and "glossary line → case reveal" in skill
 
 
 # ---------------------------------------------------------------- the key-header table
