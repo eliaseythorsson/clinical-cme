@@ -16,14 +16,15 @@ memory: one JSON document, read to a file and written from a file (`store.md` §
               "aim_set_at": "2026-10-08T09:12:00Z", "aim_tags": ["keep up to date"],
               "strengths": ["…"], "weaknesses": ["…"], "goals": [],
               "domain_self_ratings": {"CARD": 3.8}, "domain_emphasis": {"GEN": 1.5},
-              "notes": "free text", "onboarded_at": "2026-10-08"},
+              "notes": "free text", "onboarded_at": "2026-10-08",
+              "podcast_sources": {"trusted": ["The Curbsiders"], "avoid": []}},
   "config": {"session_minutes": 35, "mcqs": 0, "focused": 1, "case": true, "case_format": "unfolding",
              "round_set_at": "2026-10-08T09:12:00Z",
              "feedback_depth": "detailed", "target_sessions_per_week": 3, "review_interval_days": 42,
              "intervals_days": [1, 3, 7, 16, 35, 90], "new_topics_per_round": 1,
              "lab_units": "SI", "blood_gas_units": "mmHg", "guideline_region": "Iceland/Europe",
              "item_order": "mcqs_first", "helpers": true, "prepare_ahead": true,
-             "show_coding": true, "reminders": false,
+             "show_coding": true, "reminders": false, "listening": true,
              "resource_preferences": {"free_only": false, "formats": ["guidelines"]}},
   "review": {"last": null, "next_due": "2026-11-19", "period_start": "2026-10-08"},
   "blueprint": {"CARD": {"name": "Cardiology", "weight": 1.0, "topics": {"CARD-01": "Acute coronary syndrome"}}},
@@ -84,6 +85,16 @@ label is read off `role` where it names a stage (otherwise `labels_needed` asks 
 old fields stay in the ledger as they were and are no longer read for the pitch; `goals` and
 `notes` remain free fields.
 
+Listening: `config.listening` (true by default, also in a ledger that has no such key) puts a
+`## Listening` section into the kits (`standards.md` rule 8) and a Listening section into the
+final feedback (`feedback_guide.md` §2 E2). `profile.podcast_sources` is `{"trusted": [shows],
+"avoid": [shows]}`, or null while the learner has not been asked: it is asked once, at setup
+or in the first Listening section, and `close` then writes the answer from the reflection, or
+two empty lists when none was given. `start`, `open` and `settings` print `listening`: `{"on",
+"trusted", "avoid", "ask_sources"}`; the plan carries `listening` and `podcast_sources` for
+the author. `settings` stores the lists without blanks or repeats and refuses any other
+shape. Both settings change what a kit holds (§8).
+
 Round mix: `mcqs` (0–10), `focused` (0–6) and `case` (true/false); at least one item. A new
 learner starts with one focused question and the case (about 35 minutes; `session_minutes`
 35); a ledger that has no mix of its own keeps three MCQs and the case.
@@ -94,7 +105,8 @@ own settings document, `cme/prefs` (§7.1), and the next round applies it.
 A session entry:
 
 ```json
-{"id": "S0021", "date": "2026-10-26", "started_at": "…", "ended_at": "…", "minutes": 26, "reading_minutes": 10,
+{"id": "S0021", "date": "2026-10-26", "started_at": "…", "ended_at": "…", "minutes": 41, "reading_minutes": 10,
+ "timing": {"answering": 22.5, "waiting": 6.0, "reading": 12.5, "idle_cut": 48.0},
  "title": "Confusion after a marathon — exercise-associated hyponatraemia", "summary": "…", "tags": ["RENAL-02", "…"],
  "topics": ["RENAL-02", "CARD-03", "TOX-03", "NEURO-01"], "format": "unfolding", "mcqs": 3, "mcq_correct": 2, "focused": 1, "score": 3.4,
  "items": [{"type": "case", "topic": "RENAL-02", "mastery": 3.5, "confidence": "unsure",
@@ -110,6 +122,13 @@ A session entry:
  "grade_changes": [{"item": "Case stage 2", "topic": "RENAL-02", "from": 3, "to": 3.5, "outcome": "both_defensible"}],
  "drill": null, "errata": ["E0003"], "steps_before": {"RENAL-02": 2, "CARD-03": 1}}
 ```
+
+`minutes` is the round's **active time** and `timing` its parts, in minutes, measured by the
+engine (§6.2): the learner `answering`, `waiting` for the examiner and `reading` feedback; a
+stretch of more than 15 minutes without a step counts as 15 and the rest is `idle_cut`. A
+session without `timing` is from an older version, whose `minutes` were the time from start to
+end capped at 180 (sessions left open show exactly 180): it counts in no median and no estimate.
+`reading_minutes` is something else: the further reading the learner reports in the reflection.
 
 `steps_before` is each topic's step before the round (`override` reschedules from it). An item
 whose score the learner set carries `"mastery": 4, "graded": 2, "set_by": "learner"`: `mastery`
@@ -151,7 +170,11 @@ everything the author already wrote down, and writes the result, the **round rec
   "summary": "One or two sentences on the main teaching.",
   "grade_changes": [], "drill": {"code": "bias:premature_closure", "result": "fell_for"},
   "errata": [{"corrects": "S0012", "point": "…", "correction": "…", "source": "…"}],
-  "pending_errata_logged": "all"
+  "pending_errata_logged": "all",
+  "listening": [{"topic": "CARD-03", "link": "https://open.spotify.com/episode/<id, 22 letters and digits>",
+                 "show": "<show>", "title": "<episode title>", "minutes": 52,
+                 "why": "when to start anticoagulation after surgery, the step you were unsure of",
+                 "source": "kit"}]
 }
 ```
 
@@ -191,7 +214,8 @@ The round record, as `save` writes it to `record.json`. A
 
 ```json
 {
-  "date": "2026-10-26", "started_at": "2026-10-26T08:00:00+00:00", "ended_at": "2026-10-26T08:26:00+00:00",
+  "date": "2026-10-26", "started_at": "2026-10-26T08:00:00Z", "ended_at": "2026-10-26T09:29:00Z", "minutes": 41,
+  "timing": {"answering": 22.5, "waiting": 6.0, "reading": 12.5, "idle_cut": 48.0},
   "case_format": "unfolding", "log_id": "S0021",
   "items": [
     {"type": "case", "topic": "RENAL-02", "label": "Hyponatraemia", "domain": "RENAL", "mastery": 3, "confidence": "unsure",
@@ -238,6 +262,19 @@ The round record, as `save` writes it to `record.json`. A
   and an empty `errors` list. `save` prints `warnings` for anything missing; fix and re-run.
 - `pending_errata_logged: "all"` whenever `start` reported pending errata; `save` prints
   `errata_to_log` (full text) for part B.
+- Times are never typed: `save` and `close` fill `started_at`, `ended_at`, `minutes` and
+  `timing` from the round's clock (§6.2). A round recorded without a work folder may carry its
+  own per-part timestamps instead, `"stamps": [{"what": "start", "at": "<ISO time>"}, {"what":
+  "sent:questions", "at": "…"}, {"what": "answer:questions", "at": "…"}, …]` (the names of §6.2),
+  from which the same figures are computed. With only `started_at` and `ended_at` the minutes
+  are their difference, without `timing`, and no duration at all beyond 180 minutes.
+- `listening`: the picks of the feedback's Listening section (`feedback_guide.md` §2 E2), one
+  per topic that got one: the blueprint ID, the Spotify episode link, the show, the title, the
+  minutes, the one-line reason, and `source` (`kit`: a candidate prepared with the round;
+  `search`: found after grading). An empty list when no topic got one; no key at all with
+  listening off. `save` moves the list into the session document as its `listening` list (the
+  ledger and `record.json` never hold it), drops anything after the id in a link, and leaves
+  out a pick that is not complete, with a warning naming what to correct.
 - Omit `reflection`: the first save is provisional. `save` can be run again: it starts from the ledger before the round.
 
 ## 3. Reflection JSON (input to `close`)
@@ -251,6 +288,7 @@ The round record, as `save` writes it to `record.json`. A
  "items": [{"type": "case", "topic": "RENAL-02", "mastery": 3.5}],
  "learner_scores": [{"item": "Q2", "type": "mcq", "topic": "CARD-03", "score": 4, "note": "the learner's words"}],
  "learner_closed_gaps": [{"gap": "G0007", "note": "the learner's words"}],
+ "podcast_sources": {"trusted": ["The Curbsiders"], "avoid": []},
  "errata": [], "key_learning": [], "resolved": []}
 ```
 
@@ -265,6 +303,10 @@ The round record, as `save` writes it to `record.json`. A
 - `learner_closed_gaps`: gaps the learner asks to close, by id (`{"gap": "G0007"}`) or by topic
   (`{"topic": "RENAL-02"}`, also for a gap this round opened). `close` stops with an error,
   writing nothing, when a named item or gap does not exist.
+- `podcast_sources`: only when the learner named shows to trust or to avoid in reply to the
+  one-time question of the Listening section (`feedback_guide.md` §2 E2); `close` writes it to
+  the profile. Leave the key out otherwise: `close` then notes that the question was asked.
+  A later change is a settings change (`requests.md` §1).
 - `{"skipped": true}` records the round without a reflection.
 
 ## 4. Spacing rules (applied by `save` and `close`)
@@ -468,11 +510,12 @@ order with the ledger last) and `publish`, the path of the manifest `W/publish.j
 | Command | Use |
 |---|---|
 | `open --work W --store DIR [--version V] [--prefs J] [--reread]` | Set up the work folder for any job from `DIR`, the local copy of the store as just read: the store's layout (`DIR/data/state.json`, `DIR/data/page.json`, `DIR/data/prepared.json`, `DIR/index.html`, `DIR/data/sessions/<id>.json`) or the files side by side (`DIR/state.json`, …). Writes `W/work.json` and an empty manifest carrying `V`, the store version read. If `W` holds an earlier job (answers, a publish set, drafts of a next round), its files are first moved to `W/earlier/<n>/` (`earlier_set_aside`). Prints neutral status: `gen`, `next_id`, counts, `review_due`, `testing`, the block; never a topic. `--reread`: the same job on a fresh read after a refused publish (`store.md` §4.1): the job's own files stay, the publish set is dropped, and the job's commands are run again. |
-| `start --work W [--store DIR [--version V]] [--prefs J] [plan options] [--no-prepared]` | Start a round. With `--store` it does what `open` does first; without, it continues the job that is open (a settings change or a late reflection earlier in the same conversation), from the ledger that job wrote. The plan is written to `W/plan.json`. Prints the neutral status with the plan's counts (MCQs, focused, case, `estimated_minutes`) under `plan`, plus `helpers`, `prepare_ahead` and `speed_settings_new`. No topic names. With a plan it also prints what the first message needs, so that nothing else is run or read before it: `opening` (the opening line, word for word: the mix, the minutes, the block's line, with its reason when a block starts, and the last saved session) and `started_at` (the time for `round.json`). `--prefs` is the page's `cme/prefs` document (§7.1); `page_settings_applied` says when it changed the mix or brought a new paragraph (which `start` writes to the ledger at once, into the publish set; §7.1), `pitch` holds the learner's two paragraphs for the examiner and `labels_needed` the display labels still to derive (§1), and `round_mix` says when a prepared round was written for another mix than the one in force (§8). The prepared round is read from the store copy (§8): when it still fits, `prepared.used` is true, `present` holds the first part's text to send (`prepared.present_block` says which) and the drafted files (`prepared.ready`: `sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) are written into the work folder, with `prepared.unchecked` naming the sealed files that came without an evidence file (start a checker for each); otherwise `prepared.why` says why not and the round is planned as usual. Plan options, for this round only: `--mcqs N`, `--focused N`, `--no-case`, `--domain CODE`, `--no-new`, `--allow-repeat`, `--no-drill`. |
-| `present --work W --block questions\|case\|bank` | Print only the text the learner is to see from the sealed files in `W` (one `present` block, or the case's results bank), so it can be sent without opening the keys. |
-| `answer --work W --part questions\|case\|final\|notes\|reflection [--file F \| --text T]` | Append what the learner answered for one part to `W/answers.md`, exactly as given (default: standard input). Earlier parts are never rewritten; the same text for the same part is added once; a second message for a part is added after the first. Prints the part names filed so far, never the text. |
-| `save --work W` | First save after the final feedback: the round is recorded in the ledger, the session document is written (part A assembled in the order of the round from the sealed `present` blocks, Stage 2 as sent, the answers, the questions' feedback and the final feedback), with the page file (§7) and an emptied `data/prepared.json`. Everything is found by its fixed name (§6.1); the page settings given at the start are applied so the mix is kept in the ledger. Prints per-topic next due, warnings, `errata_to_log`, and `files`. If the learner's `index.html` is older than the skill's template, the new one joins the publish set (`page_upgraded`). It starts from the ledger as it was before this round (a settings change made earlier in the same job is kept), so it can be run again with the same result. |
-| `close --work W [--reflection J] [--session ID]` | Second save: the reflection is applied and part B goes into the session document, with the page file. It continues from the current ledger: the one `save` wrote in this job, or, for a reflection given at a later session, the ledger as read; the session document then comes from the store copy (`data/sessions/<id>.json`), and the command stops if it was not read. The reflection JSON is `W/reflection.json` unless given inline. Can be run again after a correction to `B.md`. |
+| `start --work W [--store DIR [--version V]] [--prefs J] [plan options] [--no-prepared]` | Start a round. With `--store` it does what `open` does first; without, it continues the job that is open (a settings change or a late reflection earlier in the same conversation), from the ledger that job wrote. The plan is written to `W/plan.json`. Prints the neutral status with the plan's counts (MCQs, focused, case, `estimated_minutes`, and `estimate_rounds` when the estimate is at the learner's own pace, §6.2) under `plan`, plus `helpers`, `prepare_ahead` and `speed_settings_new`. No topic names. With a plan it also prints what the first message needs, so that nothing else is run or read before it: `opening` (the opening line, word for word: the mix, the minutes, "(based on your last N rounds)" once rounds are timed, the block's line, with its reason when a block starts, and the last saved session) and `started_at` (when the round's clock started, §6.2; nothing to copy). `--prefs` is the page's `cme/prefs` document (§7.1); `page_settings_applied` says when it changed the mix or brought a new paragraph (which `start` writes to the ledger at once, into the publish set; §7.1), `pitch` holds the learner's two paragraphs for the examiner and `labels_needed` the display labels still to derive (§1), and `round_mix` says when a prepared round was written for another mix than the one in force (§8). The prepared round is read from the store copy (§8): when it still fits, `prepared.used` is true, `present` holds the first part's text to send (`prepared.present_block` says which) and the drafted files (`prepared.ready`: `sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) are written into the work folder, with `prepared.unchecked` naming the sealed files that came without an evidence file (start a checker for each); otherwise `prepared.why` says why not and the round is planned as usual. Plan options, for this round only: `--mcqs N`, `--focused N`, `--no-case`, `--domain CODE`, `--no-new`, `--allow-repeat`, `--no-drill`. |
+| `present --work W --block questions\|case\|bank` | Print only the text the learner is to see from the sealed files in `W` (one `present` block, or the case's results bank), so it can be sent without opening the keys. For the first part of a round written now it also notes that the part went out (§6.2). |
+| `answer --work W --part questions\|case\|final\|notes\|reflection [--file F \| --text T]` | Append what the learner answered for one part to `W/answers.md`, exactly as given (default: standard input). Earlier parts are never rewritten; the same text for the same part is added once; a second message for a part is added after the first. Prints the part names filed so far, never the text. It also notes when it ran, as the time the learner's message arrived (§6.2): run it first when a message arrives. |
+| `sent --work W --part questions\|questions_feedback\|case\|stage2\|feedback\|close [--at T]` | Not part of a normal round. Notes when a message went out, where the engine cannot tell (§6.2): no file was written as sent, or it was written late. |
+| `save --work W` | First save after the final feedback: the round is recorded in the ledger, the session document is written (part A assembled in the order of the round from the sealed `present` blocks, Stage 2 as sent, the answers, the questions' feedback and the final feedback), with the page file (§7) and an emptied `data/prepared.json`. Everything is found by its fixed name (§6.1); the page settings given at the start are applied so the mix is kept in the ledger. Prints per-topic next due, warnings, `errata_to_log`, and `files`. If the learner's `index.html` is older than the skill's template, the new one joins the publish set (`page_upgraded`). It starts from the ledger as it was before this round (a settings change made earlier in the same job is kept), so it can be run again with the same result. Records the time measured so far (`minutes`, `timing`; §6.2). |
+| `close --work W [--reflection J] [--session ID]` | Second save: the reflection is applied and part B goes into the session document, with the page file. It continues from the current ledger: the one `save` wrote in this job, or, for a reflection given at a later session, the ledger as read; the session document then comes from the store copy (`data/sessions/<id>.json`), and the command stops if it was not read. The reflection JSON is `W/reflection.json` unless given inline. Can be run again after a correction to `B.md`. Completes the round's measured time (the reading of the final feedback, up to the reflection) and prints `time_hint` once five rounds are timed (§6.2): one line of the closing message. |
 | `override --work W [--scores J] [--close-gaps J] [--session ID]` | After the close: a score the learner sets themselves and a gap closed at the learner's request (the entries of `learner_scores` and `learner_closed_gaps`, §3). Writes the ledger, the session document (`learner_changes`, a "Set by the learner" addendum) and the page file into the publish set. Refused while the round is unreflected (use the reflection JSON) and, for scores, for a round from before the last review |
 | `addendum --work W --md ADD.md [--session ID]` | Append later discussion to a session document (default: the last session; the document comes from the publish set or the store copy). |
 | `prepare --work W [--if-needed] [--allow-unreflected]` | Plan the next round (as of tomorrow) from the current ledger, into `W/next/plan.json`. Prints counts only, or `"prepare": false` with the reason (setting off, reflection pending, or — with `--if-needed` — a usable round is already prepared in the store). `--allow-unreflected` plans although the last session has no reflection yet (the scheduled task uses it). A paragraph the learner wrote on the page (in the `--prefs` given to `open`) is written to the ledger first, into the publish set, and reported as `page_settings_applied` with the `files` (§7.1); a round prepared for the old words does not count as usable. |
@@ -481,11 +524,11 @@ order with the ledger last) and `publish`, the path of the manifest `W/publish.j
 | `key-table` | Prints the key-header table of `standards.md` rule 9 from the engine's `KEY_*` definitions; a test fails when the rulebook's copy differs. |
 | `verify --work W --store CHECK` | Testing mode: compare the publish set with the store read again into `CHECK`; the result is also written to `W/verify.json`. |
 | `testing-note --work W --feedback J` | Testing mode: the learner's quick feedback and `W/verify.json`, as `data/testing/<id>.json` for this job's round. |
-| `stats --work W` | Review figures: period, previous period, all time; gaps, calibration, teaching points unchecked, blind spots. Writes nothing. |
+| `stats --work W` | Review figures: period, previous period, all time; gaps, calibration, teaching points unchecked, blind spots; `timing` (medians of the last timed rounds: minutes, answering, waiting, reading; the pace; the hint). Writes nothing. |
 | `review --work W --review REVIEW.json` | Record a review; closes the period. |
 | `review-doc --work W --md REPORT.md [--headline H] [--date D] [--title T]` | A review report as `data/reviews/<date>.json`, listed in the page file. |
 | `snooze --work W [--days 7]` | Postpone a due review. Keeps the prepared round. |
-| `settings --work W [--config J] [--profile J] [--blueprint FILE]` | Change settings: the changed ledger, the page file and the page if it is out of date go into the publish set, with an emptied `data/prepared.json` when the change can alter a round; `prepared` says whether the prepared round was kept and why (§8). A change to `mcqs`, `focused` or `case` is checked (at least one item) and supersedes any older page setting; a refused change writes nothing. Prints `round`: the mix in force in words and its `estimated_minutes`. `--profile '{"journey": "…"}'` or `'{"aim": "…"}'` stores a new paragraph in the learner's words, dates it and clears its label unless the same change gives one; `'{"journey_label": "…", "aim_tags": […]}'` sets the display labels (from their fixed lists, §1) and keeps the prepared round. With a paragraph or a label in the change it prints `profile` (the two paragraphs and their labels), and `labels_needed` while a label is still to derive. |
+| `settings --work W [--config J] [--profile J] [--blueprint FILE]` | Change settings: the changed ledger, the page file and the page if it is out of date go into the publish set, with an emptied `data/prepared.json` when the change can alter a round; `prepared` says whether the prepared round was kept and why (§8). A change to `mcqs`, `focused` or `case` is checked (at least one item) and supersedes any older page setting; a refused change writes nothing. Prints `round`: the mix in force in words, its `estimated_minutes`, and once rounds are timed `basis` ("based on your last N rounds") and `time_hint` (§6.2). `--profile '{"journey": "…"}'` or `'{"aim": "…"}'` stores a new paragraph in the learner's words, dates it and clears its label unless the same change gives one; `'{"journey_label": "…", "aim_tags": […]}'` sets the display labels (from their fixed lists, §1) and keeps the prepared round. With a paragraph or a label in the change it prints `profile` (the two paragraphs and their labels), and `labels_needed` while a label is still to derive. |
 | `theme --work W [--set DOMAIN \| --another]` | The learner changes the theme of the block (§4.1): `--set` a domain by id or name, `--another` the next proposal. Prints `block`, `was`, `say` and, like `settings`, the `files` to publish. Alone: the block, the proposal and the domains to choose from; writes nothing. |
 | `init --work W --profile J --config J --blueprint FILE [--start-over]` | Setup: the first ledger, its page file and the page, into the publish set. Prints `round` (the mix in words and its `estimated_minutes`) to confirm the mix with, and `labels_needed` when a paragraph came without its label. A profile given in the old fields (`role`, `goals`, `notes`) is folded into the paragraphs (§1). `W` needs no store yet. In a work folder opened on a store that already holds a ledger it stops unless `--start-over` is given. |
 
@@ -519,6 +562,7 @@ One job is worked on in one scratch folder, and every file has a fixed name ther
 | `publish/` | every command that writes: the newest version of each store file this job changed, at its store path | the commands that follow (the current ledger is `publish/data/state.json`), `verify`, whoever publishes |
 | `publish.json` | every command that writes: `{"version": <store version read>, "files": [{"as", "path"}, …]}`, in write order | whoever publishes |
 | `verify.json` | `verify` | `testing-note` |
+| `times.json` | `start`, `present`, `answer`, `sent`, `save`, `close`: when each step of the round happened (§6.2) | `save`, `close` |
 | `before_save.json`, `before_close.json` | `save`, `close`: the ledger each started from, so that either can be run again | `save`, `close` |
 | `earlier/<n>/` | `open`, `start`: the files of an earlier job in the same folder, set aside | nobody |
 
@@ -529,6 +573,51 @@ of the publish set is: session, review and testing files, then `data/page.json`,
 `data/prepared.json`, and `data/state.json` last.
 
 A `<!-- present: stage2 -->` block in a sealed file is used when there is no `stage2.md`.
+
+### 6.2 The round's clock, the learner's pace and the hint
+
+**Nobody types a time.** The commands a round already runs note when they ran, in
+`times.json`, and `save` and `close` compute the round's time from that:
+
+| Stamp | Set by | Means |
+|---|---|---|
+| `start` | `start` | the learner asked for a round |
+| `sent:questions` (or `sent:case`) | `start` with a prepared round; else `present` of the first part | the first part went out |
+| `answer:questions`, `answer:case`, `answer:final`, `answer:reflection` | `answer --part …` | a message from the learner arrived (so `answer` runs first in a turn) |
+| `sent:questions_feedback`, `sent:stage2`, `sent:feedback` | the next command, from the time `feedback_questions.md`, `stage2.md`, `feedback.md` was written (so each is written straight after sending) | that message went out |
+| `save`, `close` | `save`, `close` | the final feedback was filed; the reflection arrived |
+
+Every one of these commands takes `--at <ISO time>` for another time than now (a step filed
+late, tests); with `--at` the files' own times are not used, and `sent --part … --at …` gives
+them. A command run again keeps its first time.
+
+From the stamps in time order: after a message **arrived**, the time until the next one goes
+out is `waiting`; after a message **went out**, the time until the next step is the learner's:
+`reading` after the final feedback, `answering` after anything else. The short questions'
+feedback and the case go out together, so the time after that message is answering, less the
+time its words take to read (200 words a minute, at most half of it), which is reading. Any
+stretch between two stamps longer than 15 minutes counts as 15 and the rest is `idle_cut`
+(nothing tells a long answer from a break, so a long stretch is neither dropped nor counted
+whole). The round ends when the reflection arrives. `minutes` is answering + waiting + reading.
+A round in which no `answer` was filed as it went has no `timing`.
+
+**Pace.** A round is *timed* when it has `timing` and at least 3 minutes. Minutes are measured
+per round, not per item, so they are not shared out among item types: each timed round gives
+one number, its minutes divided by what the defaults (`MINUTES_PER`: 5 per MCQ, 10 per focused
+question, 25 for an unfolding case, 15 for a one-step one) give for the items it had, kept
+between 0.25 and 4. The learner's pace is the median of that number over their last 10 timed
+rounds. Every estimate (the plan's `estimated_minutes`, the page's `round.minutes` and
+`minutes_per`) is the default times `1 + w × (pace − 1)` with `w = timed rounds / 10`, at most
+1: the defaults before any timed round, the learner's own pace alone from 10 timed rounds.
+Wherever an estimate is shown with `w > 0` it says "based on your last N rounds".
+
+**Hint.** From 5 timed rounds, `close` prints `time_hint` and the page file carries it: "Your
+rounds take a median of 56 min against your budget of 30; dropping 3 MCQs would save about 21
+min." The median is of the last 10 timed rounds, the budget is `config.session_minutes`. The
+change named is the single one to the mix in force (dropping one or more MCQs, one or more
+focused questions, the case, or a one-step case instead of an unfolding one) after which a
+round, at the learner's own pace, comes nearest the budget; at least one item always stays.
+Within budget the hint says so and names nothing.
 
 ## 7. The page: its file (`data/page.json`) and its settings (`cme/prefs`)
 
@@ -541,7 +630,7 @@ anything of the prepared round. The page reads nothing else of the store except 
 and review documents the learner opens, and the ledger when the learner exports.
 
 ```json
-{"schema": 1, "page_version": "5.2.0", "gen": 14, "updated": "2026-11-20",
+{"schema": 1, "page_version": "5.3.0", "gen": 14, "updated": "2026-11-20",
  "who": {"name": null, "role": "attending", "specialty": "Internal/hospital medicine", "subspecialty": null, "practice": []},
  "totals": {"topics": 9, "mean_mastery": 3.8, "since": "2026-10-01", "sessions": 4, "mean_score": 3.6},
  "sessions": [{"id": "S0004", "date": "2026-11-20", "title": "…", "summary": "…", "tags": [], "topics": ["GI-06"],
@@ -549,7 +638,7 @@ and review documents the learner opens, and the ledger when the learner exports.
  "topics": [{"id": "GI-06", "label": "…", "mastery": 4, "last": "2026-11-20", "calibration": "aligned"}],
  "round": {"mix": {"mcqs": 0, "focused": 1, "case": true}, "set_at": "2026-10-08T09:12:00Z", "minutes": 35,
            "minutes_per": {"mcq": 5, "focused": 10, "case": 25}, "limits": {"mcqs": [0, 10], "focused": [0, 6]},
-           "time_hint": null},
+           "timed_rounds": 0, "time_hint": null},
  "block": {"theme": "CARD", "name": "Cardiology", "done": 4, "length": 12},
  "reviews": [{"date": "2026-11-01", "title": "…", "headline": "…"}], "next_review": "2026-12-13",
  "settings": {"session_length": 35, "per_week": 3, "region": "Iceland/Europe", "units": {"labs": "SI", "gases": "mmHg"},
@@ -572,7 +661,10 @@ and review documents the learner opens, and the ledger when the learner exports.
   of a page setting, below), the estimate for it (`minutes`), the minutes one more item costs
   (`minutes_per`, the case at the format the next round's case takes) and the limits of the
   steppers. The estimates are `MINUTES_PER` in `cme.py`: 5 minutes per MCQ, 10 per focused
-  question, 25 for an unfolding case and 15 for a one-step one, feedback included. The page
+  question, 25 for an unfolding case and 15 for a one-step one, feedback included, moved to
+  the learner's own pace as their rounds are timed (§6.2): `timed_rounds` says how many the
+  figures rest on (the page then adds "based on your last N rounds"), and `time_hint` is the
+  sentence on their measured time against their budget, from five timed rounds. The page
   has no figures of its own.
 - `block`: the theme (visible by ADR 0003) and how many of its rounds are done; `totals.since`
   and `totals.sessions` are the current review period's; `next_review` is when the next
@@ -582,9 +674,8 @@ and review documents the learner opens, and the ledger when the learner exports.
   derived) or the goal tags derived from it; each is null while the paragraph is empty.
   `who.role` is the stage label (an old `role` until there is one). Nothing else of the
   profile's paragraphs is in the file.
-- Empty until their issues fill them: `round.time_hint` (a sentence on the learner's own
-  pace, #47), `settings.reading` and `settings.listening` (#51). The page shows each once it
-  is not null.
+- Empty until their issues fill them: `settings.reading` and `settings.listening` (#51). The
+  page shows each once it is not null.
 
 The names in the page file are the page's own, not the ledger's: the page knows no ledger
 field. `schema` changes when a page would misread the file; `page_version` is the
@@ -662,12 +753,13 @@ was prepared moves the generation (below), so that round is no longer used.
 
 **Settings: two groups.** `settings` prints `prepared`: `{"kept": true, "why": …}` or
 `{"kept": false, "changed": […], "why": …}`, where `changed` names the settings that set it
-aside. What counts is the values that changed, not the keys that were sent.
+aside. What counts is the values that changed, not the keys that were sent; `listening` and
+`podcast_sources` count as they take effect (on, and no shows named, in a ledger without them).
 
 | Group | Settings | Prepared round |
 |---|---|---|
 | Cannot change what a round contains | config: `testing`, `reminders`, `prepare_task`, `prepare_ahead`, `helpers`, `show_coding`, `target_sessions_per_week`, `review_interval_days` (and `round_set_at` on its own); profile: `display_name`, `onboarded_at`, the display labels `journey_label` and `aim_tags` (and `journey_set_at`, `aim_set_at` on their own). Also `snooze`. | kept, untouched; the next `start` uses it and puts today's `testing`, `helpers`, `prepare_ahead` and `show_coding` into its plan |
-| Can change the plan, the items or the feedback notes | everything else, including any setting not listed above: the mix (`mcqs`, `focused`, `case`), `session_minutes`, `case_format`, `item_order`, `feedback_depth`, `intervals_days`, `new_topics_per_round`, `lab_units`, `blood_gas_units`, `guideline_region`, `resource_preferences`; every other profile field (the paragraphs `journey` and `aim`, from a chat or from the page; `specialty`, `subspecialty`, `practice_setting`, `goals`, `strengths`, `weaknesses`, `domain_self_ratings`, `domain_emphasis`, `notes`); a blueprint that differs from the current one | set aside (emptied), and the output says which setting did it |
+| Can change the plan, the items or the feedback notes | everything else, including any setting not listed above: the mix (`mcqs`, `focused`, `case`), `session_minutes`, `case_format`, `item_order`, `feedback_depth`, `intervals_days`, `new_topics_per_round`, `lab_units`, `blood_gas_units`, `guideline_region`, `resource_preferences`, `listening`; every other profile field (the paragraphs `journey` and `aim`, from a chat or from the page; `specialty`, `subspecialty`, `practice_setting`, `goals`, `strengths`, `weaknesses`, `domain_self_ratings`, `domain_emphasis`, `notes`, `podcast_sources`); a blueprint that differs from the current one | set aside (emptied), and the output says which setting did it |
 
 **The generation it is tied to.** `gen` counts every write of the ledger, also a change of the
 first group. A prepared round is therefore tied to `content_gen`: the generation of the last

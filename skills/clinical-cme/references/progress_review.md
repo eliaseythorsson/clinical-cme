@@ -45,7 +45,9 @@ If some of the period's older sessions have no transcript (only scores, gaps and
 
 **Your last N weeks**
 - Sessions: *n* (≈ *x* per week; target *y*). Time: about *m* minutes in sessions plus *r*
-  minutes of reading reported (say when timings are estimates).
+  minutes of reading reported (say when timings are estimates). With timed rounds (`stats`
+  `timing`): the median round against the budget, split into answering, waiting and reading,
+  and its `hint`; the sessions it leaves out are older ones without measured time.
 - Items: cases, focused questions (mean score) and MCQs (accuracy), from `stats` `items`.
 - Coverage: domains practised with mean latest score; blueprint domains not yet touched.
 - **What you learned**: gaps resolved in the period, one plain line each, plus key learning

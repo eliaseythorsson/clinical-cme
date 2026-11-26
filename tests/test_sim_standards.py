@@ -69,7 +69,7 @@ def test_stage_2_is_checked_as_it_was_sent(played):
 
 def test_feedback_that_uses_abbreviations_without_the_glossary_line_fails(played):
     s, out, rep, st = played("feedback_abbreviations")
-    assert out["ok"] is False and out["checks"] == {"blinding": True, "saved": True, "log": True, "standards": False}
+    assert out["ok"] is False and out["checks"] == {"blinding": True, "saved": True, "log": True, "standards": False, "listening": True}
     assert st["problems"] == ["the questions feedback uses 2 abbreviations and does not open with the glossary line "
                               "\"Abbreviations: …\" (references/standards.md, rule 5.3)"]
     # LP and ESC; CT is on the list, and the blueprint ID in the reveal is not an abbreviation

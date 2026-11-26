@@ -96,7 +96,7 @@ import zlib
 
 SCHEMA = 4
 SKILL_VERSION = "4.3.1"
-PAGE_VERSION = "5.2.0"   # templates/page.html carries <meta name="cme-page-version" content="5.2.0">
+PAGE_VERSION = "5.3.0"   # templates/page.html carries <meta name="cme-page-version" content="5.3.0">
 
 DEFAULT_CONFIG = {
     # The mix a new learner starts with: one focused question and the case, about 35 minutes
@@ -123,6 +123,7 @@ DEFAULT_CONFIG = {
     "testing": False,                    # testing mode: feedback check + store check at the end of each round               # a scheduled task also prepares the round when none is ready
     "show_coding": True,
     "reminders": False,
+    "listening": True,                   # one podcast episode per topic at the end of a round (issue #50)
     "resource_preferences": {"free_only": False, "formats": ["guidelines", "review articles"]},
 }
 # A ledger written before the mix was a setting of its own has no `mcqs`, `focused` or `case`: it
@@ -137,6 +138,7 @@ DEFAULT_PROFILE = {
     "journey_label": None, "aim_tags": None,
     "practice_setting": [], "goals": [], "strengths": [], "weaknesses": [],
     "domain_self_ratings": {}, "domain_emphasis": {}, "notes": "", "onboarded_at": None,
+    "podcast_sources": None,             # {"trusted": [shows], "avoid": [shows]}; None until the learner was asked
 }
 # The two open questions, word for word the same at setup (onboarding.md §2) and on the page.
 JOURNEY_QUESTION = ("In a few sentences, describe where you are in your training or career and how you'd "
@@ -159,6 +161,12 @@ CONTENT_NEUTRAL_CONFIG = ("testing", "reminders", "prepare_task", "prepare_ahead
 # the paragraphs: the paragraphs themselves are not here.
 CONTENT_NEUTRAL_PROFILE = ("display_name", "onboarded_at", "journey_label", "aim_tags",
                            "journey_set_at", "aim_set_at")
+# Listening (issue #50; references/standards.md, rule 8): a pick is one Spotify episode of
+# 15 to 90 minutes; a kit keeps three candidates per topic.
+SPOTIFY_EPISODE_RE = re.compile(r"^https://open\.spotify\.com/episode/[A-Za-z0-9]{22}$")
+LISTEN_MINUTES = (15, 90)
+LISTEN_CANDIDATES = 3
+LISTEN_SOURCES = ("kit", "search")
 SELF_RATING_FACTOR = {1: 1.6, 2: 1.3, 3: 1.0, 4: 0.8, 5: 0.6}
 MIN_RETURN_DAYS = 3      # no tested topic and no open gap comes back sooner than this (ADR 0003)
 # Drill-down limit (ADR 0003): no topic is in more than this many rounds in a row, and a topic
@@ -201,6 +209,17 @@ ROUND_LIMITS = {"mcqs": (0, 10), "focused": (0, 6)}
 # Rough minutes per item, answering plus reading its feedback: the plan's estimate and the one
 # the page shows (round_minutes). A one-step case ("discriminate") is shorter than an unfolding one.
 MINUTES_PER = {"mcq": 5, "focused": 10, "unfolding": 25, "discriminate": 15}
+# Measured time (issue #47). A round is timed from the stamps the engine sets as the round goes
+# (round_timing); a stretch without any step longer than IDLE_GAP_MINUTES counts for that long
+# and the rest is cut. The estimates move from MINUTES_PER to the learner's own pace over
+# PACE_FULL_ROUNDS timed rounds; the hint appears from HINT_MIN_ROUNDS.
+IDLE_GAP_MINUTES = 15
+PACE_FULL_ROUNDS = 10
+HINT_MIN_ROUNDS = 5
+TIMED_MIN_MINUTES = 3        # below this the stamps were not set as the round went: not a timed round
+PACE_LIMITS = (0.25, 4.0)    # a round's minutes against the defaults for its mix, kept within reason
+READING_WPM = 200            # reading the short questions' feedback, when the case came in the same message
+LEGACY_MINUTES_CAP = 180     # what older versions capped a whole session at: such a value is no measurement
 GENERIC_WORDS = {"acute", "chronic", "disease", "disorder", "disorders", "management", "issues",
                  "inpatient", "outpatient", "basics", "common", "general", "emergencies",
                  "emergency", "workup", "assessment", "syndrome", "therapy", "treatment",
@@ -569,6 +588,42 @@ def deep_merge(target, changes):
             deep_merge(target[k], v)
         else:
             target[k] = v
+
+
+def listening_on(st):
+    """Listening is on unless the learner turned it off; a ledger older than the setting has it on."""
+    return (st.get("config") or {}).get("listening", True) is not False
+
+
+def podcast_sources(value, where="podcast_sources"):
+    """The learner's podcast sources in their one form: {"trusted": [shows], "avoid": [shows]},
+    each a list of names without blanks or repeats. None (never asked) reads as two empty lists.
+    Stops on anything else, so a mistyped setting is never stored."""
+    if value is None:
+        return {"trusted": [], "avoid": []}
+    if not isinstance(value, dict) or set(value) - {"trusted", "avoid"}:
+        die('%s must be {"trusted": [shows], "avoid": [shows]}' % where)
+    out = {}
+    for k in ("trusted", "avoid"):
+        v = value.get(k)
+        v = [] if v is None else [v] if isinstance(v, str) else v
+        if not isinstance(v, list) or not all(isinstance(x, str) for x in v):
+            die("%s.%s must be a list of show names" % (where, k))
+        names = []
+        for x in v:
+            x = " ".join(x.split())
+            if x and x.casefold() not in [n.casefold() for n in names]:
+                names.append(x)
+        out[k] = names
+    return out
+
+
+def listening_status(st):
+    """What `start` and the plan say about listening: whether it is on, the shows to prefer and
+    to avoid, and whether the learner is still to be asked for them (once)."""
+    on = listening_on(st)
+    return dict(podcast_sources((st.get("profile") or {}).get("podcast_sources"), "profile.podcast_sources"),
+                on=on, ask_sources=on and (st.get("profile") or {}).get("podcast_sources") is None)
 
 
 def guideline_context(st):
@@ -1110,12 +1165,175 @@ def round_minutes(mcqs, focused, case, fmt="unfolding"):
             + (MINUTES_PER.get(fmt, MINUTES_PER["unfolding"]) if case else 0))
 
 
+def median(values):
+    v = sorted(values)
+    return None if not v else (v[len(v) // 2] if len(v) % 2 else (v[len(v) // 2 - 1] + v[len(v) // 2]) / 2.0)
+
+
+def round_timing(stamps):
+    """The measured time of a round from its stamps, [{"what", "at"}, …] in any order:
+    {"started_at", "ended_at", "minutes", "timing": {"answering", "waiting", "reading",
+    "idle_cut"}} in minutes, or None with fewer than two usable stamps.
+
+    A stamp is a message from the learner arriving (`start`, `answer:<part>`, `close`), a
+    message going out (`sent:<part>`) or another step (`save`, `answer:notes`). The time
+    after a message arrived, until the next one goes out, is the learner **waiting**; the time
+    after one went out is the learner's: **reading** after the final feedback, **answering**
+    after anything else. The short questions' feedback and the case go out in one message, so
+    the time after it is answering, less the time its words take to read (READING_WPM, at most
+    half). A stretch between two stamps longer than IDLE_GAP_MINUTES counts for that long; the
+    rest is `idle_cut`. The round ends when the reflection arrives."""
+    events = []
+    for i, e in enumerate(stamps or []):
+        t = parse_stamp(e.get("at")) if isinstance(e, dict) else None
+        if t and isinstance(e.get("what"), str):
+            w = e["what"]               # at the same second: the start, then what arrived, then what went out
+            events.append((t, 0 if w == "start" else 2 if w.startswith("sent:") else 1, i, w, e))
+    whats = [ev[3] for ev in events]
+    # `save` stands for the final feedback only where nothing else says when that went out
+    events = sorted((ev[0], ev[1:3], ev[3], ev[4]) for ev in events
+                    if not (ev[3] == "save" and "sent:feedback" in whats))
+    seen, kept = set(), []
+    for ev in events:                       # the first of each step counts: a command run again changes nothing
+        w = ev[2]
+        if w in seen and (w.startswith("sent:") or w in ("start", "save", "close")):
+            continue
+        seen.add(w)
+        kept.append(ev)
+        if w in ("close", "answer:reflection"):
+            break                           # the reflection arrived: the round ends here
+    if len(kept) < 2:
+        return None
+    has_case = any(w in ("answer:case", "answer:final", "sent:stage2", "sent:case") for w in whats)
+    final = "feedback" if "sent:feedback" in whats or has_case else "questions_feedback"
+    cap = IDLE_GAP_MINUTES * 60.0
+    secs = {"answering": 0.0, "waiting": 0.0, "reading": 0.0, "idle_cut": 0.0}
+    mode, words = "waiting", None
+    for (t0, _, w, e), (t1, _, _, _) in zip(kept, kept[1:]):
+        if w.startswith("sent:"):
+            part = w[5:]
+            mode = "reading" if part in (final, "close") else "answering"
+            words = e.get("words") if part == "questions_feedback" and mode == "answering" else None
+        elif w == "save" and "sent:feedback" not in whats and mode == "waiting":
+            mode, words = "reading", None   # no stamp for the final feedback: it was out when it was saved
+        elif w == "start" or (w.startswith("answer:") and w != "answer:notes") or w == "close":
+            mode, words = "waiting", None
+        gap = max(0.0, (t1 - t0).total_seconds())
+        counted = min(gap, cap)
+        secs["idle_cut"] += gap - counted
+        if mode == "answering" and isinstance(words, (int, float)) and words > 0:
+            read = min(counted / 2.0, words * 60.0 / READING_WPM)
+            secs["reading"] += read
+            counted -= read
+            words = None                    # read once
+        secs[mode] += counted
+    active = secs["answering"] + secs["waiting"] + secs["reading"]
+    return {"started_at": kept[0][3]["at"], "ended_at": kept[-1][3]["at"],
+            "minutes": max(1, int(round(active / 60.0))),
+            "timing": {k: round(v / 60.0, 1) for k, v in secs.items()}}
+
+
+def is_timed(sess):
+    """A session whose minutes were measured from stamps. Sessions of older versions are not:
+    they have no `timing`, and their minutes were the time from start to end capped at 180
+    (LEGACY_MINUTES_CAP), which a session left open reached."""
+    m, t = sess.get("minutes"), sess.get("timing")
+    if not isinstance(t, dict) or not isinstance(m, (int, float)) or isinstance(m, bool):
+        return False
+    return m >= TIMED_MIN_MINUTES and not (m == LEGACY_MINUTES_CAP and t.get("answering") is None)
+
+
+def session_default_minutes(sess):
+    """What MINUTES_PER gives for the items a past session had."""
+    fmt = sess.get("format")
+    return round_minutes(sess.get("mcqs"), sess.get("focused"), fmt in ("unfolding", "discriminate"), fmt)
+
+
+def timed_rounds(st):
+    """The last timed rounds (at most PACE_FULL_ROUNDS), oldest first."""
+    rounds = [s for s in (st.get("previous") or []) + (st.get("sessions") or [])
+              if is_timed(s) and session_default_minutes(s) > 0]
+    return rounds[-PACE_FULL_ROUNDS:]
+
+
+def pace(st):
+    """How the learner's measured rounds compare with the defaults:
+    {"rounds": n, "own": f, "factor": b, "median_minutes": m}.
+
+    Minutes are measured per round, not per item, so they are not shared out among item
+    types: each timed round gives one number, its minutes over what MINUTES_PER gives for its
+    own mix, and `own` is the median of those over the last timed rounds. `factor` is what
+    every estimate is multiplied by: 1 (the defaults) with no timed round, moving a tenth of
+    the way to `own` with each timed round, and `own` itself from PACE_FULL_ROUNDS."""
+    rounds = timed_rounds(st)
+    n = len(rounds)
+    if not n:
+        return {"rounds": 0, "own": None, "factor": 1.0, "median_minutes": None}
+    own = median([min(PACE_LIMITS[1], max(PACE_LIMITS[0], s["minutes"] / float(session_default_minutes(s))))
+                  for s in rounds])
+    w = min(n, PACE_FULL_ROUNDS) / float(PACE_FULL_ROUNDS)
+    return {"rounds": n, "own": round(own, 3), "factor": round(1.0 + w * (own - 1.0), 3),
+            "median_minutes": int(round(median([s["minutes"] for s in rounds])))}
+
+
+def paced(minutes, factor):
+    """An estimate at the learner's pace, in whole minutes (the default itself at factor 1)."""
+    return minutes if factor == 1.0 else int(round(minutes * factor))
+
+
+def based_on(n):
+    """How an estimate that uses the learner's own times says so; None for the defaults."""
+    return None if not n else "based on your last round" if n == 1 else "based on your last %d rounds" % n
+
+
 def mix_estimate(st):
-    """(the round mix in force, the minutes a round of it is estimated to take)."""
+    """(the round mix in force, the minutes a round of it is estimated to take at the learner's
+    pace, the number of timed rounds that pace rests on)."""
     cfg = st.get("config") or {}
     mix = {"mcqs": int(cfg.get("mcqs", LEGACY_MIX["mcqs"]) or 0), "focused": int(cfg.get("focused", 0) or 0),
            "case": bool(cfg.get("case", True))}
-    return mix, round_minutes(mix["mcqs"], mix["focused"], mix["case"], next_case_format(st))
+    p = pace(st)
+    return (mix, paced(round_minutes(mix["mcqs"], mix["focused"], mix["case"], next_case_format(st)), p["factor"]),
+            p["rounds"])
+
+
+def time_hint(st):
+    """Once HINT_MIN_ROUNDS rounds are timed: {"text", "median", "budget", "rounds", "drop",
+    "saves"}, the sentence the close and the page show. Over budget, it names the one change
+    to the mix in force (some MCQs, some focused questions, the case, or a one-step case) that
+    brings a round nearest the budget, at the learner's own pace; None before that."""
+    p = pace(st)
+    if p["rounds"] < HINT_MIN_ROUNDS:
+        return None
+    cfg = st.get("config") or {}
+    budget = int(cfg.get("session_minutes") or DEFAULT_CONFIG["session_minutes"])
+    med = p["median_minutes"]
+    out = {"median": med, "budget": budget, "rounds": p["rounds"], "drop": None, "saves": None}
+    if med <= budget:
+        out["text"] = "Your rounds take a median of %d min, within your budget of %d." % (med, budget)
+        return out
+    mix, fmt, own = mix_estimate(st)[0], next_case_format(st), p["own"]
+    now = round_minutes(mix["mcqs"], mix["focused"], mix["case"], fmt) * own
+    items = mix["mcqs"] + mix["focused"] + (1 if mix["case"] else 0)
+    options = []                            # (minutes saved, what to say), smallest change first
+    for key, one, many in (("mcqs", "MCQ", "MCQs"), ("focused", "focused question", "focused questions")):
+        per = MINUTES_PER["mcq" if key == "mcqs" else "focused"] * own
+        for k in range(1, mix[key] + 1):
+            if items - k >= 1:
+                options.append((k * per, "dropping %s" % ("one %s" % one if k == 1 else "%d %s" % (k, many))))
+    if mix["case"]:
+        if fmt == "unfolding":
+            options.append(((MINUTES_PER["unfolding"] - MINUTES_PER["discriminate"]) * own,
+                            "a one-step case instead of an unfolding one"))
+        if items > 1:
+            options.append((MINUTES_PER[fmt] * own, "dropping the case"))
+    text = "Your rounds take a median of %d min against your budget of %d" % (med, budget)
+    if options:
+        saves, what = min(options, key=lambda o: abs(now - o[0] - budget))
+        out["drop"], out["saves"] = what, int(round(saves))
+        text += "; %s would save about %d min" % (what, out["saves"])
+    out["text"] = text + "."
+    return out
 
 
 def all_sessions_for_novelty(state):
@@ -1538,7 +1756,9 @@ def plan_round(st, args, today):
     by_slot = {k: [c for c in chosen if c["slot"] == k] for k in ("case", "mcq", "focused")}
     present = (by_slot["mcq"] + by_slot["focused"] + by_slot["case"] if order != "case_first"
                else by_slot["case"] + by_slot["mcq"] + by_slot["focused"])
-    est = round_minutes(len(by_slot["mcq"]), len(by_slot["focused"]), len(by_slot["case"]), fmt)
+    own_pace = pace(st)
+    est = paced(round_minutes(len(by_slot["mcq"]), len(by_slot["focused"]), len(by_slot["case"]), fmt),
+                own_pace["factor"])
     plan = {
         "ok": True, "date": iso(today), "session_id": st.get("next_id"),
         "case_format": fmt if by_slot["case"] else None,
@@ -1551,6 +1771,9 @@ def plan_round(st, args, today):
         "feedback_depth": cfg.get("feedback_depth"), "show_coding": cfg.get("show_coding", True),
         "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
         "testing": bool(cfg.get("testing", False)),
+        # listening (rule 8): whether the kits get a "## Listening" section, and whose shows
+        "listening": listening_on(st),
+        "podcast_sources": podcast_sources(st["profile"].get("podcast_sources"), "profile.podcast_sources"),
         # what the author pitches to (standards.md rule 4): the learner's own paragraphs, never
         # the labels derived from them
         "profile": dict({k: st["profile"].get(k) for k in ("journey", "aim", "subspecialty", "practice_setting")},
@@ -1561,6 +1784,7 @@ def plan_round(st, args, today):
         "block": dict(block, mix=mix) if block else None,
         "items": chosen,
         "pending_errata": st.get("pending_errata") or [],
+        **({"estimate_rounds": own_pace["rounds"]} if own_pace["rounds"] else {}),   # the estimate is at the learner's pace
         "note": "Blind: do not reveal topics, reasons or the drill before all answers are in. The "
                 "learner is told the block's theme and position (block.line) and nothing more "
                 "specific: never which items are on the theme, nor the domain of any other item. "
@@ -1578,6 +1802,7 @@ def plan_summary(plan, out):
     return {"ok": True, "out": out, "items": len(plan["items"]),
             "mcqs": counts["mcqs"], "focused": counts["focused"], "case": counts["case"],
             "case_format": plan["case_format"], "estimated_minutes": plan["estimated_minutes"],
+            **({"estimate_rounds": plan["estimate_rounds"]} if plan.get("estimate_rounds") else {}),
             "item_order": plan["item_order"], "session_id": plan["session_id"],
             "block": (plan.get("block") or {}).get("line")}
 
@@ -1891,13 +2116,21 @@ def apply_round(state, rnd, today, theme=None):
         ratings[d] = c if prev is None else round((2 * float(prev) + c) / 3.0, 1)
 
     # session entry
+    # time: measured from the round's stamps (`save` and `close` put `timing` there from the
+    # work folder; a round.json may carry its own `stamps`). Without stamps there is only the
+    # start and the end: no idle time can be cut from that, so a whole session of more than
+    # LEGACY_MINUTES_CAP minutes is not recorded as a duration at all, and none is `timing`.
+    timing = rnd.get("timing") if isinstance(rnd.get("timing"), dict) else None
+    if timing is None and rnd.get("stamps"):
+        measured = round_timing(rnd["stamps"])
+        if measured:
+            timing = measured["timing"]
+            rnd.update({k: measured[k] for k in ("started_at", "ended_at", "minutes")})
     started, ended, minutes = rnd.get("started_at"), rnd.get("ended_at"), rnd.get("minutes")
     if minutes is None and started and ended:
-        try:
-            a = dt.datetime.fromisoformat(str(started).replace("Z", "+00:00"))
-            b = dt.datetime.fromisoformat(str(ended).replace("Z", "+00:00"))
-            minutes = max(1, min(180, int(round((b - a).total_seconds() / 60.0))))
-        except ValueError:
+        a, b = parse_stamp(str(started)), parse_stamp(str(ended))
+        minutes = max(1, int(round((b - a).total_seconds() / 60.0))) if a and b and b >= a else None
+        if minutes is not None and minutes > LEGACY_MINUTES_CAP:
             minutes = None
     mcq_items = [it for it in rnd["items"] if it.get("type") == "mcq"]
     has_case = any(is_case(it) for it in rnd["items"])
@@ -1927,6 +2160,8 @@ def apply_round(state, rnd, today, theme=None):
         "drill": rnd.get("drill"),
         "steps_before": steps_before,
     }
+    if timing is not None:
+        entry["timing"] = {k: timing.get(k) for k in ("answering", "waiting", "reading", "idle_cut")}
     if entry["case"] is not None:
         entry["case"]["topic"] = next((it["topic"] for it in rnd["items"] if is_case(it)), None)
 
@@ -2019,6 +2254,8 @@ def to_previous(sess):
            "drill": sess.get("drill"), "grade_changes": [{k: g.get(k) for k in ("outcome", "from", "to") if g.get(k) is not None}
                              for g in sess.get("grade_changes") or []],
            "reflection": {"skipped": bool((sess.get("reflection") or {}).get("skipped"))}}
+    if isinstance(sess.get("timing"), dict):
+        out["timing"] = sess["timing"]
     if sess.get("case"):
         out["case"] = {k: sess["case"].get(k) for k in ("topic", "presentation", "diagnosis") if sess["case"].get(k)}
     if sess.get("url"):
@@ -2071,9 +2308,10 @@ def report(out, size, result):
     return dict({"ok": True, "out": out, "bytes": size}, **result)
 
 
-def reflect_round(st, refl, today, session=None):
+def reflect_round(st, refl, today, session=None, measured=None):
     """Apply the reflection `refl` to the unreflected session of ledger `st` (or to `session`),
-    changing `st` in place. Returns what reflect and close report about it."""
+    changing `st` in place. Returns what reflect and close report about it. `measured`: the
+    round's time now that the reflection has arrived (round_timing), replacing what `save` had."""
     sid = session or st.get("unreflected")
     sess = next((s for s in st["sessions"] if s.get("id") == sid), None)
     if not sess or not sess.get("_snapshot"):
@@ -2083,6 +2321,8 @@ def reflect_round(st, refl, today, session=None):
     restore(st, snap)
     st["agg"]["sessions"] -= 0  # agg was restored from the snapshot
     rnd = dict(rnd, reflection=refl)
+    if measured:
+        rnd.update(measured)
     for k in ("grade_changes", "errata", "key_learning", "resolved"):
         if refl.get(k):
             rnd[k] = list(rnd.get(k) or []) + list(refl[k])
@@ -2408,6 +2648,21 @@ def agg_analytics(agg):
     }
 
 
+def timing_stats(st):
+    """Measured time over the last timed rounds, for the review: medians per round, the pace
+    against the defaults and the hint. Sessions without stamps (older versions) are left out."""
+    rounds = timed_rounds(st)
+    p = pace(st)
+    hint = time_hint(st)
+    med = lambda k: median([float((s["timing"].get(k)) or 0) for s in rounds])
+    return {"timed_rounds": len(rounds), "session_ids": [s.get("id") for s in rounds],
+            "median_minutes": p["median_minutes"], "budget_minutes": (st.get("config") or {}).get("session_minutes"),
+            "median_answering": med("answering"), "median_waiting": med("waiting"),
+            "median_reading": med("reading"), "idle_cut_total": round(sum(float(s["timing"].get("idle_cut") or 0)
+                                                                         for s in rounds), 1),
+            "pace": p["own"], "estimate_factor": p["factor"], "hint": hint["text"] if hint else None}
+
+
 def cmd_stats(args):
     today = today_from(args)
     st, _ = current_ledger(*job(args))
@@ -2464,6 +2719,7 @@ def cmd_stats(args):
         "minutes_recorded": sum(minutes), "sessions_without_timing": len(log) - len(minutes),
         "estimated_total_minutes": sum(minutes) + (len(log) - len(minutes)) * int(cfg.get("session_minutes") or 20),
         "reading_minutes_reported": sum(reading),
+        "timing": timing_stats(st),
         "items": {"cases": sum(1 for s in log for it in s.get("items") or [] if is_case(it)),
                   "focused": len(focused_m),
                   "focused_mean_mastery": round(sum(focused_m) / len(focused_m), 2) if focused_m else None,
@@ -2582,6 +2838,30 @@ def changed_keys(before, after):
     return sorted(k for k in set(before) | set(after) if before.get(k) != after.get(k))
 
 
+def round_estimate(st):
+    """What settings and init print about the round: the mix, its estimate and, once rounds
+    are timed, what the estimate rests on (`basis`) and the hint."""
+    mix, minutes, n = mix_estimate(st)
+    out = {"mix": mix_text(mix), "estimated_minutes": minutes}
+    if n:
+        out["basis"] = based_on(n)
+    hint = time_hint(st)
+    if hint:
+        out["time_hint"] = hint["text"]
+    return out
+
+
+def settings_in_effect(st, section):
+    """The config or the profile of a ledger with listening and the podcast sources in the
+    form they take effect in, for comparing two versions of the settings."""
+    out = dict(st.get(section) or {})
+    if section == "config":
+        out["listening"] = listening_on(st)
+    else:
+        out["podcast_sources"] = podcast_sources(out.get("podcast_sources"), "profile.podcast_sources")
+    return out
+
+
 def cmd_settings(args):
     """Change settings: the changed ledger goes into the publish set, with the page file and the
     page if it is out of date, so a settings change is one command. A change that can alter
@@ -2597,6 +2877,10 @@ def cmd_settings(args):
     deep_merge(st["profile"], prof_changes or {})
     set_paragraphs(st["profile"], was["profile"] or {}, prof_changes or {})
     check_paragraphs(st["profile"])
+    if "podcast_sources" in (prof_changes or {}):
+        st["profile"]["podcast_sources"] = podcast_sources(st["profile"]["podcast_sources"], "profile.podcast_sources")
+    if "listening" in (cfg_changes or {}) and not isinstance(st["config"]["listening"], bool):
+        die("config.listening must be true or false")
     if any(k in (cfg_changes or {}) for k in ("mcqs", "focused", "case")):
         check_round_mix(st["config"])
         if "round_set_at" not in cfg_changes:
@@ -2607,17 +2891,20 @@ def cmd_settings(args):
     if args.blueprint:
         st["blueprint"] = read_blueprint(args.blueprint)
     # what changed decides whether the round prepared ahead still stands: the values, not the
-    # keys that were sent (setting a value it already has changes nothing)
-    affects = [k for k in changed_keys(was["config"] or {}, st["config"]) if k not in CONTENT_NEUTRAL_CONFIG]
-    affects += ["profile." + k for k in changed_keys(was["profile"] or {}, st["profile"])
+    # keys that were sent (setting a value it already has changes nothing). Listening and the
+    # podcast sources are compared as they take effect: a ledger without them has listening on
+    # and no sources, so saying so again changes nothing.
+    affects = [k for k in changed_keys(settings_in_effect(was, "config"), settings_in_effect(st, "config"))
+               if k not in CONTENT_NEUTRAL_CONFIG]
+    affects += ["profile." + k for k in changed_keys(settings_in_effect(was, "profile"), settings_in_effect(st, "profile"))
                 if k not in CONTENT_NEUTRAL_PROFILE]
     if args.blueprint and st["blueprint"] != was["blueprint"]:
         affects.append("blueprint")
     bump_gen(st, content=bool(affects))
     st["updated"] = iso(today)
-    out = {"ok": True, "gen": st["gen"], "config": st["config"], "review": st["review"], **guideline_context(st)}
-    mix, minutes = mix_estimate(st)
-    out["round"] = {"mix": mix_text(mix), "estimated_minutes": minutes}      # what to confirm a new mix with
+    out = {"ok": True, "gen": st["gen"], "config": st["config"], "review": st["review"], **guideline_context(st),
+           "listening": listening_status(st)}
+    out["round"] = round_estimate(st)       # what to confirm a new mix with
     if any(k in (prof_changes or {}) for k in ("journey", "aim", "journey_label", "aim_tags")):
         out["profile"] = {k: st["profile"].get(k) for k in ("journey", "journey_label", "aim", "aim_tags")}
     if labels_needed(st):
@@ -2700,6 +2987,8 @@ def cmd_init(args):
     for key, _, _ in PARAGRAPHS:
         if (st["profile"].get(key) or "").strip() and not st["profile"].get(key + "_set_at"):
             st["profile"][key + "_set_at"] = now_ts()
+    if st["profile"].get("podcast_sources") is not None:
+        st["profile"]["podcast_sources"] = podcast_sources(st["profile"]["podcast_sources"], "profile.podcast_sources")
     st["profile"]["onboarded_at"] = iso(today)
     check_round_mix(st["config"])
     st["config"]["round_set_at"] = st["config"].get("round_set_at") or now_ts()
@@ -2718,8 +3007,7 @@ def cmd_init(args):
                 os.remove(os.path.join(work, PUBLISH_DIR, rel))
     save_json(info, os.path.join(work, WORK_FILE))
     out = {"ok": True, "gen": st["gen"], "domains": list(st["blueprint"]), "topics": len(bp_topics(st))}
-    mix, minutes = mix_estimate(st)
-    out["round"] = {"mix": mix_text(mix), "estimated_minutes": minutes}
+    out["round"] = round_estimate(st)
     if labels_needed(st):
         out["labels_needed"] = labels_needed(st)
     path = publish_ledger(work, info, st, out, empty_prepared=True, fresh_page=bool(args.start_over))
@@ -2791,7 +3079,7 @@ def review_path(date):
 # topic not yet tested, an active drill, the reason for a theme or the prepared round.
 
 PAGE_SESSION_KEYS = ("id", "date", "title", "summary", "tags", "topics", "score", "minutes", "format", "drill",
-                     "reflected")
+                     "reflected")      # `minutes`: the active time of the round (idle time cut)
 
 
 def page_session(doc):
@@ -2873,7 +3161,9 @@ def page_doc(st, lists=None):
     mastery = [t["mastery"] for t in topics if isinstance(t["mastery"], (int, float))]
     period = [s.get("score") for s in st.get("sessions") or []]
     scores = [x for x in period if isinstance(x, (int, float))]
-    mix, minutes = mix_estimate(st)
+    mix, minutes, timed = mix_estimate(st)
+    factor, hint = pace(st)["factor"], time_hint(st)
+    per = lambda k: MINUTES_PER[k] if factor == 1.0 else round(MINUTES_PER[k] * factor, 2)
     block = st.get("block")
     if isinstance(block, dict) and block.get("theme"):
         length = int(block.get("length") or BLOCK_LENGTH)
@@ -2905,13 +3195,16 @@ def page_doc(st, lists=None):
         "sessions": sessions,
         "topics": topics,
         # the mix in force and what it costs: the page shows `minutes`, and prices a mix the
-        # learner is choosing with `minutes_per` (the case already at the next round's format)
+        # learner is choosing with `minutes_per` (the case already at the next round's format).
+        # Both are at the learner's own pace once rounds are timed (`timed_rounds` of them: the
+        # page then says "based on your last N rounds"); `time_hint` is the sentence on how
+        # their rounds compare with their budget, from HINT_MIN_ROUNDS timed rounds
         "round": {"mix": mix, "set_at": cfg.get("round_set_at"),
                   "minutes": minutes,
-                  "minutes_per": {"mcq": MINUTES_PER["mcq"], "focused": MINUTES_PER["focused"],
-                                  "case": MINUTES_PER[next_case_format(st)]},
+                  "minutes_per": {"mcq": per("mcq"), "focused": per("focused"), "case": per(next_case_format(st))},
                   "limits": {k: list(v) for k, v in ROUND_LIMITS.items()},
-                  "time_hint": None},                    # issue #47: the learner's own pace
+                  "timed_rounds": timed,
+                  "time_hint": hint["text"] if hint else None},
         "block": block,
         "reviews": sorted(reviews.values(), key=lambda r: r.get("date") or "", reverse=True),
         "next_review": review.get("next_due"),
@@ -2964,6 +3257,9 @@ def status_dict(st, path, today):
         **guideline_context(st),             # what the examiner grades against
         # the learner's own paragraphs: the examiner pitches the feedback to them (standards.md rule 4)
         "pitch": {k: (st["profile"].get(k) or None) for k, _, _ in PARAGRAPHS},
+        # one podcast episode per topic in the final feedback: on or off, the shows to prefer and
+        # to avoid, and `ask_sources` while the learner has not been asked for them yet
+        "listening": listening_status(st),
         "prepare_task": bool(cfg.get("prepare_task", False)),
         "reminders": cfg.get("reminders"),
         "bytes": os.path.getsize(path),
@@ -3074,7 +3370,11 @@ def cmd_start(args):
         plan_out = plan_summary(plan, plan_path)
     status["plan"] = plan_out
     # everything the first message needs, so that nothing else is run or read before it (issue #43)
-    status["started_at"] = now_ts()
+    # the round's clock starts; with a prepared round the first part goes out with this output
+    first = prepared.get("present_block") or (
+        "questions" if (plan_out.get("mcqs") or plan_out.get("focused")) and plan_out.get("item_order") != "case_first"
+        else "case")
+    status["started_at"] = start_times(work, st.get("next_id"), first, bool(prepared["used"]), args.at)
     status["opening"] = opening_line(status, plan_out, today)
     if rewritten:
         status["opening"] += (" This round is written now, for what you wrote on your page about %s."
@@ -3091,7 +3391,9 @@ MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", 
 def opening_line(status, plan, today):
     """The opening line of a round, from neutral facts only: the mix, the time, the block's
     theme and position, the last saved session. Never a topic."""
-    line = "Today's round: %s, about %s minutes." % (mix_text(plan), plan.get("estimated_minutes"))
+    line = "Today's round: %s, about %s minutes%s." % (
+        mix_text(plan), plan.get("estimated_minutes"),
+        " (%s)" % based_on(plan.get("estimate_rounds")) if plan.get("estimate_rounds") else "")
     block = status.get("block")
     if block:
         line += " %s." % block["line"]
@@ -3304,8 +3606,8 @@ def cmd_finish_prepare(args):
     Judgement calls go back once: an abbreviation that looks undefined, time anchors that look
     mixed and a contradicted key to the author (`"revise": true`); a part with more than a third
     of its claims not verified, or a claim given up without another route tried, to its checker
-    (`"recheck": [files]`). With --revised whatever is still found is accepted and listed under
-    `warnings`.
+    (`"recheck": [files]`), as are a kit's listening candidates that are not three episodes in
+    form. With --revised whatever is still found is accepted and listed under `warnings`.
     Prints counts, file names and the names of keys, fields and kit sections only; what the lint
     found is written to <work>/next/lint.md, which only the author reads."""
     work, info = job(args)
@@ -3317,7 +3619,7 @@ def cmd_finish_prepare(args):
     plan = plan_for_prepared(st, plan_path)
     files, has, warnings = prepared_round_files(plan, folder)
     _, key_problems = check_key_headers([os.path.join(folder, n) for n in SEALED_FILES if n in files], plan)
-    lint = lint_round(files, plan, kits_required=True)
+    lint = lint_round(files, plan, kits_required=True, candidates=not args.no_evidence)
     if key_problems or lint["blocking"]:
         stops = []
         if key_problems:
@@ -3361,9 +3663,13 @@ def cmd_finish_prepare(args):
                     "not_verified_total": sum(c["not_verified"] for c in checked.values()),
                     "claims_total": sum(c["claims"] for c in checked.values())})
     flagged = [name for name, counts in checked.items() if needs_recheck(counts)]
+    # listening candidates are the checker's (it searched for them): a kit whose candidates are
+    # not three episodes in form sends its checker back once, not the author
+    relisten = [EVIDENCE_FOR[sealed] for sealed, kit in KIT_FOR.items()
+                if any(r["rule"] == 8 and r["file"] == kit for r in lint["review"])]
     out["lint"] = lint_summary(lint, write_lint_details(folder, lint))
-    out["revise"] = bool(total or lint["review"]) and not args.revised
-    recheck = [] if args.revised else flagged
+    out["revise"] = bool(total or any(r["rule"] != 8 for r in lint["review"])) and not args.revised
+    recheck = [] if args.revised else [n for n in EVIDENCE_FOR.values() if n in flagged or n in relisten]
     if not args.no_evidence:
         out["recheck"] = recheck
     if args.revised:
@@ -3379,10 +3685,11 @@ def cmd_finish_prepare(args):
         steps = []
         if recheck:
             steps.append("start the checker once more for %s (same prompt; it finds its own file and retries "
-                         "only what is not verified, references/evidence_check.md §3) and wait for it"
-                         % " and ".join(recheck))
-        steps.append("start the author once more with Parts `revise` on this folder (it reads the evidence "
-                     "files and lint.md there) and wait for it")
+                         "only what is not verified and the listening candidates that are not complete, "
+                         "references/evidence_check.md §3 and §6) and wait for it" % " and ".join(recheck))
+        if out["revise"] or flagged:
+            steps.append("start the author once more with Parts `revise` on this folder (it reads the evidence "
+                         "files and lint.md there) and wait for it")
         out.update({"stashed": False,
                     "next": "%s, then run this command again with --revised" % "; then ".join(steps)})
         print(json.dumps(out, ensure_ascii=False))
@@ -3408,6 +3715,10 @@ def cmd_present(args):
     body = pres.get(args.block)
     if not body:
         die("no <!-- present: %s --> block in %s" % (args.block, ", ".join(files)))
+    # the first part of a round written now goes out as soon as it is printed: note when
+    work = args.work or os.path.dirname(os.path.abspath(files[0]))
+    if os.path.isfile(os.path.join(work, TIMES_FILE)) and read_times(work).get("first_block") == args.block:
+        stamp(work, "sent:" + args.block, args.at, once=True)
     sys.stdout.write(body.strip() + "\n")
 
 
@@ -3490,6 +3801,7 @@ def take_prepared(args, st, today, path, work, plan_path):
     summary = {"ok": True, "out": plan_path, "items": len(items), "mcqs": counts.get("mcqs"),
                "focused": counts.get("focused"), "case": counts.get("case"),
                "case_format": plan.get("case_format"), "estimated_minutes": plan.get("estimated_minutes"),
+               **({"estimate_rounds": plan["estimate_rounds"]} if plan.get("estimate_rounds") else {}),
                "item_order": plan.get("item_order"), "session_id": st.get("next_id"), "prepared": True}
     return {"used": True, "made": doc.get("made"), "summary": summary, "ready": written,
             "present": first, "present_block": "questions" if q_text else "case"}
@@ -3580,6 +3892,53 @@ def session_doc_a(rnd, sid, md):
         ms = [adjusted_item_mastery(it)[0] for it in rnd["items"]]
         doc["score"] = round(sum(ms) / len(ms), 2)
     return doc
+
+
+def listening_picks(rnd, warnings):
+    """Take the examiner's `listening` list out of the round (it belongs to the session document,
+    not to the ledger) and return it as the document keeps it: one pick per topic of the round,
+    each {topic, link, show, title, minutes, why} and, when given, `source` ("kit": a candidate
+    prepared with the round; "search": found after grading). None when the round has no such
+    list (listening is off). A pick that is not complete is left out, with a warning that names
+    its place in the list and what is missing."""
+    raw = rnd.pop("listening", None)
+    if raw is None:
+        return None
+    if not isinstance(raw, list):
+        warnings.append("round 'listening' must be a list of picks; it was left out of the session document")
+        return None
+    topics = [it.get("topic") for it in rnd.get("items") or [] if isinstance(it, dict)]
+    picks, seen = [], set()
+    for n, p in enumerate(raw, 1):
+        tag = "listening pick %d" % n
+        if not isinstance(p, dict):
+            warnings.append("%s: not an object; left out" % tag)
+            continue
+        topic = p.get("topic")
+        link = str(p.get("link") or "").strip().split("?")[0]
+        try:
+            minutes = int(round(float(p.get("minutes"))))
+        except (TypeError, ValueError):
+            minutes = None
+        wrong = [k for k in ("show", "title", "why") if not (isinstance(p.get(k), str) and p[k].strip())]
+        if topic not in topics:
+            wrong.append("topic (one of this round's: %s)" % ", ".join(str(t) for t in topics))
+        elif topic in seen:
+            wrong.append("topic (one pick per topic)")
+        if not SPOTIFY_EPISODE_RE.match(link):
+            wrong.append("link (https://open.spotify.com/episode/<id>)")
+        if minutes is None or minutes < 1:
+            wrong.append("minutes")
+        if wrong:
+            warnings.append("%s: left out of the session document; correct %s" % (tag, ", ".join(wrong)))
+            continue
+        seen.add(topic)
+        pick = {"topic": topic, "link": link, "show": p["show"].strip(), "title": p["title"].strip(),
+                "minutes": minutes, "why": p["why"].strip()}
+        if p.get("source") in LISTEN_SOURCES:
+            pick["source"] = p["source"]
+        picks.append(pick)
+    return picks
 
 
 def round_format(rnd):
@@ -3913,9 +4272,17 @@ LINT_FILE = "lint.md"
 KIT_FOR = {"sealed_questions.md": "kit_questions.md", "sealed_case.md": "kit_case.md"}
 # Rule 8: the sections a kit must have, each under a Markdown heading that starts with the name.
 # kit_questions.md has one heading per question ("## Q1") instead, and "Reading" only in a round
-# without a case. Reserved for issue #50 (podcast candidates): a "Listening" section, not yet required.
+# without a case. Both kits end with "Listening" unless the learner turned listening off: one
+# line per topic of the kit ("Q1 | points: …", written by the author), and under it the
+# candidate episodes (found by the checker), one line each:
+#   - <link> | <show> | <title> | <n> min | covers: … | matches: …
 KIT_CASE_SECTIONS = ("Reveal", "Model answer", "Rubric", "Differential", "Briefing", "Pearls", "Reading")
 KIT_READING = "Reading"
+KIT_LISTENING = "Listening"
+LISTEN_BULLET_RE = re.compile(r"^[ \t>]*(?:[-*+]|\d+[.)])?[ \t]*")
+LISTEN_TOPIC_RE = re.compile(r"^[*_`]*(Q[1-9][0-9]?|case)[*_`]*[ \t]*(?:\||$)", re.I)
+LISTEN_LENGTH_RE = re.compile(r"^(?:about[ \t]+|~[ \t]*)?(\d{1,3})[ \t]*min", re.I)
+LISTEN_FIELDS = 6
 HEADING_RE = re.compile(r"^[ \t]{0,3}#{1,6}[ \t]*(.+?)[ \t#:]*$", re.M)
 
 # Rule 5: the abbreviations that need no spelling out are listed in the rulebook, between these
@@ -3954,6 +4321,88 @@ def kit_headings(text):
     return [h.strip().strip("*_`").strip().lower() for h in HEADING_RE.findall(text or "")]
 
 
+def kit_section(text, name):
+    """The body of the kit's first section whose heading starts with `name` (to the next
+    heading), or None when there is no such heading."""
+    heads = list(HEADING_RE.finditer(text or ""))
+    for i, m in enumerate(heads):
+        if m.group(1).strip().strip("*_`").strip().lower().startswith(name.lower()):
+            return text[m.end():heads[i + 1].start() if i + 1 < len(heads) else len(text)]
+    return None
+
+
+def listening_topics(text):
+    """The "Listening" section of a kit, read: {topic id: {"entries": [[field, …]], "none": bool}}
+    in the order written ("Q1", …, "case"), or None when the kit has no such section. A line
+    that starts with a key id opens a topic; under it every line with a link or with fields is
+    one candidate, and a line starting "none" says that fewer than three were kept on purpose."""
+    body = kit_section(text, KIT_LISTENING)
+    if body is None:
+        return None
+    topics, current = {}, None
+    for line in body.splitlines():
+        line = LISTEN_BULLET_RE.sub("", line, count=1).strip()
+        if not line:
+            continue
+        m = LISTEN_TOPIC_RE.match(line)
+        if m:
+            kid = m.group(1)
+            kid = "case" if kid.lower() == "case" else kid.upper()
+            current = topics.setdefault(kid, {"entries": [], "none": False})
+        elif current is None or line.lower().startswith("sources"):
+            continue
+        elif line.strip("*_`").lower().startswith("none"):
+            current["none"] = True
+        elif "|" in line or "spotify.com" in line:
+            current["entries"].append([f.strip() for f in line.split("|")])
+    return topics
+
+
+def listening_entry_flaws(fields, avoid=()):
+    """What is wrong with one candidate line, as words that name no content: [] when it has its
+    six fields, a link to one Spotify episode, a length of 15 to 90 minutes and a show the
+    learner does not avoid."""
+    flaws = []
+    if len(fields) != LISTEN_FIELDS or not all(fields):
+        flaws.append("fields")
+    link = fields[0].strip("<>") if fields else ""
+    if not SPOTIFY_EPISODE_RE.match(link):
+        flaws.append("link")
+    m = LISTEN_LENGTH_RE.match(fields[3]) if len(fields) > 3 else None
+    if not m or not LISTEN_MINUTES[0] <= int(m.group(1)) <= LISTEN_MINUTES[1]:
+        flaws.append("length")
+    if len(fields) > 1 and fields[1].strip("*_`").casefold() in [a.casefold() for a in avoid]:
+        flaws.append("avoided show")
+    return flaws
+
+
+def listening_findings(files, plan=None):
+    """Rule 8, the judgement call on the candidates the checker kept: per kit and topic, lines
+    that are not a candidate in form (fields, link, length, an avoided show), fewer than three
+    candidates with no "none" line, or more than three. Names files, key ids and counts only."""
+    if plan is not None and plan.get("listening") is False:
+        return []
+    avoid = ((plan or {}).get("podcast_sources") or {}).get("avoid") or []
+    found = []
+    for kit in KIT_FOR.values():
+        for kid, topic in (listening_topics(files.get(kit)) or {}).items():
+            flaws = [f for e in topic["entries"] for f in listening_entry_flaws(e, avoid)]
+            bad = sum(1 for e in topic["entries"] if listening_entry_flaws(e, avoid))
+            n = len(topic["entries"])
+            said = []
+            if bad:
+                said.append("%d of %d candidate%s malformed (%s)"
+                            % (bad, n, "" if n == 1 else "s", ", ".join(sorted(set(flaws)))))
+            if n - bad < LISTEN_CANDIDATES and not topic["none"]:
+                said.append("%d usable candidate%s, %d wanted (or a line 'none: why')"
+                            % (n - bad, "" if n - bad == 1 else "s", LISTEN_CANDIDATES))
+            if n > LISTEN_CANDIDATES:
+                said.append("%d candidates, %d wanted" % (n, LISTEN_CANDIDATES))
+            if said:
+                found.append({"rule": 8, "file": kit, "where": "Listening, %s" % kid, "detail": "; ".join(said)})
+    return found
+
+
 def kit_problems(files, plan=None, kits_required=True):
     """Rule 8, the mechanical part: every kit is there and has its sections. Names files, key ids
     and section names only."""
@@ -3976,11 +4425,22 @@ def kit_problems(files, plan=None, kits_required=True):
                                 % (kit, ", ".join(missing)))
             counts = (plan or {}).get("counts") or {}
             want = [KIT_READING] if plan and not counts.get("case") else []
+        listening = (plan or {}).get("listening") is not False
+        if listening:
+            want.append(KIT_LISTENING)
         missing = [name for name in want if not any(h.startswith(name.lower().rstrip("s")) for h in heads)]
         if missing:
             problems.append("%s: section%s %s missing (a heading for each: %s)"
                             % (kit, "" if len(missing) == 1 else "s", ", ".join("'%s'" % m for m in missing),
                                ", ".join("'## %s'" % m for m in missing)))
+        topics = listening_topics(files[kit]) if listening else None
+        if topics is not None:
+            ids = ["case"] if kit == "kit_case.md" else [
+                k for k in parse_key_headers(files[sealed], sealed)[0] if k != "case"]
+            missing = [k for k in ids if k not in topics]
+            if missing:
+                problems.append("%s: Listening has no line for %s (one line per topic: '%s | points: …')"
+                                % (kit, ", ".join(missing), missing[0]))
     return problems
 
 
@@ -4043,9 +4503,11 @@ def mixed_time_anchors(blocks_in_order):
     return found
 
 
-def lint_round(files, plan=None, kits_required=True, standards=None):
+def lint_round(files, plan=None, kits_required=True, standards=None, candidates=False):
     """Lint a written round ({file name: text}) against the rulebook: {"blocking": [...],
-    "review": [...], "notes": [...]}. Key headers are checked separately (check_key_headers)."""
+    "review": [...], "notes": [...]}. Key headers are checked separately (check_key_headers).
+    `candidates`: the checker has run, so the listening candidates in the kits are looked at
+    too (before it, the author's "Listening" sections hold only their topic lines)."""
     lint = {"blocking": kit_problems(files, plan, kits_required), "review": [], "notes": []}
     shown = presented_text(files)
     common = common_abbreviations(standards)
@@ -4059,6 +4521,8 @@ def lint_round(files, plan=None, kits_required=True, standards=None):
         lint["review"].append({"rule": 6, "file": name, "where": where,
                                "detail": "from now: %s; by numbered day: %s"
                                          % (", ".join('"%s"' % x for x in now), ", ".join('"%s"' % x for x in day))})
+    if candidates:
+        lint["review"] += listening_findings(files, plan)
     return lint
 
 
@@ -4071,15 +4535,21 @@ def lint_lines(lint):
         if n5:
             lines.append("%s: %d abbreviation%s not spelled out at first use (references/standards.md, rule 5)"
                          % (name, n5, "" if n5 == 1 else "s"))
+        n8 = sum(1 for r in lint["review"] if r["file"] == name and r["rule"] == 8)
         if n6:
             lines.append("%s: time anchors look mixed in %d place%s (references/standards.md, rule 6)"
                          % (name, n6, "" if n6 == 1 else "s"))
+        if n8:
+            lines.append("%s: the listening candidates of %d topic%s are not three episodes in form "
+                         "(references/standards.md, rule 8)" % (name, n8, "" if n8 == 1 else "s"))
     return lines
 
 
 def lint_summary(lint, details=None):
     out = {"abbreviations": sum(1 for r in lint["review"] if r["rule"] == 5),
            "time_anchors": sum(1 for r in lint["review"] if r["rule"] == 6)}
+    if any(r["rule"] == 8 for r in lint["review"]):
+        out["listening"] = sum(1 for r in lint["review"] if r["rule"] == 8)
     if lint["review"]:
         out["where"] = lint_lines(lint)
         if details:
@@ -4096,12 +4566,14 @@ def write_lint_details(folder, lint):
             os.remove(path)
         return None
     titles = {5: "Rule 5: abbreviations not spelled out at first use in the presented text",
-              6: "Rule 6: more than one time anchor in one case or question"}
+              6: "Rule 6: more than one time anchor in one case or question",
+              8: "Rule 8: listening candidates that are not three episodes in form (for the checker, "
+                 "evidence_check.md §6; the author changes nothing here)"}
     lines = ["# Lint: judgement calls (references/standards.md)", "",
              "Sealed like the keys: this file names content. Only the author reads it.",
              "Each line is a heuristic's finding: correct the text where the rule is broken, leave it "
              "where the finding is wrong.", ""]
-    for rule in (5, 6):
+    for rule in (5, 6, 8):
         rows = [r for r in lint["review"] if r["rule"] == rule]
         if rows:
             lines += ["## %s" % titles[rule], ""]
@@ -4160,6 +4632,7 @@ def cmd_keys(args):
 #   <work>/plan.json, sealed_*.md, kit_*.md, evidence_*.md, answers.md, stage2.md,
 #          feedback_questions.md, feedback.md, round.json, reflection.json, B.md
 #                         the files of the round, each under its fixed name
+#   <work>/times.json     when each step of the round happened (the round's clock, below)
 #   <work>/next/          the next round: its plan and drafts (`prepare`, `finish-prepare`)
 #   <work>/publish/       the publish set: the newest version of every store file this job
 #                         changed, at its store path (data/state.json, data/sessions/…)
@@ -4185,13 +4658,14 @@ PART_B_FILE = "B.md"
 BEFORE_SAVE_FILE = "before_save.json"   # the ledger as it was before this round was recorded (save can run again)
 BEFORE_CLOSE_FILE = "before_close.json"  # the ledger as save left it (close can run again)
 VERIFY_FILE = "verify.json"
+TIMES_FILE = "times.json"               # written by every step of a round: when it happened (issue #47)
 PUBLISH_DIR = "publish"
 PUBLISH_FILE = "publish.json"
 EARLIER_DIR = "earlier"
 # what one round leaves in the work folder, and what a whole job leaves
 ROUND_FILES = PREPARED_FILES + (ANSWERS_FILE, STAGE2_FILE, FEEDBACK_QUESTIONS_FILE, FEEDBACK_FILE, ROUND_FILE,
                                 RECORD_FILE, REFLECTION_FILE, PART_A_FILE, PART_B_FILE, BEFORE_SAVE_FILE,
-                                BEFORE_CLOSE_FILE, VERIFY_FILE, PLAN_FILE, NEXT_DIR)
+                                BEFORE_CLOSE_FILE, VERIFY_FILE, PLAN_FILE, TIMES_FILE, NEXT_DIR)
 JOB_FILES = ROUND_FILES + (WORK_FILE, PUBLISH_FILE, PUBLISH_DIR)
 REFLECTION_HEADING_RE = re.compile(r"^###\s+Reflection\b", re.M)
 ANSWER_MARK_RE = re.compile(r"<!--\s*/?\s*answers\b")
@@ -4439,6 +4913,117 @@ def open_work(work, store, version, prefs, today, reread=False):
     return info, st, extra
 
 
+# ---------------------------------------------------------------- the round's clock (issue #47)
+#
+# Nobody types a time. Every command of a round that the protocol already runs notes when it
+# ran in <work>/times.json: `start` (the learner asked for a round; with a prepared round the
+# first part goes out with it), `present` of the first part (a round written now: it goes out
+# then), `answer` (a message from the learner arrived), `save` and `close` (the reflection
+# arrived). What the assistant sent in between is timed by the file it writes "exactly as
+# sent" straight after sending (feedback_questions.md, stage2.md, feedback.md): the next
+# command notes the file's own time, once. `sent` sets such a time by hand, and `--at` gives
+# any of these commands another time than now (tests, a step filed late).
+
+SENT_PARTS = ("questions", "questions_feedback", "case", "stage2", "feedback", "close")
+SENT_FILES = (("questions_feedback", FEEDBACK_QUESTIONS_FILE), ("stage2", STAGE2_FILE), ("feedback", FEEDBACK_FILE))
+
+
+def stamp_time(at):
+    """The time a stamp gets: now, or `--at` (which must be an ISO time)."""
+    if at is None:
+        return now_ts()
+    t = parse_stamp(at)
+    if not t:
+        die("--at must be an ISO time such as 2026-11-26T08:15:00Z, not %r" % at)
+    return t.astimezone(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def read_times(work):
+    path = os.path.join(work, TIMES_FILE)
+    try:
+        doc = load_json(path) if os.path.isfile(path) else {}
+    except CmeError:
+        doc = {}
+    doc = doc if isinstance(doc, dict) else {}
+    if not isinstance(doc.get("stamps"), list):
+        doc["stamps"] = []
+    return doc
+
+
+def note_sent_files(work, doc, before=None):
+    """Note, once each, when the messages filed "exactly as sent" went out: the file's own
+    time (never later than `before`, the step being stamped now), with its length in words."""
+    have = {e.get("what") for e in doc["stamps"]}
+    for part, name in SENT_FILES:
+        path = in_work(work, name)
+        if not path or "sent:" + part in have:
+            continue
+        t = dt.datetime.fromtimestamp(os.path.getmtime(path), dt.timezone.utc).replace(microsecond=0)
+        limit = parse_stamp(before) if before else None
+        if limit and t > limit:
+            t = limit
+        doc["stamps"].append({"what": "sent:" + part, "at": t.isoformat().replace("+00:00", "Z"),
+                              "words": len(read_text(path).split()), "from": name})
+
+
+def stamped(work, what, at=None, once=False):
+    """The work folder's times with step `what` noted (now, or at `at`), and when the files
+    written as sent went out; not written yet (a command that fails leaves no trace). `once`:
+    a step that is run again keeps its first time. With `--at` the sent files are not timed by
+    their own clock: use `sent --at`."""
+    doc = read_times(work)
+    when = stamp_time(at)
+    if at is None:
+        note_sent_files(work, doc, when)
+    if not (once and any(e.get("what") == what for e in doc["stamps"])):
+        doc["stamps"].append({"what": what, "at": when})
+    return doc
+
+
+def stamp(work, what, at=None, once=False):
+    """Note step `what` in the work folder's times.json; returns the time it has there."""
+    doc = stamped(work, what, at, once)
+    save_json(doc, os.path.join(work, TIMES_FILE))
+    return [e["at"] for e in doc["stamps"] if e.get("what") == what][0 if once else -1]
+
+
+def start_times(work, session, first_block, sent, at=None):
+    """A round starts: a new times.json for it. `first_block`: the part that goes out first;
+    `sent`: it goes out with this very command (a prepared round)."""
+    when = stamp_time(at)
+    stamps = [{"what": "start", "at": when}] + ([{"what": "sent:" + first_block, "at": when}] if sent else [])
+    save_json({"session": session, "first_block": first_block, "stamps": stamps}, os.path.join(work, TIMES_FILE))
+    return when
+
+
+def measured_time(doc, sid):
+    """The round's measured time (round_timing) from the work folder's stamps `doc`, or None
+    when they are not this round's (a reflection given in a later session) or no answer was
+    filed as the round went (nothing then says when the learner's messages arrived)."""
+    if not sid or doc.get("session") != sid:
+        return None
+    if not any(str(e.get("what")).startswith("answer:") for e in doc["stamps"]):
+        return None
+    return round_timing(doc["stamps"])
+
+
+def cmd_sent(args):
+    """Note when a message went out, for a part the engine cannot time itself (no file written
+    as sent, or the file written late). Replaces the time taken from the file."""
+    if not os.path.isdir(args.work):
+        die("work folder not found: %s" % args.work)
+    doc = read_times(args.work)
+    what = "sent:" + args.part
+    doc["stamps"] = [e for e in doc["stamps"] if e.get("what") != what]
+    e = {"what": what, "at": stamp_time(args.at)}
+    name = dict(SENT_FILES).get(args.part)
+    if name and in_work(args.work, name):
+        e["words"] = len(read_text(in_work(args.work, name)).split())
+    doc["stamps"].append(e)
+    save_json(doc, os.path.join(args.work, TIMES_FILE))
+    print(json.dumps({"ok": True, "sent": args.part, "at": e["at"]}, ensure_ascii=False))
+
+
 def answer_blocks(path):
     """[(part, text)] of an answers file, in the order they were added."""
     if not path or not os.path.isfile(path):
@@ -4463,6 +5048,7 @@ def cmd_answer(args):
     text = text.strip("\n")
     if not text.strip():
         die("no answer text: give --file, --text, or the text on standard input")
+    stamp_time(args.at)             # a bad --at stops here, before anything is written
     if ANSWER_MARK_RE.search(text):
         die("the text holds an answers marker (<!-- answers … -->); remove that line and add it again")
     path = os.path.join(args.work, ANSWERS_FILE)
@@ -4476,6 +5062,7 @@ def cmd_answer(args):
             fh.write(("\n" if before and not before.endswith("\n") else "")
                      + "<!-- answers: %s -->\n%s\n<!-- /answers -->\n" % (args.part, text))
         have.append((args.part, text.strip()))
+        out["at"] = stamp(args.work, "answer:" + args.part, args.at)      # when the learner's message arrived
     out["parts"] = [name for name, _ in have]
     print(json.dumps(out, ensure_ascii=False))
 
@@ -4515,11 +5102,17 @@ def cmd_save(args):
     if not rnd.get("date"):
         rnd["date"] = iso(today)
     warnings = []
+    # the time so far, from the stamps (the reflection is still to come: `close` completes it)
+    times = stamped(work, "save", args.at, once=True)
+    measured = measured_time(times, sid)
+    if measured:
+        rnd.update(measured)
     # the round record: what the author wrote in the key headers + what the examiner graded
     plan_path = in_work(work, PLAN_FILE)
     keys = fill_round_from_keys(rnd, sealed, load_json(plan_path) if plan_path else None)
     if keys:
         warnings.extend(keys.pop("warnings"))
+    listening = listening_picks(rnd, warnings)      # after the keys: the items have their topics
     if not feedback and not feedback_questions:
         die("save needs the feedback as sent: %s in the work folder" % FEEDBACK_FILE)
     st = copy.deepcopy(st_in)       # st_in stays the ledger as it was before this round
@@ -4532,6 +5125,11 @@ def cmd_save(args):
     if first_run:                   # nothing failed: keep the ledger this round started from
         save_json(st_in, before)
     doc = session_doc_a(rnd, sid, md)
+    if measured:
+        doc["minutes"], doc["timing"] = measured["minutes"], measured["timing"]
+        res["minutes"], res["timing"] = measured["minutes"], measured["timing"]
+    if listening is not None:
+        doc["listening"] = listening
     rec = {}
     path = publish_ledger(work, info, st, rec, session=doc, empty_prepared=True)
     rec = report(path, os.path.getsize(path), dict(res, **rec))
@@ -4543,7 +5141,11 @@ def cmd_save(args):
         rec["page_settings_applied"] = prefs_changes
     if keys:
         rec["keys"] = keys
+    if listening is not None:
+        rec["listening"] = len(listening)
     save_json(rnd, os.path.join(work, RECORD_FILE))     # the round record as recorded, beside round.json
+    if times.get("session") == sid:
+        save_json(times, os.path.join(work, TIMES_FILE))
     if block_end(st):
         rec["next_block"] = block_end(st)       # tell the learner its `line` in the closing message
     rec["warnings"] = list(rec.get("warnings") or []) + warnings
@@ -4570,7 +5172,9 @@ def cmd_close(args):
         check_schema(st)
         migrate_profile(st)
     st_before = copy.deepcopy(st)
-    res = reflect_round(st, load_json_arg(reflection) or {}, today, args.session)
+    times = stamped(work, "close", args.at, once=True)      # the reflection arrived: the round's clock stops
+    measured = measured_time(times, args.session or st.get("unreflected"))
+    res = reflect_round(st, load_json_arg(reflection) or {}, today, args.session, measured)
     sid = res["session_id"]
     md_path = in_work(work, PART_B_FILE)
     md_b = read_text(md_path) if md_path else ""
@@ -4587,6 +5191,14 @@ def cmd_close(args):
     doc = load_json(doc_path)
     if doc.get("id") and doc["id"] != sid:
         die("session document %s does not match the reflected session %s" % (doc.get("id"), sid))
+    # the podcast sources are asked for once, in the first Listening section: what the learner
+    # answered is in the reflection; no answer is kept as "none named", so it is not asked again
+    refl = load_json_arg(reflection) or {}
+    if refl.get("podcast_sources") is not None:
+        st["profile"]["podcast_sources"] = podcast_sources(refl["podcast_sources"], "reflection podcast_sources")
+        res["podcast_sources"] = st["profile"]["podcast_sources"]
+    elif st["profile"].get("podcast_sources") is None and "listening" in doc:
+        st["profile"]["podcast_sources"] = podcast_sources(None)
     doc["closing"] = md_b
     doc["reflected"] = True
     doc.pop("learner_changes", None)        # close can run again: only this run's count
@@ -4596,6 +5208,12 @@ def cmd_close(args):
     sess = next((s for s in st["sessions"] if s.get("id") == sid), None)
     if sess and isinstance(sess.get("score"), (int, float)):
         doc["score"] = sess["score"]
+    if sess and isinstance(sess.get("timing"), dict):
+        doc["minutes"], doc["timing"] = sess.get("minutes"), sess["timing"]
+        res["minutes"], res["timing"] = sess.get("minutes"), sess["timing"]
+    hint = time_hint(st)
+    if hint:
+        res["time_hint"] = hint["text"]             # one line of the closing message
     ref = {}
     path = publish_ledger(work, info, st, ref, session=doc)
     page_warn = ref.pop("warnings", [])
@@ -4605,6 +5223,8 @@ def cmd_close(args):
         save_json(st_before, before)
     info["closed"] = sid
     save_json(info, os.path.join(work, WORK_FILE))
+    if times.get("session") == sid:
+        save_json(times, os.path.join(work, TIMES_FILE))
     if block_end(st):
         ref["next_block"] = block_end(st)       # tell the learner its `line` in the closing message
     print(json.dumps(published(work, info, ref), indent=1, ensure_ascii=False))
@@ -4794,6 +5414,7 @@ def main(argv=None):
         s.add_argument(flag, action="store_true")
     s = command("answer", cmd_answer); s.add_argument("--part", required=True, choices=ANSWER_PARTS)
     s.add_argument("--file"); s.add_argument("--text")
+    s = command("sent", cmd_sent); s.add_argument("--part", required=True, choices=SENT_PARTS)
     s = command("present", cmd_present, work=False); s.add_argument("files", nargs="*"); s.add_argument("--work")
     s.add_argument("--block", required=True)
     s = command("save", cmd_save)
@@ -4827,6 +5448,8 @@ def main(argv=None):
 
     for p in sub.choices.values():
         p.add_argument("--today", dest="today_sub")
+    for name in ("start", "answer", "sent", "present", "save", "close"):     # the round's clock: another time than now
+        sub.choices[name].add_argument("--at")
     args = ap.parse_args(argv)
     if getattr(args, "today_sub", None):
         args.today = args.today_sub

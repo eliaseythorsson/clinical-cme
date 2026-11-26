@@ -45,6 +45,29 @@ waiting for something to be generated.
 - Leaner sealed drafts (one-line pre-flight record, keys before stems), so a round that could
   not be prepared still starts quickly.
 
+## Page update 5.3.0
+
+- **Where you are, where you're aiming.** Setup asks two open questions and keeps the
+  learner's paragraphs word for word (`profile.journey`, `profile.aim`); items are pitched to
+  them and feedback written for them (`standards.md` rule 4: which decisions are tested, how
+  much background or evidence depth, and an exam's own sources for an exam aim). A stage
+  label and goal tags are derived for display only. The page's Settings tab shows both
+  paragraphs with an Update box each (saved in `cme/prefs`, applied at the next round, which
+  is then written afresh). Older ledgers fold `role`, `goals` and `notes` into the paragraphs
+  unchanged. A new learner starts with one focused question and the case (about 35 minutes);
+  MCQs are added on request.
+  `cme.py` (`PAGE_VERSION = "5.3.0"`) upgrades older pages once, at the next save.
+
+## Page update 5.2.0
+
+- Real time per round. `cme.py` notes when each step of a round happens and records the
+  round's active time, split into answering, waiting and reading, with idle stretches cut (no
+  more 180-minute sessions when a chat is left open). Nobody types a time.
+- Estimates move from the defaults to the learner's own pace over ten timed rounds; the page
+  and the opening line then say "based on your last N rounds".
+- From five timed rounds the close and the page show a hint: the median round against the
+  budget, and the one change to the mix that would fit it best.
+
 ## Page update 5.1.0
 
 - The page reads its own file. `cme.py` writes `data/page.json` with every ledger: exactly what
@@ -56,16 +79,8 @@ waiting for something to be generated.
 - Time estimates come from the engine and are realistic: about 5 minutes per MCQ, 10 per
   focused question, 25 for a case with its feedback (15 for a one-step case).
 - Export is still a full backup; the page now says first that it includes the open gaps.
-- **Where you are, where you're aiming.** Setup asks two open questions and keeps the
-  learner's paragraphs word for word (`profile.journey`, `profile.aim`); items are pitched to
-  them and feedback written for them (`standards.md` rule 4: which decisions are tested, how
-  much background or evidence depth, and an exam's own sources for an exam aim). A stage
-  label and goal tags are derived for display only. The page's Settings tab shows both
-  paragraphs with an Update box each (saved in `cme/prefs`, applied at the next round, which
-  is then written afresh). Older ledgers fold `role`, `goals` and `notes` into the paragraphs
-  unchanged. A new learner starts with one focused question and the case (about 35 minutes);
-  MCQs are added on request.
   `cme.py` (`PAGE_VERSION = "5.1.0"`) upgrades older pages once, at the next save.
+
 
 ## Page update 5.0.0
 

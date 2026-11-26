@@ -83,6 +83,16 @@ _Avoid_: override (fine for the command), dispute
 **Retest**:
 An item written on an open gap's decision point, in a new clinical context; it names the gap, and only a retest answered well closes it.
 
+**Listening pick**:
+The one podcast episode a topic of the round gets in the final feedback: 15 to 90 minutes, chosen for the gap the learner showed, given as a Spotify link with a one-line reason.
+_Avoid_: recommendation, podcast link
+
+**Candidate episode**:
+One of up to three episodes per topic that the checker finds when the round is prepared and that stay sealed in the kit; the pick is taken from them when one covers the learner's gap.
+
+**Podcast sources**:
+The shows the learner trusts and the shows to avoid; asked once, and always respected.
+
 **Rest**:
 The minimum of three days before a tested topic or a new gap can come back.
 
@@ -149,6 +159,19 @@ The one line "Abbreviations: …" that opens a feedback message and explains the
 
 **Time anchor**:
 The single point a case counts all its timings from: a named event (admission as day 0) or now, never both (rule 6).
+
+**Active time**:
+The minutes of a round in which something happened: the learner answering, waiting for the examiner or reading feedback, with idle stretches cut. Measured by the engine from the steps of the round; nobody types a time.
+_Avoid_: duration, session length (that is the budget)
+
+**Timed round**:
+A round whose active time was measured. Rounds of older versions are not timed (their minutes were capped at 180) and count in no median or estimate.
+
+**Pace**:
+The learner's active time per round against the default estimate for the same items; estimates move to it over ten timed rounds.
+
+**Time hint**:
+The one sentence, from five timed rounds, comparing the learner's median round with their budget and naming the change to the mix that would fit it best.
 
 **Specialty**:
 The learner's field of practice, which sets the pitch of items and which guideline applies; asked at setup, default internal/hospital medicine.

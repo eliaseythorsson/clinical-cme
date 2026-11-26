@@ -240,5 +240,5 @@ def test_turn_1_sends_the_questions_before_any_reference_reading():
     # before the message, a reference is named only for the cases that are not a prepared round
     assert "only if a step fails or the store is not the page" in before
     # what the message is made of comes from the one `start` call
-    for field in ("`opening`", "`present`", "`prepared.unchecked`", "`started_at`"):
+    for field in ("`opening`", "`present`", "`prepared.unchecked`"):
         assert field in text
