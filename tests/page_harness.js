@@ -2,12 +2,16 @@
 // learner's store, and prints what happened as JSON:
 //   {text: <all rendered text and HTML>, ids: {<element id>: <its text/HTML>}, styles, hidden,
 //    fetched: [<every path the page asked for>], saved: [<downloads the page made>]}
-//    db: [<every document the page wrote to its database, as {path, data}>]}
-// Usage: node page_harness.js <page.html> <store folder> [--downloads] [--db [file]] [--set id=text,…] [--click id,id,…]
+//    db: [<every document the page wrote to its database, as {path, data}>],
+//    storage: <the browser storage (localStorage) as the page left it, or null without one>}
+// Usage: node page_harness.js <page.html> <store folder> [--downloads] [--db [file]] [--storage file | --no-storage] [--set id=text,…] [--click id,id,…]
 // --downloads: the page is given the downloads capability (its Export button);
 // --db: the page is given its database (where it keeps cme/prefs); with a JSON file, that is
 //   the cme/prefs document it finds there;
-// --click: after the page has loaded, click these elements in turn;
+// --storage: the JSON file holds what the browser storage has when the page loads ({key: text});
+//   --no-storage: the browser refuses storage (every use throws);
+// --click: after the page has loaded, click these elements in turn (an element the page made
+//   and gave an id counts);
 // --set: before a click on an element <name>-save, the input <name>-input is given this text
 //   (--set lvl=…), as if the learner had typed it. The text is URI-encoded.
 const fs = require("fs");
@@ -47,7 +51,7 @@ function el(id) {
       if (typeof k === "symbol") return undefined;
       return noop;
     },
-    set(t, k, v) { t[k] = v; return true; },
+    set(t, k, v, proxy) { t[k] = v; if (k === "id" && v) byId[v] = proxy; return true; },
   });
 }
 const byId = {};
@@ -70,7 +74,11 @@ const fetch = async (url) => {
 };
 const claude = (withDownloads || withDb) ? {use: async (what) =>
   what === "downloads" && withDownloads ? {save: async (x) => { saved.push(x); }} : what === "db" && withDb ? db : null} : undefined;
-const window = {document, fetch, claude, addEventListener: () => undefined, matchMedia: () => ({matches: false, addEventListener: () => undefined})};
+const stored = opts.includes("--storage") ? JSON.parse(fs.readFileSync(optValue("--storage"), "utf8")) : {};
+const refuse = () => { throw new Error("storage is not available"); };
+const localStorage = opts.includes("--no-storage") ? {getItem: refuse, setItem: refuse, removeItem: refuse}
+  : {getItem: (k) => k in stored ? stored[k] : null, setItem: (k, v) => { stored[k] = String(v); }, removeItem: (k) => { delete stored[k]; }};
+const window = {document, fetch, claude, localStorage, addEventListener: () => undefined, matchMedia: () => ({matches: false, addEventListener: () => undefined})};
 const location = {hash: ""};
 const requestAnimationFrame = (f) => f();
 const run = new Function("window", "document", "fetch", "location", "requestAnimationFrame", "history", "navigator", "claude",
@@ -94,6 +102,7 @@ const wait = (ms) => new Promise((res) => setTimeout(res, ms));
     if (Object.keys(e.style).length) styles[id] = e.style;
   }
   const text = all.map(e => String(e.textContent || "") + "\n" + String(e.innerHTML || "")).join("\n");
-  process.stdout.write(JSON.stringify({text, ids, styles, hidden, fetched, fetched_on_load: loaded, saved, db: dbWrites}));
+  process.stdout.write(JSON.stringify({text, ids, styles, hidden, fetched, fetched_on_load: loaded, saved, db: dbWrites,
+    storage: opts.includes("--no-storage") ? null : stored}));
   process.exit(0);
 })();

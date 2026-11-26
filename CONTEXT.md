@@ -70,7 +70,7 @@ The file the engine writes for the page (`data/page.json`): exactly what the pag
 _Avoid_: index (it replaces `data/index.json`)
 
 **Page**:
-The learner's own view of their store: past sessions, scores, progress reviews, topics already tested and settings. It never names what a coming round will test (no open gaps, no due topics).
+The learner's own view of their store: past sessions, scores, progress reviews, topics already tested, reading and listening from past rounds, and settings. It never names what a coming round will test (no open gaps, no due topics).
 _Avoid_: dashboard
 
 **Gap**:
@@ -86,6 +86,13 @@ An item written on an open gap's decision point, in a new clinical context; it n
 **Listening pick**:
 The one podcast episode a topic of the round gets in the final feedback: 15 to 90 minutes, chosen for the gap the learner showed, given as a Spotify link with a one-line reason.
 _Avoid_: recommendation, podcast link
+
+**Reading pointer**:
+One of at most two further-reading items in the final feedback: a document, the exact section to read, the minutes it takes and one line on why it fits the gap. Listed with its link in the session document.
+_Avoid_: reference, reading list
+
+**Library**:
+The reading pointers and listening picks of past sessions as the page lists them under "Reading & listening" (`library` in the page file). Whether one is done is kept in the viewer's browser, never in the store.
 
 **Candidate episode**:
 One of up to three episodes per topic that the checker finds when the round is prepared and that stay sealed in the kit; the pick is taken from them when one covers the learner's gap.

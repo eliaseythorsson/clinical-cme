@@ -96,7 +96,7 @@ import zlib
 
 SCHEMA = 4
 SKILL_VERSION = "4.3.1"
-PAGE_VERSION = "5.3.0"   # templates/page.html carries <meta name="cme-page-version" content="5.3.0">
+PAGE_VERSION = "5.4.0"   # templates/page.html carries <meta name="cme-page-version" content="5.4.0">
 
 DEFAULT_CONFIG = {
     # The mix a new learner starts with: one focused question and the case, about 35 minutes
@@ -167,6 +167,10 @@ SPOTIFY_EPISODE_RE = re.compile(r"^https://open\.spotify\.com/episode/[A-Za-z0-9
 LISTEN_MINUTES = (15, 90)
 LISTEN_CANDIDATES = 3
 LISTEN_SOURCES = ("kit", "search")
+# Further reading (issue #51; references/feedback_guide.md §2 E): at most two pointers a round,
+# each an http(s) link to the document with the section to read.
+READING_MAX = 2
+READING_LINK_RE = re.compile(r"^https?://[^\s/]+\.[^\s]+$")
 SELF_RATING_FACTOR = {1: 1.6, 2: 1.3, 3: 1.0, 4: 0.8, 5: 0.6}
 MIN_RETURN_DAYS = 3      # no tested topic and no open gap comes back sooner than this (ADR 0003)
 # Drill-down limit (ADR 0003): no topic is in more than this many rounds in a row, and a topic
@@ -3093,12 +3097,43 @@ def page_session(doc):
     return e
 
 
+# The library (issue #51): the reading pointers and listening picks of past sessions, as the
+# page's "Reading & listening" view lists them. Only what a saved session document holds goes
+# in, so nothing of it can be about a coming round; the reasons (`why`) stay in the session
+# document, since they are written about what the learner missed.
+PAGE_LIBRARY_MAX = 100
+PAGE_LIBRARY_KINDS = {"reading": "section", "listening": "show"}     # kind: its own extra field
+PAGE_LIBRARY_KEYS = ("session", "date", "kind", "topic", "label", "title", "link", "minutes", "section", "show")
+
+
+def page_library_entry(e):
+    """One library entry in its fixed form, or None for anything that is not one."""
+    if not isinstance(e, dict) or e.get("kind") not in PAGE_LIBRARY_KINDS or not e.get("session"):
+        return None
+    if not (isinstance(e.get("title"), str) and isinstance(e.get("link"), str)):
+        return None
+    other = next(v for k, v in PAGE_LIBRARY_KINDS.items() if k != e["kind"])
+    return {k: e.get(k) for k in PAGE_LIBRARY_KEYS if k != other}
+
+
+def page_library_of(doc):
+    """The library entries of one session document: its `reading` list, then its `listening`."""
+    out = []
+    for kind in PAGE_LIBRARY_KINDS:
+        items = doc.get(kind)
+        for it in items if isinstance(items, list) else []:
+            if isinstance(it, dict):
+                out.append(page_library_entry(dict(it, session=doc.get("id"), date=doc.get("date"), kind=kind,
+                                                   label=None)))
+    return [e for e in out if e]
+
+
 def page_lists(path, old_index=None):
-    """The lists a page file carries from one write to the next, {"sessions", "reviews"}: from
-    the page file at `path`, else from the index older versions kept (`old_index`), else empty.
-    The ledger drops old sessions (§5 of the schema), so these lists are the only place their
-    entries stay; a missing or damaged file loses nothing the ledger or `rebuild-page` cannot
-    put back."""
+    """The lists a page file carries from one write to the next, {"sessions", "reviews",
+    "library"}: from the page file at `path`, else from the index older versions kept
+    (`old_index`), else empty. The ledger drops old sessions (§5 of the schema), so these lists
+    are the only place their entries stay; a missing or damaged file loses nothing the ledger
+    or `rebuild-page` cannot put back."""
     for p in (path, old_index):
         if not p or not os.path.exists(p):
             continue
@@ -3108,12 +3143,13 @@ def page_lists(path, old_index=None):
         except (OSError, json.JSONDecodeError):
             continue
         if isinstance(doc, dict) and isinstance(doc.get("sessions"), list):
-            reviews = doc.get("reviews")
-            return {"sessions": [page_session(e) for e in doc["sessions"] if isinstance(e, dict) and e.get("id")],
+            reviews, library = doc.get("reviews"), doc.get("library")
+            return {"library": [e for e in map(page_library_entry, library if isinstance(library, list) else []) if e],
+                    "sessions": [page_session(e) for e in doc["sessions"] if isinstance(e, dict) and e.get("id")],
                     "reviews": [{k: r.get(k) for k in ("date", "title", "headline")}
                                 for r in (reviews if isinstance(reviews, list) else [])
                                 if isinstance(r, dict) and r.get("date")]}
-    return {"sessions": [], "reviews": []}
+    return {"sessions": [], "reviews": [], "library": []}
 
 
 def page_put_session(lists, doc):
@@ -3122,6 +3158,8 @@ def page_put_session(lists, doc):
     if old and e.get("minutes") is None:
         e["minutes"] = old.get("minutes")
     lists["sessions"] = [x for x in lists["sessions"] if x.get("id") != e["id"]] + [e]
+    # the session's reading and listening, as its document has them now
+    lists["library"] = [x for x in lists.get("library") or [] if x.get("session") != e["id"]] + page_library_of(doc)
 
 
 def page_put_review(lists, doc):
@@ -3135,7 +3173,7 @@ def page_doc(st, lists=None):
     they lack and is the authority on scores, minutes and whether a round was reflected on."""
     cfg = st.get("config") or {}
     prof = migrate_profile({"profile": copy.deepcopy(st.get("profile") or {})})["profile"]
-    lists = lists or {"sessions": [], "reviews": []}
+    lists = lists or {"sessions": [], "reviews": [], "library": []}
     sessions = {e["id"]: dict(e) for e in lists["sessions"]}
     for s in (st.get("previous") or []) + (st.get("sessions") or []):
         if not s.get("id"):
@@ -3158,6 +3196,12 @@ def page_doc(st, lists=None):
               for tid, t in (st.get("topics") or {}).items() if t.get("last") or t.get("mastery") is not None]
     topics.sort(key=lambda t: t["id"])
     topics.sort(key=lambda t: t["last"] or "", reverse=True)
+    # reading and listening of past sessions, newest session first and in the order the feedback
+    # gave them; a topic is named by the ledger's label once it has been tested (it always has)
+    labels = {t["id"]: t["label"] for t in topics}
+    library = [dict(e, label=labels.get(e.get("topic")) or e.get("label")) for e in lists.get("library") or []]
+    order = {id(e): n for n, e in enumerate(library)}
+    library.sort(key=lambda e: (e.get("date") or "", id_num(e.get("session")), -order[id(e)]), reverse=True)
     mastery = [t["mastery"] for t in topics if isinstance(t["mastery"], (int, float))]
     period = [s.get("score") for s in st.get("sessions") or []]
     scores = [x for x in period if isinstance(x, (int, float))]
@@ -3208,6 +3252,7 @@ def page_doc(st, lists=None):
         "block": block,
         "reviews": sorted(reviews.values(), key=lambda r: r.get("date") or "", reverse=True),
         "next_review": review.get("next_due"),
+        "library": library[:PAGE_LIBRARY_MAX],
         "settings": {
             "session_length": cfg.get("session_minutes"), "per_week": cfg.get("target_sessions_per_week"),
             "region": context["guideline_region"],
@@ -3217,7 +3262,6 @@ def page_doc(st, lists=None):
             "review_every_days": cfg.get("review_interval_days"), "reminders": bool(cfg.get("reminders")),
             "emphasis": dict(prof.get("domain_emphasis") or {}), "self_ratings": ratings,
             "level": level, "aim": aim,                  # {"label", "text"} and {"tags", "text"}
-            "reading": None, "listening": None,          # issue #51
         },
     }
 
@@ -3939,6 +3983,47 @@ def listening_picks(rnd, warnings):
             pick["source"] = p["source"]
         picks.append(pick)
     return picks
+
+
+def reading_pointers(rnd, warnings):
+    """Take the examiner's `reading` list out of the round (like `listening`, it belongs to the
+    session document, not to the ledger) and return it as the document keeps it: the pointers
+    of the feedback's Further reading section, each {topic, title, link, section, minutes, why}.
+    None when the round has no such list. A pointer that is not complete is left out, with a
+    warning that names its place in the list and what is missing; so is one beyond READING_MAX."""
+    raw = rnd.pop("reading", None)
+    if raw is None:
+        return None
+    if not isinstance(raw, list):
+        warnings.append("round 'reading' must be a list of pointers; it was left out of the session document")
+        return None
+    topics = [it.get("topic") for it in rnd.get("items") or [] if isinstance(it, dict)]
+    out = []
+    for n, p in enumerate(raw, 1):
+        tag = "reading pointer %d" % n
+        if not isinstance(p, dict):
+            warnings.append("%s: not an object; left out" % tag)
+            continue
+        link = str(p.get("link") or "").strip()
+        try:
+            minutes = int(round(float(p.get("minutes"))))
+        except (TypeError, ValueError):
+            minutes = None
+        wrong = [k for k in ("title", "section", "why") if not (isinstance(p.get(k), str) and p[k].strip())]
+        if p.get("topic") not in topics:
+            wrong.append("topic (one of this round's: %s)" % ", ".join(str(t) for t in topics))
+        if not READING_LINK_RE.match(link):
+            wrong.append("link (the document's own http(s) address)")
+        if minutes is None or minutes < 1:
+            wrong.append("minutes")
+        if wrong:
+            warnings.append("%s: left out of the session document; correct %s" % (tag, ", ".join(wrong)))
+        elif len(out) >= READING_MAX:
+            warnings.append("%s: left out of the session document; a round has at most %d" % (tag, READING_MAX))
+        else:
+            out.append({"topic": p["topic"], "title": p["title"].strip(), "link": link,
+                        "section": p["section"].strip(), "minutes": minutes, "why": p["why"].strip()})
+    return out
 
 
 def round_format(rnd):
@@ -5112,7 +5197,8 @@ def cmd_save(args):
     keys = fill_round_from_keys(rnd, sealed, load_json(plan_path) if plan_path else None)
     if keys:
         warnings.extend(keys.pop("warnings"))
-    listening = listening_picks(rnd, warnings)      # after the keys: the items have their topics
+    reading = reading_pointers(rnd, warnings)       # after the keys: the items have their topics
+    listening = listening_picks(rnd, warnings)
     if not feedback and not feedback_questions:
         die("save needs the feedback as sent: %s in the work folder" % FEEDBACK_FILE)
     st = copy.deepcopy(st_in)       # st_in stays the ledger as it was before this round
@@ -5128,6 +5214,8 @@ def cmd_save(args):
     if measured:
         doc["minutes"], doc["timing"] = measured["minutes"], measured["timing"]
         res["minutes"], res["timing"] = measured["minutes"], measured["timing"]
+    if reading is not None:
+        doc["reading"] = reading
     if listening is not None:
         doc["listening"] = listening
     rec = {}
@@ -5141,6 +5229,8 @@ def cmd_save(args):
         rec["page_settings_applied"] = prefs_changes
     if keys:
         rec["keys"] = keys
+    if reading is not None:
+        rec["reading"] = len(reading)
     if listening is not None:
         rec["listening"] = len(listening)
     save_json(rnd, os.path.join(work, RECORD_FILE))     # the round record as recorded, beside round.json
@@ -5351,7 +5441,7 @@ def cmd_import(args):
     check_schema(state)
     os.makedirs(args.out_dir, exist_ok=True)
     files = []
-    lists = {"sessions": [], "reviews": []}
+    lists = {"sessions": [], "reviews": [], "library": []}
     for d in src.get("sessions") or []:
         if not d.get("id"):
             continue

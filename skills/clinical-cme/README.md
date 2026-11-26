@@ -45,6 +45,16 @@ waiting for something to be generated.
 - Leaner sealed drafts (one-line pre-flight record, keys before stems), so a round that could
   not be prepared still starts quickly.
 
+## Page update 5.4.0
+
+- **Reading & listening.** The further-reading pointers of a round's feedback are now also
+  structured data: the examiner lists them in `round.json` as `reading` (topic, title, link,
+  section, minutes, why), `save` writes them into the session document beside the `listening`
+  picks, and the page file carries both as `library` (the last 100, newest first). The page
+  has a "Reading & listening" tab that lists them by session and topic, with links that open
+  in a new tab and a done mark kept in the viewer's own browser (never in the store).
+  `cme.py` (`PAGE_VERSION = "5.4.0"`) upgrades older pages once, at the next save.
+
 ## Page update 5.3.0
 
 - **Where you are, where you're aiming.** Setup asks two open questions and keeps the

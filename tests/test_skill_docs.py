@@ -86,5 +86,9 @@ def test_listening_is_described_where_each_reader_looks_for_it():
     assert "## Listening" in doc("author.md") and "podcast_sources" in doc("onboarding.md")
     assert '"listening": false' in doc("requests.md") and "podcast_sources" in doc("requests.md")
     assert "`listening`" in doc("session_log.md")
+    # reading pointers as data, for the page's Reading & listening view (issue #51)
+    assert "`round.json` as `reading`" in guide and "`reading`" in doc("session_log.md")
+    assert "- `reading`:" in doc("state_schema.md") and "- `library`:" in doc("state_schema.md")
     skill = read(SKILL_MD)
     assert "`listening.on`" in skill and "`podcast_sources`" in skill
+    assert "`reading` and `listening` only" in skill

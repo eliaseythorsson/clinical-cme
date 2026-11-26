@@ -197,8 +197,8 @@ headings.
 
 **Reading pointers** (`## Reading`; in `kit_questions.md` when the round has no case): up to
 two for the round, in the form of `feedback_guide.md` §2 E (the exact section, why it fits,
-a reading time), each marked `(verify)` until the checker has confirmed that the section
-exists.
+a reading time) with the document's link and the key id of the topic it serves, each marked
+`(verify)` until the checker has confirmed that the section exists.
 
 **Listening** (`## Listening`, the last section of both kits; left out only when the plan
 has `listening` false): the candidate podcast episodes from which each topic of the round

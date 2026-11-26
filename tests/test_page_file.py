@@ -143,9 +143,10 @@ def test_page_file_has_the_documented_shape_and_empty_slots_for_what_is_to_come(
     work.init(config={"mcqs": 2, "focused": 1, "session_minutes": 30}, profile={"specialty": "Geriatrics"})
     page = work.read_json("store", "data", "page.json")
     assert list(page) == ["schema", "page_version", "gen", "updated", "who", "totals", "sessions", "topics", "round",
-                          "block", "reviews", "next_review", "settings"]
+                          "block", "reviews", "next_review", "library", "settings"]
     assert page["schema"] == cme.PAGE_SCHEMA and page["page_version"] == cme.PAGE_VERSION and page["gen"] == 1
     assert page["sessions"] == [] and page["topics"] == [] and page["reviews"] == [] and page["block"] is None
+    assert page["library"] == []
     assert page["totals"] == {"topics": 0, "mean_mastery": None, "since": "2026-11-01", "sessions": 0, "mean_score": None}
     st = work.read_ledger()
     assert page["round"] == {"mix": {"mcqs": 2, "focused": 1, "case": True}, "set_at": st["config"]["round_set_at"],
@@ -156,8 +157,8 @@ def test_page_file_has_the_documented_shape_and_empty_slots_for_what_is_to_come(
     s = page["settings"]
     assert (s["session_length"], s["per_week"], s["region"], s["units"]) == (30, 3, "Iceland/Europe", {"labs": "SI", "gases": "mmHg"})
     assert page["who"]["specialty"] == "Geriatrics"
-    # slots other issues fill: level and aim (#55), the time hint (#47), reading and listening (#51)
-    assert s["level"] is None and s["aim"] is None and s["reading"] is None and s["listening"] is None
+    # empty until the learner has written them: level and aim (#55); reading and listening are `library` (#51)
+    assert s["level"] is None and s["aim"] is None and "reading" not in s and "listening" not in s
 
 
 def test_estimates_are_the_engines_with_the_new_defaults(work):

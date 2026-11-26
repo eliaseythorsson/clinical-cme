@@ -43,8 +43,9 @@ with `cme.py answer`, `feedback_questions.md` and `feedback.md`. The
 "Questions" sections hold the MCQs and the focused questions together, as they were presented
 and answered; a round without a case has no case sections. Write "None." under a section with
 nothing to report. `save` adds the metadata from the round record (id, date, title, summary,
-tags, topics, score, format, drill) and, when the round had a Listening section, the picks
-as the document's `listening` list (`state_schema.md` §2; the page will show them):
+tags, topics, score, format, drill), the reading pointers as the document's `reading` list
+and, when the round had a Listening section, the picks as its `listening` list
+(`state_schema.md` §2; the page shows both under "Reading & listening"):
 
 - **Title**: "presentation — diagnosis or main point", under about 90 characters.
 - **Summary**: one or two sentences on the main teaching, not the score.
