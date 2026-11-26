@@ -5,6 +5,11 @@ one place they own: the **store**. This file explains what the documents are, wh
 store there are, which tools reach them, and how to read and write them quickly without copying
 data through the conversation.
 
+**Not before the first message of a round.** When the learner's store is the page and it reads
+without trouble, SKILL.md turn 1 has all a session start needs: list, read, `start`, send.
+Open this file before that message only when a step there fails or the store is another kind
+(§3); read §4 behind the scenes afterwards, before the first publish.
+
 ## 1. The documents
 
 | Document | Path in the store | Written by |

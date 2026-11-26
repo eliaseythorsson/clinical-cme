@@ -2536,7 +2536,32 @@ def cmd_start(args):
         save_json(plan, plan_path)
         plan_out = plan_summary(plan, plan_path)
     status["plan"] = plan_out
+    # everything the first message needs, so that nothing else is run or read before it (issue #43)
+    status["started_at"] = now_ts()
+    status["opening"] = opening_line(status, plan_out, today)
+    if prepared["used"]:
+        ready = prepared["ready"]
+        status["prepared"]["unchecked"] = [n for n in SEALED_FILES if n in ready and EVIDENCE_FOR[n] not in ready]
     print(json.dumps(status, ensure_ascii=False))
+
+
+MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+
+def opening_line(status, plan, today):
+    """The opening line of a round, from neutral facts only: the mix, the time, the block's
+    theme and position, the last saved session. Never a topic."""
+    line = "Today's round: %s, about %s minutes." % (mix_text(plan), plan.get("estimated_minutes"))
+    block = status.get("block")
+    if block:
+        line += " %s." % block["line"]
+        if block.get("starts") and block.get("reason"):
+            line += " New block: %s." % block["reason"].rstrip(".")
+    last = parse_date((status.get("last_session") or {}).get("date"))
+    if last:
+        line += " Last saved session: %d %s%s." % (last.day, MONTHS[last.month - 1],
+                                                 "" if last.year == today.year else " %d" % last.year)
+    return line
 
 
 # ---------------------------------------------------------------- prepared round (drafted ahead)
