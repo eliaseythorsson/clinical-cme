@@ -42,8 +42,8 @@ folder (`state_schema.md` §6.1): the sealed `present` blocks, `stage2.md`, the 
 with `cme.py answer`, `feedback_questions.md` and `feedback.md`. The
 "Questions" sections hold the MCQs and the focused questions together, as they were presented
 and answered; a round without a case has no case sections. Write "None." under a section with
-nothing to report. `cme.py doc --part A` adds the metadata from
-the round JSON (id, date, title, summary, tags, topics, score, format, drill):
+nothing to report. `save` adds the metadata from the round record (id, date, title, summary,
+tags, topics, score, format, drill):
 
 - **Title**: "presentation — diagnosis or main point", under about 90 characters.
 - **Summary**: one or two sentences on the main teaching, not the score.
@@ -73,14 +73,16 @@ a "Reflection" heading is kept as it is.
   blocks in the round JSON.
 - **Grade changes**: each with from → to, the reason and the outcome. "None." otherwise.
 
-`cme.py doc --part B` wraps it as `{"closing": …, "reflected": true}` for `update`.
+`cme.py close` puts it into the session document as `closing`, with `reflected: true`.
 
 ## 4. Addendum
 
 Discussion after the close: write it as `## Addendum · <date>` followed by the text to a file and
-run `cme.py addendum --doc <session file> --md <file> --out-dir <dir>`, then save the file it
-prints. It appends to an existing addendum; read the current session file first if it may have
-changed. If the
+run `cme.py addendum --work <work> --md <file>` (the last session; `--session <id>` for an
+older one), then publish the `files` it prints. Straight after a close the work folder already
+holds the session document; in a later conversation, read the store with
+`data/sessions/<id>.json` and `open` the work folder first. It appends to an existing
+addendum. If the
 learner returns to an old case in a later session, note the current session's ID in the text.
 
 ## 5. Errata

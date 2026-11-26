@@ -14,10 +14,12 @@ W/publish.json ({"version": the store version read, "files": […]}). The assist
 whatever the set lists; it is cumulative, so a failed publish is covered by the next one.
 
 A job (one work folder):
-  open    --work W --store DIR [--version V] [--prefs J]
+  open    --work W --store DIR [--version V] [--prefs J] [--reread]
                                                   set W up for any job from DIR, the store as just read
                                                   (data/state.json … or the files side by side);
-                                                  prints neutral status and counts, never topics
+                                                  prints neutral status and counts, never topics.
+                                                  --reread: the same job on a fresh read, after a refused
+                                                  publish; then run its commands again
   start   --work W [--store DIR [--version V]] [--prefs J] [plan options] [--no-prepared]
                                                   a round: with --store it opens W first. Neutral status +
                                                   plan (W/plan.json; no topics); with a prepared round in
@@ -71,6 +73,7 @@ import math
 import os
 import random
 import re
+import shutil
 import sys
 import tempfile
 import zlib
@@ -2378,7 +2381,8 @@ def cmd_open(args):
     """Set up the work folder for one job from the local copy of the learner's store. Prints
     neutral status and counts only (never topics)."""
     today = today_from(args)
-    info, st, extra = open_work(args.work, args.store, args.version, load_json_arg(args.prefs), today)
+    info, st, extra = open_work(args.work, args.store, args.version, load_json_arg(args.prefs), today,
+                                reread=args.reread)
     status = status_dict(st, info["state"], today)
     status.update(extra)
     print(json.dumps(status, ensure_ascii=False))
@@ -3303,10 +3307,13 @@ def set_aside_round(work):
     return set_aside(work, ROUND_FILES)
 
 
-def open_work(work, store, version, prefs, today):
+def open_work(work, store, version, prefs, today, reread=False):
     """Set up the work folder for one job from `store`, the local copy of the learner's store
     as it was just read (the store's layout, or its files side by side). Returns (what was
-    noted in work.json, the ledger, what to add to the printed status)."""
+    noted in work.json, the ledger, what to add to the printed status).
+    `reread`: the same job on a fresh read of the store, after a publish was refused because
+    the store had moved on. The job's own files stay (answers, feedback, round.json, the next
+    round's drafts); what was computed from the old read goes, and the commands are run again."""
     store = os.path.abspath(store)
     if not os.path.isdir(store):
         die("the store copy %s is not a folder: read the store's files into a folder first" % store)
@@ -3332,7 +3339,18 @@ def open_work(work, store, version, prefs, today):
             earlier_gen = int(load_json(earlier).get("gen") or 0)
         except (CmeError, AttributeError, TypeError, ValueError):
             earlier_gen = None
-    aside = set_aside_earlier_job(work)
+    if reread:
+        if not work_info(work):
+            die("--reread continues a job after a refused publish, and no job is open in %s" % work)
+        for name in (PUBLISH_DIR, BEFORE_SAVE_FILE, BEFORE_CLOSE_FILE, VERIFY_FILE):
+            path = os.path.join(work, name)
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            elif os.path.exists(path):
+                os.remove(path)
+        prefs = prefs if prefs is not None else work_info(work).get("prefs")
+        extra["reread"] = True
+    aside = None if reread else set_aside_earlier_job(work)
     if aside:
         extra["earlier_set_aside"] = aside
         if earlier_gen is not None and earlier_gen > int(st.get("gen") or 0):
@@ -3688,7 +3706,7 @@ def main(argv=None):
         return s
 
     s = command("open", cmd_open); s.add_argument("--store", required=True); s.add_argument("--version")
-    s.add_argument("--prefs")
+    s.add_argument("--prefs"); s.add_argument("--reread", action="store_true")
     s = command("start", cmd_start); s.add_argument("--store"); s.add_argument("--version"); s.add_argument("--prefs")
     s.add_argument("--focused", type=int); s.add_argument("--mcqs", type=int); s.add_argument("--domain")
     s.add_argument("--seed", type=int); s.add_argument("--no-prepared", action="store_true")

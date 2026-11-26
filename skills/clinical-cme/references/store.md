@@ -9,20 +9,22 @@ data through the conversation.
 
 | Document | Path in the store | Written by |
 |---|---|---|
-| Ledger (`state_schema.md` §1), ≤ ~100 KB | `data/state.json` | `cme.py save`, `close`, `place` |
-| Index of sessions and reviews, for the page | `data/index.json` | `save`, `close`, `review-doc`, `place`, `reindex` |
+| Ledger (`state_schema.md` §1), ≤ ~100 KB | `data/state.json` | `cme.py save`, `close`, `settings`, `theme`, `review`, `init` |
+| Index of sessions and reviews, for the page | `data/index.json` | every command that writes the ledger; `review-doc`; `reindex` |
 | One round: metadata, `transcript` (part A), `closing` (part B), `addendum` | `data/sessions/S0042.json` | `save`, `close`, `addendum` |
-| The page itself | `index.html` | setup; `save` when the page is out of date (§4.5) |
+| The page itself | `index.html` | `init`; any command that writes the ledger, when the page is out of date (§4.5) |
 | A progress-review report | `data/reviews/2026-11-20.json` | `review-doc` |
-| The next round, written ahead and packed: questions, case, feedback notes (`state_schema.md` §8) | `data/prepared.json` | `finish-prepare` after a close; emptied by `save`, `settings` and `place` |
+| The next round, written ahead and packed: questions, case, feedback notes (`state_schema.md` §8) | `data/prepared.json` | `finish-prepare`; emptied by `save`, `settings`, `theme` and `review` |
 
 One more document lives outside the files: the round mix the learner sets on their page
 (`state_schema.md` §7) is kept by the page as its own settings document, `cme/prefs`. The page
 writes it; the skill only reads it.
 
-Every `cme.py` command that writes prints a `files` list. Each entry has `path` (the local file
-it wrote) and `as` (where it goes in the store). Put back exactly those files. Never write a
-document by retyping it.
+`cme.py` never touches the store. You read the store's files into a local folder, the **store
+copy**; `cme.py open` (or `start --store`) sets up a **work folder** on it; every command that
+writes puts its files into the work folder's **publish set** and prints the whole set as
+`files`. Each entry has `path` (the local file) and `as` (where it goes in the store). Publish
+exactly those files (§4). Never write a document by retyping it.
 
 ## 2. The tools
 
@@ -78,44 +80,71 @@ store next time (§4.3, "Carry-over"). Never write a second copy somewhere else 
 
 ## 4. Reading and writing
 
-Note the version or file timestamp of what you read; it pins the write.
+Every job has the same three steps, whatever it is (a round, a settings change, preparing a
+round, a review):
+
+1. **Read** the store's files into the store copy, `<work>/store/`, and note the store's
+   version (the artifact version the read reports; a folder has none).
+2. **Open** the work folder on it: `python3 cme.py start --work <work> --store <work>/store
+   --version <version>` for a round, `python3 cme.py open --work <work> --store <work>/store
+   --version <version>` for anything else. Every later command takes only `--work <work>`.
+3. **Publish** after each command that writes: every entry of the `files` it printed, in the
+   order listed. The same list, with the version the store was read at, is in the file the
+   command names as `publish` (`<work>/publish.json`: `{"version": …, "files": [{"as", "path"}, …]}`).
+   The list is the whole publish set, not only what the last command changed: session, review
+   and testing files first, then `data/index.json`, `index.html`, `data/prepared.json`, and
+   `data/state.json` last. Publishing it again is harmless, and a publish that failed is
+   covered by the next one.
+
+A second job later in the same conversation starts again at step 1 with a fresh read (`open`
+and `start --store` set the earlier job's files aside in `<work>/earlier/`). The exception is
+a round that follows another job in the same conversation without the learner leaving (a
+settings change first, or a late reflection closed first): run `start --work <work>` without
+`--store`; the round continues from the ledger that job wrote.
 
 ### 4.1 The page
 
-- **Read** (session start; one call): the read-files tool with the paths `data/state.json`,
+- **Read** (one call): the read-files tool with the paths `data/state.json`,
   `data/index.json`, `data/prepared.json` and `index.html`, asking for them as saved local
-  files. Copy the saved files to `<work>/store/state.json`, `<work>/store/index.json`,
-  `<work>/store/prepared.json` and `<work>/store/index.html`. A store last saved by a version
-  before 4.3 has no `data/prepared.json`: if the read is refused because of it, repeat the read
-  without that path and run `start` all the same (a missing file simply means no prepared
-  round). In the
-  same parallel batch, read the page's settings document `cme/prefs` (a few bytes of settings,
-  safe to see). Missing, or no tool that reads it → no page settings this session. The saved names are chosen by the
-  client: match each to its artifact path by the line that reports it, or by the sha256 or size
-  the result lists for each path (`sha256sum` confirms). Note the artifact version the result reports. If the read returns content into the
-  conversation instead of saving files, stop using that tool for the ledger.
-- **Write**: one publish call with every entry of the `files` list that `cme.py` printed
-  (`as` → served path, `path` → local file), keeping the other files (patch mode), pinned to the
-  version you read. The new version in the result is the proof; keep it for the next write.
-- **Conflict** (the version moved: another device saved): read both files again, re-run the
-  same `cme.py` command on the fresh files with the same inputs, publish again. Once. If it
-  fails again, follow §6.
+  files. Copy the saved files into `<work>/store/`: at their store paths
+  (`<work>/store/data/state.json`, …) or side by side under their own names
+  (`<work>/store/state.json`, `index.json`, `prepared.json`, `index.html`); `cme.py` finds
+  either. A store last saved by a version before 4.3 has no `data/prepared.json`: if the read
+  is refused because of it, repeat the read without that path (a missing file simply means no
+  prepared round). In the same parallel batch, read the page's settings document `cme/prefs`
+  (a few bytes of settings, safe to see) and pass it as `--prefs`. Missing, or no tool that
+  reads it → no page settings this session. The saved names are chosen by the client: match
+  each to its artifact path by the line that reports it, or by the sha256 or size the result
+  lists for each path (`sha256sum` confirms). Note the artifact version the result reports and
+  pass it as `--version`. If the read returns content into the conversation instead of saving
+  files, stop using that tool for the ledger.
+- **Write**: one publish call with every entry of `files` (`as` → served path, `path` → local
+  file), keeping the other files (patch mode), pinned to the version: the one in
+  `publish.json` for the first publish of a job, the one the last publish returned after
+  that. The new version in the result is the proof; keep it for the next write.
+- **Conflict** (the version moved: another device saved): read the store again into the store
+  copy, run `python3 cme.py open --work <work> --store <work>/store --version <new version>
+  --reread` (it keeps the job's own files and drops what was computed from the old read), run
+  the job's writing commands again in the same order (`save`, then `close`, …), publish
+  again. Once. If it fails again, follow §6.
 
 ### 4.2 A folder
 
-Copy the files into the folder at their `as` paths: session and review files first, then
-`data/index.json` and `data/prepared.json`, then `data/state.json` last (so an interrupted save never leaves a ledger
-that points to a missing log entry). Before overwriting `state.json`, check its `gen` is still
-the one you read; if it moved, re-read and re-run as for the page.
+The folder is its own store copy: `--store <the folder>`, no `--version`. To publish, copy
+each file of `files` into the folder at its `as` path, in the order listed (the ledger last,
+so an interrupted save never leaves a ledger that points to a missing log entry). Before
+overwriting `state.json`, check its `gen` is still the one `open` or `start` printed, or the
+one your last write left; if it moved, re-read and re-run as for the page.
 
 ### 4.3 Files carried by the learner, and carry-over
 
 - **Read**: the attached `state.json` (and `index.json` if attached; `cme.py` rebuilds what is
-  missing from the ledger). Copy them into `<work>/store/`. No round is prepared ahead in a
-  carried store: leave `data/prepared.json` out of what you hand back.
-- **Write**: hand back `state.json`, `index.json` and the new session file as downloads, with
-  one line: "Keep these three files together, replacing the old ones; attach `state.json` and
-  `index.json` next time."
+  missing from the ledger). Copy them into `<work>/store/` and open the work folder on it. No
+  round is prepared ahead in a carried store: leave `data/prepared.json` out of what you hand
+  back.
+- **Write**: hand back `state.json`, `index.json` and the new session file from `files` as
+  downloads, with one line: "Keep these three files together, replacing the old ones; attach
+  `state.json` and `index.json` next time."
 - **Carry-over into the page or a folder**: when attached files have a higher `gen` than the
   store, check with the learner, then save them into the store as a normal write (§4.1–4.2), plus any
   session files they attach.
@@ -127,17 +156,17 @@ the one you read; if it moved, re-read and re-run as for the page.
   ledger", "Save the round").
 - **One store per learner.** The store kind lives in the learner's head and the page, not in the
   ledger; never start a second one.
-- **Save once per step.** `save` after the final feedback, `close` after the reflection,
-  `finish-prepare` after the close (one small file, which does not touch the ledger). `save --work`
-  always starts from the ledger as it was read, so it can be run again after fixing a
-  warning; never run `save` on a ledger that `save` wrote.
-- **The prepared round is sealed.** Read `data/prepared.json` into a file and hand it to
-  `start`; never open it in the conversation.
+- **Publish once per step.** After `save` (the final feedback), after `close` (the
+  reflection), after `finish-prepare` (the next round). `save` always starts from the ledger
+  as it was before the round, so it can be run again after fixing a warning.
+- **The prepared round is sealed.** Read `data/prepared.json` into the store copy; `start`
+  finds it there. Never open it in the conversation.
 
 ### 4.5 Updating the page (once per skill version)
 
-`save` (and `place`) compare the learner's `index.html` with this skill's template and, when it
-is older, add the new `index.html` to `files`. Before the publish that carries it:
+Every command that writes the ledger compares the learner's `index.html` (in the store copy)
+with this skill's template and, when it is older, adds the new `index.html` to the publish
+set (`page_upgraded` in its output). Before the first publish that carries it:
 
 1. Check what the page has declared it uses. It needs `db` and `user` (for the round-mix
    switches) and `downloads` (for Export): `{"db": {}, "user": {}, "downloads": {}}`. If one is
@@ -155,38 +184,41 @@ A folder: copy `index.html` into it like the other files. Carried files: no page
 
 After the onboarding questions (`onboarding.md` §2):
 
-1. `python3 cme.py init --profile '<json>' --config '<json>' --blueprint <skill>/templates/blueprint.json
-   --out <work>/state.json` (or a blueprint drafted for the learner's specialty in the same JSON
-   shape, or as Markdown like `templates/blueprint.md`: `init` accepts both), then
-   `python3 cme.py place <work>/state.json --out-dir <work>/out0`.
-2. **The page**: copy `templates/page.html` to `<work>/out0/index.html`. Create a new artifact
-   in one publish with `index.html` and the files from `place`, titled **Clinical CME**, with a
-   generic icon (a stethoscope or similar) and the description "Your clinical CME ledger and
-   session log." Then declare what the page uses: `downloads` (its Export button), `db` and
-   `user` (the round-mix switches in Settings): `{"db": {}, "user": {}, "downloads": {}}`. Pin
-   the page if the app can.
-   **A folder**: copy `out0/data/` into the folder the learner names. **Carried files**: hand
-   back the files.
+1. `python3 cme.py init --work <work> --profile '<json>' --config '<json>' --blueprint
+   <skill>/templates/blueprint.json` (or a blueprint drafted for the learner's specialty in the
+   same JSON shape, or as Markdown like `templates/blueprint.md`: `init` accepts both). The
+   work folder needs no store yet: `init` writes the first ledger, the index and the page
+   (`index.html`) into the publish set and prints them as `files`.
+2. **The page**: create a new artifact in one publish with those `files`, titled **Clinical
+   CME**, with a generic icon (a stethoscope or similar) and the description "Your clinical
+   CME ledger and session log." Then declare what the page uses: `downloads` (its Export
+   button), `db` and `user` (the round-mix switches in Settings): `{"db": {}, "user": {},
+   "downloads": {}}`. Pin the page if the app can.
+   **A folder**: copy the `files` into the folder the learner names, at their `as` paths.
+   **Carried files**: hand back the files.
 3. Tell the learner in two lines where their data is. For the page: it is theirs and private;
-   the skill finds it by its title, so keep the title. Then offer the first round.
+   the skill finds it by its title, so keep the title. Then offer the first round: `start
+   --work <work>` in the same work folder, pinning its publishes to the version the creating
+   publish returned.
 
 If an artifact titled Clinical CME already exists, reuse it (never create a second one): read
-its store and continue, or start a fresh ledger in it only if the learner asks to start over.
+its store and continue, or start a fresh ledger in it only if the learner asks to start over
+(`open` on its store, then `init --work <work> … --start-over`).
 
 ## 6. Recovery
 
 - **A save was refused twice, or the store tool failed**: say so plainly, do not report the
-  round as saved, and hand the learner the files from the last `save`/`close` output folder
-  (state, index, session file) as downloads. At the next session, save them as a carry-over
+  round as saved, and hand the learner the files of the publish set (`files`: state, index,
+  session file) as downloads. At the next session, save them as a carry-over
   (§4.3) after checking their `gen` is higher than the store's.
 - **Session saved without a reflection** (the learner left after the feedback): nothing to do.
   `start` reports `last_session.unreflected`; the next `save` finalises it as "reflection
   skipped". If the learner wants to add the reflection at the start of the next session
-  (the snapshot is still in the ledger): read that session's file into
-  `<work>/store/sessions/`, add the reflection with `cme.py answer --part reflection`, write
-  `reflection.json` and `B.md`, run `cme.py close --work <work>` and save its files; then run
-  `start <work>/out2/data/state.json --work <work>` for today's round as usual (`start` sets
-  the closed round's files aside).
+  (the snapshot is still in the ledger): read that session's file into the store copy with the
+  rest (`data/sessions/<id>.json`), `open` the work folder, add the reflection with `cme.py
+  answer --part reflection`, write `reflection.json` and `B.md`, run `cme.py close --work
+  <work>` and publish its `files`; then run `start --work <work>` (no `--store`) for today's
+  round as usual: it continues from the closed ledger and sets the closed round's files aside.
 - **The artifact cannot be found**: ask for the link. Never create a second ledger silently.
 - **The index is missing or damaged**: `cme.py` rebuilds what it can from the ledger on the next
   save; `cme.py reindex <folder>` rebuilds it fully from the session files.

@@ -494,6 +494,32 @@ def test_start_again_before_any_answer_sets_nothing_aside(rnd):
     assert "earlier_set_aside" not in out and os.path.isfile(rnd.p("sealed_questions.md"))
 
 
+def test_reread_after_a_refused_publish_replays_the_job_on_the_fresh_store(rnd, tmp_path_factory):
+    rnd.play_to_feedback().save()
+    rnd.write("B.md", PART_B)
+    rnd.close()
+    # another device changed a setting in between: the publish is refused, the store is read again
+    other = Round(tmp_path_factory.mktemp("other"))
+    shutil.copytree(rnd.store(), other.store())
+    other.open()
+    other.run("settings", "--work", other.path, "--config", '{"session_minutes": 45}')
+    other.publish()
+    shutil.rmtree(rnd.store())
+    shutil.copytree(other.store(), rnd.store())
+    out = rnd.run_json("--today", DAY, "open", "--work", rnd.path, "--store", rnd.store(), "--version", "9", "--reread")
+    assert out["reread"] is True and "earlier_set_aside" not in out and out["gen"] == 2
+    assert os.path.isfile(rnd.p("answers.md")) and not os.path.exists(rnd.pub()) and rnd.manifest()["files"] == []
+    rnd.save()
+    closed = rnd.close()
+    st = rnd.read_json("publish", "data", "state.json")
+    assert st["config"]["session_minutes"] == 45 and [s["id"] for s in st["sessions"]] == ["S0001"]
+    assert st["unreflected"] is None and closed["gen"] == 4 and rnd.manifest()["version"] == "9"
+    assert names(closed) == [SESSION, INDEX, PREPARED, STATE]
+    r = Work(str(tmp_path_factory.mktemp("none")))
+    r = r.run("open", "--work", r.path, "--store", rnd.store(), "--reread", ok=False)
+    assert "no job is open" in json.loads(r.stdout)["error"]
+
+
 # ---- setup, and the other jobs
 
 def test_init_sets_up_a_work_folder_without_a_store_and_the_first_round_can_start(tmp_path):

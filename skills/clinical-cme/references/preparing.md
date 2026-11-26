@@ -26,12 +26,13 @@ Contents: 1. What is made ready, and when · 2. After the close · 3. Prepare on
 ## 2. After the close
 
 Run this behind the scenes after the close message is out and the files `close` printed are
-saved. Skip it for a store of files the learner carries (`store.md` §4.3). If a progress review
-follows the round now, run it after the review instead, from the ledger the review wrote
-(`progress_review.md`, "After the review is saved").
+published, in the same work folder: the next round is planned from the ledger as `close` left
+it. Skip it for a store of files the learner carries (`store.md` §4.3). If a progress review
+follows the round now, run it after the review instead (`progress_review.md`, "After the
+review is saved"); the same commands then plan from the ledger the review wrote.
 
-1. **Plan**: `mkdir -p <work>/next`, then `python3 cme.py prepare <work>/out2/data/state.json
-   --out <work>/next/plan.json`. If it prints `"prepare": false`, stop here.
+1. **Plan**: `python3 cme.py prepare --work <work>`. It writes `<work>/next/plan.json`. If it
+   prints `"prepare": false`, stop here.
 2. **Write**: start the author (Plan `<work>/next/plan.json`, Write into `<work>/next`, Parts
    `all`; prompt as in SKILL.md, "Roles") and wait for "done". Do not read the plan or what it
    writes. Without an author, write the four files yourself as `author.md` describes
@@ -40,13 +41,13 @@ follows the round now, run it after the review instead, from the ledger the revi
    `<work>/next/evidence_questions.md`; `sealed_case.md` → `evidence_case.md`), and wait for
    both. Without helpers, skip this step: the evidence is then checked at the session, after
    the answers.
-4. **Finish**: `python3 cme.py finish-prepare <work>/out2/data/state.json --work <work>` (add
-   `--no-evidence` when step 3 was skipped). It checks the key headers, reads the checkers'
-   counts, prints counts and the names of files, keys and fields only, and stashes the round
-   into `<work>/out3` when it is clean:
-   - `"stashed": true` → save its one file (`store.md` §4).
+4. **Finish**: `python3 cme.py finish-prepare --work <work>` (add `--no-evidence` when step 3
+   was skipped). It checks the key headers, reads the checkers' counts, prints counts and the
+   names of files, keys and fields only, and, when the round is clean, packs it and adds
+   `data/prepared.json` to the publish set:
+   - `"stashed": true` → publish its `files` (`store.md` §4).
    - `"revise": true` (a key is contradicted; nothing stashed yet) → start the author once
-     more with Parts `revise`, wait, then run the command again with `--revised` and save.
+     more with Parts `revise`, wait, then run the command again with `--revised` and publish.
    - an error naming key headers (one missing or malformed; nothing stashed) → start the
      author once more with Parts `headers` and the error's list of problems in its prompt (it
      names no content), wait, then run the command again. Without an author, correct the
@@ -67,12 +68,12 @@ A session whose whole job is to make sure a round is ready. The learner is not t
 nothing, and never write anything about the round's content.
 
 1. Read the store as at the start of a round (SKILL.md, turn 1, step 1: `state.json`,
-   `index.json`, `prepared.json`).
-2. `python3 cme.py prepare <work>/store/state.json --out <work>/next/plan.json --if-needed
-   <work>/store/prepared.json --allow-unreflected`. `"prepare": false` → reply "A round is
-   already prepared." (or the reason it gives) and stop.
-3. Write, check and finish as in §2, steps 2–4, with `<work>/store/state.json` as the ledger,
-   and save the one file, pinned to the version you read. If the store changed in between,
+   `index.json`, `prepared.json`), then `python3 cme.py open --work <work> --store
+   <work>/store --version <version read>`.
+2. `python3 cme.py prepare --work <work> --if-needed --allow-unreflected`. `"prepare": false`
+   → reply "A round is already prepared." (or the reason it gives) and stop.
+3. Write, check and finish as in §2, steps 2–4, and publish the `files` (here the one file,
+   `data/prepared.json`), pinned to the version you read. If the store changed in between,
    stop: a round is being played.
 4. Reply in one line: "Next round prepared." Nothing else.
 
