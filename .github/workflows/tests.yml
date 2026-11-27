@@ -4,13 +4,19 @@ on:
   push:
     branches: [main]
 jobs:
+  # the fast suite: engine calls run in the test process (tests/conftest.py), on the newest Python
+  # CI uses and on 3.8, the oldest the engine promises
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.8"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
       # the page render tests (tests/test_page.py) run the page's script with node; without it
       # they fail here rather than skip
       - uses: actions/setup-node@v4
@@ -18,4 +24,19 @@ jobs:
           node-version: "22"
       - run: node --version
       - run: python -m py_compile skills/clinical-cme/scripts/cme.py
+      - run: pip install pytest && python -m pytest -q tests
+  # on main: every engine call as a real process, as the assistant runs cme.py
+  subprocess:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      CME_TEST_SUBPROCESS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - run: pip install pytest && python -m pytest -q tests

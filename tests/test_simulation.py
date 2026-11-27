@@ -11,9 +11,7 @@ import sys
 
 import pytest
 
-from conftest import CME, ROOT
-
-SIM = os.path.join(ROOT, "sim", "simulate.py")
+from conftest import CME, SIM, run_script
 TODAY = "2026-11-01"
 
 SEALED_QUESTIONS = """## Keys
@@ -153,7 +151,7 @@ DG 2 · one bullet per item.
 
 
 def sim(*args, ok=True):
-    r = subprocess.run([sys.executable, SIM, *args], capture_output=True, text=True)
+    r = run_script(SIM, args)
     if ok:
         assert r.returncode == 0, r.stderr + r.stdout
     return r
@@ -164,7 +162,7 @@ def sim_json(*args):
 
 
 def cme(*args):
-    r = subprocess.run([sys.executable, CME, *args], capture_output=True, text=True)
+    r = run_script(CME, args)
     assert r.returncode == 0, r.stderr + r.stdout
     return r.stdout
 

@@ -7,12 +7,10 @@ import json
 import os
 import re
 import shutil
-import subprocess
-import sys
 
 import pytest
 
-from conftest import SKILL
+from conftest import SKILL, run_script
 from examples import cme
 from test_finish_prepare import Next, edit
 
@@ -141,7 +139,7 @@ def test_the_table_in_the_rulebook_is_the_one_cme_py_generates():
 
 
 def test_the_key_table_command_prints_it():
-    r = subprocess.run([sys.executable, cme.__file__, "key-table"], capture_output=True, text=True)
+    r = run_script(cme.__file__, ["key-table"])
     assert r.returncode == 0 and r.stdout.strip() == "%s\n%s\n%s" % (
         cme.KEY_TABLE_OPEN, cme.key_header_table(), cme.KEY_TABLE_CLOSE)
 
@@ -462,8 +460,7 @@ def test_an_installed_skill_with_an_edited_list_lints_with_it(tmp_path):
     os.mkdir(str(tmp_path / "work"))
     nxt = with_abbreviations(Next(tmp_path / "work").setup().check())
     assert nxt.finish()[1]["lint"]["abbreviations"] == 2
-    r = subprocess.run([sys.executable, os.path.join(skill, "scripts", "cme.py"), "finish-prepare", "--work", nxt.path],
-                       capture_output=True, text=True)
+    r = run_script(os.path.join(skill, "scripts", "cme.py"), ["finish-prepare", "--work", nxt.path])
     out = json.loads(r.stdout)
     assert out["stashed"] is True and out["lint"] == {"abbreviations": 0, "time_anchors": 0}
 

@@ -13,7 +13,7 @@ import subprocess
 
 import pytest
 
-from conftest import CME, ROOT, SKILL
+from conftest import CME, ROOT, SKILL, run_script
 
 PAGE = os.path.join(SKILL, "templates", "page.html")
 HARNESS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "page_harness.js")
@@ -313,8 +313,7 @@ def test_export_can_be_imported_again(tmp_path):
     export = tmp_path / "export.json"
     export.write_text(out["saved"][0]["data"], encoding="utf-8")
     cme = load_cme()
-    proc = subprocess.run([shutil.which("python3") or "python", CME, "import", str(export), "--out-dir", str(tmp_path / "back")],
-                          capture_output=True, text=True)
+    proc = run_script(CME, ["import", str(export), "--out-dir", str(tmp_path / "back")])
     assert proc.returncode == 0, proc.stderr
     names = [f["as"] for f in json.loads(proc.stdout)["files"]]
     assert names == ["data/sessions/S0002.json", "data/sessions/S0001.json", "data/page.json", "data/state.json"] \

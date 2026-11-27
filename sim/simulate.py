@@ -124,9 +124,14 @@ def rp(run, *parts):
     return os.path.join(run, *parts)
 
 
+def run_engine(script, args):
+    """Run the engine script as its own process; returns the subprocess.CompletedProcess. The
+    one way this harness calls cme.py: the tests swap it for an in-process runner (issue #73)."""
+    return subprocess.run([sys.executable, script, *args], capture_output=True, text=True)
+
+
 def run_cme(skill, *args):
-    cme = os.path.join(skill, "scripts", "cme.py")
-    r = subprocess.run([sys.executable, cme, *args], capture_output=True, text=True)
+    r = run_engine(os.path.join(skill, "scripts", "cme.py"), list(args))
     if r.returncode != 0:
         raise SimError("cme.py %s failed: %s" % (args[0], (r.stderr or r.stdout).strip()[:500]))
     return r.stdout

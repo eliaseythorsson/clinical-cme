@@ -1,16 +1,126 @@
-"""Shared fixtures: run cme.py as the assistant does, in a scratch folder."""
+"""Shared fixtures: run cme.py as the assistant does, in a scratch folder.
+
+Every engine call goes through `run_script`: by default it runs the script's `main(argv)` in this
+process (issue #73), isolated the way a separate `python script.py …` process is; with
+CME_TEST_SUBPROCESS=1 in the environment every call is a real process, as the assistant runs it.
+The few tests that need a real process whatever the switch says pass `process=True`."""
+import builtins
+import io
 import json
 import os
 import shutil
 import subprocess
 import sys
+import traceback
+import types
+import warnings
 
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILL = os.path.join(ROOT, "skills", "clinical-cme")
 CME = os.path.join(SKILL, "scripts", "cme.py")
+SIM = os.path.join(ROOT, "sim", "simulate.py")
 BLUEPRINT = os.path.join(SKILL, "templates", "blueprint.json")
+
+SUBPROCESS = os.environ.get("CME_TEST_SUBPROCESS") == "1"
+
+# ---- running a script: in this process, or as its own process
+
+_compiled = {}
+
+
+def _code(script):
+    """The script compiled once per version of its file: compiling cme.py is most of what a new
+    process costs. Each call still executes it afresh into a new module."""
+    st = os.stat(script)
+    key = (script, st.st_mtime_ns, st.st_size)
+    if key not in _compiled:
+        with open(script, "rb") as fh:
+            _compiled[key] = compile(fh.read(), script, "exec", dont_inherit=True)
+    return _compiled[key]
+
+
+def _newlines(text):
+    """What text mode (universal newlines) makes of a pipe's content, as subprocess.run(text=True)
+    reads the child's output. (The child reads its standard input untranslated.)"""
+    return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def _exit_status(code, stderr):
+    """What `sys.exit(code)` leaves as the process's exit status."""
+    if code is None:
+        return 0
+    if isinstance(code, int):
+        return code & 0xFF
+    stderr.write("%s\n" % code)
+    return 1
+
+
+def _show_warning(message, category, filename, lineno, file=None, line=None):
+    sys.stderr.write(warnings.formatwarning(message, category, filename, lineno, line))
+
+
+def _in_process(script, args, cwd, input):
+    """`python script args` without a new process: a fresh module from the script (no state kept
+    from an earlier call), its own standard input (empty unless given), standard output and error
+    captured, argv, working folder, environment and warning filters as a new process has them and
+    all put back afterwards, and the exit status `sys.exit(main())` would leave, a traceback on
+    standard error and status 1 for an uncaught exception."""
+    name = "_under_test_" + os.path.splitext(os.path.basename(script))[0]
+    module = types.ModuleType(name)
+    module.__file__ = script
+    module.__builtins__ = builtins
+    out, err = io.StringIO(), io.StringIO()
+    saved = (sys.stdin, sys.stdout, sys.stderr, sys.argv, os.getcwd(), dict(os.environ), sys.modules.get(name))
+    sys.modules[name] = module
+    try:
+        sys.stdin = io.StringIO(input or "", newline="")
+        sys.stdout, sys.stderr = out, err
+        sys.argv = [script, *args]
+        if cwd is not None:
+            os.chdir(cwd)
+        with warnings.catch_warnings():
+            # the filters of a fresh interpreter (no -W, no PYTHONWARNINGS), printed to its stderr
+            warnings.resetwarnings()
+            for category in (DeprecationWarning, PendingDeprecationWarning, ImportWarning, ResourceWarning):
+                warnings.simplefilter("ignore", category)
+            warnings.filterwarnings("default", category=DeprecationWarning, module=name)
+            warnings.showwarning = _show_warning
+            try:
+                exec(_code(script), module.__dict__)
+                if hasattr(module, "run_engine"):           # sim/simulate.py: its engine calls too
+                    module.run_engine = run_script
+                code = module.main(list(args))
+            except SystemExit as e:
+                code = e.code
+            except Exception:                               # noqa: BLE001 - as the interpreter reports it
+                traceback.print_exc()
+                code = 1
+            status = _exit_status(code, err)
+    finally:
+        sys.stdin, sys.stdout, sys.stderr, sys.argv = saved[:4]
+        os.chdir(saved[4])
+        if dict(os.environ) != saved[5]:
+            os.environ.clear()
+            os.environ.update(saved[5])
+        if saved[6] is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = saved[6]
+    return subprocess.CompletedProcess([sys.executable, script, *args], status,
+                                       _newlines(out.getvalue()), _newlines(err.getvalue()))
+
+
+def run_script(script, args, cwd=None, input=None, process=None, env=None):
+    """Run a Python script with these arguments; returns a subprocess.CompletedProcess (returncode,
+    stdout, stderr). In this process unless CME_TEST_SUBPROCESS=1 or `process=True` (or an `env`,
+    which only a process can have)."""
+    args = [str(a) for a in args]
+    if process or env is not None or (process is None and SUBPROCESS):
+        return subprocess.run([sys.executable, script, *args], capture_output=True, text=True, cwd=cwd,
+                              input=input, env=env)
+    return _in_process(script, args, cwd, input)
 
 ROUND = {
     "log_id": "S0001", "case_format": "unfolding", "title": "t", "summary": "s", "tags": ["x"],
@@ -60,7 +170,10 @@ MIX = {"mcqs": 3, "focused": 0, "case": True, "session_minutes": 20}
 
 class Work:
     """A scratch work folder, with the learner's folder store read into store/ as a session has
-    it, plus a helper that runs cme.py and parses its JSON output."""
+    it, plus a helper that runs cme.py and parses its JSON output. `process=True`: every call is a
+    real process even without CME_TEST_SUBPROCESS."""
+
+    process = None
 
     def __init__(self, path):
         self.path = str(path)
@@ -96,8 +209,8 @@ class Work:
     def write_ledger(self, st):
         return self.write(os.path.join("store", "data", "state.json"), st)
 
-    def run(self, *args, ok=True):
-        r = subprocess.run([sys.executable, CME, *args], capture_output=True, text=True, cwd=self.path)
+    def run(self, *args, ok=True, input=None):
+        r = run_script(CME, args, cwd=self.path, input=input, process=self.process)
         if ok:
             assert r.returncode == 0, r.stderr + r.stdout
         return r

@@ -7,13 +7,11 @@ import datetime as dt
 import json
 import os
 import shutil
-import subprocess
-import sys
 
 import pytest
 
 import examples
-from conftest import CME
+from conftest import CME, run_script
 from examples import LEDGERS, PREPARED_MADE, cme
 
 PARTS = ("plan", "schedule", "applied")
@@ -26,9 +24,10 @@ def read(path):
         return json.load(fh)
 
 
-def run_cme(args, hashseed="0"):
-    env = dict(os.environ, PYTHONHASHSEED=hashseed)
-    r = subprocess.run([sys.executable, CME, *args], capture_output=True, text=True, env=env)
+def run_cme(args, hashseed=None):
+    """cme.py with these arguments; with a `hashseed`, as its own process with that string hashing."""
+    env = None if hashseed is None else dict(os.environ, PYTHONHASHSEED=hashseed)
+    r = run_script(CME, args, env=env)
     assert r.returncode == 0, r.stdout + r.stderr
     return r.stdout
 
@@ -120,7 +119,7 @@ def store_copy(tmp_path, st, prepared=None):
     return str(tmp_path / "store")
 
 
-def start(tmp_path, today, st, prepared=None, hashseed="0"):
+def start(tmp_path, today, st, prepared=None, hashseed=None):
     work = tmp_path / "work"
     out = json.loads(run_cme(["--today", today, "start", "--work", str(work),
                               "--store", store_copy(tmp_path, st, prepared)], hashseed))

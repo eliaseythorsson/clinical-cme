@@ -8,7 +8,7 @@ import shutil
 
 import pytest
 
-from conftest import BLUEPRINT, REFLECTION, ROUND, SEALED_CASE, SEALED_QUESTIONS, Work
+from conftest import BLUEPRINT, REFLECTION, ROUND, SEALED_CASE, SEALED_QUESTIONS, CME, Work, run_script
 
 DAY = "2026-11-01"
 SAID = {
@@ -152,6 +152,7 @@ def test_an_earlier_job_in_the_work_folder_is_set_aside_by_open(rnd):
 # ---- a full round through the commands
 
 def test_full_round_needs_only_the_work_folder_the_dates_and_the_reflection(rnd):
+    rnd.process = True              # one whole round end to end as real processes, whatever the switch says
     started = rnd.start()
     assert started["work"] == rnd.path and os.path.isfile(rnd.p("plan.json"))
     rnd.play_to_feedback()
@@ -276,10 +277,8 @@ def test_answer_reads_a_file_or_standard_input_and_prints_no_content(rnd):
     rnd.start()
     r = rnd.run("answer", "--work", rnd.path, "--part", "questions", "--file", rnd.write("msg.md", SAID["questions"] + "\n"))
     assert "thunderclap" not in r.stdout
-    import subprocess, sys
-    from conftest import CME
-    r = subprocess.run([sys.executable, CME, "answer", "--work", rnd.path, "--part", "case"], input=SAID["case"],
-                       capture_output=True, text=True)
+    # the answer piped into a real process's standard input, as the assistant pipes it
+    r = run_script(CME, ["answer", "--work", rnd.path, "--part", "case"], input=SAID["case"], process=True)
     assert r.returncode == 0 and json.loads(r.stdout)["parts"] == ["questions", "case"]
     assert "malignancy" not in r.stdout
 

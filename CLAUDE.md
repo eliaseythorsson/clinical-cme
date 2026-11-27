@@ -15,7 +15,9 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
   - `references/` — store, schema, the rulebook (`standards.md`), case design, feedback, analysis, logging, review, onboarding,
     preparing ahead, other requests
   - `templates/` — learner page (`page.html`), default blueprint, resource library
-- `tests/` — pytest suite for `cme.py` (`conftest.py` runs it the way the assistant does)
+- `tests/` — pytest suite for `cme.py` (`conftest.py` runs it the way the assistant does, its
+  `main(argv)` in the test process, isolated as a process would be; `CME_TEST_SUBPROCESS=1` runs
+  every call as a real process, as CI does on `main`)
   - `tests/ledgers/` — synthetic example ledgers with their expected plan, schedule and applied
     round; `tests/examples.py` says how to accept a deliberate change
 - `sim/` — simulation harness (`simulate.py`, personas, saved reports); run with `/simulate`,
