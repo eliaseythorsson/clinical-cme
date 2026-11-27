@@ -247,7 +247,7 @@ drafts an equivalent blueprint in the same format for you to check.
     - LDL-cholesterol target by risk category [ESC/EAS dyslipidaemias 2019, focused update 2025]
     - Whether to measure lipoprotein(a), and what to do with the result [ESC/EAS dyslipidaemias focused update 2025]
   - CARD-14b  Statin intolerance and add-on therapy  (aspects: management high)
-    - Whether muscle symptoms on a statin are true intolerance, and how to rechallenge [ESC/EAS dyslipidaemias 2019]
+    - Whether muscle symptoms on a statin are true intolerance, and how to rechallenge [ESC/EAS dyslipidaemias focused update 2025]
     - Order of add-on therapy when the LDL target is not reached (ezetimibe, PCSK9 inhibitor, bempedoic acid) [ESC/EAS dyslipidaemias focused update 2025]
 - CARD-15  Adult congenital disease and murmurs
   - CARD-15a  Septal defects, PFO, bicuspid valve  (aspects: diagnosis medium, management medium)
@@ -506,17 +506,17 @@ drafts an equivalent blueprint in the same format for you to check.
     - Which warning signs in dengue call for admission and fluid management [WHO arboviral diseases 2025]
 - ID-09  HIV
   - ID-09a  New diagnosis and timing of antiretroviral therapy  (aspects: diagnosis high, management high, testing medium)
-    - Which inpatient presentations (indicator conditions) call for an HIV test [EACS 13.0 2025]
-    - How soon ART is started in tuberculosis and in cryptococcal meningitis [EACS 13.0 2025]
-    - Which baseline tests shape the first antiretroviral regimen [EACS 13.0 2025]
+    - Which inpatient presentations (indicator conditions) call for an HIV test [EACS 13.1 2026]
+    - How soon ART is started in tuberculosis and in cryptococcal meningitis [EACS 13.1 2026]
+    - Which baseline tests shape the first antiretroviral regimen [EACS 13.1 2026]
   - ID-09b  Opportunistic infections and prophylaxis  (aspects: diagnosis high, management high, prevention high)
-    - At which CD4 count Pneumocystis and toxoplasma prophylaxis starts and stops [EACS 13.0 2025]
-    - Whether Pneumocystis pneumonia with hypoxaemia calls for adjunctive corticosteroids [EACS 13.0 2025]
-    - Whether cryptococcal antigen screening is done at a low CD4 count [EACS 13.0 2025]
+    - At which CD4 count Pneumocystis and toxoplasma prophylaxis starts and stops [EACS 13.1 2026]
+    - Whether Pneumocystis pneumonia with hypoxaemia calls for adjunctive corticosteroids [EACS 13.1 2026]
+    - Whether cryptococcal antigen screening is done at a low CD4 count [EACS 13.1 2026]
   - ID-09c  Immune reconstitution and long-term complications  (aspects: diagnosis medium, management high)
-    - Whether immune reconstitution syndrome calls for continuing ART and adding corticosteroids [EACS 13.0 2025]
-    - Which drug interactions with ART must be checked before a new prescription [EACS 13.0 2025]
-    - Cardiovascular risk assessment and statin use in people with HIV [EACS 13.0 2025]
+    - Whether immune reconstitution syndrome calls for continuing ART and adding corticosteroids [EACS 13.1 2026]
+    - Which drug interactions with ART must be checked before a new prescription [EACS 13.1 2026]
+    - Cardiovascular risk assessment and statin use in people with HIV [EACS 13.1 2026]
 - ID-10  Healthcare-associated and resistant organisms
   - ID-10a  Treating resistant organisms (ESBL, carbapenemase producers, MRSA, VRE)  (aspects: management very high, interpretation high)
     - Whether a carbapenem is preferred over piperacillin-tazobactam for a serious ESBL infection [ESCMID MDR-GNB 2022]
@@ -524,7 +524,7 @@ drafts an equivalent blueprint in the same format for you to check.
     - Whether combination therapy adds anything for carbapenem-resistant infection [ESCMID MDR-GNB 2022]
   - ID-10b  Infection control and post-exposure prophylaxis  (aspects: prevention high, management medium)
     - Whether MRSA carriers are decolonised before surgery [ESCMID/EUCIC decolonisation 2024]
-    - Whether a needlestick exposure calls for HIV post-exposure prophylaxis, and how soon [EACS 13.0 2025]
+    - Whether a needlestick exposure calls for HIV post-exposure prophylaxis, and how soon [EACS 13.1 2026]
     - Hepatitis B vaccine and immunoglobulin after exposure, by the exposed person's immunity [EASL HBV 2025]
 - ID-11  Invasive fungal infection
   - ID-11a  Aspergillosis and other moulds  (aspects: diagnosis high, testing high, management high)
@@ -562,8 +562,8 @@ drafts an equivalent blueprint in the same format for you to check.
     - When pelvic inflammatory disease calls for admission and intravenous therapy [IUSTI PID 2017]
 - ID-15  Prevention and the immunocompromised host
   - ID-15a  Adult immunisation  (aspects: prevention high)
-    - Which vaccines are due before starting immunosuppression, and how long before [EULAR vaccination AIIRD 2019]
-    - Whether live vaccines are contraindicated on a given immunosuppressant [EULAR vaccination AIIRD 2019]
+    - Which vaccines are due before starting immunosuppression, and how long before [EULAR vaccination AIIRD 2026]
+    - Whether live vaccines are contraindicated on a given immunosuppressant [EULAR vaccination AIIRD 2026]
     - Revaccination schedule after haematopoietic stem cell transplant [ECIL-7 vaccination 2019]
   - ID-15b  Infection on immunosuppressants and after transplant  (aspects: prevention high, diagnosis high, management medium)
     - At which steroid dose and duration Pneumocystis prophylaxis is started [EULAR infections 2022]
@@ -787,10 +787,10 @@ drafts an equivalent blueprint in the same format for you to check.
     - When rising liver tests require stopping the drug [EASL DILI 2019]
     - Whether to rechallenge [EASL DILI 2019]
   - GI-04c  Alcohol-related hepatitis  (aspects: management high, prognosis high, diagnosis medium)
-    - Whether disease severity justifies corticosteroids [EASL alcohol-related liver disease 2025]
-    - Whether to stop steroids at day 7 [EASL alcohol-related liver disease 2025]
-    - What to exclude before starting steroids [EASL alcohol-related liver disease 2025]
-    - Who is considered for early transplantation [EASL alcohol-related liver disease 2025]
+    - Whether disease severity justifies corticosteroids [EASL alcohol-related liver disease 2018]
+    - Whether to stop steroids at day 7 [EASL alcohol-related liver disease 2018]
+    - What to exclude before starting steroids [EASL alcohol-related liver disease 2018]
+    - Who is considered for early transplantation [EASL alcohol-related liver disease 2018]
 - GI-08  Chronic liver disease
   - GI-08a  Abnormal liver tests and steatotic liver disease  (aspects: testing high, diagnosis high, management medium)
     - Which tests make up a liver screen for abnormal liver tests [BSG abnormal liver tests 2018]
@@ -827,9 +827,9 @@ drafts an equivalent blueprint in the same format for you to check.
     - Whether to use water-soluble contrast in adhesive obstruction [WSES adhesive small bowel obstruction 2017]
     - When to give neostigmine or decompress in colonic pseudo-obstruction [ASGE colonic pseudo-obstruction 2020]
   - GI-06b  Mesenteric ischaemia and ischaemic colitis  (aspects: diagnosis very high, management high)
-    - Whether a normal lactate rules out mesenteric ischaemia [ESVS mesenteric 2017]
-    - Whether to wait for renal function before CT angiography [ESVS mesenteric 2017]
-    - How long to anticoagulate mesenteric venous thrombosis [ESVS mesenteric 2017]
+    - Whether a normal lactate rules out mesenteric ischaemia [ESVS mesenteric 2025]
+    - Whether to wait for renal function before CT angiography [ESVS mesenteric 2025]
+    - How long to anticoagulate mesenteric venous thrombosis [ESVS mesenteric 2025]
 - GI-09  Biliary disease
   - GI-09a  Gallstones and cholecystitis  (aspects: management high, disposition high)
     - Timing of cholecystectomy in acute cholecystitis [WSES acute cholecystitis 2020; Tokyo 2018]
@@ -909,8 +909,8 @@ drafts an equivalent blueprint in the same format for you to check.
     - Which foot findings call for urgent referral to a foot team [IWGDF 2023]
     - Whether rapid glucose lowering in established retinopathy needs eye review first [ADA Standards of Care 2026]
   - ENDO-07c  Type 1 and atypical diabetes  (aspects: diagnosis high, management medium)
-    - Whether a new adult diagnosis needs islet autoantibodies or C-peptide to classify it [ADA/EASD type 1 diabetes consensus 2021]
-    - When monogenic diabetes is suspected and genetic testing requested [ADA/EASD type 1 diabetes consensus 2021]
+    - Whether a new adult diagnosis needs islet autoantibodies or C-peptide to classify it [ADA/EASD type 1 diabetes consensus 2026]
+    - When monogenic diabetes is suspected and genetic testing requested [ADA/EASD type 1 diabetes consensus 2026]
     - Recognition and insulin need in diabetes caused by an immune checkpoint inhibitor [ESE immune checkpoint inhibitor endocrinopathies 2022]
 - ENDO-03  Thyroid emergencies
   - ENDO-03a  Thyroid storm  (aspects: diagnosis high, management very high)
@@ -994,7 +994,7 @@ drafts an equivalent blueprint in the same format for you to check.
     - Which non-insulin causes are considered in the ill inpatient [Endocrine Society adult hypoglycaemic disorders 2009]
   - ENDO-11b  Neuroendocrine tumours and multiple endocrine syndromes  (aspects: diagnosis medium, testing medium)
     - How a biochemically proven insulinoma is localised [ENETS functioning pancreatic NET 2023]
-    - Which presentations call for testing for MEN1 [MEN1 clinical practice guideline 2012]
+    - Which presentations call for testing for MEN1 [AACE MEN1 consensus 2025]
 
 ## G. Rheumatology, Allergy & Immunology  (weight: 0.5)
 - RHEUM-01  Crystal arthritis and the acute joint
@@ -1048,13 +1048,13 @@ drafts an equivalent blueprint in the same format for you to check.
     - Whether a cephalosporin or carbapenem is given to a patient with a penicillin allergy [EAACI beta-lactam hypersensitivity 2020]
     - Which reactions rule out any challenge [EAACI/ENDA drug provocation testing 2024]
   - RHEUM-04c  Urticaria and angioedema  (aspects: diagnosis high, management high)
-    - Whether angioedema without urticaria is bradykinin- or histamine-mediated, and what each is treated with [WAO/EAACI hereditary angioedema 2025]
+    - Whether angioedema without urticaria is bradykinin- or histamine-mediated, and what each is treated with [WAO HAE 2025]
     - How far chronic urticaria is investigated [EAACI/GA²LEN international urticaria guideline 2026]
     - Treatment steps in chronic urticaria after a standard-dose antihistamine [EAACI/GA²LEN international urticaria guideline 2026]
 - RHEUM-05  Rheumatoid arthritis
   - RHEUM-05a  Diagnosis and systemic disease  (aspects: diagnosis high, management medium)
     - Whether early inflammatory arthritis meets criteria for rheumatoid arthritis [ACR/EULAR RA classification 2010]
-    - Which comorbidities are screened for and managed, cardiovascular risk among them [EULAR cardiovascular risk in RMDs 2024]
+    - Which comorbidities are screened for and managed, cardiovascular risk among them [EULAR cardiovascular risk in RMDs 2022]
   - RHEUM-05b  Complications of DMARDs and biologics  (aspects: management very high, prevention high)
     - Which infections are screened for, and prophylaxis given, before a biologic or JAK inhibitor [EULAR infection screening points to consider 2022]
     - Whether a JAK inhibitor is used in the older patient with cardiovascular or cancer risk [EULAR RA 2025]
@@ -1103,7 +1103,7 @@ drafts an equivalent blueprint in the same format for you to check.
     - Whether suspected drug-induced interstitial nephritis is treated by withdrawal alone or with glucocorticoids [no guideline; expert review]
   - RENAL-01c  Cardiorenal and volume decisions  (aspects: management very high)
     - Choice of fluid, and whether more fluid is given, in the oliguric patient [KDIGO AKI 2012]
-    - Whether decongestion continues as creatinine rises in acute heart failure [ESC heart failure 2021/2023]
+    - Whether decongestion continues as creatinine rises in acute heart failure [ESC HF 2026]
     - Whether diuretics have a role in AKI other than for volume overload [KDIGO AKI 2012]
 - RENAL-02  Sodium
   - RENAL-02a  Hyponatraemia: diagnosis  (aspects: diagnosis very high, interpretation very high)
@@ -1120,16 +1120,16 @@ drafts an equivalent blueprint in the same format for you to check.
     - Choice of fluid and route for replacing free water [no guideline; expert review]
 - RENAL-03  Potassium
   - RENAL-03a  Hyperkalaemia  (aspects: management very high)
-    - Which potassium levels and ECG findings call for intravenous calcium [UK Kidney Association hyperkalaemia 2023]
-    - Insulin-glucose dose and how long glucose is monitored after it [UK Kidney Association hyperkalaemia 2023]
+    - Which potassium levels and ECG findings call for intravenous calcium [UK Kidney Association hyperkalaemia 2026]
+    - Insulin-glucose dose and how long glucose is monitored after it [UK Kidney Association hyperkalaemia 2026]
     - Whether a potassium binder allows renin-angiotensin inhibition to continue [KDIGO CKD 2024]
-    - Which hyperkalaemia calls for emergency dialysis [UK Kidney Association hyperkalaemia 2023]
+    - Which hyperkalaemia calls for emergency dialysis [UK Kidney Association hyperkalaemia 2026]
   - RENAL-03b  Hypokalaemia and its work-up  (aspects: diagnosis high, management high)
     - Whether hypokalaemia with hypertension leads to testing for primary aldosteronism [Endocrine Society primary aldosteronism 2025]
     - Separating renal from extrarenal potassium loss, and the role of magnesium [no guideline; expert review]
 - RENAL-04  Acid-base
   - RENAL-04a  Metabolic acidosis  (aspects: interpretation very high, management high)
-    - Whether sodium bicarbonate is given in lactic acidosis or severe acidaemia with AKI [SSC 2021]
+    - Whether sodium bicarbonate is given in lactic acidosis or severe acidaemia with AKI [SSC 2026]
     - When a raised osmolar gap leads to antidote and dialysis for toxic alcohol [EXTRIP methanol 2015]
     - Whether oral bicarbonate is given in chronic kidney disease [KDIGO CKD 2024]
   - RENAL-04b  Metabolic alkalosis  (aspects: interpretation high, management medium)
@@ -1163,8 +1163,8 @@ drafts an equivalent blueprint in the same format for you to check.
     - Fluid volume and target urine output, and whether bicarbonate is added [no guideline; expert review]
     - Whether hypocalcaemia in rhabdomyolysis is treated [no guideline; expert review]
   - RENAL-07b  Contrast and nephrotoxic drugs  (aspects: prevention high)
-    - Which patients receive prophylactic hydration before iodinated contrast [ESUR contrast media 2018]
-    - Whether metformin is held around contrast [ESUR contrast media 2018]
+    - Which patients receive prophylactic hydration before iodinated contrast [ESUR contrast media 2025]
+    - Whether metformin is held around contrast [ESUR contrast media 2025]
 - RENAL-08  Glomerular disease
   - RENAL-08a  Nephritic syndrome and rapidly progressive disease  (aspects: diagnosis very high, testing high)
     - Which serology is sent urgently, and whether immunosuppression waits for biopsy [KDIGO glomerular diseases 2021]
@@ -1184,7 +1184,7 @@ drafts an equivalent blueprint in the same format for you to check.
     - Which patients receive metabolic evaluation [EAU urolithiasis 2026]
   - RENAL-09b  Retention, prostate disease, incontinence  (aspects: management medium)
     - Catheter, alpha-blocker and timing of trial without catheter in acute retention [EAU non-neurogenic male LUTS 2026]
-    - Whether an antimuscarinic is used for urgency incontinence in an older patient [EAU urinary incontinence 2026]
+    - Whether an antimuscarinic is used for urgency incontinence in an older patient [EAU non-neurogenic female LUTS 2026]
 
 ## I. Neurology  (weight: 0.43)
 - NEURO-01  Ischaemic stroke and TIA
@@ -1257,7 +1257,7 @@ drafts an equivalent blueprint in the same format for you to check.
     - Which anticoagulant after the acute phase, and for how long [ESO CVT 2017]
   - NEURO-06c  Raised pressure, giant cell arteritis, infection  (aspects: diagnosis high, management high, testing medium)
     - Whether papilloedema with a normal CT needs venography before diagnosing idiopathic intracranial hypertension [IIH UK consensus 2018]
-    - Whether a new headache after 50 with raised CRP starts glucocorticoids before the diagnosis is confirmed [EULAR LVV 2023]
+    - Whether a new headache after 50 with raised CRP starts glucocorticoids before the diagnosis is confirmed [EULAR PMR/LVV 2025]
     - Whether a headache with fever needs CT before the lumbar puncture [ESCMID bacterial meningitis 2016]
   - NEURO-06d  Primary headache in hospital  (aspects: management high, diagnosis medium)
     - Which acute treatment for a migraine attack in hospital, and whether opioids have a place [NICE CG150 2021]
@@ -1499,7 +1499,7 @@ drafts an equivalent blueprint in the same format for you to check.
     - Whether orthogeriatric care and mobilisation the day after surgery are in place [NICE CG124 2023]
 - GERI-05  Geriatric syndromes
   - GERI-05a  Incontinence and constipation  (aspects: management medium, diagnosis medium)
-    - Whether an indwelling catheter is justified for incontinence in hospital [EAU urinary incontinence 2025]
+    - Whether an indwelling catheter is justified for incontinence in hospital [EAU non-neurogenic female LUTS 2026]
     - Whether an antimuscarinic is acceptable in cognitive impairment [STOPP/START v3 2023]
   - GERI-05b  Swallowing, nutrition and pressure injury  (aspects: prevention high, management high)
     - Whether texture-modified food or thickened fluids are prescribed after a swallow assessment [ESPEN geriatrics 2022]
@@ -1521,7 +1521,7 @@ drafts an equivalent blueprint in the same format for you to check.
   - DERM-02a  Eczema and psoriasis in the inpatient  (aspects: management high, diagnosis medium)
     - Whether systemic corticosteroids are given for a psoriasis flare [EuroGuiDerm psoriasis 2025]
     - Whether methotrexate or a biologic is held during infection or renal impairment [EuroGuiDerm psoriasis 2025]
-    - Whether punched-out erosions in eczema are eczema herpeticum needing aciclovir [EuroGuiDerm atopic eczema 2022]
+    - Whether punched-out erosions in eczema are eczema herpeticum needing aciclovir [EuroGuiDerm atopic eczema 2025]
 - DERM-03  Skin signs of systemic disease
   - DERM-03a  Purpura and vasculitic rash  (aspects: diagnosis high, testing high)
     - Whether palpable purpura is biopsied, with direct immunofluorescence, and from which lesion [CHCC dermatologic addendum 2018]
@@ -1561,17 +1561,17 @@ drafts an equivalent blueprint in the same format for you to check.
     - Which cardiovascular drugs are compatible with breastfeeding [ESC CVD and pregnancy 2025]
 - WH-02  Menopause and contraception
   - WH-02a  Menopausal hormone therapy  (aspects: management high, prevention medium)
-    - Route of oestrogen in a woman at raised risk of venous thromboembolism [NICE menopause NG23 2024]
-    - Whether a progestogen is needed, and in what form [NICE menopause NG23 2024]
-    - How to counsel on breast cancer and cardiovascular risk when starting or continuing HRT [NICE menopause NG23 2024]
-    - Whether premature ovarian insufficiency calls for hormone replacement until the usual age of menopause [NICE menopause NG23 2024]
+    - Route of oestrogen in a woman at raised risk of venous thromboembolism [NICE menopause NG23 2024, updated 2026]
+    - Whether a progestogen is needed, and in what form [NICE menopause NG23 2024, updated 2026]
+    - How to counsel on breast cancer and cardiovascular risk when starting or continuing HRT [NICE menopause NG23 2024, updated 2026]
+    - Whether premature ovarian insufficiency calls for hormone replacement until the usual age of menopause [NICE menopause NG23 2024, updated 2026]
   - WH-02b  Contraception with medical comorbidity  (aspects: management high)
     - Whether combined hormonal contraception is acceptable with migraine with aura, hypertension, prior VTE or other cardiovascular risk [WHO MEC 2025]
     - Which methods remain effective with enzyme-inducing drugs [WHO MEC 2025]
     - Which methods are acceptable in the first weeks after delivery [WHO MEC 2025]
 - WH-03  Gynaecological presentations for the internist
   - WH-03a  Abnormal bleeding and pelvic pain  (aspects: diagnosis high, disposition high)
-    - Whether abdominal pain or bleeding in a woman of reproductive age needs a pregnancy test and assessment for ectopic pregnancy [NICE ectopic pregnancy and miscarriage NG126 2019, updated 2025]
+    - Whether abdominal pain or bleeding in a woman of reproductive age needs a pregnancy test and assessment for ectopic pregnancy [NICE ectopic pregnancy and miscarriage NG126 2019, updated 2026]
     - Investigations for heavy menstrual bleeding with iron deficiency, including when to test for a bleeding disorder [NICE heavy menstrual bleeding NG88 2018]
     - Urgency of referral for postmenopausal bleeding [NICE suspected cancer NG12]
   - WH-03b  Breast problems  (aspects: diagnosis medium, management medium, disposition medium)

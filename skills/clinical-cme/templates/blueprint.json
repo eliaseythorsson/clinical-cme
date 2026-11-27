@@ -607,7 +607,7 @@
     "CARD-14b": {
      "label": "Statin intolerance and add-on therapy",
      "points": [
-      "Whether muscle symptoms on a statin are true intolerance, and how to rechallenge [ESC/EAS dyslipidaemias 2019]",
+      "Whether muscle symptoms on a statin are true intolerance, and how to rechallenge [ESC/EAS dyslipidaemias focused update 2025]",
       "Order of add-on therapy when the LDL target is not reached (ezetimibe, PCSK9 inhibitor, bempedoic acid) [ESC/EAS dyslipidaemias focused update 2025]"
      ],
      "aspects": {
@@ -1431,9 +1431,9 @@
     "ID-09a": {
      "label": "New diagnosis and timing of antiretroviral therapy",
      "points": [
-      "Which inpatient presentations (indicator conditions) call for an HIV test [EACS 13.0 2025]",
-      "How soon ART is started in tuberculosis and in cryptococcal meningitis [EACS 13.0 2025]",
-      "Which baseline tests shape the first antiretroviral regimen [EACS 13.0 2025]"
+      "Which inpatient presentations (indicator conditions) call for an HIV test [EACS 13.1 2026]",
+      "How soon ART is started in tuberculosis and in cryptococcal meningitis [EACS 13.1 2026]",
+      "Which baseline tests shape the first antiretroviral regimen [EACS 13.1 2026]"
      ],
      "aspects": {
       "diagnosis": 1.0,
@@ -1444,9 +1444,9 @@
     "ID-09b": {
      "label": "Opportunistic infections and prophylaxis",
      "points": [
-      "At which CD4 count Pneumocystis and toxoplasma prophylaxis starts and stops [EACS 13.0 2025]",
-      "Whether Pneumocystis pneumonia with hypoxaemia calls for adjunctive corticosteroids [EACS 13.0 2025]",
-      "Whether cryptococcal antigen screening is done at a low CD4 count [EACS 13.0 2025]"
+      "At which CD4 count Pneumocystis and toxoplasma prophylaxis starts and stops [EACS 13.1 2026]",
+      "Whether Pneumocystis pneumonia with hypoxaemia calls for adjunctive corticosteroids [EACS 13.1 2026]",
+      "Whether cryptococcal antigen screening is done at a low CD4 count [EACS 13.1 2026]"
      ],
      "aspects": {
       "diagnosis": 1.0,
@@ -1457,9 +1457,9 @@
     "ID-09c": {
      "label": "Immune reconstitution and long-term complications",
      "points": [
-      "Whether immune reconstitution syndrome calls for continuing ART and adding corticosteroids [EACS 13.0 2025]",
-      "Which drug interactions with ART must be checked before a new prescription [EACS 13.0 2025]",
-      "Cardiovascular risk assessment and statin use in people with HIV [EACS 13.0 2025]"
+      "Whether immune reconstitution syndrome calls for continuing ART and adding corticosteroids [EACS 13.1 2026]",
+      "Which drug interactions with ART must be checked before a new prescription [EACS 13.1 2026]",
+      "Cardiovascular risk assessment and statin use in people with HIV [EACS 13.1 2026]"
      ],
      "aspects": {
       "diagnosis": 0.6,
@@ -1484,7 +1484,7 @@
      "label": "Infection control and post-exposure prophylaxis",
      "points": [
       "Whether MRSA carriers are decolonised before surgery [ESCMID/EUCIC decolonisation 2024]",
-      "Whether a needlestick exposure calls for HIV post-exposure prophylaxis, and how soon [EACS 13.0 2025]",
+      "Whether a needlestick exposure calls for HIV post-exposure prophylaxis, and how soon [EACS 13.1 2026]",
       "Hepatitis B vaccine and immunoglobulin after exposure, by the exposed person's immunity [EASL HBV 2025]"
      ],
      "aspects": {
@@ -1602,8 +1602,8 @@
     "ID-15a": {
      "label": "Adult immunisation",
      "points": [
-      "Which vaccines are due before starting immunosuppression, and how long before [EULAR vaccination AIIRD 2019]",
-      "Whether live vaccines are contraindicated on a given immunosuppressant [EULAR vaccination AIIRD 2019]",
+      "Which vaccines are due before starting immunosuppression, and how long before [EULAR vaccination AIIRD 2026]",
+      "Whether live vaccines are contraindicated on a given immunosuppressant [EULAR vaccination AIIRD 2026]",
       "Revaccination schedule after haematopoietic stem cell transplant [ECIL-7 vaccination 2019]"
      ],
      "aspects": {
@@ -2274,10 +2274,10 @@
     "GI-04c": {
      "label": "Alcohol-related hepatitis",
      "points": [
-      "Whether disease severity justifies corticosteroids [EASL alcohol-related liver disease 2025]",
-      "Whether to stop steroids at day 7 [EASL alcohol-related liver disease 2025]",
-      "What to exclude before starting steroids [EASL alcohol-related liver disease 2025]",
-      "Who is considered for early transplantation [EASL alcohol-related liver disease 2025]"
+      "Whether disease severity justifies corticosteroids [EASL alcohol-related liver disease 2018]",
+      "Whether to stop steroids at day 7 [EASL alcohol-related liver disease 2018]",
+      "What to exclude before starting steroids [EASL alcohol-related liver disease 2018]",
+      "Who is considered for early transplantation [EASL alcohol-related liver disease 2018]"
      ],
      "aspects": {
       "management": 1.0,
@@ -2386,9 +2386,9 @@
     "GI-06b": {
      "label": "Mesenteric ischaemia and ischaemic colitis",
      "points": [
-      "Whether a normal lactate rules out mesenteric ischaemia [ESVS mesenteric 2017]",
-      "Whether to wait for renal function before CT angiography [ESVS mesenteric 2017]",
-      "How long to anticoagulate mesenteric venous thrombosis [ESVS mesenteric 2017]"
+      "Whether a normal lactate rules out mesenteric ischaemia [ESVS mesenteric 2025]",
+      "Whether to wait for renal function before CT angiography [ESVS mesenteric 2025]",
+      "How long to anticoagulate mesenteric venous thrombosis [ESVS mesenteric 2025]"
      ],
      "aspects": {
       "diagnosis": 1.3,
@@ -2624,8 +2624,8 @@
     "ENDO-07c": {
      "label": "Type 1 and atypical diabetes",
      "points": [
-      "Whether a new adult diagnosis needs islet autoantibodies or C-peptide to classify it [ADA/EASD type 1 diabetes consensus 2021]",
-      "When monogenic diabetes is suspected and genetic testing requested [ADA/EASD type 1 diabetes consensus 2021]",
+      "Whether a new adult diagnosis needs islet autoantibodies or C-peptide to classify it [ADA/EASD type 1 diabetes consensus 2026]",
+      "When monogenic diabetes is suspected and genetic testing requested [ADA/EASD type 1 diabetes consensus 2026]",
       "Recognition and insulin need in diabetes caused by an immune checkpoint inhibitor [ESE immune checkpoint inhibitor endocrinopathies 2022]"
      ],
      "aspects": {
@@ -2869,7 +2869,7 @@
      "label": "Neuroendocrine tumours and multiple endocrine syndromes",
      "points": [
       "How a biochemically proven insulinoma is localised [ENETS functioning pancreatic NET 2023]",
-      "Which presentations call for testing for MEN1 [MEN1 clinical practice guideline 2012]"
+      "Which presentations call for testing for MEN1 [AACE MEN1 consensus 2025]"
      ],
      "aspects": {
       "diagnosis": 0.6,
@@ -3030,7 +3030,7 @@
     "RHEUM-04c": {
      "label": "Urticaria and angioedema",
      "points": [
-      "Whether angioedema without urticaria is bradykinin- or histamine-mediated, and what each is treated with [WAO/EAACI hereditary angioedema 2025]",
+      "Whether angioedema without urticaria is bradykinin- or histamine-mediated, and what each is treated with [WAO HAE 2025]",
       "How far chronic urticaria is investigated [EAACI/GA²LEN international urticaria guideline 2026]",
       "Treatment steps in chronic urticaria after a standard-dose antihistamine [EAACI/GA²LEN international urticaria guideline 2026]"
      ],
@@ -3045,7 +3045,7 @@
      "label": "Diagnosis and systemic disease",
      "points": [
       "Whether early inflammatory arthritis meets criteria for rheumatoid arthritis [ACR/EULAR RA classification 2010]",
-      "Which comorbidities are screened for and managed, cardiovascular risk among them [EULAR cardiovascular risk in RMDs 2024]"
+      "Which comorbidities are screened for and managed, cardiovascular risk among them [EULAR cardiovascular risk in RMDs 2022]"
      ],
      "aspects": {
       "diagnosis": 1.0,
@@ -3217,7 +3217,7 @@
      "label": "Cardiorenal and volume decisions",
      "points": [
       "Choice of fluid, and whether more fluid is given, in the oliguric patient [KDIGO AKI 2012]",
-      "Whether decongestion continues as creatinine rises in acute heart failure [ESC heart failure 2021/2023]",
+      "Whether decongestion continues as creatinine rises in acute heart failure [ESC HF 2026]",
       "Whether diuretics have a role in AKI other than for volume overload [KDIGO AKI 2012]"
      ],
      "aspects": {
@@ -3266,10 +3266,10 @@
     "RENAL-03a": {
      "label": "Hyperkalaemia",
      "points": [
-      "Which potassium levels and ECG findings call for intravenous calcium [UK Kidney Association hyperkalaemia 2023]",
-      "Insulin-glucose dose and how long glucose is monitored after it [UK Kidney Association hyperkalaemia 2023]",
+      "Which potassium levels and ECG findings call for intravenous calcium [UK Kidney Association hyperkalaemia 2026]",
+      "Insulin-glucose dose and how long glucose is monitored after it [UK Kidney Association hyperkalaemia 2026]",
       "Whether a potassium binder allows renin-angiotensin inhibition to continue [KDIGO CKD 2024]",
-      "Which hyperkalaemia calls for emergency dialysis [UK Kidney Association hyperkalaemia 2023]"
+      "Which hyperkalaemia calls for emergency dialysis [UK Kidney Association hyperkalaemia 2026]"
      ],
      "aspects": {
       "management": 1.3
@@ -3291,7 +3291,7 @@
     "RENAL-04a": {
      "label": "Metabolic acidosis",
      "points": [
-      "Whether sodium bicarbonate is given in lactic acidosis or severe acidaemia with AKI [SSC 2021]",
+      "Whether sodium bicarbonate is given in lactic acidosis or severe acidaemia with AKI [SSC 2026]",
       "When a raised osmolar gap leads to antidote and dialysis for toxic alcohol [EXTRIP methanol 2015]",
       "Whether oral bicarbonate is given in chronic kidney disease [KDIGO CKD 2024]"
      ],
@@ -3398,8 +3398,8 @@
     "RENAL-07b": {
      "label": "Contrast and nephrotoxic drugs",
      "points": [
-      "Which patients receive prophylactic hydration before iodinated contrast [ESUR contrast media 2018]",
-      "Whether metformin is held around contrast [ESUR contrast media 2018]"
+      "Which patients receive prophylactic hydration before iodinated contrast [ESUR contrast media 2025]",
+      "Whether metformin is held around contrast [ESUR contrast media 2025]"
      ],
      "aspects": {
       "prevention": 1.0
@@ -3460,7 +3460,7 @@
      "label": "Retention, prostate disease, incontinence",
      "points": [
       "Catheter, alpha-blocker and timing of trial without catheter in acute retention [EAU non-neurogenic male LUTS 2026]",
-      "Whether an antimuscarinic is used for urgency incontinence in an older patient [EAU urinary incontinence 2026]"
+      "Whether an antimuscarinic is used for urgency incontinence in an older patient [EAU non-neurogenic female LUTS 2026]"
      ],
      "aspects": {
       "management": 0.6
@@ -3689,7 +3689,7 @@
      "label": "Raised pressure, giant cell arteritis, infection",
      "points": [
       "Whether papilloedema with a normal CT needs venography before diagnosing idiopathic intracranial hypertension [IIH UK consensus 2018]",
-      "Whether a new headache after 50 with raised CRP starts glucocorticoids before the diagnosis is confirmed [EULAR LVV 2023]",
+      "Whether a new headache after 50 with raised CRP starts glucocorticoids before the diagnosis is confirmed [EULAR PMR/LVV 2025]",
       "Whether a headache with fever needs CT before the lumbar puncture [ESCMID bacterial meningitis 2016]"
      ],
      "aspects": {
@@ -4424,7 +4424,7 @@
     "GERI-05a": {
      "label": "Incontinence and constipation",
      "points": [
-      "Whether an indwelling catheter is justified for incontinence in hospital [EAU urinary incontinence 2025]",
+      "Whether an indwelling catheter is justified for incontinence in hospital [EAU non-neurogenic female LUTS 2026]",
       "Whether an antimuscarinic is acceptable in cognitive impairment [STOPP/START v3 2023]"
      ],
      "aspects": {
@@ -4491,7 +4491,7 @@
      "points": [
       "Whether systemic corticosteroids are given for a psoriasis flare [EuroGuiDerm psoriasis 2025]",
       "Whether methotrexate or a biologic is held during infection or renal impairment [EuroGuiDerm psoriasis 2025]",
-      "Whether punched-out erosions in eczema are eczema herpeticum needing aciclovir [EuroGuiDerm atopic eczema 2022]"
+      "Whether punched-out erosions in eczema are eczema herpeticum needing aciclovir [EuroGuiDerm atopic eczema 2025]"
      ],
      "aspects": {
       "management": 1.0,
@@ -4620,10 +4620,10 @@
     "WH-02a": {
      "label": "Menopausal hormone therapy",
      "points": [
-      "Route of oestrogen in a woman at raised risk of venous thromboembolism [NICE menopause NG23 2024]",
-      "Whether a progestogen is needed, and in what form [NICE menopause NG23 2024]",
-      "How to counsel on breast cancer and cardiovascular risk when starting or continuing HRT [NICE menopause NG23 2024]",
-      "Whether premature ovarian insufficiency calls for hormone replacement until the usual age of menopause [NICE menopause NG23 2024]"
+      "Route of oestrogen in a woman at raised risk of venous thromboembolism [NICE menopause NG23 2024, updated 2026]",
+      "Whether a progestogen is needed, and in what form [NICE menopause NG23 2024, updated 2026]",
+      "How to counsel on breast cancer and cardiovascular risk when starting or continuing HRT [NICE menopause NG23 2024, updated 2026]",
+      "Whether premature ovarian insufficiency calls for hormone replacement until the usual age of menopause [NICE menopause NG23 2024, updated 2026]"
      ],
      "aspects": {
       "management": 1.0,
@@ -4646,7 +4646,7 @@
     "WH-03a": {
      "label": "Abnormal bleeding and pelvic pain",
      "points": [
-      "Whether abdominal pain or bleeding in a woman of reproductive age needs a pregnancy test and assessment for ectopic pregnancy [NICE ectopic pregnancy and miscarriage NG126 2019, updated 2025]",
+      "Whether abdominal pain or bleeding in a woman of reproductive age needs a pregnancy test and assessment for ectopic pregnancy [NICE ectopic pregnancy and miscarriage NG126 2019, updated 2026]",
       "Investigations for heavy menstrual bleeding with iron deficiency, including when to test for a bleeding disorder [NICE heavy menstrual bleeding NG88 2018]",
       "Urgency of referral for postmenopausal bleeding [NICE suspected cancer NG12]"
      ],
