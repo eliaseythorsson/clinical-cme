@@ -1,0 +1,290 @@
+{
+ "schema": 2,
+ "ok": false,
+ "date": "2026-11-27",
+ "persona": "stops-halfway",
+ "skill_version": "5.0.0",
+ "commit": "c16e2e6",
+ "examiner_model": "claude-opus-5-5",
+ "learner_model": "claude-sonnet-5-5",
+ "config": {
+  "session_minutes": 35,
+  "mcqs": 0,
+  "focused": 1,
+  "case": true,
+  "round_set_at": "2026-11-27T02:05:35Z",
+  "case_format": "unfolding",
+  "feedback_depth": "detailed",
+  "evidence_ladder": true,
+  "target_sessions_per_week": 3,
+  "review_interval_days": 42,
+  "intervals_days": [
+   1,
+   3,
+   7,
+   16,
+   35,
+   90
+  ],
+  "new_topics_per_round": 1,
+  "lab_units": "SI",
+  "blood_gas_units": "mmHg",
+  "guideline_region": "Iceland/Europe",
+  "item_order": "mcqs_first",
+  "helpers": false,
+  "prepare_ahead": false,
+  "prepare_task": false,
+  "testing": false,
+  "show_coding": true,
+  "reminders": false,
+  "listening": true,
+  "resource_preferences": {
+   "free_only": false,
+   "formats": [
+    "guidelines",
+    "review articles"
+   ]
+  }
+ },
+ "round": {
+  "session": "S0001",
+  "shape": "1 focused",
+  "score": 5.0,
+  "confident_misses": 0,
+  "continued_from_earlier_run": false
+ },
+ "messages": {
+  "examiner": 5,
+  "learner": 4
+ },
+ "checks": {
+  "blinding": {
+   "ok": false,
+   "leaks": 1,
+   "to_review": 0,
+   "seal_lifted_at": {
+    "questions": 3
+   },
+   "never_lifted": [
+    "case"
+   ],
+   "terms_checked": 471,
+   "block_line": "Block: Cardiology, round 1 of 12",
+   "findings": [
+    {
+     "part": "case",
+     "kind": "feedback-notes line",
+     "level": "fail",
+     "term": "nothing on it in your record yet",
+     "message": 4,
+     "excerpt": "…pic: the first round of the cardiology block, and nothing on it in your record yet. **Q1 (focused)** **Rubric** - ✓ the decision: a…"
+    }
+   ],
+   "problems": []
+  },
+  "saved": {
+   "ok": true,
+   "session": "S0001",
+   "publish_set": [
+    "data/sessions/S0001.json",
+    "data/page.json",
+    "data/prepared.json",
+    "data/state.json"
+   ],
+   "files_compared": 4,
+   "problems": []
+  },
+  "log": {
+   "ok": true,
+   "sections": [
+    "a_case",
+    "a_questions",
+    "case",
+    "coded",
+    "discussion",
+    "fb_questions",
+    "feedback",
+    "grade_changes",
+    "questions",
+    "reflection"
+   ],
+   "problems": [],
+   "examiner_text_not_logged": [
+    {
+     "message": 2,
+     "starts": "Today's round: 1 focused question + the case, about 35 minutes. Block: Cardiology, round 1"
+    },
+    {
+     "message": 9,
+     "starts": "Saved: session S0001, one focused question on pulmonary embolism, 5/5. The case was not pl"
+    },
+    {
+     "message": 9,
+     "starts": "Your reflection added one point to the plan: risk stratification after a confirmed pulmona"
+    },
+    {
+     "message": 9,
+     "starts": "With your target of three sessions a week, the next round fits any time from tomorrow."
+    }
+   ]
+  },
+  "standards": {
+   "ok": false,
+   "abbreviations": 0,
+   "time_anchors": 0,
+   "to_review": 1,
+   "feedback": [
+    {
+     "id": "questions",
+     "glossary": true,
+     "abbreviations": 4,
+     "not_in_glossary": [
+      "SV"
+     ]
+    },
+    {
+     "id": "final",
+     "glossary": true,
+     "abbreviations": 0,
+     "not_in_glossary": []
+    }
+   ],
+   "findings": [
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "SV"
+    }
+   ],
+   "problems": [
+    "the final feedback names the skill's own machinery (sealed): references/standards.md rule 11"
+   ]
+  },
+  "listening": {
+   "ok": false,
+   "on": true,
+   "picks": 0,
+   "topics": 1,
+   "from_kit": 0,
+   "from_search": 0,
+   "problems": [
+    "the final feedback has no Listening section"
+   ]
+  },
+  "prepared": {
+   "ok": true,
+   "unmarked": 0,
+   "unquoted": 0,
+   "prepared_feedback": {
+    "offered": 6,
+    "as_prepared": 1,
+    "changed": 5,
+    "discarded": 0
+   },
+   "problems": []
+  },
+  "stopped": {
+   "ok": true,
+   "case_topic": "CARD-04",
+   "case_topic_schedule": {
+    "last": null,
+    "attempts": 0,
+    "step": 0,
+    "due": null
+   },
+   "items_saved": 1,
+   "problems": []
+  }
+ },
+ "timings": {
+  "steps": [
+   {
+    "step": 1,
+    "label": "start of round",
+    "learner_message": 1,
+    "wait_s": 66.7,
+    "turn_s": 256.4,
+    "examiner_messages": 1,
+    "examiner_chars": 1542,
+    "learner_s": null
+   },
+   {
+    "step": 2,
+    "label": "after the answers to the questions",
+    "learner_message": 3,
+    "wait_s": 38.9,
+    "turn_s": 44.5,
+    "examiner_messages": 1,
+    "examiner_chars": 6798,
+    "learner_s": 8.3
+   },
+   {
+    "step": 3,
+    "label": "after the case answer",
+    "learner_message": 5,
+    "wait_s": 26.9,
+    "turn_s": 53.0,
+    "examiner_messages": 2,
+    "examiner_chars": 1309,
+    "learner_s": 4.4
+   },
+   {
+    "step": 4,
+    "label": "after the reflection",
+    "learner_message": 8,
+    "wait_s": 144.9,
+    "turn_s": 220.6,
+    "examiner_messages": 1,
+    "examiner_chars": 511,
+    "learner_s": 29.4
+   }
+  ],
+  "total_wait_s": 277.4,
+  "longest_wait_s": 144.9,
+  "elapsed_s": 540.9
+ },
+ "quality": {
+  "scorer_model": "claude-opus-5-5",
+  "items": [
+   {
+    "id": "Q1",
+    "type": "focused",
+    "topic": "CARD-08",
+    "answered": true,
+    "score": 4,
+    "note": "Accurate ESC 2019 PE content, Wells arithmetic right; but stem asks only diagnosis+discriminators while rubric grades CTPA/no D-dimer route. Easy for IM."
+   },
+   {
+    "id": "Case",
+    "type": "case",
+    "topic": "CARD-04",
+    "answered": false,
+    "score": 5,
+    "note": "Realistic bifascicular block syncope with timolol twist; telemetry left to learner; key (admit, monitor, DDD pacing without washout) fits ESC 2018/2021."
+   }
+  ],
+  "feedback": [
+   {
+    "id": "questions",
+    "score": 5,
+    "note": "Fair 5/5, correct ESC citation, answers the ALT doubt well and usefully corrects the bedside clot-burden inference; teaches the decisive point."
+   },
+   {
+    "id": "final",
+    "score": 4,
+    "note": "Accurate gap summary and good reflection prompt; minor slip calling the case 'unseen' though it had been presented."
+   }
+  ],
+  "item_mean": 4.5,
+  "feedback_mean": 4.5,
+  "score": 4,
+  "note": "Clinically sound, well-pitched round; Q1 rubric reached beyond what its stem asked, and the strong case went unanswered.",
+  "concerns": [
+   "Q1: rubric element 3 (CTPA without D-dimer, anticoagulate) is graded but the stem asks only for diagnosis and discriminators; align stem or rubric."
+  ],
+  "problems": [
+   "feedback dispute has no score"
+  ]
+ },
+ "note": null
+}
