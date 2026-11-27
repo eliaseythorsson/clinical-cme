@@ -280,8 +280,8 @@ that competes with them for attention.
 
 The grading form gives each item its `depth` under `given` (`answer` prints it too:
 `{"Q1": {"level": 3, "name": "design", "in_a_row": 2}}`): the depth the item gets **if it
-was answered well today**. The engine counts, per topic, how many times in a row its items
-were answered well (mastery ≥ 4, no misconception, no guessed MCQ), back from the last
+was answered well today**. The engine counts, per topic (per sub-topic where the blueprint has
+two levels), how many times in a row its items were answered well (mastery ≥ 4, no misconception, no guessed MCQ), back from the last
 round. A focused question goes at most one depth beyond what its own aspect of the topic
 has earned; an item on an open gap stays at 1. No `depth` (the ladder is off,
 `config.evidence_ladder` false): every item is at depth 1.
@@ -324,6 +324,18 @@ How it is applied:
   level numbers or names to the learner.
 - The learner asks in the round to go deeper on an item, or to skip the trials: do it for
   that item. As a standing choice it is the setting (`requests.md` §1).
+
+### 4.2 The sibling line (two-level blueprint)
+
+Where the blueprint has sub-topics, an item names its own (`subtopic`), and the grading form
+gives `sibling` under `given` (`answer` prints it as `siblings`): the other sub-topic of the
+same disease the learner answered last time, with its date and score. Write **one line**
+tying today's point to it: the shared mechanism, drug class or diagnostic frame, and where
+the two decisions part ("Last month's question on stroke prevention turned on the same
+bleeding-risk trade-off; here the stent adds a second antiplatelet, which is why triple
+therapy is kept short"). The draft marks it `[live: the sibling line …]`. It links, it does
+not re-teach: no second briefing, and nothing of the sibling's key the learner has not seen
+in its own feedback. No `sibling`: no line.
 
 ## 5. Length and time
 
@@ -524,6 +536,7 @@ Live, in every message:
 - the glossary line (§10.1), the verdict lines and the score so far;
 - **the opening in the learner's own words**: what they wrote or doubted, answered first (§3);
 - calibration, transfer between items, the gap summary and the coding line (§2 D);
+- the sibling line, where the item has a `sibling` (§4.2);
 - **credit for a defensible answer outside the key**, and **corrections to the key** (§9.4);
 - the reading and listening picks (§2 E, E2) and the reflection prompt.
 

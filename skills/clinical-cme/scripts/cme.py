@@ -25,6 +25,7 @@ Add `--today YYYY-MM-DD` before the command to fix the date.
 import argparse
 import base64
 import copy
+import hashlib
 import datetime as dt
 import json
 import math
@@ -530,6 +531,8 @@ def migrate_domains(st):
         tgt.setdefault("topics", {})
         for tid, label in (info.get("topics") or {}).items():
             tgt["topics"].setdefault(tid, label)
+        for tid, group in (info.get("subtopics") or {}).items():
+            tgt.setdefault("subtopics", {}).setdefault(tid, group)
         try:
             tgt["weight"] = max(float(tgt.get("weight", 0.6)), float(info.get("weight", 0.6)))
         except (TypeError, ValueError):
@@ -577,8 +580,12 @@ def migrate_domains(st):
 
 
 def migrate_ledger(st):
-    """Everything a ledger read from the store is brought up to: the profile's paragraphs and
-    one code per area. Changes `st` in place; a no-op afterwards."""
+    """Everything a ledger read from the store is brought up to: the profile's paragraphs, one
+    code per area, and the blueprint in the shape the engine reads (a one-level blueprint stays
+    as it is; a two-level one given with nested topics is flattened, issue #81). Changes `st` in
+    place; a no-op afterwards."""
+    if isinstance(st, dict) and isinstance(st.get("blueprint"), dict):
+        blueprint_shape(st["blueprint"])
     return migrate_domains(migrate_profile(st))
 
 
@@ -764,16 +771,44 @@ def weight_from_text(text):
         return 0.6
 
 
+BP_ID_RE = r"[A-Z]{2,8}[-.][A-Za-z0-9_\-]+"
+ASPECTS_RE = re.compile(r"\s*[(\[]\s*aspects?\s*:\s*([^)\]]*)[)\]]\s*$", re.I)
+
+
+def parse_aspects(text):
+    """The importance of each aspect of a sub-topic, from "management high, testing 0.6":
+    {aspect: weight} for the aspects named (FOCUSED_ASPECTS), the weights as in the blueprint's
+    areas. Unknown aspects are left out."""
+    out = {}
+    for part in re.split(r"[,;]", text or ""):
+        words = part.strip().split(None, 1)
+        if words and words[0].lower() in FOCUSED_ASPECTS:
+            out[words[0].lower()] = weight_from_text(words[1] if len(words) > 1 else "medium")
+    return out
+
+
 def blueprint_from_md(text):
-    """Parse the markdown blueprint format into {DOMAIN: {name, weight, topics}}."""
-    bp, cur = {}, None
-    for line in text.splitlines():
-        m = re.match(r"^##\s+(?:[A-Z]\.\s*)?(.+?)\s*\(weight:\s*([^)]+)\)\s*$", line.strip())
+    """Parse the markdown blueprint format into {DOMAIN: {name, weight, topics[, subtopics]}}.
+    Two levels (issue #81): a bullet indented under a topic that starts with an id is a
+    sub-topic of it ("  - CARD-03a  Stroke prevention decision (aspects: management high)"); a
+    bullet indented under a sub-topic without an id is one of its decision points. A blueprint
+    without indented bullets is the one-level blueprint, as before."""
+    bp, cur, topic, sub = {}, None, None, None
+    for raw in text.splitlines():
+        line = raw.strip()
+        indent = len(raw) - len(raw.lstrip())
+        m = re.match(r"^##\s+(?:[A-Z]\.\s*)?(.+?)\s*\(weight:\s*([^)]+)\)\s*$", line)
         if m:
-            cur = {"name": m.group(1).strip(), "weight": weight_from_text(m.group(2)), "code": None}
+            cur, topic, sub = {"name": m.group(1).strip(), "weight": weight_from_text(m.group(2)), "code": None,
+                               "indent": None}, None, None
             continue
-        m = re.match(r"^-\s+([A-Z]{2,8}[-.][A-Za-z0-9_\-]+)\s+(.+?)\s*$", line.strip())
-        if m and cur is not None:
+        if cur is None or not line.startswith(("-", "*", "+")):
+            continue
+        m = re.match(r"^[-*+]\s+(%s)\s+(.+?)\s*$" % BP_ID_RE, line)
+        if m and cur["indent"] is None:
+            cur["indent"] = indent      # the area's topics are as indented as its first one
+        base = cur["indent"] if cur["indent"] is not None else 0
+        if m and indent <= base:
             tid, label = m.group(1), m.group(2)
             # One heading, one area (issue #80): its code is that of its first topic's id; a later
             # topic with another prefix (EMRG-01 under TOX) joins it with its own id.
@@ -781,6 +816,72 @@ def blueprint_from_md(text):
             if d not in bp:
                 bp[d] = {"name": cur["name"], "weight": cur["weight"], "topics": {}}
             bp[d]["topics"][tid] = label
+            topic, sub = (d, tid), None
+            continue
+        if indent <= base or topic is None:
+            continue
+        if m:                       # a sub-topic of the topic above
+            label, aspects = m.group(2), {}
+            a = ASPECTS_RE.search(label)
+            if a:
+                label, aspects = label[:a.start()].rstrip(), parse_aspects(a.group(1))
+            sub = {"label": label}
+            if aspects:
+                sub["aspects"] = aspects
+            bp[topic[0]].setdefault("subtopics", {}).setdefault(topic[1], {})[m.group(1)] = sub
+        elif sub is not None:       # a decision point of the sub-topic above
+            point = re.sub(r"^[-*+]\s+", "", line).strip()
+            if point:
+                sub.setdefault("points", []).append(point)
+    return blueprint_shape(bp)
+
+
+def blueprint_shape(bp):
+    """The blueprint in the shape the ledger keeps (issue #81): per area `topics` ({id: label})
+    and, for a two-level blueprint, `subtopics` ({topic id: {sub-topic id: {"label", "points",
+    "aspects"}}}). A JSON blueprint may give a topic as {"label", "subtopics": {...}} and a
+    sub-topic as its label alone: both are brought to that shape. Dies on a sub-topic id used
+    twice, or used as a topic id. A one-level blueprint comes back as it was."""
+    if not isinstance(bp, dict):
+        die("a blueprint is {area code: {name, weight, topics}}")
+    seen, topic_ids = {}, set()
+    for d, info in bp.items():
+        if isinstance(info, dict):
+            topic_ids |= set((info.get("topics") or {}))
+    for d, info in bp.items():
+        if not isinstance(info, dict):
+            continue
+        topics = info.get("topics") or {}
+        subs = info.get("subtopics") if isinstance(info.get("subtopics"), dict) else {}
+        for tid, v in list(topics.items()):
+            if isinstance(v, dict):
+                topics[tid] = v.get("label") or tid
+                if isinstance(v.get("subtopics"), dict) and v["subtopics"]:
+                    subs.setdefault(tid, {}).update(v["subtopics"])
+        clean = {}
+        for tid, group in subs.items():
+            if tid not in topics:
+                die("blueprint area %s: sub-topics are listed under %s, which is not one of its topics" % (d, tid))
+            out = {}
+            for sid, v in (group or {}).items():
+                v = {"label": v} if isinstance(v, str) else dict(v or {})
+                if sid in seen or sid in topic_ids:
+                    die("blueprint: the id %s is used twice (a sub-topic id must be unique and not a topic id)" % sid)
+                seen[sid] = tid
+                entry = {"label": str(v.get("label") or sid)}
+                points = [str(x).strip() for x in v.get("points") or [] if str(x).strip()]
+                if points:
+                    entry["points"] = points
+                aspects = {a: float(w) for a, w in (v.get("aspects") or {}).items() if a in FOCUSED_ASPECTS}
+                if aspects:
+                    entry["aspects"] = aspects
+                out[sid] = entry
+            if out:
+                clean[tid] = out
+        if clean:
+            info["subtopics"] = clean
+        else:
+            info.pop("subtopics", None)
     return bp
 
 
@@ -790,6 +891,26 @@ def bp_topics(state):
         for tid, label in (info.get("topics") or {}).items():
             out[tid] = {"domain": d, "label": label}
     return out
+
+
+def bp_subtopics(state):
+    """Every sub-topic of the blueprint: {sub-topic id: {"topic", "domain", "label", "points",
+    "aspects"}}, in blueprint order. Empty for a one-level blueprint."""
+    out = {}
+    for d, info in (state.get("blueprint") or {}).items():
+        for tid, group in ((info or {}).get("subtopics") or {}).items():
+            for sid, v in (group or {}).items():
+                out[sid] = dict(v, topic=tid, domain=d)
+    return out
+
+
+def subtopics_of(state, tid):
+    """The sub-topic ids of topic `tid`, in blueprint order ([] for a topic without any)."""
+    for info in (state.get("blueprint") or {}).values():
+        group = ((info or {}).get("subtopics") or {}).get(tid)
+        if group:
+            return list(group)
+    return []
 
 
 def bp_weights(state):
@@ -916,13 +1037,15 @@ def item_answered_well(it):
     return m >= 4 and not misconception
 
 
-def answered_in_a_row(st, tid, aspect=None):
+def answered_in_a_row(st, tid, aspect=None, subtopic=None):
     """How many times in a row, counting back from the last round, the items on topic `tid`
-    were answered well; with `aspect`, only its focused questions on that aspect."""
+    were answered well; with `aspect`, only its focused questions on that aspect; with
+    `subtopic`, only the items recorded on that sub-topic (issue #81)."""
     n = 0
     for s in reversed((st.get("previous") or []) + (st.get("sessions") or [])):
         for it in reversed(s.get("items") or []):
-            if it.get("topic") != tid or (aspect and it.get("aspect") != aspect):
+            if it.get("topic") != tid or (aspect and it.get("aspect") != aspect) \
+                    or (subtopic and it.get("subtopic") != subtopic):
                 continue
             if not item_answered_well(it):
                 return n
@@ -934,20 +1057,114 @@ def depth_level(in_a_row):
     return max(i for i, (_, need) in enumerate(EVIDENCE_DEPTHS, 1) if in_a_row >= need)
 
 
-def evidence_depth(st, tid, aspect=None, retests=False):
+def gap_on(g, tid, subtopic=None):
+    """Is open gap `g` one on topic `tid` that bears on `subtopic`? A gap recorded without a
+    sub-topic bears on the whole topic; one with a sub-topic only on that sub-topic."""
+    return g.get("topic") == tid and (not subtopic or not g.get("subtopic") or g["subtopic"] == subtopic)
+
+
+def evidence_depth(st, tid, aspect=None, retests=False, subtopic=None):
     """The evidence depth an item on topic `tid` earns if it is answered well in the round to
-    come: {"level": 1–4, "name", "in_a_row"}. None with the ladder turned off. A focused
-    question goes at most one depth beyond what its own aspect of the topic has earned; an item
-    on an open gap (`retests`, or any gap open on the topic) stays at the first depth."""
+    come: {"level": 1–4, "name", "in_a_row"}. None with the ladder turned off. Counted on the
+    item's sub-topic where it has one (issue #81), else on the topic. A focused question goes at
+    most one depth beyond what its own aspect has earned; an item on an open gap (`retests`, or
+    a gap open on the topic that bears on its sub-topic) stays at the first depth."""
     if not st["config"].get("evidence_ladder", True):
         return None
-    run = answered_in_a_row(st, tid) if tid else 0
+    run = answered_in_a_row(st, tid, subtopic=subtopic) if tid else 0
     level = depth_level(run)
     if aspect and level > 1:
-        level = min(level, depth_level(answered_in_a_row(st, tid, aspect)) + 1)
-    if retests or any(g.get("topic") == tid for g in st.get("gaps") or []):
+        level = min(level, depth_level(answered_in_a_row(st, tid, aspect, subtopic)) + 1)
+    if retests or any(gap_on(g, tid, subtopic) for g in st.get("gaps") or []):
         level = 1
     return {"level": level, "name": EVIDENCE_DEPTHS[level - 1][0], "in_a_row": run}
+
+
+# ---------------------------------------------------------------- sub-topics (issue #81)
+#
+# The disease (the blueprint topic) returns on schedule; the sub-topic rotates and is recorded.
+# Nothing is stored per sub-topic: what it has had (rounds, the last date, the last score) is
+# counted from the recorded items that name it, as the evidence depth is.
+
+def subtopic_status(st, tid):
+    """What each sub-topic of topic `tid` has had, from the recorded items: {sub-topic id:
+    {"rounds", "last", "mastery", "session"}}, `mastery` the mean score (as the schedule counts
+    it) of its items in the last round that had it. A sub-topic never tested is absent."""
+    out = {}
+    for s in (st.get("previous") or []) + (st.get("sessions") or []):
+        here = {}
+        for it in s.get("items") or []:
+            if it.get("topic") == tid and it.get("subtopic") and it.get("mastery") is not None:
+                here.setdefault(it["subtopic"], []).append(adjusted_item_mastery(it)[0])
+        for sid, ms in here.items():
+            prev = out.get(sid) or {"rounds": 0}
+            out[sid] = {"rounds": prev["rounds"] + 1, "last": s.get("date"), "session": s.get("id"),
+                        "mastery": round_half(sum(ms) / len(ms))}
+    return out
+
+
+def last_round_subtopics(st, tid):
+    """The sub-topics of the last recorded round that had an item on topic `tid`."""
+    for s in reversed((st.get("previous") or []) + (st.get("sessions") or [])):
+        items = [it for it in s.get("items") or [] if it.get("topic") == tid]
+        if items:
+            return {it.get("subtopic") for it in items if it.get("subtopic")}
+    return set()
+
+
+def choose_subtopic(st, tid, gap=None):
+    """The sub-topic an item on topic `tid` is written to: (id, why) or (None, None) for a topic
+    without sub-topics. A gap's own sub-topic first (`gap`: the open gap the item retests: the
+    exact point comes back); else one not yet tested, in blueprint order; else the weakest
+    (lowest last score, then tested longest ago). Never the sub-topic of the last round on the
+    topic while it has another."""
+    subs = subtopics_of(st, tid)
+    if not subs:
+        return None, None
+    if gap and gap.get("subtopic") in subs:
+        return gap["subtopic"], "gap"
+    status = subtopic_status(st, tid)
+    last = last_round_subtopics(st, tid)
+    pool = [x for x in subs if x not in last] or subs
+    untested = [x for x in pool if x not in status]
+    if untested:
+        return untested[0], "untested"
+    return min(pool, key=lambda x: (status[x]["mastery"], status[x]["last"] or "", subs.index(x))), "weakest"
+
+
+def subtopic_label(st, sid):
+    return (bp_subtopics(st).get(sid) or {}).get("label")
+
+
+def sibling_of(st, tid, subtopic):
+    """The sibling sub-topic answered last time (issue #81): the latest recorded item on topic
+    `tid` on another sub-topic than `subtopic`, as {"subtopic", "label", "date", "session",
+    "mastery"}; None when there is none."""
+    if not tid or not subtopic:
+        return None
+    for s in reversed((st.get("previous") or []) + (st.get("sessions") or [])):
+        for it in reversed(s.get("items") or []):
+            if it.get("topic") == tid and it.get("subtopic") and it["subtopic"] != subtopic:
+                return {"subtopic": it["subtopic"], "label": subtopic_label(st, it["subtopic"]),
+                        "date": s.get("date"), "session": s.get("id"), "mastery": it.get("mastery")}
+    return None
+
+
+def subtopic_problems(st, items):
+    """The items of a round whose `subtopic` is not a sub-topic of their topic in the ledger's
+    blueprint: one line each, naming the item, never its content."""
+    subs = bp_subtopics(st)
+    out = []
+    for n, it in enumerate(items or [], 1):
+        sid = it.get("subtopic") if isinstance(it, dict) else None
+        if not sid:
+            continue
+        where = "key %s" % it["key"] if it.get("key") else "item %d" % n
+        if sid not in subs:
+            out.append("%s: subtopic %s is not in the blueprint" % (where, sid))
+        elif subs[sid]["topic"] != it.get("topic"):
+            out.append("%s: subtopic %s belongs to topic %s, not %s" % (where, sid, subs[sid]["topic"], it.get("topic")))
+    return out
 
 
 def block_rounds_on(st, tid, block):
@@ -1517,8 +1734,9 @@ def all_sessions_for_novelty(state):
             if it.get("type") in ("mcq", "focused") and it.get("stem"):
                 x = {"id": s.get("id"), "date": s.get("date"), "topic": it.get("topic"),
                      "kind": it["type"], "stem": it["stem"]}
-                if it.get("aspect"):
-                    x["aspect"] = it["aspect"]
+                for k in ("subtopic", "aspect"):
+                    if it.get(k):
+                        x[k] = it[k]
                 stems.append(x)
     return cases, stems
 
@@ -1919,6 +2137,19 @@ def plan_round(st, args, today):
                 "how": "Write this item on the gap's decision point, in a new clinical context, and "
                        "write the line 'retests: %s' in the item's key header (references/standards.md, "
                        "rule 9). Only an item that says so, answered well, closes the gap." % gap_ref(g)}
+    # two levels (issue #81): the topic (the disease) came by its schedule; the sub-topic rotates
+    # within it, the gap's own sub-topic first, so a missed point comes back exactly
+    sub_info = bp_subtopics(st)
+    for c in chosen:
+        sid, why = choose_subtopic(st, c.get("topic"), gaps_by_topic.get(c.get("topic"))) if c.get("topic") else (None, None)
+        if sid:
+            info = sub_info[sid]
+            c["subtopic"] = dict({"id": sid, "label": info["label"], "why": why},
+                                 **{k: info[k] for k in ("points", "aspects") if info.get(k)})
+            c["subtopic"]["how"] = (
+                "Write this item on the sub-topic, on one of its decision points (or another of the same "
+                "sub-topic), and write the line 'subtopic: %s' in the item's key header (references/standards.md, "
+                "rule 9)." % sid + (" It retests the gap: ask about the gap's own point." if why == "gap" else ""))
     for c in chosen:
         notes = standing_positions(st, today, c.get("topic")) if c.get("topic") else []
         if notes:
@@ -1944,7 +2175,16 @@ def plan_round(st, args, today):
             continue
         pref = ("diagnosis", "testing", "management", "interpretation", "disposition", "prevention", "prognosis")
         options = [a for a in pref if a not in taken] or list(pref)
-        aspect = min(options, key=lambda a: (last_seen[a], pref.index(a)))
+        weights = (c.get("subtopic") or {}).get("aspects") or {}
+        if any(a in weights for a in options):
+            # the sub-topic says which aspects matter most: each is asked in proportion to its
+            # importance (the one furthest behind its share first)
+            sid = c["subtopic"]["id"]
+            asked = {a: sum(1 for x in used_stems if x.get("subtopic") == sid and x.get("aspect") == a) for a in weights}
+            options = [a for a in options if a in weights]
+            aspect = min(options, key=lambda a: ((asked[a] + 1) / max(weights[a], 0.01), last_seen[a], pref.index(a)))
+        else:
+            aspect = min(options, key=lambda a: (last_seen[a], pref.index(a)))
         taken.append(aspect)
         c["aspect_hint"] = aspect
         c["aspect_note"] = ("Suggested aspect (least recently tested). If this item re-tests an open "
@@ -1952,7 +2192,8 @@ def plan_round(st, args, today):
     for c in chosen:
         # the evidence depth the item earns if it is answered well (the first depth is not
         # written): the author prepares the notes for it; `answer` gives the examiner the figure
-        d = evidence_depth(st, c.get("topic"), c.get("aspect_hint"), bool(c.get("retest_gap")))
+        d = evidence_depth(st, c.get("topic"), c.get("aspect_hint"), bool(c.get("retest_gap")),
+                           (c.get("subtopic") or {}).get("id"))
         if d and d["level"] > 1:
             c["depth"] = dict(d, how="If this item is answered well its feedback goes to this depth: write "
                                      "the notes for it under 'Deeper' in the item's kit section and put its "
@@ -2082,6 +2323,9 @@ def compact_item(it):
     typ = "case" if is_case(it) else "focused" if it.get("type") == "focused" else "mcq"
     out = {"type": typ, "topic": it.get("topic"),
            "mastery": it.get("mastery"), "confidence": it.get("confidence")}
+    for k in ("subtopic", "recorded_under"):       # issue #81: the sub-topic it tested; the topic a mapping moved it from
+        if it.get(k):
+            out[k] = it[k]
     if typ == "mcq":
         out["correct"] = it.get("correct")
     if it.get("set_by") == "learner":      # `mastery` is the learner's score, `graded` the examiner's
@@ -2237,8 +2481,16 @@ def apply_round(state, rnd, today, theme=None, gap_ids=None, block=None):
     touched = list(dict.fromkeys(list(by_topic) + list(new_gaps_by_topic) + [t for t in resolved_by_topic if t]
                                  + [t for _, t in closures if t] + list(stops)))
     before = touched_before(state, touched)
-    inputs = {tid: [{k: (clip(g[k], CLIP_GAP) if k == "gap" else g[k]) for k in ("gap", "source", "auto", "domain", "label")
+    inputs = {tid: [{k: (clip(g[k], CLIP_GAP) if k == "gap" else g[k])
+                     for k in ("gap", "source", "auto", "domain", "label", "subtopic")
                      if g.get(k) is not None} for g in gs] for tid, gs in new_gaps_by_topic.items()}
+    # the sub-topic a gap is on (issue #81): the one it names, else the one this round's items on
+    # its topic were on, when they were on one
+    item_subs = {}
+    for tid, items in by_topic.items():
+        subs = {i.get("subtopic") for i in items}
+        if len(subs) == 1 and None not in subs:
+            item_subs[tid] = subs.pop()
     for it in rnd["items"]:
         g = gap_index.get(it["topic"])
         if it.get("retests") and (not g or it["retests"] not in (g["id"], it["topic"])):
@@ -2272,9 +2524,11 @@ def apply_round(state, rnd, today, theme=None, gap_ids=None, block=None):
         t["history"].append([iso(rdate), mastery, comfort, calibration])
         t["history"] = t["history"][-CAP_HISTORY:]
         if misconception and not any(g.get("source") == "misconception" for g in new_gaps_by_topic.get(tid, [])):
-            new_gaps_by_topic.setdefault(tid, []).append({
+            wrong = next((i.get("subtopic") for i, (_, mc) in zip(items, adj) if mc and i.get("subtopic")), None)
+            new_gaps_by_topic.setdefault(tid, []).append(dict({
                 "topic": tid, "source": "misconception", "auto": True,
-                "gap": "Confident but incorrect answer on %s; re-test the same decision point." % iso(rdate)})
+                "gap": "Confident but incorrect answer on %s; re-test the same decision point." % iso(rdate)},
+                **({"subtopic": wrong} if wrong else {})))
         summary[tid] = {"mastery": mastery, "step": step, "due": iso(due), "interval_days": interval,
                         "calibration": calibration, "comfort": comfort, "misconception": misconception}
         if limited:
@@ -2327,6 +2581,11 @@ def apply_round(state, rnd, today, theme=None, gap_ids=None, block=None):
                      "self": clip("; ".join(selfrep), 200) or None, "source": sources,
                      "date": iso(rdate),
                      "opened": (existing or {}).get("opened") or (existing or {}).get("date") or iso(rdate)}
+            sub = next((g.get("subtopic") for g in new if g.get("subtopic") and g.get("source") != "self"), None) \
+                or next((g.get("subtopic") for g in new if g.get("subtopic")), None) or item_subs.get(tid) \
+                or (existing or {}).get("subtopic")
+            if sub:
+                entry["subtopic"] = sub
             if existing:
                 entry["id"] = existing["id"]
                 # a gap written again after its retest has had its one targeted retest
@@ -2443,6 +2702,9 @@ def apply_round(state, rnd, today, theme=None, gap_ids=None, block=None):
         entry["timing"] = {k: timing.get(k) for k in ("answering", "waiting", "reading", "idle_cut")}
     if entry["case"] is not None:
         entry["case"]["topic"] = next((it["topic"] for it in rnd["items"] if is_case(it)), None)
+        sub = next((it.get("subtopic") for it in rnd["items"] if is_case(it)), None)
+        if sub:
+            entry["case"]["subtopic"] = sub
 
     # errata
     errata_ids = []
@@ -2761,6 +3023,10 @@ def apply_round_again(st, sess, rnd, today):
     """Undo round `sess` and apply `rnd`, the same round with amended input, in its place. On the
     topics and comfort ratings a later round owns, the later round's values stay (decision 2 of
     issue #74: only the latest round on a topic is applied again). Returns what apply_round does."""
+    if (sess.get("undo") or {}).get("frozen"):
+        die("round %s was recorded before the blueprint mapping of %s: it can no longer be applied again "
+            "(its scores stay as recorded; a gap closed or a stop said on one of its topics applies "
+            "outright)" % (sess.get("id"), sess["undo"]["frozen"]))
     pos = st["sessions"].index(sess)
     later_t, later_d = later_owned(st, pos)
     u = sess.get("undo")
@@ -2870,6 +3136,9 @@ def to_previous(sess):
         c = it.get("coding") or {}
         ci = {"type": it.get("type"), "topic": it.get("topic"), "mastery": it.get("mastery"),
               "confidence": it.get("confidence")}
+        for k in ("subtopic", "recorded_under"):
+            if it.get(k):
+                ci[k] = it[k]
         if it.get("type") == "mcq":
             ci["correct"] = it.get("correct")
         if it.get("set_by") == "learner":
@@ -2895,7 +3164,7 @@ def to_previous(sess):
     if isinstance(sess.get("timing"), dict):
         out["timing"] = sess["timing"]
     if sess.get("case"):
-        out["case"] = {k: sess["case"].get(k) for k in ("topic", "presentation", "diagnosis") if sess["case"].get(k)}
+        out["case"] = {k: sess["case"].get(k) for k in ("topic", "subtopic", "presentation", "diagnosis") if sess["case"].get(k)}
     if sess.get("url"):
         out["url"] = sess["url"]
     if sess.get("block"):
@@ -3215,17 +3484,23 @@ def amend_round(st, sid, scores, closes, date, today, stops=()):
     if not sess and (scores or stops):
         die("round %s is %s: its scores can no longer be changed (a note can still be added with addendum)"
             % (sid, "from before the last progress review" if has_session(st, sid) else "not in the ledger"))
+    frozen = (sess.get("undo") or {}).get("frozen") if sess else None
+    if frozen and scores:
+        die("round %s was recorded before the blueprint mapping of %s: its scores can no longer be changed "
+            "(a note can still be added with addendum)" % (sid, frozen))
     changes, topics, warnings, again = [], {}, [], {}
     if scores or stops:
-        rnd = again[sid] = round_from_entry(st, sess)
+        rnd = round_from_entry(st, sess)
+        if not frozen:      # a round frozen by a mapping is not applied again: its stops apply outright
+            again[sid] = rnd
         for req in scores:
             ch = learner_score(find_item(rnd["items"], req, sid), req, date)
             rnd["grade_changes"] = list(rnd.get("grade_changes") or []) + [ch.pop("grade_change")]
             changes.append(ch)
     said, outright_stops = [], []
     for req in stops:
-        stop, gc, ch = learner_stop(again[sid]["items"], req, sid, date)
-        again[sid]["grade_changes"] = list(again[sid].get("grade_changes") or []) + [gc]
+        stop, gc, ch = learner_stop(rnd["items"], req, sid, date)
+        rnd["grade_changes"] = list(rnd.get("grade_changes") or []) + [gc]
         owner = owner_of(st, stop["topic"])
         if owner is None:
             outright_stops.append(stop)
@@ -3817,6 +4092,357 @@ def cmd_theme(args):
     print(json.dumps(out, ensure_ascii=False))
 
 
+# ---------------------------------------------------------------- a mapping onto a two-level blueprint (issue #81)
+#
+# A ledger with history moves to a two-level blueprint once: a mapping file says, for past items,
+# which sub-topic each actually tested (which may sit under another disease), for open gaps where
+# they go, and which retired diseases fold into another. Each past question goes to the sub-topic
+# it tested; sub-topics never tested start as new; a disease keeps its due date. The mapping is
+# applied through the normal write path (`apply-mapping`), never by editing the ledger by hand.
+
+MAPPING_TYPES = {"mcq": "mcq", "focused": "focused", "case": "case", "essay": "case"}
+
+
+def read_mapping(path):
+    """The mapping file as {"name", "items": [...], "gaps": [...], "topics": [...], "text"}: JSON
+    (state_schema.md §9) or a markdown table with the columns Session, Item, Recorded under and
+    Goes to (a row whose Session is "gap" maps the open gap on its topic; "topic" retires the
+    topic into the one it goes to; a Session cell may list several sessions; the first id in
+    Goes to is the target, so "CARD-02d (touches CARD-10b)" and "stays GEN-10" read as meant)."""
+    try:
+        text = read_text(path)
+    except OSError:
+        die("mapping file not found: %s" % path)
+    if path.endswith(".json"):
+        try:
+            m = json.loads(text)
+        except json.JSONDecodeError as e:
+            die("invalid JSON in %s: %s" % (path, e))
+        if not isinstance(m, dict):
+            die("a mapping file is {\"items\": [...], \"gaps\": [...], \"topics\": [...]}")
+        out = {k: list(m.get(k) or []) for k in ("items", "gaps", "topics")}
+        out["name"] = m.get("name") or os.path.basename(path)
+    else:
+        out = {"items": [], "gaps": [], "topics": [], "name": os.path.basename(path)}
+        cols = None
+        for line in text.splitlines():
+            line = line.strip()
+            if not line.startswith("|"):
+                cols = None if not line else cols
+                continue
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            low = [c.lower().strip("*_` ") for c in cells]
+            if "session" in low and "goes to" in low:
+                cols = {name: low.index(name) for name in low}
+                continue
+            if cols is None or all(re.match(r"^:?-+:?$", c) for c in cells if c):
+                continue
+            cell = lambda name: cells[cols[name]] if name in cols and cols[name] < len(cells) else ""
+            to = re.search(BP_ID_RE, cell("goes to"))
+            under = re.search(BP_ID_RE, cell("recorded under"))
+            if not to:
+                continue
+            kind = cell("session").lower().strip("*_` ")
+            if kind == "gap":
+                out["gaps"].append({"topic": under.group(0) if under else None, "to": to.group(0)})
+            elif kind in ("topic", "disease"):
+                out["topics"].append({"topic": under.group(0) if under else None, "to": to.group(0)})
+            else:
+                for sid in re.findall(r"S\d{4}", cell("session")):
+                    e = {"session": sid, "type": cell("item").lower().strip("*_` "),
+                         "topic": under.group(0) if under else None, "to": to.group(0)}
+                    if cell("stem"):
+                        e["stem"] = cell("stem")
+                    out["items"].append(e)
+    out["text"] = text
+    return out
+
+
+def mapping_target(st, to):
+    """(topic, sub-topic) that `to` names in the ledger's blueprint: a sub-topic (and its
+    topic), or a topic alone; None when the blueprint has neither."""
+    subs = bp_subtopics(st)
+    if to in subs:
+        return subs[to]["topic"], to
+    if to in bp_topics(st):
+        return to, None
+    return None
+
+
+def merge_gaps(kept, others):
+    """One open gap from several the mapping puts on one topic (the ledger keeps one per topic):
+    the texts joined, every source, the earliest opening, and still awaiting its retest if any
+    of them was."""
+    g = dict(kept)
+    texts = [x.get("gap") for x in [kept] + others if x.get("gap")]
+    g["gap"] = clip("; ".join(dict.fromkeys(texts)), CLIP_GAP)
+    srcs = set()
+    for x in [kept] + others:
+        v = x.get("source") or []
+        srcs |= set([v] if isinstance(v, str) else v)
+    g["source"] = sorted(srcs)
+    opened = [x.get("opened") or x.get("date") for x in [kept] + others if x.get("opened") or x.get("date")]
+    if opened:
+        g["opened"] = min(opened)
+    dates = [x.get("date") for x in [kept] + others if x.get("date")]
+    if dates:
+        g["date"] = max(dates)
+    selves = [x.get("self") for x in [kept] + others if x.get("self")]
+    g["self"] = clip("; ".join(selves), 200) if selves else kept.get("self")
+    if any(gap_awaits_retest(x) for x in [kept] + others):
+        g.pop("last_retested", None)
+    if not g.get("subtopic"):
+        sub = next((x.get("subtopic") for x in others if x.get("subtopic")), None)
+        if sub:
+            g["subtopic"] = sub
+    return g
+
+
+def apply_mapping(st, mapping, today):
+    """Apply `mapping` (read_mapping) to ledger `st`, in place. Every problem is collected and
+    the command stops with all of them before anything changes. Returns what apply-mapping
+    prints."""
+    problems = []
+    if st.get("unreflected"):
+        die("round %s is waiting for its reflection: close it (or record it as skipped) before the mapping "
+            "is applied" % st["unreflected"])
+    digest = hashlib.sha256(mapping["text"].encode("utf-8")).hexdigest()
+    done = next((m for m in st.get("mappings") or [] if m.get("sha256") == digest), None)
+    if done:
+        die("this mapping was applied on %s already: nothing to do" % done.get("date"))
+    if not bp_subtopics(st):
+        die("the ledger's blueprint has no sub-topics: set the two-level blueprint first "
+            "(`settings --work W --blueprint FILE`, in the same job), then apply the mapping")
+    number_gaps(st)         # gaps from older ledgers are named by id from here on
+    bpt = bp_topics(st)
+    history = (st.get("previous") or []) + (st.get("sessions") or [])
+    by_id = {s.get("id"): s for s in history}
+    # items: each entry names one recorded item, by session, type and the topic it was recorded under
+    moves, seen = [], {}
+    for n, e in enumerate(mapping["items"], 1):
+        e = e if isinstance(e, dict) else {}
+        tag = "items[%d] (%s %s %s)" % (n, e.get("session"), e.get("type"), e.get("topic"))
+        sess = by_id.get(e.get("session"))
+        typ = MAPPING_TYPES.get(str(e.get("type") or "").lower())
+        target = mapping_target(st, e.get("to"))
+        if sess is None:
+            problems.append("%s: no session %s in the ledger" % (tag, e.get("session")))
+            continue
+        if typ is None:
+            problems.append("%s: 'type' must be mcq, focused or case" % tag)
+            continue
+        if target is None:
+            problems.append("%s: 'to' %s is neither a sub-topic nor a topic of the blueprint" % (tag, e.get("to")))
+            continue
+        cands = [it for it in sess.get("items") or []
+                 if ("case" if is_case(it) else it.get("type")) == typ
+                 and (it.get("recorded_under") or it.get("topic")) == e.get("topic")]
+        if e.get("stem"):
+            cands = [it for it in cands if str(e["stem"]).lower() in str(it.get("stem") or "").lower()]
+        if e.get("n") is not None:
+            try:
+                cands = [cands[int(e["n"]) - 1]]
+            except (ValueError, IndexError):
+                cands = []
+        if len(cands) != 1:
+            problems.append("%s: %s" % (tag, "no such item" if not cands else
+                                        "%d items match: add \"stem\" (words of its stem) or \"n\"" % len(cands)))
+            continue
+        if id(cands[0]) in seen:
+            problems.append("%s: the same item as items[%d]" % (tag, seen[id(cands[0])]))
+            continue
+        seen[id(cands[0])] = n
+        moves.append((sess, cands[0], target))
+    # retired topics: every item and gap still on them goes to the topic named
+    retire = {}
+    for n, e in enumerate(mapping["topics"], 1):
+        e = e if isinstance(e, dict) else {}
+        tag = "topics[%d] (%s)" % (n, e.get("topic"))
+        src, dst = e.get("topic"), e.get("to")
+        if not src or (src not in st["topics"] and not any(it.get("topic") == src for s in history
+                                                            for it in s.get("items") or [])):
+            problems.append("%s: no topic %s in the ledger" % (tag, src))
+        elif dst not in bpt or dst == src:
+            problems.append("%s: 'to' must be another topic of the blueprint" % tag)
+        else:
+            retire[src] = dst
+    # gaps: by id, or as the open gap on a topic
+    gap_to = {}
+    for n, e in enumerate(mapping["gaps"], 1):
+        e = e if isinstance(e, dict) else {}
+        ref = e.get("gap") or e.get("topic")
+        tag = "gaps[%d] (%s)" % (n, ref)
+        g = next((x for x in st["gaps"] if ref and ref in (x.get("id"), x.get("topic"))), None)
+        target = mapping_target(st, e.get("to"))
+        if g is None:
+            problems.append("%s: no open gap %s" % (tag, ref))
+        elif target is None:
+            problems.append("%s: 'to' %s is neither a sub-topic nor a topic of the blueprint" % (tag, e.get("to")))
+        elif id(g) in gap_to:
+            problems.append("%s: that gap is mapped twice" % tag)
+        else:
+            gap_to[id(g)] = target
+    if problems:
+        die("the mapping cannot be applied: " + "; ".join(problems) + ". Nothing was changed.")
+
+    date = iso(today)
+    topics_before = copy.deepcopy(st["topics"])
+    affected, changed_sessions, moved_out = set(), set(), []
+    sources = {}        # a topic the mapping gives items to: the topics they came from, latest last
+
+    def move(sess, it, topic, sub):
+        was = it.get("topic")
+        if topic != was:
+            it.setdefault("recorded_under", was)
+            it["topic"] = topic
+            affected.update((was, topic))
+            sources.setdefault(topic, []).append((sess.get("date") or "", was))
+        if sub:
+            it["subtopic"] = sub
+        else:
+            it.pop("subtopic", None)
+        changed_sessions.add(sess.get("id"))
+        moved_out.append(dict({"session": sess.get("id"), "type": "case" if is_case(it) else it.get("type"),
+                               "from": it.get("recorded_under") or was, "topic": topic},
+                              **({"subtopic": sub} if sub else {})))
+
+    for sess, it, (topic, sub) in moves:
+        move(sess, it, topic, sub)
+    for sess in history:
+        for it in sess.get("items") or []:
+            if it.get("topic") in retire:
+                move(sess, it, retire[it["topic"]], None)
+    for sess in history:            # what each session says it tested follows its items
+        if sess.get("id") not in changed_sessions:
+            continue
+        old = list(sess.get("topics") or [])
+        sess["topics"] = list(dict.fromkeys(it.get("topic") for it in sess.get("items") or [] if it.get("topic")))
+        why = sess.get("why")
+        if isinstance(why, dict):
+            for it in sess.get("items") or []:
+                if it.get("recorded_under") in why and it["recorded_under"] not in sess["topics"]:
+                    why.setdefault(it["topic"], why[it["recorded_under"]])
+            for tid in [t for t in why if t in old and t not in sess["topics"]]:
+                del why[tid]
+        case = sess.get("case")
+        it = next((x for x in sess.get("items") or [] if is_case(x)), None)
+        if isinstance(case, dict) and it is not None:
+            case["topic"] = it.get("topic")
+            if it.get("subtopic"):
+                case["subtopic"] = it["subtopic"]
+            else:
+                case.pop("subtopic", None)
+    # gaps: moved, and merged where two land on one topic (the ledger keeps one open gap per topic)
+    gaps_out, merged, staged = [], [], []
+    for g in st["gaps"]:
+        ng = dict(g)
+        target = gap_to.get(id(g)) or ((retire[g["topic"]], None) if g.get("topic") in retire else None)
+        if target:
+            topic, sub = target
+            if topic != g.get("topic"):
+                ng.setdefault("recorded_under", g.get("topic"))
+                affected.update((g.get("topic"), topic))
+            ng["topic"] = topic
+            if sub:
+                ng["subtopic"] = sub
+            elif topic != g.get("topic"):
+                ng.pop("subtopic", None)
+            gaps_out.append({"id": g.get("id"), "from": g.get("topic"), "topic": topic, "subtopic": sub})
+        staged.append((g, ng))
+    groups = {}
+    for g, ng in staged:
+        groups.setdefault(ng["topic"], []).append((g, ng))
+    new_gaps = []
+    for g, ng in staged:
+        group = groups[ng["topic"]]
+        if len(group) == 1:
+            new_gaps.append(ng)
+            continue
+        kept = next((x for x in group if x[0].get("topic") == ng["topic"]), group[0])
+        if kept[0] is not g:
+            continue
+        others = [x[1] for x in group if x is not kept]
+        new_gaps.append(merge_gaps(ng, others))
+        merged += [{"id": o.get("id"), "into": ng.get("id"), "topic": ng["topic"]} for o in others]
+    st["gaps"] = new_gaps
+    # retired topics: their record goes to the topic they fold into, unless it has its own
+    for src, dst in retire.items():
+        affected.update((src, dst))
+        rec = st["topics"].pop(src, None)
+        if rec is not None and dst not in st["topics"]:
+            rec = dict(rec, domain=bpt[dst]["domain"], label=bpt[dst]["label"])
+            st["topics"][dst] = rec
+        for p in st.get("positions") or []:
+            if p.get("topic") == src:
+                p["topic"] = dst
+    # a topic that gets items and has no record yet: built from its items, on the schedule (step
+    # and due date) of the topic its latest item came from
+    new_records = []
+    intervals = [int(x) for x in st["config"].get("intervals_days") or DEFAULT_CONFIG["intervals_days"]]
+    for tid, srcs in sources.items():
+        if tid in st["topics"]:
+            continue
+        rows = []
+        for sess in history:
+            ms = [adjusted_item_mastery(it)[0] for it in sess.get("items") or []
+                  if it.get("topic") == tid and it.get("mastery") is not None]
+            if ms:
+                rows.append([sess.get("date"), round_half(sum(ms) / len(ms)), None, "not_rated"])
+        if not rows:
+            continue
+        src = topics_before.get(sorted(srcs)[-1][1]) or {}
+        t = ensure_topic(st, tid)
+        step = max(0, min(int(src.get("step") or 0), len(intervals) - 1))
+        due = src.get("due") or iso(parse_date(rows[-1][0]) + dt.timedelta(days=intervals[step]))
+        t.update({"last": rows[-1][0], "attempts": len(rows), "mastery": rows[-1][1], "step": step, "due": due,
+                  "calibration": "not_rated", "history": rows[-CAP_HISTORY:]})
+        new_records.append({"topic": tid, "due": due, "from": sorted(srcs)[-1][1]})
+    # the rounds the mapping changed, or that were the latest on a topic it changed, can no longer
+    # be applied again: their undo records no longer fit the ledger (state_schema.md §9)
+    affected.discard(None)
+    frozen = []
+    for sess in st["sessions"]:
+        u = sess.get("undo")
+        owns = set((u or {}).get("topics") or {}) if u is not None else set(sess.get("topics") or [])
+        if sess.get("id") in changed_sessions or owns & affected:
+            sess["undo"] = dict(u or {}, topics={}, frozen=date)
+            sess["undo"].pop("partial", None)
+            frozen.append(sess.get("id"))
+    for g in st["gaps"]:
+        if g.get("topic") and g["topic"] not in st["topics"]:
+            ensure_topic(st, g["topic"])
+    entry = {"date": date, "name": mapping.get("name"), "sha256": digest, "items": len(moved_out),
+             "gaps": len(gaps_out), "topics": sorted(retire)}
+    if merged:
+        entry["merged"] = merged
+    st.setdefault("mappings", []).append(entry)
+    out = {"mapping": mapping.get("name"), "items": moved_out, "gaps": gaps_out, "merged": merged,
+           "retired": [{"topic": a, "into": b} for a, b in retire.items()], "new_records": new_records,
+           "frozen": frozen,
+           "not_in_blueprint": sorted(t for t in st["topics"] if t not in bpt)}
+    return out
+
+
+def cmd_apply_mapping(args):
+    """Apply a mapping file to the ledger (issue #81): past items to the sub-topics they tested,
+    open gaps to theirs, retired topics folded into others. Through the publish set like any
+    change; `--check` prints what it would do and writes nothing."""
+    today = today_from(args)
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
+    res = apply_mapping(st, read_mapping(args.mapping), today)
+    out = dict({"ok": True, "check": bool(args.check)}, **res)
+    if args.check:
+        print(json.dumps(out, ensure_ascii=False))
+        return
+    lapse_positions(st, today)
+    bump_gen(st)
+    st["updated"] = iso(today)
+    out["gen"] = st["gen"]
+    publish_ledger(work, info, st, out, empty_prepared=True)
+    print(json.dumps(published(work, info, out), ensure_ascii=False))
+
+
 # ---------------------------------------------------------------- init, blueprint
 
 def read_blueprint(path):
@@ -3826,7 +4452,7 @@ def read_blueprint(path):
         die("blueprint not found: %s" % path)
     if path.endswith(".json"):
         try:
-            return json.loads(text)
+            return blueprint_shape(json.loads(text))
         except json.JSONDecodeError as e:
             die("invalid JSON in %s: %s" % (path, e))
     return blueprint_from_md(text)
@@ -4055,6 +4681,16 @@ def page_doc(st, lists=None):
     topics = [{"id": tid, "label": t.get("label"), "mastery": t.get("mastery"), "last": t.get("last"),
                "calibration": t.get("calibration")}
               for tid, t in (st.get("topics") or {}).items() if t.get("last") or t.get("mastery") is not None]
+    # two levels (issue #81): under each disease, its sub-topics already tested, as recorded
+    sub_labels = bp_subtopics(st)
+    for t in topics:
+        subs = subtopic_status(st, t["id"])
+        if subs:
+            order = subtopics_of(st, t["id"])
+            t["subtopics"] = [{"id": sid, "label": (sub_labels.get(sid) or {}).get("label"), "mastery": v["mastery"],
+                               "last": v["last"]}
+                              for sid, v in sorted(subs.items(), key=lambda kv: (order.index(kv[0]) if kv[0] in order
+                                                                                  else len(order), kv[0]))]
     topics.sort(key=lambda t: t["id"])
     topics.sort(key=lambda t: t["last"] or "", reverse=True)
     # reading and listening of past sessions, newest session first and in the order the feedback
@@ -4966,8 +5602,8 @@ KEY_COMMON = ("type", "topic", "label", "reason")           # every header needs
 KEY_REQUIRED = {"mcq": ("stem_summary",), "focused": ("stem_summary", "aspect"),
                 "case": ("patient", "setting", "presentation", "diagnosis")}
 KEY_OPTIONAL = {"mcq": (), "focused": (), "case": ("twist",)}
-KEY_ANY = ("domain", "retests")                              # optional in every header
-KEY_ITEM_FIELDS = ("type", "topic", "label", "domain", "retests", "stem_summary", "aspect")
+KEY_ANY = ("domain", "retests", "subtopic")                  # optional in every header
+KEY_ITEM_FIELDS = ("type", "topic", "label", "domain", "retests", "subtopic", "stem_summary", "aspect")
 KEY_CASE_FIELDS = ("patient", "setting", "presentation", "diagnosis", "twist")
 KEY_EMPTY = ("", "-", "none", "null", "n/a", "na")
 RUBRIC_RE = re.compile(r"<!--[ \t]*rubric:[ \t]*([A-Za-z0-9_]+)[ \t]*-->[ \t]*\n(.*?)\n?[ \t]*<!--[ \t]*/rubric[ \t]*-->", re.S)
@@ -5167,6 +5803,15 @@ def check_key_headers(paths, plan=None):
             if part in written and int(want.get(k) or 0) != have[k]:
                 problems.append("%s: the plan has %d %s item(s), the keys have %d header(s) of that type"
                                 % (part, int(want.get(k) or 0), name, have[k]))
+        # two levels (issue #81): an item on a planned topic names the sub-topic the plan gave it
+        for c in plan.get("items") or []:
+            sub = (c.get("subtopic") or {}).get("id") if isinstance(c, dict) else None
+            if not sub:
+                continue
+            on = [(kid, h) for kid, h in headers.items() if h.get("topic") == c.get("topic") and not h.get("_bad")]
+            if on and not any(h.get("subtopic") == sub for _, h in on):
+                problems.append("key %s: the plan gives topic %s the sub-topic %s; write 'subtopic: %s' in its header"
+                                % (on[0][0], c["topic"], sub, sub))
     problems.extend(rubric_problems(paths))
     return by_file, problems
 
@@ -5247,6 +5892,8 @@ KEY_FIELD_NOTES = {
     "domain": "the domain code, only when the topic ID does not start with it",
     "retests": "the plan's `retest_gap.id`, on an item written on that gap's decision point; "
                "otherwise leave the line out",
+    "subtopic": "the plan's `subtopic.id`, where the blueprint has sub-topics for the topic (for a "
+                "`new_in_domain` item, the sub-topic you wrote to); otherwise leave the line out",
 }
 KEY_TABLE_OPEN = "<!-- key-header-table: generated by `cme.py key-table`; do not edit by hand -->"
 KEY_TABLE_CLOSE = "<!-- /key-header-table -->"
@@ -5490,6 +6137,16 @@ COMMANDS = (
      '`--another` the next proposal. Prints `block`, `was`, `say` and, like `settings`, the '
      '`files` to publish. Alone: the block, the proposal and the domains to choose from; writes '
      'nothing.'),
+    ('`apply-mapping --work W --mapping FILE [--check]`',
+     'Move a ledger with history onto a two-level blueprint, once (§9): the mapping file (JSON, or '
+     'a markdown table) says which sub-topic each past item tested, where each open gap goes and '
+     'which retired topics fold into another. Items keep their scores and the topic they were '
+     'recorded under (`recorded_under`); a topic keeps its due date; gaps landing on one topic '
+     'are merged. Set the two-level blueprint with `settings --blueprint` first. Refused while a '
+     'round awaits its reflection, and for a mapping already applied. Prints what moved (`items`, '
+     '`gaps`, `merged`, `retired`, `new_records`), the rounds that can no longer be applied again '
+     '(`frozen`), topics left outside the blueprint (`not_in_blueprint`) and, like `settings`, '
+     'the `files` to publish. `--check`: the same, written nowhere.'),
     ('`init --work W --profile J --config J --blueprint FILE [--start-over]`',
      'Setup: the first ledger, its page file and the page, into the publish set. Prints `round` '
      '(the mix in words and its `estimated_minutes`) to confirm the mix with, and `labels_needed`'
@@ -6527,13 +7184,24 @@ def answer_depth(work, part, today=None, keys=None):
     headers, _, st = keys
     out, notes = {}, {}
     for kid, h in headers.items():
-        d = evidence_depth(st, h.get("topic"), h.get("aspect"), bool(h.get("retests")))
+        d = evidence_depth(st, h.get("topic"), h.get("aspect"), bool(h.get("retests")), h.get("subtopic"))
         if d:
             out[kid] = d
         held = standing_positions(st, today or dt.date.today(), h.get("topic")) if h.get("topic") else []
         if held:
             notes[kid] = [position_for_round(p) for p in held]
     return out or None, notes or None
+
+
+def answer_siblings(keys):
+    """For each item whose answers a part completes and that names a sub-topic: the sibling
+    sub-topic of its topic answered last time ({"Q1": {"subtopic", "label", "date", "session",
+    "mastery"}}), for the feedback's sibling line (feedback_guide.md §4.2); None when none has one."""
+    if not keys:
+        return None
+    headers, _, st = keys
+    out = {kid: sibling_of(st, h.get("topic"), h.get("subtopic")) for kid, h in headers.items()}
+    return {k: v for k, v in out.items() if v} or None
 
 
 # ---------------------------------------------------------------- the grading and reflection forms
@@ -6585,8 +7253,9 @@ def grading_guide(listening):
         "Each item: `mastery` (a focused question and the case by feedback_guide.md section 2; an MCQ "
         "4-5 correct with sound reasoning, 3 correct with flawed reasoning, 1-2 wrong).",
         "`given` is what grading uses and nobody edits: `depth`, how far behind the recommendation the "
-        "feedback goes (feedback_guide.md section 4.1), and `positions`, the learner's position notes "
-        "on the topic (standards.md rule 12).",
+        "feedback goes (feedback_guide.md section 4.1), `positions`, the learner's position notes "
+        "on the topic (standards.md rule 12), and `sibling`, the other sub-topic of the disease answered "
+        "last time, for the sibling line (feedback_guide.md section 4.2).",
         "Coding (feedback_guide.md section 11): `art` for the case and a focused question (a focused "
         "question scores only the domains it tested: leave the others null), `idea` for the case only, "
         "and one entry in `errors` for every rubric element marked missed or partial and for a wrong MCQ.",
@@ -6622,15 +7291,18 @@ def grading_guide(listening):
     return {"how": how, "codes": grading_codes(), "shapes": shapes}
 
 
-def form_item(kid, h, rubric, depth=None, positions=None):
+def form_item(kid, h, rubric, depth=None, positions=None, sibling=None):
     """One entry of the grading form for the item of key `kid`."""
     typ = h.get("type")
     it = {"key": kid, "type": typ, "topic": h.get("topic"), "label": h.get("label")}
+    if h.get("subtopic"):
+        it["subtopic"] = h["subtopic"]
     if typ == "focused":
         it["aspect"] = h.get("aspect")
     if h.get("retests"):
         it["retests"] = h["retests"]
-    given = dict(({"depth": depth} if depth else {}), **({"positions": positions} if positions else {}))
+    given = dict(({"depth": depth} if depth else {}), **({"positions": positions} if positions else {}),
+                 **({"sibling": sibling} if sibling else {}))
     if given:
         it[FORM_GIVEN] = given
     if typ in RUBRIC_TYPES:
@@ -6658,6 +7330,7 @@ def write_grading_form(work, part, today=None, keys=None):
         return None
     headers, rubrics, st = keys
     depth, positions = answer_depth(work, part, today, keys)
+    siblings = answer_siblings(keys) or {}
     path = os.path.join(work, ROUND_FILE)
     rnd = {}
     if os.path.isfile(path):
@@ -6674,7 +7347,8 @@ def write_grading_form(work, part, today=None, keys=None):
     added = []
     for kid, h in headers.items():
         if kid not in have:
-            items.append(form_item(kid, h, rubrics.get(kid), (depth or {}).get(kid), (positions or {}).get(kid)))
+            items.append(form_item(kid, h, rubrics.get(kid), (depth or {}).get(kid), (positions or {}).get(kid),
+                                   siblings.get(kid)))
             added.append(kid)
     listening = listening_on(st)
     form = {FORM_KEY: grading_guide(listening)}
@@ -6876,6 +7550,10 @@ def draft_item(it, blocks, flags, used):
     if typ != "mcq":
         out.append(live("credit for anything defensible outside the key; where the evidence differs from "
                         "the key, say so and correct it"))
+    sib = given.get("sibling")
+    if sib:
+        out.append(live("the sibling line: one sentence tying this point to %s, answered on %s"
+                        % (sib.get("label") or sib.get("subtopic"), sib.get("date"))))
     return out
 
 
@@ -7191,6 +7869,9 @@ def cmd_answer(args):
         out["depth"] = depth
     if positions:
         out["positions"] = positions
+    siblings = answer_siblings(keys)
+    if siblings:
+        out["siblings"] = siblings
     # the form the examiner fills: the grading form once a part's answers are in, the
     # reflection form when the reflection arrives
     form = (write_reflection_form(args.work) if args.part == "reflection"
@@ -7243,6 +7924,11 @@ def cmd_save(args):
     keys = fill_round_from_keys(rnd, sealed, load_json(plan_path) if plan_path else None)
     if keys:
         warnings.extend(keys.pop("warnings"))
+    wrong = subtopic_problems(cur, rnd.get("items"))
+    if wrong:
+        die("the round names a sub-topic the blueprint does not have under its topic: " + "; ".join(wrong)
+            + ". Correct 'subtopic' in the key header (references/standards.md, rule 9), or in round.json, "
+              "and run save again. Nothing was recorded.")
     reading = reading_pointers(rnd, warnings)       # after the keys: the items have their topics
     listening = listening_picks(rnd, warnings)
     if not feedback and not feedback_questions:
@@ -7604,6 +8290,8 @@ def build_parser():
     s = command("snooze", cmd_snooze); s.add_argument("--days", type=int, default=7)
     s = command("settings", cmd_settings); s.add_argument("--config"); s.add_argument("--profile"); s.add_argument("--blueprint")
     s = command("theme", cmd_theme); s.add_argument("--set"); s.add_argument("--another", action="store_true")
+    s = command("apply-mapping", cmd_apply_mapping); s.add_argument("--mapping", required=True)
+    s.add_argument("--check", action="store_true")
     s = command("init", cmd_init); s.add_argument("--profile", default="{}"); s.add_argument("--config", default="{}")
     s.add_argument("--blueprint", required=True); s.add_argument("--start-over", action="store_true")
     # maintenance tools, outside the protocol: they take their own files and folders

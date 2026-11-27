@@ -279,7 +279,10 @@ round JSON.
 
 `plan` lists, for each chosen topic, the cases and MCQ stems already used (`already_used`),
 plus the most recent cases on any topic. A re-test of the same topic must use a different
-patient, setting, presentation and twist; the decision point may be the same (§6). The key
+patient, setting, presentation and twist; the decision point may be the same (§6). Where the
+blueprint has two levels, the plan names the sub-topic (`subtopic`) and its decision points:
+the item is written to that sub-topic, so the disease returns on schedule while what is asked
+of it rotates; `already_used` carries each earlier stem's sub-topic. The key
 headers keep what later rounds are compared with: the case's compact description, each short
 question's `stem_summary` and each focused question's `aspect` (rule 9).
 

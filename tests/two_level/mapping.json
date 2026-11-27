@@ -1,0 +1,107 @@
+{
+ "name": "mid_curriculum onto the two-level sample",
+ "items": [
+  {
+   "session": "S0001",
+   "type": "case",
+   "topic": "CARD-05",
+   "to": "CARD-12a"
+  },
+  {
+   "session": "S0003",
+   "type": "mcq",
+   "topic": "CARD-05",
+   "to": "CARD-05a"
+  },
+  {
+   "session": "S0007",
+   "type": "mcq",
+   "topic": "CARD-05",
+   "to": "CARD-12b"
+  },
+  {
+   "session": "S0008",
+   "type": "case",
+   "topic": "CARD-05",
+   "to": "CARD-05b"
+  },
+  {
+   "session": "S0001",
+   "type": "mcq",
+   "topic": "GI-02",
+   "to": "GI-02b"
+  },
+  {
+   "session": "S0002",
+   "type": "case",
+   "topic": "GI-02",
+   "to": "GI-02a"
+  },
+  {
+   "session": "S0003",
+   "type": "focused",
+   "topic": "GI-02",
+   "to": "GI-02b"
+  },
+  {
+   "session": "S0005",
+   "type": "mcq",
+   "topic": "GI-02",
+   "to": "GI-02a"
+  },
+  {
+   "session": "S0007",
+   "type": "focused",
+   "topic": "GI-02",
+   "to": "GI-02b"
+  },
+  {
+   "session": "S0008",
+   "type": "focused",
+   "topic": "GI-02",
+   "to": "GI-02a"
+  },
+  {
+   "session": "S0001",
+   "type": "mcq",
+   "topic": "ENDO-06",
+   "to": "ENDO-06a"
+  },
+  {
+   "session": "S0003",
+   "type": "mcq",
+   "topic": "ENDO-06",
+   "to": "ENDO-06a"
+  },
+  {
+   "session": "S0004",
+   "type": "mcq",
+   "topic": "ENDO-06",
+   "to": "ENDO-06b"
+  },
+  {
+   "session": "S0006",
+   "type": "mcq",
+   "topic": "ENDO-06",
+   "to": "ENDO-06a"
+  },
+  {
+   "session": "S0010",
+   "type": "mcq",
+   "topic": "ENDO-06",
+   "to": "ENDO-06a"
+  }
+ ],
+ "gaps": [
+  {
+   "topic": "ENDO-06",
+   "to": "ENDO-06a"
+  }
+ ],
+ "topics": [
+  {
+   "topic": "CARD-04",
+   "to": "CARD-11"
+  }
+ ]
+}

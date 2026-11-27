@@ -32,7 +32,7 @@ the conversation, and the keys must be good enough for another clinician to grad
    blocks (rule 8) are written as, and the rules it keeps. The examiner marks the answer first
    and then adapts your blocks: write each so that it can be sent as it stands.
 4. The plan (JSON). It gives, per item: slot (`mcq`, `focused`, `case`), topic and blueprint
-   ID, the reason it was chosen, any open gap to re-test, the learner's `positions` on its topic
+   ID, the `subtopic` to write to where the blueprint has sub-topics (with its decision points), the reason it was chosen, any open gap to re-test, the learner's `positions` on its topic
    (rule 12), `aspect_hint` for focused items, a
    `depth` where the learner has answered the topic well before (rule 8, "Deeper"), a
    `drill` if one applies, `separation` notes, and `already_used` stems and cases; and for the
@@ -51,6 +51,15 @@ Planning notes:
 - The plan's `guideline_region`, `specialty`, units and profile are applied as rules 2–4 say:
   the pitch of every item, and the background, evidence depth and sources its kit holds, come
   from the profile's paragraphs by rule 4.
+- An item with `subtopic` in the plan is written to that sub-topic of its topic (the
+  disease): the topic came by its schedule, the sub-topic is the engine's choice within it
+  (`why`: `untested`, `weakest`, or `gap` when it retests a gap on that sub-topic). Ask about
+  one of its `points` (the decision points the blueprint lists), or another decision point
+  of the same sub-topic, and write `subtopic: <subtopic.id>` in the key header (rule 9). Its
+  `aspects`, where given, say which aspects matter most; the `aspect_hint` already follows
+  them. `already_used` names the sub-topic of each earlier stem: a different decision point
+  of a sub-topic tested before is welcome, the same vignette is not. An item you place in a
+  `new_in_domain` slot names the sub-topic you wrote to when its topic has them.
 - An item with `retest_gap` in the plan re-tests that gap: the same decision point in a new
   clinical context (transfer). Write `retests: <retest_gap.id>` in that item's key header
   (rule 9), as the plan's `how` line says; without it a good answer cannot close the gap.

@@ -11,6 +11,12 @@ against it is kept in `learner_ledger.json`.
   before the hyphen is the domain code. The ledger refers to these IDs, so never renumber:
   add new topics with new IDs, and retire old ones by marking them `(retired)`.
 - Cross-references such as "(see HEME-04)" are fine.
+- Optional second level: a topic (the disease, which returns on schedule) may list its
+  sub-topics (which rotate and are recorded) as bullets indented under it, each starting
+  with its own stable ID, the topic's ID plus a letter: `  - CODE-NNa  Sub-topic label`,
+  optionally ending in `(aspects: management high, testing low)`. Bullets indented under a
+  sub-topic, without an ID, are its decision points: the author's list to draw on, never
+  scheduled. A topic without sub-topics works as a one-level topic.
 
 This default blueprint suits a hospitalist or general internist and is adapted from the
 SHM Core Competencies in Hospital Medicine and the ABIM Internal Medicine certification

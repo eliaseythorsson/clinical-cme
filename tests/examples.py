@@ -134,6 +134,8 @@ def round_for(st, plan):
             rnd["case"] = {"patient": "Example patient %d" % n, "setting": "ward",
                            "presentation": "Example presentation %d" % n,
                            "diagnosis": "Example diagnosis: %s" % label}
+        if planned.get("subtopic"):        # a two-level blueprint: the item is written to the planned sub-topic
+            item["subtopic"] = planned["subtopic"]["id"]
         if planned.get("retest_gap"):      # the author wrote the item on the open gap, as the plan asks
             item["retests"] = planned["retest_gap"]["id"]
         if name == "weak":

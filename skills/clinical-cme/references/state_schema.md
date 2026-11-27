@@ -27,13 +27,17 @@ memory: one JSON document, read to a file and written from a file (`store.md` §
              "show_coding": true, "reminders": false, "listening": true,
              "resource_preferences": {"free_only": false, "formats": ["guidelines"]}},
   "review": {"last": null, "next_due": "2026-11-19", "period_start": "2026-10-08"},
-  "blueprint": {"CARD": {"name": "Cardiology", "weight": 1.0, "topics": {"CARD-01": "Acute coronary syndrome"}}},
+  "blueprint": {"CARD": {"name": "Cardiology", "weight": 1.0,
+                         "topics": {"CARD-01": "Acute coronary syndrome", "CARD-03": "Atrial fibrillation"},
+                         "subtopics": {"CARD-03": {"CARD-03a": {"label": "Stroke prevention decision",
+                                                                "points": ["…"], "aspects": {"management": 1.0}}}}}},
   "topics": {"RENAL-02": {"domain": "RENAL", "label": "Hyponatraemia / hypernatraemia",
                           "last": "2026-10-26", "attempts": 4, "mastery": 3.5, "step": 3, "due": "2026-11-11",
                           "comfort": 5, "calibration": "aligned",
                           "history": [["2026-10-26", 3.5, 5, "aligned"]]}},
   "gaps": [{"id": "G0007", "topic": "RENAL-02", "gap": "re-testable description", "self": null,
-            "source": ["graded"], "date": "2026-10-26", "opened": "2026-09-17", "last_retested": null}],
+            "source": ["graded"], "date": "2026-10-26", "opened": "2026-09-17", "last_retested": null,
+            "subtopic": "RENAL-02b"}],
   "resolved": [{"id": "G0004", "topic": "CARD-03", "note": "…", "opened": "…", "resolved": "…", "partial": false},
                {"id": "G0006", "topic": "HEME-04", "note": "…", "opened": "…", "resolved": "…", "partial": false,
                 "closed_by": "learner", "learner_note": "…", "session": "S0021"}],
@@ -59,6 +63,22 @@ learner drops it (`position --drop`), a review drops it, or `POSITION_LAPSE_DAYS
 after `confirmed` (the day it was set or last kept at a review); a lapsed note leaves the
 ledger at the next write that touches notes. `reopened` is the day the examiner raised a
 changed guideline on it once more; it is not raised again. A ledger without `positions` has none.
+
+**Blueprint, one or two levels** (issue #81). An area (`blueprint.<code>`) has `name`,
+`weight` and `topics` ({id: label}); the topic is the **disease**, the unit that is scheduled.
+A two-level blueprint adds `subtopics`: per topic, its sub-topics in order, each with `label`,
+optional `points` (the author's list of decision points to draw on; not scheduled) and
+optional `aspects` ({aspect: importance}, the weights of `weight_from_text`). A topic without
+sub-topics, and a blueprint without any, work exactly as before. In markdown a sub-topic is a
+bullet indented under its topic, starting with its id, with `(aspects: management high,
+testing low)` at the end where known; a decision point is a bullet indented under its
+sub-topic, without an id. A JSON blueprint may nest them (`"CARD-03": {"label": "…",
+"subtopics": {"CARD-03a": "…"}}`); the ledger keeps the flat shape above, and a ledger read
+with the nested shape is brought to it (`migrate_ledger`). Nothing is stored per sub-topic:
+what each has had is counted from the items that name it (§4, "Sub-topics"). An item and a
+gap name theirs as `subtopic`; an item moved by a mapping keeps the topic it was recorded under
+as `recorded_under` (§9); `mappings` lists the mappings applied (`date`, `name`, `sha256`,
+counts, `merged`).
 
 Order: `item_order` `mcqs_first` (the default) runs short questions → their feedback → case →
 its feedback; `case_first` puts the case first and all feedback at the end. Speed settings:
@@ -550,6 +570,23 @@ plan's `block` holds `theme`, `name`, `round` (this round's number), `length`, `
 theme (`mix` is null) and still counts as a round of the block. A prepared round is used only
 for the round of the block it was planned for.
 
+**Sub-topics** (two-level blueprint, issue #81): **the disease returns on schedule; the
+sub-topic rotates and is recorded.** Spacing, the rest, the drill-down limit, blocks and the
+theme all run on the topic (the disease), as above. When the plan has chosen a topic that has
+sub-topics, it gives the item `subtopic` (`id`, `label`, `points`, `aspects`, `why`, `how`):
+the gap's own sub-topic when the item retests an open gap that has one (`gap`: the exact point
+comes back); otherwise a sub-topic not yet tested, in blueprint order (`untested`); otherwise
+the weakest, by the score of its last round, then tested longest ago (`weakest`); never the
+sub-topic of the last round on the disease while it has another. What a sub-topic has had is
+counted from the recorded items that name it (`subtopic_status`: rounds, last date, last
+score); nothing is stored for it. A focused question on a sub-topic with `aspects` gets as
+`aspect_hint` the listed aspect furthest behind its share by importance. A gap takes the
+sub-topic it names, else that of the round's items on its topic when they share one (a
+confident error: the sub-topic of the item it was made on); a gap written again keeps it unless
+the new one names another. The feedback links the sibling: `answer` and the grading form give
+each item the other sub-topic of its disease answered last time (`sibling`,
+`feedback_guide.md` §4.2).
+
 ### 4.1 Changing the theme
 
 The theme is proposed; the learner decides. Three places carry it:
@@ -636,6 +673,9 @@ the recorded rounds (`sessions` and `previous`) each time.
 - A focused question: at most one level beyond the level its own `aspect` of the topic has
   earned, counted the same way over the topic's focused questions on that aspect.
 - An item that retests a gap, or whose topic has an open gap: level 1.
+- An item on a sub-topic (§4, "Sub-topics") is counted over the items on that sub-topic only,
+  and its aspect over that sub-topic's focused questions; an open gap on another sub-topic of
+  the disease does not hold it at level 1 (a gap without a sub-topic does).
 - The plan gives an item `depth` (`level`, `name`, `in_a_row`, `how`) only beyond level 1,
   with the focused question's `aspect_hint` as its aspect; `answer` gives the examiner the
   level for the topic and aspect the key header names. `config.evidence_ladder` false: neither.
@@ -682,6 +722,7 @@ order with the ledger last) and `publish`, the path of the manifest `W/publish.j
 | `snooze --work W [--days 7]` | Postpone a due review. Keeps the prepared round. |
 | `settings --work W [--config J] [--profile J] [--blueprint FILE]` | Change settings: the changed ledger, the page file and the page if it is out of date go into the publish set, with an emptied `data/prepared.json` when the change can alter a round; `prepared` says whether the prepared round was kept and why (§8). A change to `mcqs`, `focused` or `case` is checked (at least one item) and supersedes any older page setting; a refused change writes nothing. Prints `round`: the mix in force in words, its `estimated_minutes`, and once rounds are timed `basis` ("based on your last N rounds") and `time_hint` (§6.2). `--profile '{"journey": "…"}'` or `'{"aim": "…"}'` stores a new paragraph in the learner's words, dates it and clears its label unless the same change gives one; `'{"journey_label": "…", "aim_tags": […]}'` sets the display labels (from their fixed lists, §1) and keeps the prepared round. With a paragraph or a label in the change it prints `profile` (the two paragraphs and their labels), and `labels_needed` while a label is still to derive. |
 | `theme --work W [--set DOMAIN \| --another]` | The learner changes the theme of the block (§4.1): `--set` a domain by id or name, `--another` the next proposal. Prints `block`, `was`, `say` and, like `settings`, the `files` to publish. Alone: the block, the proposal and the domains to choose from; writes nothing. |
+| `apply-mapping --work W --mapping FILE [--check]` | Move a ledger with history onto a two-level blueprint, once (§9): the mapping file (JSON, or a markdown table) says which sub-topic each past item tested, where each open gap goes and which retired topics fold into another. Items keep their scores and the topic they were recorded under (`recorded_under`); a topic keeps its due date; gaps landing on one topic are merged. Set the two-level blueprint with `settings --blueprint` first. Refused while a round awaits its reflection, and for a mapping already applied. Prints what moved (`items`, `gaps`, `merged`, `retired`, `new_records`), the rounds that can no longer be applied again (`frozen`), topics left outside the blueprint (`not_in_blueprint`) and, like `settings`, the `files` to publish. `--check`: the same, written nowhere. |
 | `init --work W --profile J --config J --blueprint FILE [--start-over]` | Setup: the first ledger, its page file and the page, into the publish set. Prints `round` (the mix in words and its `estimated_minutes`) to confirm the mix with, and `labels_needed` when a paragraph came without its label. A profile given in the old fields (`role`, `goals`, `notes`) is folded into the paragraphs (§1). `W` needs no store yet. In a work folder opened on a store that already holds a ledger it stops unless `--start-over` is given. |
 
 Maintenance tools, outside the protocol; they take their own files and folders:
@@ -817,7 +858,10 @@ and review documents the learner opens, and the ledger when the learner exports.
   unreadable is built from the ledger alone (`store.md` §6; `rebuild-page` reads the session
   files); a store from before 5.1 has `data/index.json`, whose lists are taken over once.
 - `topics`: only topics already tested, most recently tested first, with the result and the
-  date of the last test. A topic that has a gap but was never tested is not listed.
+  date of the last test. A topic that has a gap but was never tested is not listed. With a
+  two-level blueprint a topic carries `subtopics`: those already tested, in blueprint order,
+  each with `id`, `label`, `mastery` (its last round) and `last`; the page shows them under
+  their disease. A sub-topic not yet tested is never named.
 - `round`: the mix in force and when it was set (`set_at` is `config.round_set_at`, the `base`
   of a page setting, below), the estimate for it (`minutes`), the minutes one more item costs
   (`minutes_per`, the case at the format the next round's case takes) and the limits of the
@@ -964,3 +1008,56 @@ The plan is made as of the day after the close, so everything in it is due by an
 Whatever part a prepared round lacks (`prepared.ready` lists what it has) is written at the
 session, from the same plan, while the learner answers the part that is there.
 
+## 9. Moving a ledger to a two-level blueprint: the mapping file
+
+A ledger with history moves to a two-level blueprint once: set the blueprint
+(`settings --work W --blueprint FILE`), then, in the same job, `apply-mapping --work W
+--mapping FILE` (§6; `--check` first to see what it would do). Each past question goes to the
+sub-topic it actually tested; sub-topics never tested start as new; a disease keeps its due
+date. It goes through the publish set like any change: never edit the ledger by hand.
+
+The mapping file is JSON:
+
+```json
+{"name": "blueprint v2",
+ "items": [{"session": "S0029", "type": "focused", "topic": "CARD-02", "to": "CARD-03c"},
+           {"session": "S0031", "type": "mcq", "topic": "HEME-02", "to": "HEME-02c", "stem": "platelets 11"},
+           {"session": "S0018", "type": "mcq", "topic": "PULM-06", "to": "CARD-08"}],
+ "gaps": [{"topic": "CARD-05", "to": "CARD-12b"}, {"gap": "G0012", "to": "ID-11a"}],
+ "topics": [{"topic": "PULM-06", "to": "CARD-08"}]}
+```
+
+or a markdown table with the columns `Session`, `Item`, `Recorded under` and `Goes to` (others,
+such as "What it asked", are ignored; a `Stem` column is read as `stem`). A `Session` cell may
+list several sessions (`S0018, S0022`); `gap` in it maps the open gap on the topic recorded
+under; `topic` retires that topic into the one it goes to. The first id in `Goes to` is the
+target, so `CARD-02d (touches CARD-10b)` reads as `CARD-02d` and `stays GEN-10` as `GEN-10`.
+
+- `items`: one recorded item each, found by `session`, `type` (`mcq`, `focused`, `case`) and
+  `topic`, the topic it was recorded under. Two items of one type on one topic in a session
+  need `stem` (words of its stem) or `n` (1, 2, … in the session's order). `to` is a sub-topic
+  (the item gets it, and its topic becomes the sub-topic's disease) or a topic (the disease
+  only, no sub-topic). An item moved to another disease keeps where it was recorded as
+  `recorded_under`; the session's `topics`, `why` and `case` follow its items. Scores, coding
+  and the topic records' schedules are not changed. Items the file does not name stay on their
+  disease with no sub-topic.
+- `gaps`: an open gap by `gap` (its id) or `topic`, to a sub-topic or a topic. Where several
+  open gaps land on one topic they are merged into one (the ledger keeps one per topic): the
+  texts joined, every source, the earliest opening; it awaits its retest if any of them did,
+  and keeps the id of the gap that was already on that topic (`merged` lists the others).
+- `topics`: a topic retired from the blueprint, folded into another: the items and the open
+  gap still on it go there (disease only), its position notes too, and its record becomes the
+  other's when that has none (otherwise it is dropped and the other keeps its due date).
+- A topic that receives items and has no record yet gets one built from them (rounds, last
+  date, last score), on the step and due date of the topic its latest item came from
+  (`new_records`).
+- **Frozen rounds.** A round with an item the mapping moved, or whose undo record held a topic
+  the mapping changed, can no longer be applied again: its undo record is emptied and marked
+  `frozen` with the date. Its scores can no longer be set by the learner (`override --scores`
+  is refused, as for a round before the last review); a gap closed or a stop said on one of its
+  topics applies outright (§4). `frozen` lists them.
+- Refused, with nothing changed: while a round awaits its reflection; when the blueprint has no
+  sub-topics; for a mapping already applied (the same file, by `sha256`); and whenever any
+  entry does not resolve (every problem is named at once). `not_in_blueprint` lists topic
+  records left outside the blueprint, to retire with a further mapping.
+- A learner's mapping is learner data: it is never committed to the skill's repository.

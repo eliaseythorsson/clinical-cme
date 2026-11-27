@@ -164,6 +164,8 @@ table.plain td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
 .code{font-family:var(--mono);font-size:.74rem;color:var(--faint);margin-right:6px}
 .mcell{display:flex;align-items:center;gap:8px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .cal{font-size:.78rem;color:var(--muted)}
+table.plain tr.sub td{border-top:0;padding-top:2px;padding-bottom:6px;font-size:.82rem;color:var(--muted)}
+table.plain tr.sub td:first-child{padding-left:32px}
 .cal.over{color:var(--warn)}
 
 /* settings */
@@ -530,13 +532,20 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     const rows = page.topics || [];
     const tb = $("topics");
     if (!rows.length) { tb.innerHTML = `<tbody><tr><td class="empty">No topics tested yet.</td></tr></tbody>`; return; }
+    const meter = (m) => `<span class="mcell"><span class="meter ${scoreClass(m)}"><i style="width:${m != null ? m / 5 * 100 : 0}%"></i></span>${m != null ? esc(m) : "–"}</span>`;
     tb.innerHTML = `<thead><tr><th>Topic</th><th>Mastery</th><th>Last tested</th><th>Calibration</th></tr></thead><tbody>` + rows.map((t) => {
       const m = typeof t.mastery === "number" ? t.mastery : null;
       const cal = t.calibration && t.calibration !== "not_rated" ? t.calibration.replace(/_/g, " ") : "–";
+      // the disease's sub-topics already tested, under it (two-level blueprint)
+      const subs = (t.subtopics || []).map((u) => {
+        const um = typeof u.mastery === "number" ? u.mastery : null;
+        return `<tr class="sub"><td><span class="code">${esc(u.id)}</span>${esc(u.label || "")}</td>
+        <td>${meter(um)}</td><td class="num">${u.last ? shortDate(u.last) : "–"}</td><td></td></tr>`;
+      }).join("");
       return `<tr><td><span class="code">${esc(t.id)}</span>${esc(t.label || "")}</td>
-        <td><span class="mcell"><span class="meter ${scoreClass(m)}"><i style="width:${m != null ? m / 5 * 100 : 0}%"></i></span>${m != null ? esc(m) : "–"}</span></td>
+        <td>${meter(m)}</td>
         <td class="num">${t.last ? shortDate(t.last) : "–"}</td>
-        <td><span class="cal ${/over/.test(cal) ? "over" : ""}">${esc(cal)}</span></td></tr>`;
+        <td><span class="cal ${/over/.test(cal) ? "over" : ""}">${esc(cal)}</span></td></tr>` + subs;
     }).join("") + `</tbody>`;
   }
 

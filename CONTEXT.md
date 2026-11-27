@@ -53,7 +53,7 @@ The feedback message as the state engine puts it together from the marked gradin
 _Avoid_: template
 
 **Live part**:
-What the examiner writes once the answers are in: the opening in the learner's own words, verdicts, calibration, transfer, the gap summary and coding line, credit for a defensible answer outside the key and corrections to the key, the glossary line, the reading and listening picks.
+What the examiner writes once the answers are in: the opening in the learner's own words, verdicts, calibration, transfer, the sibling line, the gap summary and coding line, credit for a defensible answer outside the key and corrections to the key, the glossary line, the reading and listening picks.
 
 ## People and roles
 
@@ -170,13 +170,30 @@ _Avoid_: output folder, files list
 ## Curriculum
 
 **Blueprint**:
-The list of domains and topics the curriculum covers.
+The list of domains and topics the curriculum covers; one level (topics), or two (topics with their sub-topics).
 
 **Domain**:
 A blueprint grouping such as cardiology or gastroenterology, one `##` heading of the markdown blueprint, with one code (`TOX`); a topic id may carry another prefix (`EMRG-01` is in `TOX`).
 
 **Topic**:
-One blueprint entry within a domain; the unit that is scheduled.
+One blueprint entry within a domain, a disease process ("Atrial fibrillation"); the unit that is scheduled: it returns on schedule.
+_Avoid_: disease (fine with the learner; the engine and the docs say topic)
+
+**Sub-topic**:
+One angle of a topic in a two-level blueprint ("AF: stroke prevention decision"; id `CARD-03a`); what rotates and is recorded. When the topic comes due, the plan picks the sub-topic (the gap's own, else one not yet tested, else the weakest; never the last round's on that topic); its record (rounds, last score), evidence depth and stems used are counted from the items that name it.
+_Avoid_: subtopic as a separate schedule, facet
+
+**Decision point**:
+One decision a sub-topic can be tested on, from the author's list for it in the blueprint (`points`). For variety only: never scheduled. A missed one still comes back exactly, through its gap and retest.
+
+**Sibling line**:
+The one line of an item's feedback tying it to the other sub-topic of the same topic the learner answered last time (the shared frame, and where the two decisions part).
+
+**Mapping file**:
+The learner's list of where their past items and open gaps go on a two-level blueprint (past item → the sub-topic it tested), applied once with `apply-mapping`. Learner data: never committed.
+
+**Frozen round**:
+A round recorded before a mapping that moved its items or changed its topics: it can no longer be applied again (its scores stay; a gap closed or a stop on its topics applies outright).
 
 **Block**:
 A run of rounds (default 12) with one domain as its theme; most new material and the case come from the theme.
