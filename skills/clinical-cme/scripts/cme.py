@@ -322,12 +322,11 @@ def learner_today(profile, at=None, offset=None):
 
 def note_utc_offset(st, offset):
     """Record a UTC offset the assistant passed when it differs from the profile's: a change
-    that cannot alter what a round contains (the prepared round stands). True when recorded.
-    Nothing is recorded in a ledger a newer engine wrote."""
+    that cannot alter what a round contains (NEUTRAL: the prepared round stands). True when
+    recorded, and the caller writes the ledger. Nothing is recorded in a ledger a newer engine wrote."""
     if offset is None or newer_engine(st) or st["profile"].get("utc_offset") == offset:
         return False
     st["profile"]["utc_offset"] = offset
-    bump_gen(st, content=False)
     return True
 
 
@@ -2127,69 +2126,146 @@ def all_sessions_for_novelty(state):
     return cases, stems
 
 
-def plan_round(st, args, today):
-    """The plan for the next round of ledger `st` as of `today`, as a dict. `args` carries the
-    one-off options of plan/start (mcqs, focused, no_case, domain, no_new, allow_repeat, no_drill,
-    force_drill, seed). Reads only; writes and prints nothing."""
-    cfg = st["config"]
+# ---------------------------------------------------------------- the plan of a round (issue #85: in three parts)
+#
+# plan_round = eligibility (Eligible: which topics may come in, and in what order of urgency) +
+# slotting (slotted: each slot of the round filled, by the block's shares) + the author's brief
+# (briefed: what each item is to be written on, and the plan around it). One random generator
+# runs through slotting and the brief, in that order, so a seed gives the same plan.
+
+# The one-off options of a round's plan (`start`, and none for `prepare`): (name, default, type).
+# The command line takes them as --mcqs N, --focused N, --domain D, --seed N and the flags.
+PLAN_OPTIONS = (("focused", None, int), ("mcqs", None, int), ("domain", None, str), ("seed", None, int),
+                ("allow_repeat", False, bool), ("no_drill", False, bool), ("force_drill", False, bool),
+                ("no_new", False, bool), ("no_case", False, bool))
+
+
+def plan_options(given=None):
+    """The plan options as a plain dict, each at its default unless `given` (a dict, or anything
+    with the options as attributes, such as parsed command-line arguments) sets it."""
+    get = given.get if isinstance(given, dict) else (lambda k, d: getattr(given, k, d))
+    return {name: get(name, default) for name, default, _ in PLAN_OPTIONS}
+
+
+def plan_options_given(given):
+    """Was any one-off plan option given (then a prepared round, written without them, does not fit)?"""
+    opts = plan_options(given)       # a number counts when given, a domain or a flag when set
+    return any(opts[name] is not None if kind is int else bool(opts[name]) for name, _, kind in PLAN_OPTIONS)
+
+
+def round_size(st, opts):
+    """(case, mcqs, focused): the round's counts, the mix in force unless an option changes it."""
     mix = plan_counts(st)
-    n_case = 0 if args.no_case else mix["case"]
-    n_mcqs = args.mcqs if args.mcqs is not None else mix["mcqs"]
-    n_focused = args.focused if getattr(args, "focused", None) is not None else mix["focused"]
+    n_case = 0 if opts["no_case"] else mix["case"]
+    n_mcqs = opts["mcqs"] if opts["mcqs"] is not None else mix["mcqs"]
+    n_focused = opts["focused"] if opts["focused"] is not None else mix["focused"]
     for name, v in (("--mcqs", n_mcqs), ("--focused", n_focused)):
         lo, hi = ROUND_LIMITS[name[2:]]
         if not lo <= v <= hi:
             die("%s must be between %d and %d" % (name, lo, hi))
     if n_case + n_mcqs + n_focused == 0:
         die("the round would be empty: ask for at least one MCQ, focused question or the case")
-    topics = st["topics"]
-    bpt = bp_topics(st)
-    live = bp_live_topics(st)
-    eff = domain_weights(st)
-    pull = new_topic_weights(st, eff)
-    log = st["sessions"]
-    rng = random.Random(args.seed if args.seed is not None else int(today.strftime("%Y%m%d")) * 100 + len(log))
-    restrict = canon_domain(st, args.domain.upper()) if args.domain else None
-    # The block this round belongs to. Its theme steers the round unless the learner asked for a
-    # one-off domain round (--domain), which still counts as a round of the block.
-    block = block_status(st)
-    theme = block["theme"] if block and not restrict else None
-    # A large backlog (issue #79): topics whose date has come, counted as `status` counts them.
-    overdue = sum(1 for t in topics.values() if parse_date(t.get("due")) and parse_date(t["due"]) <= today)
-    backlog = bool(theme) and overdue >= BACKLOG_OVERDUE
+    return n_case, n_mcqs, n_focused
 
-    # Tested in the last few days: left to rest, whatever its due date says (a ledger written by
-    # an older version can hold a topic due the day after a miss).
-    resting = {tid for tid, t in topics.items()
-               if parse_date(t.get("last")) and (today - parse_date(t["last"])).days < MIN_RETURN_DAYS}
-    # In each of the last two rounds: left out of this one, due or not (the drill-down limit).
-    history = st["previous"] + log
-    last_rounds = [set(s.get("topics") or []) for s in history[-DRILLDOWN_MAX_ROUNDS:]]
-    drilled = set.intersection(*last_rounds) if len(last_rounds) == DRILLDOWN_MAX_ROUNDS else set()
-    # A theme topic missed when it was seen in two rounds of the block waits for its date (the
-    # pause, issue #79): no gap retest or revisit brings it back sooner, as with the learner's
-    # stop (issue #75); in a one-off --domain round of the block too.
-    paused = {tid for tid, t in topics.items()
-              if block and topic_domain(st, tid, bpt) == block["theme"]
-              and (parse_date(t.get("due")) or today) > today and t.get("history")
-              and not answered_well(t["history"][-1][1], t["history"][-1][3])
-              and block_rounds_on(st, tid, block) >= DRILLDOWN_BLOCK_ROUNDS}
-    recent = set()
-    for s in log[-3:]:
-        recent.update(s.get("topics") or [])
-    recent_domains = [topic_domain(st, t, bpt) for s in log[-10:] for t in (s.get("topics") or [])]
 
-    def allowed(tid):
-        if tid in bpt and tid not in live:        # retired from the blueprint: never planned
+def pick_weighted(rng, pool):
+    """One entry of `pool` ([(weight, …)]) drawn by weight, or None when nothing weighs."""
+    total = sum(w for w, _, _ in pool)
+    if total <= 0:
+        return None
+    x, acc = rng.uniform(0, total), 0.0
+    for item in pool:
+        acc += item[0]
+        if x <= acc:
+            return item
+    return pool[-1]
+
+
+class Eligible:
+    """Eligibility, the first part of a plan of ledger `st` as of `today`: the block and its
+    theme (none in a one-off --domain round), the topics held back (rest: tested in the last few
+    days; the drill-down limit: in each of the last rounds; the pause of a theme topic missed in
+    two rounds of its block; retired; outside a one-off domain), then what waits: the due topics
+    by urgency (`due_ids`) and the gaps ready for their retest (`gap_ids`). Also what new material
+    there is (by domain weight) and the reasons the author is given."""
+
+    def __init__(self, st, opts, today):
+        self.st, self.today = st, today
+        self.topics = topics = st["topics"]
+        self.bpt = bpt = bp_topics(st)
+        self.live = bp_live_topics(st)
+        self.eff = domain_weights(st)
+        self.pull = new_topic_weights(st, self.eff)
+        self.log = log = st["sessions"]
+        self.allow_repeat = opts["allow_repeat"]
+        self.restrict = restrict = canon_domain(st, opts["domain"].upper()) if opts["domain"] else None
+        # The block this round belongs to. Its theme steers the round unless the learner asked for a
+        # one-off domain round (--domain), which still counts as a round of the block.
+        self.block = block = block_status(st)
+        self.theme = theme = block["theme"] if block and not restrict else None
+        # A large backlog (issue #79): topics whose date has come, counted as `status` counts them.
+        self.overdue = sum(1 for t in topics.values() if parse_date(t.get("due")) and parse_date(t["due"]) <= today)
+        self.backlog = bool(theme) and self.overdue >= BACKLOG_OVERDUE
+
+        # Tested in the last few days: left to rest, whatever its due date says (a ledger written by
+        # an older version can hold a topic due the day after a miss).
+        self.resting = {tid for tid, t in topics.items()
+                        if parse_date(t.get("last")) and (today - parse_date(t["last"])).days < MIN_RETURN_DAYS}
+        # In each of the last two rounds: left out of this one, due or not (the drill-down limit).
+        self.history = history = st["previous"] + log
+        last_rounds = [set(s.get("topics") or []) for s in history[-DRILLDOWN_MAX_ROUNDS:]]
+        self.drilled = set.intersection(*last_rounds) if len(last_rounds) == DRILLDOWN_MAX_ROUNDS else set()
+        # A theme topic missed when it was seen in two rounds of the block waits for its date (the
+        # pause, issue #79): no gap retest or revisit brings it back sooner, as with the learner's
+        # stop (issue #75); in a one-off --domain round of the block too.
+        self.paused = {tid for tid, t in topics.items()
+                       if block and topic_domain(st, tid, bpt) == block["theme"]
+                       and (parse_date(t.get("due")) or today) > today and t.get("history")
+                       and not answered_well(t["history"][-1][1], t["history"][-1][3])
+                       and block_rounds_on(st, tid, block) >= DRILLDOWN_BLOCK_ROUNDS}
+        self.recent = set()
+        for s in log[-3:]:
+            self.recent.update(s.get("topics") or [])
+        self.recent_domains = [topic_domain(st, t, bpt) for s in log[-10:] for t in (s.get("topics") or [])]
+
+        self.gaps_by_topic = gaps_by_topic = {g["topic"]: g for g in st["gaps"] if g.get("topic")}
+        gap_rank = self.gap_rank
+        due = []
+        for tid, t in topics.items():
+            nd = parse_date(t.get("due"))
+            if nd and nd <= today and self.allowed(tid):
+                urgency = 0 if t.get("calibration") in ("overconfident", "confident_error") else 1
+                g = gaps_by_topic.get(tid)
+                due.append(((urgency, gap_rank(g) if g else 9, -(today - nd).days,
+                             t.get("mastery") if t.get("mastery") is not None else 0), tid))
+        due.sort()
+        self.due_ids = due_ids = [tid for _, tid in due]
+
+        self.gap_ids = gap_ids = []
+        for tid, g in sorted(gaps_by_topic.items(), key=lambda kv: (gap_rank(kv[1]), kv[1].get("date") or "")):
+            if tid in due_ids or not self.allowed(tid):
+                continue
+            # One targeted re-test of a gap that no item has tested since it was written, once the
+            # gap is a few days old; after that the gap comes back with its topic's spacing.
+            gd = parse_date(g.get("date"))
+            if gap_awaits_retest(g) and (gd is None or (today - gd).days >= MIN_RETURN_DAYS or self.allow_repeat):
+                gap_ids.append(tid)
+            # A gap of the theme whose topic was last tested under another theme: the pause it was
+            # given outside the theme ends with its domain's block (also after a change of theme).
+            elif theme and topics.get(tid, {}).get("domain") == theme and theme != next(
+                    ((s.get("block") or {}).get("theme") for s in reversed(history) if tid in (s.get("topics") or [])), theme):
+                gap_ids.append(tid)
+
+    def allowed(self, tid):
+        if tid in self.bpt and tid not in self.live:        # retired from the blueprint: never planned
             return False
-        if (tid in resting or tid in drilled or tid in paused) and not args.allow_repeat:
+        if (tid in self.resting or tid in self.drilled or tid in self.paused) and not self.allow_repeat:
             return False
-        if restrict and topic_domain(st, tid, bpt) != restrict:
+        if self.restrict and topic_domain(self.st, tid, self.bpt) != self.restrict:
             return False
         return True
 
-    gaps_by_topic = {g["topic"]: g for g in st["gaps"] if g.get("topic")}
-
+    @staticmethod
     def gap_rank(g):
         src = g.get("source") or []
         src = [src] if isinstance(src, str) else src
@@ -2201,86 +2277,52 @@ def plan_round(st, args, today):
             return 2
         return 3
 
-    due = []
-    for tid, t in topics.items():
-        nd = parse_date(t.get("due"))
-        if nd and nd <= today and allowed(tid):
-            urgency = 0 if t.get("calibration") in ("overconfident", "confident_error") else 1
-            g = gaps_by_topic.get(tid)
-            due.append(((urgency, gap_rank(g) if g else 9, -(today - nd).days,
-                         t.get("mastery") if t.get("mastery") is not None else 0), tid))
-    due.sort()
-    due_ids = [tid for _, tid in due]
+    def dom(self, tid):
+        return topic_domain(self.st, tid, self.bpt)
 
-    gap_ids = []
-    for tid, g in sorted(gaps_by_topic.items(), key=lambda kv: (gap_rank(kv[1]), kv[1].get("date") or "")):
-        if tid in due_ids or not allowed(tid):
-            continue
-        # One targeted re-test of a gap that no item has tested since it was written, once the
-        # gap is a few days old; after that the gap comes back with its topic's spacing.
-        gd = parse_date(g.get("date"))
-        if gap_awaits_retest(g) and (gd is None or (today - gd).days >= MIN_RETURN_DAYS or args.allow_repeat):
-            gap_ids.append(tid)
-        # A gap of the theme whose topic was last tested under another theme: the pause it was
-        # given outside the theme ends with its domain's block (also after a change of theme).
-        elif theme and topics.get(tid, {}).get("domain") == theme and theme != next(
-                ((s.get("block") or {}).get("theme") for s in reversed(history) if tid in (s.get("topics") or [])), theme):
-            gap_ids.append(tid)
-
-    def new_candidates():
+    def new_candidates(self):
         pool = []
-        for tid, info in bpt.items():
+        for tid, info in self.bpt.items():
             d = info["domain"]
-            if tid in topics or tid in recent or not allowed(tid):
+            if tid in self.topics or tid in self.recent or not self.allowed(tid):
                 continue
-            w = pull.get(tid, 0.0) / (1.0 + recent_domains.count(d))
+            w = self.pull.get(tid, 0.0) / (1.0 + self.recent_domains.count(d))
             if w > 0:
                 pool.append((w, tid, d))
         return pool
 
-    def domain_only_candidates(exclude):
+    def domain_only_candidates(self, exclude):
         pool = []
-        for d, w in eff.items():
-            if d in exclude or (restrict and d != restrict):
+        for d, w in self.eff.items():
+            if d in exclude or (self.restrict and d != self.restrict):
                 continue
-            w = w / (1.0 + recent_domains.count(d))
+            w = w / (1.0 + self.recent_domains.count(d))
             if w > 0:
                 pool.append((w, None, d))
         return pool
 
-    def weighted_pick(pool):
-        total = sum(w for w, _, _ in pool)
-        if total <= 0:
-            return None
-        x, acc = rng.uniform(0, total), 0.0
-        for item in pool:
-            acc += item[0]
-            if x <= acc:
-                return item
-        return pool[-1]
+    def label_of(self, tid):
+        return (self.topics.get(tid) or {}).get("label") or (self.bpt.get(tid) or {}).get("label")
 
-    def label_of(tid):
-        return (topics.get(tid) or {}).get("label") or (bpt.get(tid) or {}).get("label")
-
-    def reason_for(tid, code):
-        t = topics.get(tid) or {}
+    def reason_for(self, tid, code):
+        t = self.topics.get(tid) or {}
         if code == "due":
             text = "spaced review due %s" % t.get("due")
             if t.get("mastery") is not None:
                 text += "; last %s/5 on %s" % (t.get("mastery"), t.get("last"))
             if t.get("calibration") in ("overconfident", "confident_error"):
                 text += "; flagged %s last time" % t["calibration"].replace("_", " ")
-            g = gaps_by_topic.get(tid)
+            g = self.gaps_by_topic.get(tid)
             if g:
                 text += "; open gap: %s" % clip(g.get("gap"), 240)
             return text
         if code == "gap":
-            g = gaps_by_topic.get(tid) or {}
+            g = self.gaps_by_topic.get(tid) or {}
             src = g.get("source") or []
             return "open gap (%s) from %s: %s" % (", ".join([src] if isinstance(src, str) else src),
                                                  g.get("date"), clip(g.get("gap"), 240))
         if code == "new":
-            if theme and dom(tid) == theme:
+            if self.theme and self.dom(tid) == self.theme:
                 return "not yet tested; in the block's theme"
             return "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)"
         if code == "revisit":
@@ -2288,6 +2330,25 @@ def plan_round(st, args, today):
                    "ask about another decision point of the topic" % (t.get("mastery"), t.get("last"))
             return text
         return code
+
+
+def slotted(st, el, size, opts, rng):
+    """Slotting, the second part of a plan: the case first (a block's case on its theme), then the
+    short questions, focused before MCQs. In a block each short slot draws on one share (repeat,
+    theme, wildcard: block_mix) and a share with nothing to give passes its slot on; outside a
+    block (a one-off domain round) they take what is due, then the gaps, then something new.
+    Items of the round stay apart (unrelated topics, other domains where they can). Returns
+    (the items chosen, the block's mix or None)."""
+    n_case, n_mcqs, n_focused = size
+    cfg = st["config"]
+    topics, bpt, live, eff, log, today = el.topics, el.bpt, el.live, el.eff, el.log, el.today
+    restrict, block, theme, backlog = el.restrict, el.block, el.theme, el.backlog
+    due_ids, gap_ids = el.due_ids, el.gap_ids
+    allowed, dom, label_of, reason_for = el.allowed, el.dom, el.label_of, el.reason_for
+    new_candidates, domain_only_candidates = el.new_candidates, el.domain_only_candidates
+
+    def weighted_pick(pool):
+        return pick_weighted(rng, pool)
 
     labels = {tid: {"label": label_of(tid) or ""} for tid in set(bpt) | set(topics)}
     refs = blueprint_refs(labels)
@@ -2367,9 +2428,6 @@ def plan_round(st, args, today):
         return None
 
     # ---- a round of a themed block: each slot draws on one share (theme, repeat, wildcard)
-
-    def dom(tid):
-        return topic_domain(st, tid, bpt)
 
     def fits(slot, tid, d, level):
         return tid not in used_topics and (slot == "case" or mcq_ok(tid, d, level))
@@ -2479,7 +2537,7 @@ def plan_round(st, args, today):
     # the reasoning on a re-tested decision point); the last short slot may be kept for a new topic.
     shorts = ["focused"] * n_focused + ["mcq"] * n_mcqs
     total = n_case + len(shorts)
-    wants_new = int(cfg["new_topics_per_round"]) > 0 and not args.no_new
+    wants_new = int(cfg["new_topics_per_round"]) > 0 and not opts["no_new"]
     reserve_new = wants_new and len(shorts) >= 1 and total >= 2 and (total >= 4 or not last_session_had_new())
     mix = block_mix(len(shorts), block["round"], backlog) if theme else None
     # Due repeats take the first slots (the focused questions, when the round has them), then the
@@ -2499,7 +2557,16 @@ def plan_round(st, args, today):
             item = item or take_short(slot)
         if item:
             chosen.append(item); used_topics.add(item.get("topic")); used_domains.append(item["domain"])
+    return chosen, mix
 
+
+def briefed(st, el, chosen, mix, opts, rng):
+    """The author's brief, the last part of a plan: the drill, the gap to retest, the sub-topic,
+    the learner's position notes, what was already used, the aspect and the evidence depth of
+    each item, and the plan around them (format, order, estimate, the settings the author writes
+    to, the block). Returns the plan."""
+    cfg, today = st["config"], el.today
+    gaps_by_topic, block, backlog, overdue = el.gaps_by_topic, el.block, el.backlog, el.overdue
     fmt = next_case_format(st)
 
     drill = None
@@ -2508,9 +2575,9 @@ def plan_round(st, args, today):
     target = cases[0] if cases else next((c for c in chosen if c["slot"] == "focused"), None)
     if target is not None and target["slot"] == "focused":
         active = [d for d in active if d.get("code") not in FOCUSED_DRILLS_EXCLUDED]
-    if active and target is not None and not args.no_drill:
+    if active and target is not None and not opts["no_drill"]:
         d = active[rng.randrange(len(active))]
-        if args.force_drill or rng.random() < float(d.get("rate", 0.33)):
+        if opts["force_drill"] or rng.random() < float(d.get("rate", 0.33)):
             drill = {"code": d.get("code"), "pattern": d.get("description") or d.get("code"),
                      "how": ("Build the case so this pattern is tempting but avoidable from the data "
                              "(case_design.md section 9). Keep it blind; reveal it in the feedback."
@@ -2632,6 +2699,19 @@ def plan_round(st, args, today):
                 "neither they nor their feedback may cue the case.",
     }
     return plan
+
+
+def plan_round(st, options, today):
+    """The plan for the next round of ledger `st` as of `today`, as a dict. `options`: the one-off
+    options of the round (PLAN_OPTIONS; a dict, or parsed command-line arguments; None: none).
+    Reads only; writes and prints nothing."""
+    opts = plan_options(options)
+    size = round_size(st, opts)
+    rng = random.Random(opts["seed"] if opts["seed"] is not None
+                        else int(today.strftime("%Y%m%d")) * 100 + len(st["sessions"]))
+    el = Eligible(st, opts, today)
+    chosen, mix = slotted(st, el, size, opts, rng)
+    return briefed(st, el, chosen, mix, opts, rng)
 
 
 def plan_summary(plan, out):
@@ -3596,8 +3676,7 @@ def record_round(st, rnd, today, again=None):
         claim_topics(st, len(st["sessions"]) - 1)
     if rnd.get("reflection") is None:
         st["unreflected"] = entry["id"]
-    compact(st)
-    bump_gen(st)
+    count_write(st, today, ROUND, log=True)
     out = {"gen": st["gen"], "session_id": entry["id"],
            "next_id": st["next_id"], "score": entry["score"], "topics": summary,
            "errata_ids": errata_ids,
@@ -3659,8 +3738,7 @@ def reflect_round(st, refl, today, session=None, measured=None, base=None):
     lapse_positions(st, today)
     if st.get("unreflected") == sid:    # a later round still waiting for its own reflection keeps waiting
         st["unreflected"] = None
-    compact(st)
-    bump_gen(st)
+    count_write(st, today, ROUND, log=True)
     out = {"gen": st["gen"], "session_id": entry["id"],
            "topics": summary, "open_gaps": len(st["gaps"]), "errata_ids": errata_ids,
            "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
@@ -3989,18 +4067,16 @@ def cmd_override(args):
     doc["learner_changes"] = list(doc.get("learner_changes") or []) + changes
     doc["addendum"] = ((doc.get("addendum") or "").rstrip() + "\n\n"
                        + learner_changes_md(changes, "## Set by the learner · %s" % iso(today))).strip() + "\n"
-    compact(st)
+
+    def report():
+        out = {"ok": True, "gen": st["gen"], "session": sid, "learner_changes": changes, "topics": topics,
+               "open_gaps": len(st["gaps"]), "warnings": warnings}
+        if scores or stops:
+            out["score"] = sess["score"]
+        return out
     # never content-neutral: a learner-set score moves the topic's step and due date, a closed gap
     # takes its retest out of the plan, so a round prepared before this was planned on other facts
-    bump_gen(st)
-    st["updated"] = iso(today)
-    out = {"ok": True, "gen": st["gen"], "session": sid, "learner_changes": changes, "topics": topics,
-           "open_gaps": len(st["gaps"]), "warnings": warnings}
-    if scores or stops:
-        out["score"] = sess["score"]
-    # the prepared round was planned with the gap open and the old due date
-    publish_ledger(work, info, st, out, session=doc, empty_prepared=True)
-    print(json.dumps(published(work, info, out), indent=1, ensure_ascii=False))
+    commit(work, info, report, st, today, ROUND, log=True, session=doc, indent=1)
 
 
 # ---------------------------------------------------------------- stats
@@ -4303,15 +4379,12 @@ def cmd_review(args):
     st["sessions"] = []
     st["unreflected"] = None
     st["review"] = {"last": iso(today), "next_due": iso(next_due), "period_start": iso(today + dt.timedelta(days=1))}
-    compact(st)
-    bump_gen(st)
-    st["updated"] = iso(today)
-    out = {"ok": True, "gen": st["gen"], "reviews": len(st["reviews"]),
-           "next_review_due": iso(next_due), "drills": st["drills"], "positions": entry.get("positions"),
-           "pending_errata": [e["id"] for e in st["pending_errata"]], "warnings": warnings}
-    path = publish_ledger(work, info, st, out, empty_prepared=True)
-    out.update({"out": path, "bytes": os.path.getsize(path)})
-    print(json.dumps(published(work, info, out), indent=1, ensure_ascii=False))
+
+    def report():
+        return {"ok": True, "gen": st["gen"], "reviews": len(st["reviews"]),
+                "next_review_due": iso(next_due), "drills": st["drills"], "positions": entry.get("positions"),
+                "pending_errata": [e["id"] for e in st["pending_errata"]], "warnings": warnings}
+    commit(work, info, report, st, today, ROUND, log=True, then=written, indent=1)
 
 
 def cmd_position(args):
@@ -4343,11 +4416,8 @@ def cmd_position(args):
     lapse_positions(st, today)
     # a round prepared ahead stays usable: it was written to respect the note, and the examiner
     # reads the notes from the ledger when grading
-    bump_gen(st, content=False)
-    st["updated"] = iso(today)
-    out = {"ok": True, "gen": st["gen"], "dropped": args.drop, "reopened": args.reopened, "positions": listed()}
-    publish_ledger(work, info, st, out)
-    print(json.dumps(published(work, info, out), indent=1, ensure_ascii=False))
+    commit(work, info, lambda: {"ok": True, "gen": st["gen"], "dropped": args.drop, "reopened": args.reopened,
+                                "positions": listed()}, st, today, NEUTRAL, indent=1)
 
 
 def cmd_snooze(args):
@@ -4355,11 +4425,9 @@ def cmd_snooze(args):
     work, info = job(args)
     st, _ = current_ledger(work, info)
     st["review"]["next_due"] = iso(today + dt.timedelta(days=args.days))
-    bump_gen(st, content=False)     # when the review is due does not change a round: the prepared one stays
-    st["updated"] = iso(today)
-    out = {"ok": True, "gen": st["gen"], "next_review_due": st["review"]["next_due"]}
-    publish_ledger(work, info, st, out)
-    print(json.dumps(published(work, info, out), ensure_ascii=False))
+    # when the review is due does not change a round: the prepared one stays
+    commit(work, info, lambda: {"ok": True, "gen": st["gen"], "next_review_due": st["review"]["next_due"]},
+           st, today, NEUTRAL)
 
 
 def changed_keys(before, after):
@@ -4446,22 +4514,22 @@ def cmd_settings(args):
                 if k not in CONTENT_NEUTRAL_PROFILE]
     if args.blueprint and st["blueprint"] != was["blueprint"]:
         affects.append("blueprint")
-    bump_gen(st, content=bool(affects))
-    st["updated"] = iso(today)
-    out = {"ok": True, "gen": st["gen"], "config": st["config"], "review": st["review"], **guideline_context(st),
-           "listening": listening_status(st)}
-    out["round"] = round_estimate(st)       # what to confirm a new mix with
-    if any(k in (prof_changes or {}) for k in ("journey", "aim", "journey_label", "aim_tags")):
-        out["profile"] = {k: st["profile"][k] for k in ("journey", "journey_label", "aim", "aim_tags")}
-    if labels_needed(st):
-        out["labels_needed"] = labels_needed(st)
-    out["prepared"] = ({"kept": False, "changed": affects,
-                        "why": "set aside: %s can change what a round contains, so the next round is "
-                               "planned and written at its start" % ", ".join(affects)}
-                       if affects else
-                       {"kept": True, "why": "kept: nothing that changes what a round contains was changed"})
-    publish_ledger(work, info, st, out, empty_prepared=bool(affects))
-    print(json.dumps(published(work, info, out), ensure_ascii=False))
+
+    def report():
+        out = {"ok": True, "gen": st["gen"], "config": st["config"], "review": st["review"],
+               **guideline_context(st), "listening": listening_status(st)}
+        out["round"] = round_estimate(st)       # what to confirm a new mix with
+        if any(k in (prof_changes or {}) for k in ("journey", "aim", "journey_label", "aim_tags")):
+            out["profile"] = {k: st["profile"][k] for k in ("journey", "journey_label", "aim", "aim_tags")}
+        if labels_needed(st):
+            out["labels_needed"] = labels_needed(st)
+        out["prepared"] = ({"kept": False, "changed": affects,
+                            "why": "set aside: %s can change what a round contains, so the next round is "
+                                   "planned and written at its start" % ", ".join(affects)}
+                           if affects else
+                           {"kept": True, "why": "kept: nothing that changes what a round contains was changed"})
+        return out
+    commit(work, info, report, st, today, ROUND if affects else NEUTRAL)
 
 
 def cmd_theme(args):
@@ -4488,13 +4556,10 @@ def cmd_theme(args):
     out = {"ok": True, "changed": res["changed"], "block": block, "was": res["was"],
            "say": ("New block: %s. Round 1 of %d." % (res["reason"], block["length"])) if res["changed"]
                   else "%s is already the theme. %s." % (block["name"], block["line"])}
-    if res["changed"]:
-        bump_gen(st)
-        st["updated"] = iso(today)
-        out["gen"] = st["gen"]
-        publish_ledger(work, info, st, out, empty_prepared=True)
-        published(work, info, out)
-    print(json.dumps(out, ensure_ascii=False))
+    if not res["changed"]:
+        print(json.dumps(out, ensure_ascii=False))
+        return
+    commit(work, info, lambda: dict(out, gen=st["gen"]), st, today, ROUND)
 
 
 # ---------------------------------------------------------------- a mapping onto a two-level blueprint (issue #81)
@@ -4841,11 +4906,7 @@ def cmd_apply_mapping(args):
         print(json.dumps(out, ensure_ascii=False))
         return
     lapse_positions(st, today)
-    bump_gen(st)
-    st["updated"] = iso(today)
-    out["gen"] = st["gen"]
-    publish_ledger(work, info, st, out, empty_prepared=True)
-    print(json.dumps(published(work, info, out), ensure_ascii=False))
+    commit(work, info, lambda: dict(out, gen=st["gen"]), st, today, ROUND)
 
 
 # ---------------------------------------------------------------- init, blueprint
@@ -4901,8 +4962,7 @@ def cmd_init(args):
     migrate_domains(st)
     iv = int(st["config"]["review_interval_days"])
     st["review"] = {"last": None, "next_due": iso(today + dt.timedelta(days=iv)), "period_start": iso(today)}
-    st["gen"] = 1
-    st.pop("content_gen", None)
+    st["gen"] = 0               # no write yet: the commit step counts this first one as generation 1
     if not info:
         info = {"store": None, "state": None, "version": None, "prefs": None}
     info.update({"session_id": st["next_id"], "started": iso(today)})
@@ -4912,15 +4972,22 @@ def cmd_init(args):
             if in_work(work, os.path.join(PUBLISH_DIR, rel)):
                 os.remove(os.path.join(work, PUBLISH_DIR, rel))
     save_json(info, os.path.join(work, WORK_FILE))
-    out = {"ok": True, "gen": st["gen"], "domains": list(st["blueprint"]), "topics": len(bp_live_topics(st))}
-    out["round"] = round_estimate(st)
-    if labels_needed(st):
-        out["labels_needed"] = labels_needed(st)
-    path = publish_ledger(work, info, st, out, empty_prepared=True, fresh_page=bool(args.start_over))
-    if not store_file(work, info, "index.html"):        # a new store: the page goes with the first ledger
-        publish_text(work, "index.html", read_text(PAGE_TEMPLATE))
-    out.update({"out": path, "bytes": os.path.getsize(path), "work": os.path.abspath(work)})
-    print(json.dumps(published(work, info, out), ensure_ascii=False))
+
+    def report():
+        out = {"ok": True, "gen": st["gen"], "domains": list(st["blueprint"]), "topics": len(bp_live_topics(st))}
+        out["round"] = round_estimate(st)
+        if labels_needed(st):
+            out["labels_needed"] = labels_needed(st)
+        return out
+
+    def then(out, path):
+        if not store_file(work, info, "index.html"):        # a new store: the page goes with the first ledger
+            publish_text(work, "index.html", read_text(PAGE_TEMPLATE))
+        out = written(out, path)
+        out["work"] = os.path.abspath(work)
+        return out
+    # the first write of the ledger: generation 1, no prepared round
+    commit(work, info, report, st, today, ROUND, fresh_page=bool(args.start_over), then=then)
 
 
 def cmd_blueprint_md(args):
@@ -5258,12 +5325,6 @@ def status_block(st):
     return out
 
 
-def plan_options_given(args):
-    return any((getattr(args, "mcqs", None) is not None, getattr(args, "focused", None) is not None,
-                args.no_case, args.domain, args.no_new, args.allow_repeat, args.no_drill, args.force_drill,
-                args.seed is not None))
-
-
 def cmd_open(args):
     """Set up the work folder for one job from the local copy of the learner's store. Prints
     neutral status and counts only (never topics)."""
@@ -5312,8 +5373,7 @@ def cmd_start(args):
     today = today or learner_today(st["profile"], at, offset) or job_date(work) or dt.date.today()
     refuse_newer(st)                # a round this engine could not save is not begun
     if not args.store and note_utc_offset(st, offset):
-        st["updated"] = iso(today)
-        path = publish_ledger(work, info, st, extra)
+        path, _ = write_ledger(work, info, st, today, NEUTRAL, extra)
         extra["utc_offset_recorded"] = offset
     prefs_warn = []
     prefs_changes = apply_prefs(st, info.get("prefs"), prefs_warn)
@@ -5323,9 +5383,7 @@ def cmd_start(args):
         # a paragraph written on the page changes what the author pitches to: it is kept in the
         # ledger at once (the labels the assistant derives next are set on it), and the round
         # prepared for the old words is set aside
-        bump_gen(st)
-        st["updated"] = iso(today)
-        path = publish_ledger(work, info, st, kept, empty_prepared=True)
+        path, _ = write_ledger(work, info, st, today, ROUND, kept)
     status = status_dict(st, path, today)
     status.update(extra)
     status.update(kept)
@@ -5798,20 +5856,6 @@ def guideline_recheck(st, doc):
     return out
 
 
-def write_guidelines(work, info, st, doc, today, out):
-    """The records document into the publish set, a generation on, and the ledger with it (its
-    `guidelines_gen`): a content-neutral write, so the prepared round stays."""
-    refuse_newer(st, work)          # before any file goes into the publish set
-    doc["gen"] = max(int(doc.get("gen") or 0), int(st.get("guidelines_gen") or 0)) + 1
-    doc["updated"] = iso(today)
-    doc["region"] = guideline_context(st)["guideline_region"]
-    publish_json(work, GUIDELINES_PATH, doc)
-    st["guidelines_gen"] = doc["gen"]
-    bump_gen(st, content=False)
-    st["updated"] = iso(today)
-    publish_ledger(work, info, st, out)
-
-
 def guideline_summary(st, doc, how, today):
     """What the records say of the blueprint's tags now (counts; the tags changed, superseded or
     uncertain by name; the teaching to re-check): for the progress review and `tag-checks`."""
@@ -5924,9 +5968,7 @@ def cmd_tag_checks(args):
             die("no results file among %s" % ", ".join(args.results))
         counts = file_tag_results(st, doc, results, today)
         out.update({"filed": len(results), "unreadable": bad, "files_missing": missing, "by_status": counts})
-    write_guidelines(work, info, st, doc, today, out)
-    out["gen"] = st["gen"]
-    print(json.dumps(published(work, info, out), ensure_ascii=False))
+    commit(work, info, out, st, today, NEUTRAL, guidelines=doc, then=lambda out, _: dict(out, gen=st["gen"]))
 
 
 def cmd_prepare(args):
@@ -5959,13 +6001,9 @@ def cmd_prepare(args):
         # is only planned with; `start` and `save` keep that.)
         fresh, _ = current_ledger(work, info)
         apply_paragraphs(fresh, info.get("prefs") or {}, [])
-        bump_gen(fresh)
-        fresh["updated"] = iso(today)
-        publish_ledger(work, info, fresh, kept, empty_prepared=True)
+        write_ledger(work, info, fresh, today, ROUND, kept)
         bump_gen(st)            # the ledger planned with is that one, plus a mix still waiting
-    ns = argparse.Namespace(focused=None, mcqs=None, no_case=False, domain=None, no_new=False,
-                            allow_repeat=False, no_drill=False, force_drill=False, seed=None)
-    plan = plan_round(st, ns, today + dt.timedelta(days=1))
+    plan = plan_round(st, None, today + dt.timedelta(days=1))        # no one-off options: the round as set
     folder = os.path.join(work, NEXT_DIR)
     os.makedirs(folder, exist_ok=True)
     out = os.path.join(folder, PLAN_FILE)
@@ -6220,17 +6258,21 @@ def cmd_finish_prepare(args):
                     "next": "%s, then run this command again with --revised" % "; then ".join(steps)})
         print(json.dumps(out, ensure_ascii=False))
         return
+    doc = None
     if results:
         doc, how = load_guidelines(work, info, st)
         if doc is None:
             tagged["filed"], tagged["not_filed"] = 0, NOT_READ
         else:
             file_tag_results(st, doc, results, today_from(args))
-            write_guidelines(work, info, st, doc, today_from(args), out)
             tagged["filed"] = len(results)
-    publish_json(work, PREPARED_PATH, prepared_doc(st, plan, files, has))
-    out.update({"gen": content_gen(st), "has": has, "stashed": True})
-    print(json.dumps(published(work, info, out), ensure_ascii=False))
+
+    def stashed(out, _):
+        publish_json(work, PREPARED_PATH, prepared_doc(st, plan, files, has))
+        out.update({"gen": content_gen(st), "has": has, "stashed": True})
+        return out
+    # the guideline records filed with the round: a write that cannot alter it
+    commit(work, info, out, st, today_from(args), None if doc is None else NEUTRAL, guidelines=doc, then=stashed)
 
 
 def cmd_present(args):
@@ -8021,6 +8063,87 @@ def publish_ledger(work, info, st, out, session=None, review=None, empty_prepare
     return path
 
 
+# ---------------------------------------------------------------- the commit step (issue #85)
+#
+# A command that writes the ledger changes it in memory and says what kind of change it was: one
+# that can alter what a round contains (ROUND) or one that cannot (NEUTRAL: CONTENT_NEUTRAL_*, the
+# review's date, a position note, the guideline records). From that alone the commit step counts
+# the generation (content_gen moves only with ROUND), dates the ledger, compacts it (`log`: the
+# change touched the log), puts it into the publish set with its page file and, for ROUND, an
+# emptied prepared round; then the step's token and journal entry, the publish set and the output.
+
+NEUTRAL, ROUND = "neutral", "round"
+
+
+def count_write(st, today, alters, log=False):
+    """The ledger's side of a write: compacted when the change touched the log (`log`), one
+    generation on (the generation a prepared round is tied to only for a ROUND change), dated
+    `today`. Returns the new generation."""
+    if log:
+        compact(st)
+    bump_gen(st, content=alters != NEUTRAL)
+    st["updated"] = iso(today)
+    return st["gen"]
+
+
+def write_ledger(work, info, st, today, alters, out=None, log=False, session=None, review=None,
+                 keep_prepared=False, fresh_page=False, counted=False):
+    """Count the write (count_write) and put the ledger into the publish set with what goes with it
+    (publish_ledger): the page file, a new or changed session or review document, an emptied
+    prepared round for a ROUND change (`keep_prepared`: `close` only, see cmd_close). `out`: what
+    the command reports, or a function making it once the generation is counted (called before
+    any file goes into the publish set); publish_ledger notes the page's state in it. `counted`:
+    the write was counted already (record_round and reflect_round count it, since what they report
+    carries the generation). Returns (the ledger's local path, out)."""
+    if not counted:
+        count_write(st, today, alters, log)
+    out = out() if callable(out) else ({} if out is None else out)
+    path = publish_ledger(work, info, st, out, session=session, review=review,
+                          empty_prepared=alters == ROUND and not keep_prepared, fresh_page=fresh_page)
+    return path, out
+
+
+def put_guidelines(work, st, doc, today):
+    """The guideline check records into the publish set, a generation on, the ledger noting that
+    generation (`guidelines_gen`); the ledger is written with them, as a NEUTRAL change."""
+    refuse_newer(st, work)          # before any file goes into the publish set
+    doc["gen"] = max(int(doc.get("gen") or 0), int(st.get("guidelines_gen") or 0)) + 1
+    doc["updated"] = iso(today)
+    doc["region"] = guideline_context(st)["guideline_region"]
+    publish_json(work, GUIDELINES_PATH, doc)
+    st["guidelines_gen"] = doc["gen"]
+
+
+def written(out, path):
+    """A `then` for commit: the ledger's local path and size added to what the command reports."""
+    out.update({"out": path, "bytes": os.path.getsize(path)})
+    return out
+
+
+def commit(work, info, out, st=None, today=None, alters=None, log=False, session=None, review=None,
+           keep_prepared=False, counted=False, fresh_page=False, guidelines=None, files=(), then=None, indent=None,
+           ascii=False):
+    """The one commit step of a command that writes the publish set, and its output: the guideline
+    records (`guidelines`), the ledger `st` changed in the way `alters` says (write_ledger; None: the
+    ledger is not changed, and a `review` document goes in with the page file alone), the documents
+    in `files` ((store path, object)), then `then(out, ledger path)` for what the command reports
+    about the written files, then the step's token and journal entry and the publish set
+    (published), printed (`indent`, `ascii`: as each command has always printed)."""
+    path = None
+    if guidelines is not None:
+        put_guidelines(work, st, guidelines, today)
+    if alters is not None:
+        path, out = write_ledger(work, info, st, today, alters, out, log=log, session=session, review=review,
+                                 keep_prepared=keep_prepared, fresh_page=fresh_page, counted=counted)
+    elif review is not None:
+        publish_page(work, info, st, review=review)
+    for rel, obj in files:
+        publish_json(work, rel, obj)
+    if then is not None:
+        out = then(out, path)
+    print(json.dumps(published(work, info, out), indent=indent, ensure_ascii=ascii))
+
+
 def set_aside(work, names):
     """Move the named files and folders of the work folder into earlier/<n>/; returns that
     folder, or None when none of them is there."""
@@ -8663,8 +8786,7 @@ def open_work(work, store, version, prefs, today=None, reread=False, at=None, of
             "offset": offset, "steps": old.get("steps") or [], "job": old.get("job") or new_job_id()}
     save_json(info, os.path.join(work, WORK_FILE))
     if note_utc_offset(st, offset):
-        st["updated"] = iso(today)
-        publish_ledger(work, info, st, extra)
+        write_ledger(work, info, st, today, NEUTRAL, extra)
         extra["utc_offset_recorded"] = offset
     publish_set(work, info)
     return info, st, extra
@@ -9610,29 +9732,30 @@ def cmd_save(args):
         doc["listening"] = listening
     if adapted is not None:
         doc["prepared_feedback"] = adapted      # the log only: never in the feedback, never in the ledger
-    rec = {}
-    path = publish_ledger(work, info, st, rec, session=doc, empty_prepared=True)
-    rec = report(path, os.path.getsize(path), dict(res, **rec))
-    with open(os.path.join(work, PART_A_FILE), "w", encoding="utf-8") as fh:
-        fh.write(md)
-    if prefs_changes:
-        rec["page_settings_applied"] = prefs_changes
-    if keys:
-        rec["keys"] = keys
-    if reading is not None:
-        rec["reading"] = len(reading)
-    if listening is not None:
-        rec["listening"] = len(listening)
-    if adapted is not None:
-        rec["prepared_feedback"] = {k: (v if isinstance(v, int) else len(v)) for k, v in adapted.items()}
-    save_json(rnd, os.path.join(work, RECORD_FILE))     # the round record as recorded, beside round.json
-    if times.get("session") == sid:
-        save_json(times, os.path.join(work, TIMES_FILE))
-    if block_end(st):
-        rec["next_block"] = block_end(st)       # tell the learner its `line` in the closing message
-    rec["warnings"] = list(rec.get("warnings") or []) + warnings
-    rec["transcript_chars"] = len(md)
-    print(json.dumps(published(work, info, rec), indent=1, ensure_ascii=False))
+
+    def then(rec, path):
+        rec = report(path, os.path.getsize(path), dict(res, **rec))
+        with open(os.path.join(work, PART_A_FILE), "w", encoding="utf-8") as fh:
+            fh.write(md)
+        if prefs_changes:
+            rec["page_settings_applied"] = prefs_changes
+        if keys:
+            rec["keys"] = keys
+        if reading is not None:
+            rec["reading"] = len(reading)
+        if listening is not None:
+            rec["listening"] = len(listening)
+        if adapted is not None:
+            rec["prepared_feedback"] = {k: (v if isinstance(v, int) else len(v)) for k, v in adapted.items()}
+        save_json(rnd, os.path.join(work, RECORD_FILE))     # the round record as recorded, beside round.json
+        if times.get("session") == sid:
+            save_json(times, os.path.join(work, TIMES_FILE))
+        if block_end(st):
+            rec["next_block"] = block_end(st)       # tell the learner its `line` in the closing message
+        rec["warnings"] = list(rec.get("warnings") or []) + warnings
+        rec["transcript_chars"] = len(md)
+        return rec
+    commit(work, info, {}, st, today, ROUND, counted=True, session=doc, then=then, indent=1)
 
 
 def cmd_close(args):
@@ -9716,20 +9839,23 @@ def cmd_close(args):
     hint = time_hint(st)
     if hint:
         res["time_hint"] = hint["text"]             # one line of the closing message
-    ref = {}
-    path = publish_ledger(work, info, st, ref, session=doc)
-    page_warn = ref.pop("warnings", [])
-    ref = report(path, os.path.getsize(path), dict(res, **ref))
-    ref["warnings"] = list(ref.get("warnings") or []) + page_warn
-    save_json({"session": sid, "round": base, "gen": [gen_before, st["gen"]],
-               "entry": next(s for s in st["sessions"] if s.get("id") == sid)}, os.path.join(work, CLOSE_FROM_FILE))
-    info["closed"] = sid
-    save_json(info, os.path.join(work, WORK_FILE))
-    if times.get("session") == sid:
-        save_json(times, os.path.join(work, TIMES_FILE))
-    if block_end(st):
-        ref["next_block"] = block_end(st)       # tell the learner its `line` in the closing message
-    print(json.dumps(published(work, info, ref), indent=1, ensure_ascii=False))
+
+    def then(ref, path):
+        page_warn = ref.pop("warnings", [])
+        ref = report(path, os.path.getsize(path), dict(res, **ref))
+        ref["warnings"] = list(ref.get("warnings") or []) + page_warn
+        save_json({"session": sid, "round": base, "gen": [gen_before, st["gen"]],
+                   "entry": next(s for s in st["sessions"] if s.get("id") == sid)}, os.path.join(work, CLOSE_FROM_FILE))
+        info["closed"] = sid
+        save_json(info, os.path.join(work, WORK_FILE))
+        if times.get("session") == sid:
+            save_json(times, os.path.join(work, TIMES_FILE))
+        if block_end(st):
+            ref["next_block"] = block_end(st)       # tell the learner its `line` in the closing message
+        return ref
+    # the prepared round is left as it is: the reflection moves content_gen, so a round prepared
+    # before it no longer fits (prepared_fits), and the next one is prepared after this close
+    commit(work, info, {}, st, today, ROUND, counted=True, session=doc, keep_prepared=True, then=then, indent=1)
 
 
 def same_content(a, b):
@@ -9788,8 +9914,7 @@ def cmd_testing_note(args):
     ver = in_work(work, VERIFY_FILE)
     note = {"session": sid, "date": iso(today), "skill_version": SKILL_VERSION,
             "feedback": fb, "store_check": load_json(ver) if ver else None}
-    publish_json(work, "data/testing/%s.json" % sid, note)
-    print(json.dumps(published(work, info, {"ok": True, "session": sid}), indent=1))
+    commit(work, info, {"ok": True, "session": sid}, files=[("data/testing/%s.json" % sid, note)], indent=1, ascii=True)
 
 
 def cmd_addendum(args):
@@ -9808,8 +9933,8 @@ def cmd_addendum(args):
     except OSError:
         die("file not found: %s" % args.md)
     doc["addendum"] = ((doc.get("addendum") or "").rstrip() + "\n\n" + add).strip() + "\n"
-    publish_json(work, session_path(doc.get("id") or sid), doc)
-    print(json.dumps(published(work, info, {"ok": True, "session": sid, "chars": len(doc["addendum"])})))
+    commit(work, info, {"ok": True, "session": sid, "chars": len(doc["addendum"])},
+           files=[(session_path(doc.get("id") or sid), doc)], ascii=True)
 
 
 def layout_file(root, rel, obj):
@@ -9886,14 +10011,10 @@ def cmd_review_doc(args):
     date = args.date or iso(today)
     doc = {"date": date, "title": args.title or "CME progress review — %s" % date,
            "headline": args.headline, "report": text}
-    publish_page(work, info, st, review=doc)
-    print(json.dumps(published(work, info, {"ok": True, "doc": "reviews/%s" % date}), ensure_ascii=False))
+    commit(work, info, {"ok": True, "doc": "reviews/%s" % date}, st, review=doc)
 
 
 # ---------------------------------------------------------------- main
-
-PLAN_FLAGS = ("--allow-repeat", "--no-drill", "--force-drill", "--no-new", "--no-case")
-
 
 def build_parser():
     """The command line: every command with its options (the table of them: COMMANDS)."""
@@ -9913,10 +10034,13 @@ def build_parser():
     s.add_argument("--prefs"); s.add_argument("--reread", action="store_true")
     s = command("start", cmd_start); s.add_argument("--store"); s.add_argument("--version"); s.add_argument("--prefs")
     s.add_argument("--utc-offset")
-    s.add_argument("--focused", type=int); s.add_argument("--mcqs", type=int); s.add_argument("--domain")
-    s.add_argument("--seed", type=int); s.add_argument("--no-prepared", action="store_true")
-    for flag in PLAN_FLAGS:
-        s.add_argument(flag, action="store_true")
+    for name, _, kind in PLAN_OPTIONS:          # the round's one-off options, then --no-prepared, then the flags
+        if kind is not bool:
+            s.add_argument("--" + name.replace("_", "-"), **({"type": int} if kind is int else {}))
+    s.add_argument("--no-prepared", action="store_true")
+    for name, _, kind in PLAN_OPTIONS:
+        if kind is bool:
+            s.add_argument("--" + name.replace("_", "-"), action="store_true")
     s = command("answer", cmd_answer); s.add_argument("--part", required=True, choices=ANSWER_PARTS)
     s.add_argument("--file"); s.add_argument("--text")
     s = command("sent", cmd_sent); s.add_argument("--part", required=True, choices=SENT_PARTS)
