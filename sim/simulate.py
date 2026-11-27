@@ -9,14 +9,15 @@ session relays between them (see sim/README.md). This script is everything that 
 
   init     make a run folder: a seeded folder store, a scratch folder, the two agents' briefs
   send     an agent sends a message to the other side; the time is recorded
-  next     the session asks what to hand to the other agent, and whether to stop
+  next     the session asks what to hand to the other agent, and whether to stop; it records the
+           tokens the agent's turn used, when the session passes them (--tokens, --helper-tokens)
   check    the automatic checks: blinding, saved files, log complete and verbatim, the writing
            standards (abbreviations, time anchors, the feedback's glossary line), the Listening
            section and its picks, and what the persona is expected to produce (a settled
            dispute; a round saved without its case)
   quality  the form a separate scorer agent fills in: clinical quality per item and per feedback
-  report   checks + waiting time per step + the quality scores (logged only, never a pass bar),
-           written to sim/reports/ for comparison with later runs
+  report   checks + waiting time and tokens per step + the quality scores (logged only, never a
+           pass bar), written to sim/reports/ for comparison with later runs
   history  one line per saved report, to compare runs over time
 
 It talks to cme.py through its command line, as the assistant does. The one exception is the
@@ -312,10 +313,40 @@ def round_closed(run):
     return st.get("unreflected") != sessions[-1].get("id")
 
 
+def helper_tokens(pairs):
+    """--helper-tokens role=N, repeatable: the tokens the examiner's own helpers used (author,
+    checker), as far as its harness shows them. {role: N}; a role given twice is added up."""
+    out = {}
+    for pair in pairs or []:
+        role, sep, n = str(pair).partition("=")
+        role = role.strip()
+        if not sep or not re.match(r"^[a-z][a-z0-9_-]*$", role) or not re.match(r"^\s*\d+\s*$", n):
+            raise SimError("--helper-tokens takes role=N (e.g. author=12000), not %r" % pair)
+        out[role] = out.get(role, 0) + int(n)
+    return out
+
+
+def turn_event(run, role, tokens=None, helpers=None, ts=None):
+    """The end of an agent's turn, with the tokens it used when the session passed them. A figure
+    not passed is simply absent: the report shows it as not recorded."""
+    if tokens is not None and tokens < 0:
+        raise SimError("--tokens must be a whole number of tokens, 0 or more")
+    ev = {"mark": "turn_end", "role": role, "ts": time.time() if ts is None else ts}
+    if tokens is not None:
+        ev["tokens"] = tokens
+    if helpers:
+        ev["helpers"] = helpers
+    append_event(run, ev)
+    return ev
+
+
 def cmd_next(args):
-    """After an agent's turn: record its end, and say what to hand to the other agent."""
+    """After an agent's turn: record its end (and its tokens), and say what to hand to the other agent."""
+    helpers = helper_tokens(args.helper_tokens)
+    if helpers and args.after != "examiner":
+        raise SimError("--helper-tokens is for the examiner's helpers (--after examiner)")
     events = load_events(args.run)
-    append_event(args.run, {"mark": "turn_end", "role": args.after, "ts": time.time() if args.ts is None else args.ts})
+    turn_event(args.run, args.after, args.tokens, helpers, args.ts)
     msgs = [e for e in events if "n" in e]
     new = []
     for e in reversed(msgs):
@@ -333,7 +364,7 @@ def cmd_next(args):
     elif learner_count > MAX_LEARNER_MESSAGES:
         stop, why = True, "more than %d learner messages: the round is not converging" % MAX_LEARNER_MESSAGES
     print(json.dumps({"ok": True, "deliver_to": other, "files": new, "round_closed": closed,
-                      "stop": stop, "why": why}, indent=1))
+                      "stop": stop, "why": why, "tokens_recorded": args.tokens is not None}, indent=1))
 
 
 # ---------------------------------------------------------------- what the round was
@@ -791,17 +822,105 @@ def timings(rnd):
             "final": "the final answers", "reflection": "the reflection"}.get(rnd.part_of.get(m["n"]), "learner message %d" % m["n"])
         # the learner's own time runs from when the examiner's turn ended (it is only then handed on)
         handed = [e["ts"] for e in events if e.get("role") == "examiner" and e["ts"] <= m["ts"]]
+        # the tokens the examiner's turns of this step used, its helpers included, where recorded
+        spent = [turn_tokens(e) for e in events if e.get("mark") == "turn_end" and e.get("role") == "examiner"
+                 and m["ts"] <= e["ts"] <= until]
+        spent = [t for t in spent if t is not None]
         steps.append({
             "step": len(steps) + 1, "label": label, "learner_message": m["n"],
             "wait_s": round(replies[0]["ts"] - m["ts"], 1) if replies else None,
             "turn_s": round(ends[0] - m["ts"], 1) if ends else None,
             "examiner_messages": len(replies), "examiner_chars": sum(r["chars"] for r in replies),
             "learner_s": round(m["ts"] - max(handed), 1) if handed else None,
+            "tokens": sum(spent) if spent else None,
         })
     waits = [s["wait_s"] for s in steps if s["wait_s"] is not None]
     return {"steps": steps, "total_wait_s": round(sum(waits), 1) if waits else None,
             "longest_wait_s": max(waits) if waits else None,
             "elapsed_s": round(msgs[-1]["ts"] - msgs[0]["ts"], 1) if len(msgs) > 1 else None}
+
+
+# ---------------------------------------------------------------- tokens per role and per turn
+
+# Who a learner pays for: the examiner and the helpers it starts. The learner persona and the
+# quality scorer exist only in the simulation.
+LEARNER_PAYS_FOR = ("examiner",)
+
+
+def turn_tokens(ev):
+    """The tokens of one examiner turn with its helpers', or None when none were recorded."""
+    figures = [ev["tokens"]] if isinstance(ev.get("tokens"), int) else []
+    figures += [n for n in (ev.get("helpers") or {}).values() if isinstance(n, int)]
+    return sum(figures) if figures else None
+
+
+def tokens(run):
+    """Tokens per turn and per role, as the session passed them to `next` and `quality`
+    (--tokens, --helper-tokens). A turn without a figure is counted and shown as not recorded;
+    nothing here ever fails a run."""
+    turns, seen = [], {}
+    for ev in load_events(run):
+        if ev.get("mark") != "turn_end" or not ev.get("role"):
+            continue
+        role = ev["role"]
+        seen[role] = seen.get(role, 0) + 1
+        tok = ev.get("tokens") if isinstance(ev.get("tokens"), int) else None
+        turns.append({"role": role, "turn": seen[role], "tokens": tok,
+                      "helpers": {k: v for k, v in (ev.get("helpers") or {}).items() if isinstance(v, int)}})
+    by_role = {}
+    for t in turns:
+        r = by_role.setdefault(t["role"], {"turns": 0, "recorded": 0, "tokens": None})
+        r["turns"] += 1
+        if t["tokens"] is not None:
+            r["recorded"] += 1
+            r["tokens"] = (r["tokens"] or 0) + t["tokens"]
+        for h, n in t["helpers"].items():          # an examiner's helper: a role of its own, under the examiner
+            hr = by_role.setdefault(h, {"turns": 0, "recorded": 0, "tokens": None, "helper_of": t["role"]})
+            hr["turns"] += 1
+            hr["recorded"] += 1
+            hr["tokens"] = (hr["tokens"] or 0) + n
+    recorded = [r["tokens"] for r in by_role.values() if r["tokens"] is not None]
+    pays = [r for name, r in by_role.items() if name in LEARNER_PAYS_FOR or r.get("helper_of") in LEARNER_PAYS_FOR]
+    paid = [r["tokens"] for r in pays if r["tokens"] is not None]
+    examiner = by_role.get("examiner") or {"turns": 0, "recorded": 0}
+    return {"turns": turns, "by_role": by_role,
+            "total": sum(recorded) if recorded else None,
+            "cost_to_learner": sum(paid) if paid else None,
+            "examiner_turns": examiner["turns"], "examiner_turns_recorded": examiner["recorded"],
+            "complete": bool(examiner["turns"]) and examiner["recorded"] == examiner["turns"]}
+
+
+def count(n):
+    return "not recorded" if n is None else "{:,}".format(n)
+
+
+def cost_line(tk):
+    """The cost to a learner of the round: the examiner and its helpers, as far as recorded."""
+    if not tk or tk.get("cost_to_learner") is None:
+        return "not recorded"
+    line = "%s tokens" % count(tk["cost_to_learner"])
+    if not tk.get("complete"):
+        line = "at least %s (%d of %d examiner turns recorded)" % (line, tk["examiner_turns_recorded"], tk["examiner_turns"])
+    return line
+
+
+def tokens_markdown(tk):
+    lines = ["## Tokens", "",
+             "As the relay saw each agent's usage when its turn returned (`next --tokens`, `quality --tokens`); "
+             "the examiner's helpers when it reported them (`--helper-tokens`). Cost to a learner: the examiner "
+             "and its helpers; the learner persona and the scorer exist only in the simulation.", ""]
+    if not tk or not tk.get("turns"):
+        return lines + ["No turns recorded.", ""]
+    lines += ["| Role | Turns | Recorded | Tokens |", "|---|---|---|---|"]
+    for role, r in tk["by_role"].items():
+        lines.append("| %s%s | %d | %d | %s |" % (role, " (helper of the %s)" % r["helper_of"] if r.get("helper_of") else "",
+                                                 r["turns"], r["recorded"], count(r["tokens"])))
+    lines += ["", "Run total %s; cost to a learner %s." % (count(tk["total"]), cost_line(tk)), "",
+              "| Role | Turn | Tokens | Helpers |", "|---|---|---|---|"]
+    for t in tk["turns"]:
+        lines.append("| %s | %d | %s | %s |" % (t["role"], t["turn"], count(t["tokens"]),
+                                               ", ".join("%s %s" % (h, count(n)) for h, n in sorted(t["helpers"].items())) or "–"))
+    return lines + [""]
 
 
 # ---------------------------------------------------------------- what a persona is expected to produce
@@ -1113,6 +1232,8 @@ def cmd_quality(args):
     rnd = Round(args.run)
     if not rnd.items:
         raise SimError("no round in %s to score (no round.json, no saved round)" % args.run)
+    if args.tokens is not None:           # the scorer's turn that just returned
+        turn_event(args.run, "scorer", args.tokens)
     path = rp(args.run, "quality.json")
     prompt = rp(args.run, "quality_prompt.md")
     if not os.path.exists(path) or args.reset:
@@ -1151,9 +1272,10 @@ def report_markdown(rep):
         "| Round | %s: %s |" % (rep["round"].get("session") or "not saved", rep["round"].get("shape") or "unknown"),
         "| Round score (examiner's grading) | %s |" % (rep["round"].get("score") if rep["round"].get("score") is not None else "–"),
         "| Ledger settings | %s |" % ", ".join("%s=%s" % (k, json.dumps(v)) for k, v in sorted((rep.get("config") or {}).items())
-                                               if k in ("helpers", "prepare_ahead", "mcqs", "focused", "case", "case_format", "item_order")),
+                                               if k in ("usage", "helpers", "prepare_ahead", "mcqs", "focused", "case", "case_format", "item_order")),
         "| Messages | %d examiner, %d learner |" % (rep["messages"]["examiner"], rep["messages"]["learner"]),
         "| Clinical quality (logged only) | %s |" % quality_line(rep.get("quality")),
+        "| Cost to a learner (examiner + its helpers) | %s |" % cost_line(rep.get("tokens")),
         "",
         "## Automatic checks",
         "",
@@ -1228,11 +1350,15 @@ def report_markdown(rep):
               "Wait: from the learner's message to the examiner's first message after it (includes the relay). "
               "Turn: until the examiner's turn ended, behind-the-scenes work included. Learner: the persona's own time.",
               "",
-              "| Step | | Wait (s) | Turn (s) | Examiner messages | Characters | Learner (s) |", "|---|---|---|---|---|---|---|"]
+              "| Step | | Wait (s) | Turn (s) | Examiner messages | Characters | Learner (s) | Examiner tokens |",
+              "|---|---|---|---|---|---|---|---|"]
     for s in t["steps"]:
-        lines.append("| %d | %s | %s | %s | %d | %d | %s |" % (s["step"], s["label"], secs(s["wait_s"]), secs(s["turn_s"]),
-                                                             s["examiner_messages"], s["examiner_chars"], secs(s["learner_s"])))
+        lines.append("| %d | %s | %s | %s | %d | %d | %s | %s |" % (s["step"], s["label"], secs(s["wait_s"]), secs(s["turn_s"]),
+                                                                  s["examiner_messages"], s["examiner_chars"], secs(s["learner_s"]),
+                                                                  count(s.get("tokens"))))
     lines += ["", "Total wait %s s; longest wait %s s; whole run %s s." % (secs(t["total_wait_s"]), secs(t["longest_wait_s"]), secs(t["elapsed_s"])), ""]
+    if "tokens" in rep:                   # reports made before issue #94 have no token count
+        lines += tokens_markdown(rep["tokens"])
     q = rep.get("quality") or {}
     if q.get("items") or q.get("feedback") or q.get("problems"):
         cell = lambda v: str(v if v is not None else "").replace("|", "/")
@@ -1305,7 +1431,7 @@ def cmd_report(args):
                   "score": (rnd.doc or {}).get("score"), "confident_misses": confident_misses(rnd.items),
                   "continued_from_earlier_run": bool(rnd.meta.get("continued_from"))},
         "messages": {r: sum(1 for m in rnd.messages if m["role"] == r) for r in ROLES},
-        "checks": res["checks"], "timings": timings(rnd),
+        "checks": res["checks"], "timings": timings(rnd), "tokens": tokens(args.run),
         "quality": quality,
         "note": args.note,
     }
@@ -1321,6 +1447,7 @@ def cmd_report(args):
                       "data": os.path.join(out_dir, name + ".json"),
                       "checks": {k2: v["ok"] for k2, v in res["checks"].items()},
                       "longest_wait_s": rep["timings"]["longest_wait_s"],
+                      "cost_to_learner": rep["tokens"]["cost_to_learner"],
                       "quality": {k: quality.get(k) for k in ("item_mean", "feedback_mean", "score")} if quality else None},
                      indent=1))
     return 0
@@ -1347,17 +1474,19 @@ def cmd_history(args):
                      "commit": r.get("commit"), "checks": "pass" if not failed else "FAIL: " + ", ".join(failed),
                      "round_score": (r.get("round") or {}).get("score"), "quality_items": q.get("item_mean"),
                      "quality_feedback": q.get("feedback_mean"), "quality_overall": q.get("score"),
-                     "longest_wait_s": (r.get("timings") or {}).get("longest_wait_s")})
+                     "longest_wait_s": (r.get("timings") or {}).get("longest_wait_s"),
+                     "cost_to_learner": (r.get("tokens") or {}).get("cost_to_learner")})
     if args.json:
         print(json.dumps(rows, indent=1))
         return 0
     show = lambda v: "–" if v is None else str(v)
-    print("| Report | Persona | Version / commit | Checks | Round score | Quality: items | feedback | overall | Longest wait (s) |")
-    print("|---|---|---|---|---|---|---|---|---|")
+    print("| Report | Persona | Version / commit | Checks | Round score | Quality: items | feedback | overall | Longest wait (s) | Cost to a learner (tokens) |")
+    print("|---|---|---|---|---|---|---|---|---|---|")
     for r in rows:
-        print("| %s | %s | %s / %s | %s | %s | %s | %s | %s | %s |" % (
+        print("| %s | %s | %s / %s | %s | %s | %s | %s | %s | %s | %s |" % (
             r["report"], show(r["persona"]), show(r["skill_version"]), show(r["commit"]), r["checks"], show(r["round_score"]),
-            show(r["quality_items"]), show(r["quality_feedback"]), show(r["quality_overall"]), show(r["longest_wait_s"])))
+            show(r["quality_items"]), show(r["quality_feedback"]), show(r["quality_overall"]), show(r["longest_wait_s"]),
+            show(r["cost_to_learner"])))
     return 0
 
 
@@ -1379,11 +1508,15 @@ def main(argv=None):
     s.set_defaults(fn=cmd_send)
     s = sub.add_parser("next", help="after an agent's turn: what to hand to the other agent")
     s.add_argument("--run", required=True); s.add_argument("--after", choices=ROLES, required=True)
+    s.add_argument("--tokens", type=int, help="tokens the agent's turn that just returned used (its usage figure)")
+    s.add_argument("--helper-tokens", action="append", metavar="ROLE=N",
+                   help="examiner only, repeatable: tokens its own helpers used (e.g. author=12000), if it reported them")
     s.add_argument("--ts", type=float, help=argparse.SUPPRESS); s.set_defaults(fn=cmd_next)
     s = sub.add_parser("check", help="run the automatic checks (exit 1 if any fails)")
     s.add_argument("--run", required=True); s.set_defaults(fn=cmd_check)
     s = sub.add_parser("quality", help="write the quality scorer's form and brief; run again to check the filled form")
     s.add_argument("--run", required=True); s.add_argument("--reset", action="store_true", help="write a fresh form")
+    s.add_argument("--tokens", type=int, help="tokens the scorer's turn that just returned used (pass it after the scorer)")
     s.set_defaults(fn=cmd_quality)
     s = sub.add_parser("history", help="one line per saved report: checks and quality scores over time")
     s.add_argument("--reports"); s.add_argument("--persona"); s.add_argument("--json", action="store_true")

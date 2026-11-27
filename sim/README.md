@@ -43,18 +43,25 @@ starting a fresh examiner each turn.
    Options: `--prepare-ahead` (the examiner also prepares the next round after the close; much
    longer), `--from-run <earlier run folder>` (a second round on the same store),
    `--skill <folder>` (test an installed copy instead of `plugins/clinical-cme/skills/clinical-cme/`),
-   `--config '<json>'` (other ledger settings, e.g. `{"mcqs": 2, "focused": 1}`). `stops-halfway`
-   needs a round with short questions and a case, which the default settings give.
+   `--config '<json>'` (other ledger settings, e.g. `{"mcqs": 2, "focused": 1}`; any key is passed
+   to the ledger as given, so a preset such as `{"usage": "economy"}` (issue #93) runs once the
+   skill knows it). `stops-halfway` needs a round with short questions and a case, which the
+   default settings give.
 2. **Start the examiner agent**, in the foreground, with the prompt
    "Read `<examiner_prompt.md path>` and follow it." and a neutral description ("Run the
    round"). Use the model the round is to be tested with, and note its name for the report.
-3. When it returns, run `python3 sim/simulate.py next --run <run> --after examiner`. It prints
-   `files` (the examiner's new messages), `deliver_to` and `stop`.
+3. When it returns, run `python3 sim/simulate.py next --run <run> --after examiner --tokens <N>`,
+   where N is the token usage your tool reported for the turn that just returned (its
+   `subagent_tokens` or usage figure; leave `--tokens` out if it showed none). If the examiner
+   reported its own helpers' usage, add `--helper-tokens author=<N>` (and `checker=<N>`, …,
+   repeatable); never ask it to. It prints `files` (the examiner's new messages), `deliver_to`
+   and `stop`.
    - `stop` true → go to step 6.
 4. **Start the learner agent** the first time ("Read `<learner_prompt.md path>` and follow it.
    The examiner's first message(s): `<files>`."; description "Take the round"), or continue it
    ("New message(s) from the examiner: `<files>`."). When it returns, run
-   `python3 sim/simulate.py next --run <run> --after learner`.
+   `python3 sim/simulate.py next --run <run> --after learner --tokens <N>` (its usage, as in
+   step 3).
    - `stop` true → go to step 6. (After the close message the learner sends nothing, and
      `next` reports that the round is closed.)
 5. **Continue the examiner agent** with "The learner replied: `<files>`." and go to step 3.
@@ -62,16 +69,17 @@ starting a fresh examiner each turn.
    scorer's form (`quality.json`: one entry per item, one per feedback message) and its brief,
    and prints both paths. Start a **new** agent, neither the examiner nor the learner, with
    "Read `<quality_prompt.md path>` and follow it." (description "Score the round"). When it
-   returns, run the same command again: it says whether the form is whole. Continue the scorer
-   once if entries are missing; then go on whatever the form holds. Skip this step if the round
+   returns, run the same command again with `--tokens <N>` (the scorer's usage): it says whether
+   the form is whole. Continue the scorer once if entries are missing (and pass that turn's
+   `--tokens` the same way); then go on whatever the form holds. Skip this step if the round
    was never saved (there is nothing to score).
 7. **Report.** `python3 sim/simulate.py report --run <run> --examiner-model <name>
    --learner-model <name>`. It runs the automatic checks, takes in the quality scores and writes
-   `sim/reports/<date>-<persona>.md` and `.json`. If the run stopped early (an agent failed, or
+   `sim/reports/<date>-<persona>.md` and `.json`, with the token table (see Tokens). If the run stopped early (an agent failed, or
    `why` says the round is not converging), still write the report and add `--note '<what
    happened>'`: a failed run is a result.
 8. **Tell the owner** the result in a few lines: which checks passed, the longest wait and at
-   which step, any blinding or writing-standards findings to review, the quality means and any concern the scorer
+   which step, the cost to a learner in tokens, any blinding or writing-standards findings to review, the quality means and any concern the scorer
    listed, and the report's path. Commit the two report
    files (never the run folder: `sim/runs/` is ignored by git).
 
@@ -122,6 +130,18 @@ turn ended, behind-the-scenes work included; and the learner agent's own time. W
 relay's hand-over (seconds). Helper agents are slower to start than a live conversation, so
 compare runs with each other, not with the real app.
 
+## Tokens
+
+The relay sees each helper agent's token usage when its turn returns, and passes it to `next
+--tokens` (the examiner, the learner) and `quality --tokens` (the scorer); the examiner's own
+helpers (author, checker), if its harness shows their usage and it reports them, go in with
+`--helper-tokens role=N`. Each figure is kept on the turn's end in `transcript.jsonl`. The report
+gives a table per role and one per turn, the run total, the examiner's tokens per step beside the
+waiting time, and the **cost to a learner**: the examiner and its helpers only, since the learner
+persona and the scorer exist only in the simulation. A figure not passed is shown as "not
+recorded" (a cost with some examiner turns missing is shown as "at least …"); it never fails a
+run. `history` lists the cost to a learner per report.
+
 ## Clinical-quality score
 
 After the round a separate agent, the quality scorer, reads the messages, the keys and the
@@ -141,7 +161,7 @@ only. `report --quality 1-5 --quality-note '<line>'` still records an overall sc
 hand, with or without a scorer.
 
 `python3 sim/simulate.py history [--persona <name>] [--json]` prints one line per saved report:
-checks, the round's score, the quality means and the longest wait.
+checks, the round's score, the quality means, the longest wait and the cost to a learner.
 
 ## Reports
 
@@ -180,7 +200,7 @@ than `sim/runs/`; `--run <folder>` names the folder itself, which must be new or
 | `ledger_at_start.json` | the ledger as the round found it |
 | `store/` | the simulated learner's folder store (`data/state.json`, …) |
 | `work/` | the examiner's scratch folder (`<work>` in SKILL.md) |
-| `messages/NNN-<role>.md`, `transcript.jsonl` | every message as sent, and when |
+| `messages/NNN-<role>.md`, `transcript.jsonl` | every message as sent, and when; every turn's end, with its tokens when passed |
 | `examiner_prompt.md`, `learner_prompt.md` | the two briefs, filled in from `prompts/` |
 | `checks.json` | the full check results |
 | `quality_prompt.md`, `quality.json` | the quality scorer's brief and its form, filled in |

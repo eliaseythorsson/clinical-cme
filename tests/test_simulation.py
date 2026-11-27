@@ -178,6 +178,7 @@ class Script:
         self.reports = str(tmp_path / "reports")
         self.faults = set(faults)
         self.clock = 1000.0
+        self.spend = None
         sim("init", "--persona", self.persona, "--run", self.run, "--today", TODAY)
         self.work = os.path.join(self.run, "work")
         self.store = os.path.join(self.run, "store")
@@ -210,7 +211,17 @@ class Script:
 
     def turn_end(self, role, after=0.0):
         self.clock += after
-        return sim_json("next", "--run", self.run, "--after", role, "--ts", str(self.clock))
+        # the usage the relay saw when the agent's turn returned (issue #94): `spend` maps a role
+        # to its figures, turn by turn, each a number, a (number, [role=N, ...]) pair or None
+        figure = (self.spend.get(role) or [None]).pop(0) if self.spend else None
+        extra = []
+        if isinstance(figure, tuple):
+            figure, helpers = figure
+            for h in helpers:
+                extra += ["--helper-tokens", h]
+        if figure is not None:
+            extra += ["--tokens", str(figure)]
+        return sim_json("next", "--run", self.run, "--after", role, "--ts", str(self.clock), *extra)
 
     def store_files(self, skip=()):
         """Publish: every file of the publish set into the folder store, in the manifest's order."""
@@ -607,3 +618,70 @@ def test_a_live_part_left_in_the_feedback_fails_the_prepared_check(tmp_path):
     prepared = json.load(open(os.path.join(s.run, "checks.json")))["checks"]["prepared"]
     assert prepared["problems"] == [
         "the final feedback as sent still holds the draft's comment lines or a [live: …] part"]
+
+
+# ---- tokens per role and per turn (issue #94)
+
+def test_tokens_are_recorded_per_role_and_turn_and_reported(tmp_path):
+    s = Script(tmp_path)
+    # five examiner turns (the first save is one of its own) and five learner turns, as play() runs them
+    s.spend = {"examiner": [1000, (2000, ["author=500", "checker=300"]), 1500, 2500, 800],
+               "learner": [100, 110, 120, 130, 140]}
+    s.play()
+    sim("quality", "--run", s.run)                        # the form: before the scorer, no figure
+    sim("quality", "--run", s.run, "--tokens", "4000")    # after the scorer returned
+    out, rep = s.report()
+    tk = rep["tokens"]
+    assert [(t["role"], t["turn"]) for t in tk["turns"]][:3] == [("examiner", 1), ("learner", 1), ("examiner", 2)]
+    assert tk["turns"][2]["helpers"] == {"author": 500, "checker": 300}
+    assert tk["by_role"]["examiner"] == {"turns": 5, "recorded": 5, "tokens": 7800}
+    assert tk["by_role"]["learner"]["tokens"] == 600 and tk["by_role"]["scorer"]["tokens"] == 4000
+    assert tk["by_role"]["author"] == {"turns": 1, "recorded": 1, "tokens": 500, "helper_of": "examiner"}
+    assert tk["total"] == 7800 + 800 + 600 + 4000
+    assert tk["cost_to_learner"] == 8600 and tk["complete"] is True      # neither persona nor scorer
+    assert out["cost_to_learner"] == 8600
+    # per step: what the examiner's turns after each learner message used, helpers included
+    assert [st["tokens"] for st in rep["timings"]["steps"]] == [1000, 2800, 1500, 2500, 800]
+    md = open(out["report"], encoding="utf-8").read()
+    assert "| Cost to a learner (examiner + its helpers) | 8,600 tokens |" in md
+    assert "## Tokens" in md and "| author (helper of the examiner) | 1 | 1 | 500 |" in md
+    assert "| examiner | 2 | 2,000 | author 500, checker 300 |" in md and "| scorer | 1 | 4,000 | – |" in md
+    assert "Run total 13,200; cost to a learner 8,600 tokens." in md
+    hist = json.loads(sim("history", "--reports", s.reports, "--json").stdout)
+    assert hist[-1]["cost_to_learner"] == 8600
+
+
+def test_missing_token_figures_are_not_recorded_and_never_fail_the_run(script):
+    s = script()                                          # no figure passed anywhere
+    out, rep = s.report()
+    assert out["ok"] is True and rep["tokens"]["total"] is None and rep["tokens"]["cost_to_learner"] is None
+    assert all(st["tokens"] is None for st in rep["timings"]["steps"])
+    md = open(out["report"], encoding="utf-8").read()
+    assert "| Cost to a learner (examiner + its helpers) | not recorded |" in md
+    assert "| examiner | 1 | not recorded | – |" in md and "Run total not recorded" in md
+
+
+def test_some_examiner_turns_without_a_figure_give_a_lower_bound(tmp_path):
+    s = Script(tmp_path)
+    s.spend = {"examiner": [1000, None, 2000]}
+    s.play()
+    out, rep = s.report()
+    assert rep["tokens"]["cost_to_learner"] == 3000 and rep["tokens"]["complete"] is False
+    assert "at least 3,000 tokens (2 of 5 examiner turns recorded)" in open(out["report"], encoding="utf-8").read()
+
+
+def test_bad_token_figures_are_refused_and_nothing_is_recorded(tmp_path):
+    run = str(tmp_path / "run")
+    sim("init", "--run", run, "--today", TODAY)
+    for bad in (["--tokens", "-5"], ["--helper-tokens", "author"], ["--helper-tokens", "author=lots"]):
+        assert sim("next", "--run", run, "--after", "examiner", *bad, ok=False).returncode == 2
+    assert sim("next", "--run", run, "--after", "learner", "--helper-tokens", "author=5", ok=False).returncode == 2
+    events = [json.loads(x) for x in open(os.path.join(run, "transcript.jsonl")) if x.strip()]
+    assert not any(e.get("mark") for e in events)
+    assert sim_json("next", "--run", run, "--after", "examiner", "--tokens", "12")["tokens_recorded"] is True
+
+
+def test_config_passes_a_usage_preset_through_to_the_ledger(tmp_path):
+    run = str(tmp_path / "run")
+    sim("init", "--run", run, "--today", TODAY, "--config", json.dumps({"usage": "economy"}))
+    assert json.load(open(os.path.join(run, "store", "data", "state.json")))["config"]["usage"] == "economy"
