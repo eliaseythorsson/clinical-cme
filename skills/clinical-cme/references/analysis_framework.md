@@ -124,6 +124,11 @@ Sections, in this order:
 
 1. `stats` lists `teaching_points_unchecked` (this period's key-learning lines not yet
    checked, as `<session>.<n>`).
+   Check first the points `stats` lists under `guidelines.teaching_to_recheck`: per guideline
+   tag found changed or superseded while rounds were prepared, the rounds held before that
+   finding on a sub-topic citing it, with their points (`points` null: a round of an earlier
+   period; its session document holds them). Each still gets its own verdict: a newer edition
+   is an erratum only where what was taught actually differs.
 2. Verify the ones most likely to have changed against current primary sources: thresholds,
    drug choices, doses, recommendation classes, screening intervals. Typically 10–15 per
    review, more if the learner wants.

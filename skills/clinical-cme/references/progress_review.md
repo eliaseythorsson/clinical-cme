@@ -37,6 +37,16 @@ If some of the period's older sessions have no transcript (only scores, gaps and
    (> 15 sessions) with parallel helper agents available: one batch per subagent with
    `analysis_framework.md` and the instruction to return findings under the §2.2 headings.
 3. Run the guideline-change check (`analysis_framework.md` §2.3) on `teaching_points_unchecked`.
+   The blueprint's guideline tags were swept ahead, while a round was prepared (`preparing.md`
+   §1; `state_schema.md` §10): report `stats` `guidelines` (tags checked, counts by status, the
+   tags superseded, changed and uncertain, by name). Only when its `review_sweep_due` is above
+   zero (the sweep did not run ahead), run it now, behind the scenes: `python3 cme.py tag-checks
+   --work <work> --list <work>/tags`, one tag checker per entry of its `checkers`, together
+   (`evidence_check.md` §7), then `tag-checks --work <work>` with `--results <file>` for each,
+   publish its `files`, and run `stats` again. Its `guidelines.teaching_to_recheck` (the
+   teaching earlier rounds based on a tag found changed or superseded) goes into the
+   guideline-change check first. (Read `data/guidelines.json` with the store; without it
+   `guidelines` says so.)
 4. Draft the report (`analysis_framework.md` §2.6). Use a task list with neutral items.
 
 ## 2. Present (R2C2: relationship, reaction, content, coaching)

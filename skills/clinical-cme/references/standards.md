@@ -69,6 +69,14 @@ relevant to the plan's `specialty`.
    `feedback_guide.md` §1.
 3. One line above each verification list states the region and the specialty, so that author,
    checker and examiner work to the same ones.
+4. **The blueprint's guideline tag is a baseline**, not the only source. A decision point's tag
+   (`[ESC ACS 2023]`) says where to start; where the plan gives a newer guideline in its place,
+   or the sub-topic's `guidelines` say a tag changed or is uncertain, the key and the kit cite
+   the guideline in force for the region. Tags are re-checked while rounds are prepared (the
+   items' tags when not checked within 90 days, and a rolling sweep: `evidence_check.md` §7,
+   `state_schema.md` §10); a tag the check finds superseded is cited as its successor from then
+   on. The tag check concerns only the edition and the appropriateness of the source: every
+   claim is still verified one by one on the verification list.
 
 ## Rule 3. Units and drug names
 

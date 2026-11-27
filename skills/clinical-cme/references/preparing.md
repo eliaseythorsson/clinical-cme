@@ -27,6 +27,13 @@ Contents: 1. What is made ready, and when · 2. After the close · 3. Prepare on
 - **Preparation takes longer than writing the items alone** (about twice the author's time,
   and more of the allowance): the feedback's text is most of it. That is accepted, because it
   happens after the close or overnight, never while the learner waits (ADR 0009).
+- **Guideline tags are re-checked here too** (ADR 0011): the guideline each decision point of
+  the blueprint cites is a baseline. Each preparation checks the tags the next round's items
+  rest on (unless checked within 90 days) and a rolling share of the whole set (about 1/12,
+  never-checked first, then the oldest); when a progress review falls due within the gap
+  between rounds (at least a week), the preparation also checks every other tag not checked
+  within 30 days, filed after the round is stashed, so that the review only reports the
+  result. Lists hold at most 40 tags, one checker each.
 - Quality of the items and completeness of the check are fixed; only the learner's waiting is
   cut. Nothing here is ever mentioned to the learner, apart from §5.
 
@@ -38,15 +45,21 @@ it. Skip it for a store of files the learner carries (`store.md` §4.3). If a pr
 follows the round now, run it after the review instead (`progress_review.md`, "After the
 review is saved"); the same commands then plan from the ledger the review wrote.
 
-1. **Plan**: `python3 cme.py prepare --work <work>`. It writes `<work>/next/plan.json`. If it
-   prints `"prepare": false`, stop here.
+1. **Plan**: on a page store, first read `data/guidelines.json` into `<work>/store/` (the
+   guideline tags' check records, not read at the start of a round; a store without it → none
+   yet). Then `python3 cme.py prepare --work <work>`. It writes `<work>/next/plan.json` and, when
+   guideline tags are due for a check, their lists (`tag_checks` in its output). If it prints
+   `"prepare": false`, stop here.
 2. **Write**: start the author (Plan `<work>/next/plan.json`, Write into `<work>/next`, Parts
    `all`; prompt as in SKILL.md, "Roles") and wait for "done". Do not read the plan or what it
    writes. Without an author, write the four files yourself as `author.md` describes
    (description "Prepare the next round").
 3. **Check**: start one checker per sealed file, together (`<work>/next/sealed_questions.md` →
    `<work>/next/evidence_questions.md`; `sealed_case.md` → `evidence_case.md`), and wait for
-   both. Each also finds the listening candidates for its kit (`evidence_check.md` §6).
+   both. Each also finds the listening candidates for its kit (`evidence_check.md` §6). At the
+   same time start one tag checker per entry of `tag_checks.checkers` and of
+   `tag_checks.review_checkers` (its `list` → its `results`, `evidence_check.md` §7). Wait for
+   the evidence checkers and the `checkers` only: the review sweep is filed in step 5.
    Without helpers, skip this step: the evidence is then checked at the session, after the
    answers, and episodes are searched for after grading (`feedback_guide.md` §2 E2).
 4. **Finish**: `python3 cme.py finish-prepare --work <work>` (add `--no-evidence` when step 3
@@ -54,7 +67,8 @@ review is saved"); the same commands then plan from the ledger the review wrote.
    the checkers' counts (keys contradicted; claims and claims not verified, per file under
    `not_verified`), prints counts and the names of files, keys, fields and kit sections
    only, and, when the round is clean, packs it and adds `data/prepared.json` to the publish
-   set:
+   set, with the tag checks filed (`data/guidelines.json` and the ledger; `tag_checks` counts
+   them; results that are missing hold nothing up):
    - `"stashed": true` → publish its `files` (`store.md` §4). `warnings` that begin "accepted
      after one revision" or "accepted after one retry" need nothing done.
    - `"recheck"` lists evidence files, or `"revise": true` (nothing stashed yet; its `next`
@@ -65,8 +79,9 @@ review is saved"); the same commands then plan from the ledger the review wrote.
         episodes in form), start its checker once more with the same prompt, together, and
         wait: it retries only those claims, by other routes, and completes the candidates;
      2. unless `next` names the checker alone: start the author once more with Parts
-        `revise` and wait: it corrects a contradicted key and what the lint named, and
-        carries what the retry confirmed into the kits.
+        `revise` and wait: it corrects a contradicted key and what the lint named, carries
+        what the retry confirmed into the kits, and cites the newer guideline where a tag the
+        items rest on was found superseded (`tag_checks.items_changed`).
 
      One pass only, never a second retry. Never open `<work>/next/lint.md`: it names content.
    - an error naming key headers or kits (the lint's blocking problems; nothing stashed) →
@@ -76,6 +91,10 @@ review is saved"); the same commands then plan from the ledger the review wrote.
    - an error naming an evidence file (missing, empty, or without its `Checked:` or `Keys
      contradicted:` line) → start the checker for that file once more and run the command
      again; never pass `--no-evidence` to get past it.
+5. **The review sweep** (only when `tag_checks.review_checkers` was not empty): once the round's
+   files are published, wait for those checkers, then `python3 cme.py tag-checks --work <work>`
+   with `--results <file>` for each of their `results`, and publish its `files`. Results that
+   are missing hold nothing up: those tags come due again.
 
 Say nothing about any of it. If anything here still fails, leave it: the next session writes or
 checks what is missing (SKILL.md, turn 1). With `testing` true, run the store check last of all
@@ -90,17 +109,17 @@ A session whose whole job is to make sure a round is ready. The learner is not t
 nothing, and never write anything about the round's content.
 
 1. Read the store as at the start of a round (SKILL.md, turn 1, step 1: `state.json`,
-   `page.json`, `prepared.json`, and `cme/prefs` when it exists), then `python3 cme.py open
-   --work <work> --store <work>/store --version <version read>` (plus `--prefs '<the cme/prefs
-   JSON>'`, so the round is written for the mix and the paragraphs set on the page). A
-   scheduled task has no message from the learner: pass no `--today` and no `--utc-offset`;
-   the job is dated by the offset the learner's rounds recorded (`state_schema.md` §1).
+   `page.json`, `prepared.json`, and `cme/prefs` when it exists) and `data/guidelines.json`,
+   then `python3 cme.py open --work <work> --store <work>/store --version <version read>`
+   (plus `--prefs '<the cme/prefs JSON>'`, so the round is written for the mix and the
+   paragraphs set on the page). A scheduled task has no message from the learner: pass no
+   `--today` and no `--utc-offset`; the job is dated by the offset the learner's rounds recorded (`state_schema.md` §1).
 2. `python3 cme.py prepare --work <work> --if-needed --allow-unreflected`. `"prepare": false`
    → reply "A round is already prepared." (or the reason it gives) and stop.
-3. Write, check and finish as in §2, steps 2–4, and publish the `files` (here the one file,
-   `data/prepared.json`; with it the ledger and the page file when `prepare` took over a
-   paragraph the learner wrote on the page), pinned to the version you read. If the store changed in between,
-   stop: a round is being played.
+3. Write, check and finish as in §2, steps 2–5, and publish the `files` (`data/prepared.json`;
+   with it the ledger and the page file when `prepare` took over a paragraph the learner wrote
+   on the page or tag checks were filed, and then `data/guidelines.json`), pinned to the
+   version you read. If the store changed in between, stop: a round is being played.
 4. Reply in one line: "Next round prepared." Nothing else.
 
 ## 4. Always-ready rounds ("prepare my rounds overnight", and off again)

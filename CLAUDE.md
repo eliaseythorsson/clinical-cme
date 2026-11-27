@@ -14,7 +14,8 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
   - `scripts/cme.py` — the state engine (Python 3.8+, standard library only)
   - `references/` — store, schema, the rulebook (`standards.md`), case design, feedback, analysis, logging, review, onboarding,
     preparing ahead, other requests
-  - `templates/` — learner page (`page.html`), default blueprint, resource library
+  - `templates/` — learner page (`page.html`), default blueprint, resource library, the default
+    blueprint's guideline-tag checks made before #90 (`guideline_checks.json`)
 - `tests/` — pytest suite for `cme.py` (`conftest.py` runs it the way the assistant does, its
   `main(argv)` in the test process, isolated as a process would be; `CME_TEST_SUBPROCESS=1` runs
   every call as a real process, as CI does on `main`)

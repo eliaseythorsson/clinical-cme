@@ -107,6 +107,8 @@ An erratum corrects an earlier teaching point. Two sources:
 - **At a review**: the guideline-change check finds a point `changed` or `superseded`;
   `review` stores it as a pending erratum; `status` reports `pending_errata_count`; the next
   session sets `"pending_errata_logged": "all"`.
+  A guideline tag found changed or superseded while a round was prepared makes no erratum by
+  itself: the teaching that rested on it is queued for this check (`state_schema.md` §10).
 
 `record`/`reflect` assign IDs and print `errata_to_log`. Write each into part B:
 

@@ -20,6 +20,7 @@ Open this file before that message only when a step there fails or the store is 
 | The page itself | `index.html` | `init`; any command that writes the ledger, when the page is out of date (§4.5) |
 | A progress-review report | `data/reviews/2026-11-20.json` | `review-doc` |
 | The next round, written ahead and packed: questions, case, feedback notes (`state_schema.md` §8) | `data/prepared.json` | `finish-prepare`; who empties it: `state_schema.md` §8 |
+| The guideline tags' check records (`state_schema.md` §10): read only to prepare a round and at a review | `data/guidelines.json` | `finish-prepare`, `tag-checks` |
 
 The page renders `data/page.json` and nothing else of the store (it opens a session or review
 document when the learner clicks one; only its Export button reads the ledger). A store last
@@ -111,7 +112,9 @@ late reflection closed first): `--today <date> start --work <work> --utc-offset 
 
 - **Read** (one call): the read-files tool with the paths `data/state.json`, `data/page.json`,
   `data/prepared.json` and `index.html`, as saved local files; copy them into an empty
-  `<work>/store/` under any names, and always pass `--version`. A path the store lacks (an older store) → repeat the read without it. In
+  `<work>/store/` under any names, and always pass `--version`. A path the store lacks (an older store) → repeat the read without it.
+  To prepare a round (`preparing.md` §2–3) or for a review, read `data/guidelines.json` too
+  (a store without it has none yet); a round's start never needs it. In
   the same batch read the page's settings document `cme/prefs` and pass it as `--prefs`
   (missing → no page settings). If the read returns content into the conversation instead of
   saving files, stop using that tool for the ledger.
@@ -119,7 +122,7 @@ late reflection closed first): `--today <date> start --work <work> --utc-offset 
   file), keeping the other files (patch mode), pinned to the version: the one in
   `publish.json` for the first publish of a job, the one the last publish returned after that.
 - **Refused because another device saved first**: read the same four files again into a new,
-  empty folder (nothing more: the engine kept what else it needs, and tells from the ledger
+  empty folder (with `data/guidelines.json` when `files` held it; nothing more: the engine kept what else it needs, and tells from the ledger
   which of the job's writes the store already holds), run `python3
   cme.py open --work <work> --store <fresh> --version <new version> --reread`, and publish the
   `files` it prints. The engine applies the job again on the fresh store (a round recorded on

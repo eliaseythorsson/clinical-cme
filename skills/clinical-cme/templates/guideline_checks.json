@@ -1,0 +1,2449 @@
+{
+ "v": 1,
+ "kind": "guideline_checks_seed",
+ "region": "Iceland/Europe",
+ "made": "2026-11-27",
+ "about": "Guideline tags of the default blueprint already checked before issue #90: the #82 pass (confirmed current) and the #89 pass (searched). Tags the #89 pass did not search are left out, so the rolling sweep checks them first. Applies only to a learner whose guideline region is Iceland/Europe; source: docs/blueprint-citations-2026-11-27.md.",
+ "records": [
+  {
+   "tag": "AABB 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "AACE MEN1 consensus 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "AAO-HNS BPPV 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.entnet.org/resource/aao-hnsf-updated-cpg-bppv-press-release-fact-sheet/",
+   "note": "2017 update still the latest; 2026 news items are a study, not a new guideline"
+  },
+  {
+   "tag": "ADA/EASD consensus 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ADA/EASD type 1 diabetes consensus 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ADA/EASD/JBDS hyperglycaemic crises consensus 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "AHA CRAO scientific statement 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ASH ITP 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ATA hypothyroidism 2014",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ATS OHS 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://thoracic.org/statements/guideline-implementation-tools/eval-and-mgmt-of-ohs.php",
+   "note": "No newer ATS OHS guideline found"
+  },
+  {
+   "tag": "ATS/ERS/JRS/ALAT IPF/PPF 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "BSG IDA 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.bsg.org.uk/clinical-resource/guidelines-iron-deficiency-anaemia-in-adults",
+   "note": "Current; BSG marks it due for update 2026 (2025 BSG/ACPGBI FIT guideline complements it)"
+  },
+  {
+   "tag": "BSG abnormal liver tests 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "BSG chronic diarrhoea 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.bsg.org.uk/clinical-resource/bsg-guidelines-chronic-diarrhoea",
+   "note": "3rd edition still current on BSG site"
+  },
+  {
+   "tag": "BSH AIHA 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "BSH HIT 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "BSH TLS 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "BSH acute chest syndrome 2015",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "BSH acute transfusion reactions 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "BTS bronchiectasis 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.respiratoryfutures.org.uk/health-condition-resources/bronchiectasis/british-thoracic-society-guideline-for-bronchiectasis-in-adults",
+   "note": "Latest BTS guideline (ERS has a 2025 guideline, a different body)"
+  },
+  {
+   "tag": "BTS nodules 2015",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "BTS oxygen 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "BTS pleural 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "Baveno VIII 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "CPOC perioperative diabetes 2022",
+   "last_checked": "2026-11-27",
+   "status": "uncertain",
+   "superseded_by": null,
+   "source": "https://cpoc.org.uk/guidelines-resources-guidelines-resources/guideline-diabetes",
+   "note": "Same guideline as above; year of latest revision not confirmed from the CPOC page"
+  },
+  {
+   "tag": "EAACI anaphylaxis 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EAACI beta-lactam hypersensitivity 2020",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pubmed.ncbi.nlm.nih.gov/31749148/",
+   "note": "No newer EAACI beta-lactam position paper found (2025 EAACI item is a biomarker task-force report)"
+  },
+  {
+   "tag": "EAACI/GA²LEN international urticaria guideline 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EACS 13.1 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EADO cSCC 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://guidelines.edf.one//uploads/attachments/cmqj4slax3esoqtjrjdsl8de3-stratigos-dessinioti-ejc-cscc-2026-part1.pdf",
+   "note": "Corrected from EADO cSCC 2023 in the blueprint (#89)."
+  },
+  {
+   "tag": "EADO melanoma diagnostics 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://melanoma.org.au/paper/european-consensus-based-interdisciplinary-guideline-for-melanoma-part-1-diagnostics-update-2024-2/",
+   "note": "Part 1 Diagnostics, Update 2024 is the latest"
+  },
+  {
+   "tag": "EADV bullous pemphigoid 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pubmed.ncbi.nlm.nih.gov/35766904/",
+   "note": "Updated S2k guideline 2022 is the latest"
+  },
+  {
+   "tag": "EAN-ESCMID encephalitis 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EAN/PNS GBS 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EANO-ESMO brain metastases 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.esmo.org/guidelines/neuro-oncology/brain-metastasis-from-solid-tumours",
+   "note": "ESMO page lists 2021 as current"
+  },
+  {
+   "tag": "EASL ACLF 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL AIH 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL ALD 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL DILI 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL HBV 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL HCC 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL HCV 2020",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL TIPS 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL acute liver failure 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL alcohol-related liver disease 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL decompensated cirrhosis 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL gallstones 2016",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL haemochromatosis 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL hepatic encephalopathy 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL liver transplantation 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL vascular liver 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL-EASD-EASO MASLD 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EASL-ERN Wilson 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EAU non-neurogenic female LUTS 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EAU non-neurogenic male LUTS 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EAU sexual and reproductive health 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EAU urolithiasis 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EAU urological infections 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ECCO Crohn's 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ECCO UC 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ECCO infections 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://ecco-ibd.eu/publications/news/issues/2025/volume-20-issue-4/new-ecco-guidelines-on-opportunistic-infections-in-ibd-2025-update",
+   "note": "Corrected from ECCO infections 2021 in the blueprint (#89)."
+  },
+  {
+   "tag": "ECHM consensus 2016",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ECIL-7 vaccination 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EFNS Wernicke 2010",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.qxmd.com/r/20642790",
+   "note": "No EAN replacement found"
+  },
+  {
+   "tag": "EGS 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.medthority.com/guidelines/glaucoma/european-glaucoma-society---terminology-and-guidelines-for-glaucoma-6th-edition",
+   "note": "Corrected from EGS 2020 in the blueprint (#89)."
+  },
+  {
+   "tag": "EHA CLL 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EHA LBCL 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EHA-EMN myeloma 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EHRA DOAC practical guide 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EHRA NOAC 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EJN MG treatment guidance 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ELN AML 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ELN CML 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ELN MPN 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EMA SmPC",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EMA clozapine SmPC",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EMA valproate 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ERC ALS 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ERC ethics 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ERC special circumstances 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ERC/ESICM post-resuscitation care 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ERS HFNC 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pubmed.ncbi.nlm.nih.gov/34649974/",
+   "note": "No newer ERS HFNC guideline found"
+  },
+  {
+   "tag": "ERS bronchiectasis 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ERS chronic cough 2020",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://publications.ersnet.org/content/erj/55/1/1901136",
+   "note": "No newer ERS guideline found"
+  },
+  {
+   "tag": "ERS sarcoidosis 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ERS symptom management 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ERS/ATS COPD exacerbations 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.guidelinecentral.com/guideline/7220/",
+   "note": "No newer joint guideline found"
+  },
+  {
+   "tag": "ERS/ATS NIV 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ERS/ATS non-invasive ventilation 2017",
+   "last_checked": "2026-11-27",
+   "status": "uncertain",
+   "superseded_by": null,
+   "source": "https://connect.uclahealth.org/dom/2026/06/30/noninvasive-respiratory-support-for-adult-patients-with-acute-respiratory-failure-an-official-american-thoracic-society-clinical-practice-guideline/",
+   "note": "No joint ERS/ATS update, but ATS alone issued a noninvasive respiratory support guideline (AJRCCM, June 2026); scope vs 2017 not confirmed"
+  },
+  {
+   "tag": "ERS/EACTS MPE 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pubmed.ncbi.nlm.nih.gov/30054348/",
+   "note": "No newer ERS/EACTS statement found"
+  },
+  {
+   "tag": "ERS/ECDC European TB standards 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ERS/ESICM/ESCMID/ALAT HAP/VAP 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ERS/ESICM/ESCMID/ALAT sCAP 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESAIC preoperative assessment 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC ACHD 2020",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC ACS 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC AF 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC CCS 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC CVD and pregnancy 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC CVD prevention 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC HF 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC NCS 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC PAAD 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC PE 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC SVT 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC VA 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC cardio-oncology 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC cardiomyopathies 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC diabetes and CVD 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC endocarditis 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC hypertension 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC myocarditis and pericarditis 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC pacing 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC syncope 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC/EACTS VHD 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC/EAS dyslipidaemias 2019, focused update 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC/EAS dyslipidaemias focused update 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC/ERS PH 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESC/ERS pulmonary hypertension 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESCEO knee osteoarthritis 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pubmed.ncbi.nlm.nih.gov/31126594/",
+   "note": "No newer ESCEO algorithm found"
+  },
+  {
+   "tag": "ESCEO/IOF 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESCMID CDI 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESCMID MDR-GNB 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESCMID antibiotic allergy 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESCMID bacterial meningitis 2016",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESCMID brain abscess 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESCMID meningitis 2016",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESCMID-ECMM-ERS aspergillosis 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESCMID/EUCIC decolonisation 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESCP diverticular disease 2020",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.escp.eu.com/members/resources/resources-search/diverticular-disease",
+   "note": "No newer ESCP guideline found"
+  },
+  {
+   "tag": "ESE hypoparathyroidism 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESE/ENSAT adrenal incidentaloma 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESE/ESICM/ERA hyponatraemia 2014",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESGE Barrett 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESGE LGIB 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESGE NVUGIH 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESGE bile duct stones 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESGE post-polypectomy surveillance 2020",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESGE/BSG antithrombotics 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESICM ARDS 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESICM fluid therapy part 1 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESICM fluid therapy part 3 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESICM shock 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESICM very old patients 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESID diagnostic criteria 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://discovery-pp.ucl.ac.uk/id/eprint/10068520",
+   "note": "2019 working definitions still the latest found"
+  },
+  {
+   "tag": "ESMO CIPN 2020",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESMO CUP 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESMO FN 2016",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESMO MDS 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESMO VTE 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESMO bone health in cancer 2020",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESMO cancer pain 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESMO cancer-associated thrombosis 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESMO dyspnoea 2020",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.esmo.org/guidelines/supportive-and-palliative-care/dyspnoea-in-advanced-cancer-patients",
+   "note": "ESMO page lists 2020 as current"
+  },
+  {
+   "tag": "ESMO irAE 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESMO survivorship 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pubmed.ncbi.nlm.nih.gov/35963481/",
+   "note": "2022 expert consensus statements are the latest"
+  },
+  {
+   "tag": "ESO BP in AIS and ICH 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESO CVT 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESO ICH 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESO IVT 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESO TIA 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pubmed.ncbi.nlm.nih.gov/34414299",
+   "note": "ESO guideline list shows 2021 as latest"
+  },
+  {
+   "tag": "ESO space-occupying infarction 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESO-EANS ICH 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESO-EANS-ESMINT aSAH 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESO-ESSD dysphagia 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESPEN geriatrics 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://ueaeprints.uea.ac.uk/id/eprint/67392/",
+   "note": "No newer edition found"
+  },
+  {
+   "tag": "ESPEN nutrition and hydration in dementia 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://cris.fau.de/publications/322803415",
+   "note": "Update 2024 is the latest"
+  },
+  {
+   "tag": "ESPEN polymorbid inpatients 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESRS European Insomnia Guideline 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESUR contrast media 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESVS 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESVS chronic venous disease 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://esvs.org/?p=331091",
+   "note": "ESVS page still lists 2022 as current"
+  },
+  {
+   "tag": "ESVS mesenteric 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ESsCD coeliac 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pure.amsterdamumc.nl/en/publications/european-society-for-the-study-of-coeliac-disease-2025-updated-gu/",
+   "note": "Corrected from ESsCD coeliac 2019 in the blueprint (#89)."
+  },
+  {
+   "tag": "ETA Graves' hyperthyroidism 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ETA subclinical hypothyroidism 2013",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://eprints.ncl.ac.uk/309310",
+   "note": "ETA 2025 guideline covers LT4 therapy of hypothyroidism generally, not subclinical disease"
+  },
+  {
+   "tag": "ETA thyroid nodules 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ETA thyroid storm consensus 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EU Directive 2006/126/EC, Annex III",
+   "last_checked": "2026-11-27",
+   "status": "uncertain",
+   "superseded_by": null,
+   "source": "https://eur-lex.europa.eu/eli/dir/2025/2205/oj",
+   "note": "Still in force, but recast Directive (EU) 2025/2205 has been adopted; national transposition pending. Revisit when it applies"
+  },
+  {
+   "tag": "EU Directive 2014/85/EU",
+   "last_checked": "2026-11-27",
+   "status": "uncertain",
+   "superseded_by": null,
+   "source": "https://eur-lex.europa.eu/eli/dir/2025/2205/oj",
+   "note": "Amends 2006/126/EC Annex III; same status as above (Directive (EU) 2025/2205 adopted)"
+  },
+  {
+   "tag": "EULAR AAV 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR APS 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR CPPD 2011",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR LVV imaging 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR PMR and LVV 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR PMR/LVV 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR PsA 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR RA 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR SLE 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR SSc 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR Sjögren's 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR cardiovascular risk in RMDs 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR fibromyalgia 2016",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pubmed.ncbi.nlm.nih.gov/27377815/",
+   "note": "No newer EULAR recommendations found"
+  },
+  {
+   "tag": "EULAR gout 2016",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR gout diagnosis 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR infection screening points to consider 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://research.manchester.ac.uk/en/publications/2022-eular-recommendations-for-screening-and-prophylaxis-of-chron/",
+   "note": "Same 2022 EULAR document"
+  },
+  {
+   "tag": "EULAR infections 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://research.manchester.ac.uk/en/publications/2022-eular-recommendations-for-screening-and-prophylaxis-of-chron/",
+   "note": "2022 EULAR screening/prophylaxis recommendations are the latest"
+  },
+  {
+   "tag": "EULAR vaccination AIIRD 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR vaccination in AIIRD 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EULAR/ACR HLH/MAS points to consider 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EUREOS EoE 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "Endocrine Society adult hypoglycaemic disorders 2009",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "Endocrine Society hypercalcaemia of malignancy 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "Endocrine Society hypopituitarism 2016",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "Endocrine Society primary adrenal insufficiency 2016",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "Endocrine Society primary aldosteronism 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EuroGuiDerm atopic eczema 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "EuroGuiDerm psoriasis 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "European trauma bleeding 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://link.springer.com/article/10.1186/s13054-023-04327-7",
+   "note": "Sixth edition (2023) is the latest"
+  },
+  {
+   "tag": "Fifth UDMI 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "Fleischner 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pubmed.ncbi.nlm.nih.gov/28240562/",
+   "note": "No newer Fleischner nodule guideline found"
+  },
+  {
+   "tag": "GINA 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "GOLD 2027",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "Global candidiasis 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "IAP 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ICFSR frailty 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pubmed.ncbi.nlm.nih.gov/31641726/",
+   "note": "No newer ICFSR frailty guideline found"
+  },
+  {
+   "tag": "ICM 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ICS status epilepticus 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "IDSA SSTI 2014",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "IDSA cIAI 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "IDSA cUTI 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "IDSA infectious diarrhoea 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5848254",
+   "note": "No newer IDSA guideline found"
+  },
+  {
+   "tag": "IDSA vertebral osteomyelitis 2015",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "IDSA/ESCMID SAB 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "IIH UK consensus 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6166610/",
+   "note": "No newer UK consensus found"
+  },
+  {
+   "tag": "IMWG 2014",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ISTH DIC 2013",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "ISTH TTP 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "IUSTI PID 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "IUSTI gonorrhoea 2020",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "IUSTI syphilis 2020",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "IWGDF 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://iwgdfguidelines.org/guidelines-2027/",
+   "note": "As above"
+  },
+  {
+   "tag": "IWGDF/IDSA 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://iwgdfguidelines.org/guidelines-2027/",
+   "note": "2027 update in development (due May 2027); 2023 is current"
+  },
+  {
+   "tag": "International Pressure Injury Guideline 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "JBDS DKA 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "JBDS HHS 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "JBDS enteral feeding 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "JBDS hypoglycaemia 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "JBDS/CPOC perioperative 2023",
+   "last_checked": "2026-11-27",
+   "status": "uncertain",
+   "superseded_by": null,
+   "source": "https://cpoc.org.uk/guidelines-resources-guidelines-resources/guideline-diabetes",
+   "note": "CPOC diabetes guideline exists (2021, revised 2022); could not confirm a 2023 JBDS/CPOC edition"
+  },
+  {
+   "tag": "KDIGO AKI 2012",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "KDIGO ANCA vasculitis 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "KDIGO CKD 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "KDIGO aHUS/C3G 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "KDIGO glomerular diseases 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "KDIGO lupus nephritis 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "KDIGO transplant recipient 2009",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pubmed.ncbi.nlm.nih.gov/19845597/",
+   "note": "No newer recipient guideline found (2020 KDIGO covers candidates)"
+  },
+  {
+   "tag": "Lugano 2014",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://geiselmed.dartmouth.edu/radiology/wp-content/uploads/sites/47/2026/01/Lugano-Response-Criteria-2026.pdf",
+   "note": "Still reprinted unchanged in NCCN 2026"
+  },
+  {
+   "tag": "MASCC/ESMO antiemesis 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://esmo.org/guidelines/supportive-and-palliative-care/prevention-of-chemotherapy-and-radiotherapy-induced-nausea-and-vomiting",
+   "note": "ESMO page lists 2023 update"
+  },
+  {
+   "tag": "Maastricht VI 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE CG100 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE CG103 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE CG113 2011",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.nice.org.uk/guidance/CG113/chapter/update-information",
+   "note": "Still active; latest changes 2024 (presentational) and 2026 (link)"
+  },
+  {
+   "tag": "NICE CG124 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE CG150 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE CG174 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE CG178 2014",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.nice.org.uk/guidance/cg178",
+   "note": "Still active (2025 exceptional surveillance, no replacement)"
+  },
+  {
+   "tag": "NICE CG32 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE CG50",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE CG83",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE NG10 2015",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE NG12",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE NG12 2015",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE NG122",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE NG128 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.nice.org.uk/guidance/ng128/chapter/Update-information",
+   "note": "Updated since (2022 ICH blood pressure, 2025 links) but the thromboprophylaxis point is unchanged since 2019"
+  },
+  {
+   "tag": "NICE NG141 2019",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.nice.org.uk/NG141",
+   "note": "No update found"
+  },
+  {
+   "tag": "NICE NG222 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE NG239 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE NG24 2015",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE NG250 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE NG71 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE NG89 2018, updated 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://www.nice.org.uk/guidance/ng89/chapter/update-information",
+   "note": "Corrected from NICE NG89 2019 in the blueprint (#89)."
+  },
+  {
+   "tag": "NICE NG97 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE ectopic pregnancy and miscarriage NG126 2019, updated 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE menopause NG23 2024, updated 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE nutrition support CG32",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NICE suspected cancer NG12",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NMS international consensus 2011",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "NOGG 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "Pituitary Society Cushing's disease consensus 2021",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "Pituitary Society prolactinoma consensus 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "RCPsych MEED 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "S3 SJS/TEN 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "SCCM PADIS 2018 and 2025 focused update",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "SEIMC septic arthritis 2024",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "SSC 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "STOPP/START v3 2023",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "SfE emergency hypocalcaemia 2016",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "https://pubmed.ncbi.nlm.nih.gov/32022081",
+   "note": "No newer SfE emergency guidance found"
+  },
+  {
+   "tag": "SfE pituitary apoplexy 2011",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "TIF 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "Tokyo 2018",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "UEG HaPanEU 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "UK Kidney Association hyperkalaemia 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "WAO HAE 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "WHO MEC 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "WHO TB module 4 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "WHO arboviral diseases 2025",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "WHO community opioid overdose 2014",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "WHO malaria 2026",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "WHO opioid dependence 2009",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "WHO-HAEM5 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "WSES acute cholecystitis 2020",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "WSES adhesive small bowel obstruction 2017",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "World Falls Guidelines 2022",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "expert review",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  },
+  {
+   "tag": "no guideline",
+   "last_checked": "2026-11-27",
+   "status": "current",
+   "superseded_by": null,
+   "source": "search-checked pass on the default blueprint (#82, commit 6885326)",
+   "note": "Confirmed current when the blueprint's citations were checked (#82)."
+  }
+ ]
+}

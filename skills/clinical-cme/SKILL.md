@@ -68,7 +68,7 @@ publish --work <work>`; refused: `store.md` §4). No learner data in the skill's
 | `references/onboarding.md` | First run, settings at setup, FAQ (§5) |
 | `references/progress_review.md` | When a review is due or requested |
 | `references/standards.md`, `references/author.md`, `references/case_design.md` | Only when you write items yourself (the rulebook, the author's brief, how items are designed) |
-| `references/evidence_check.md` | The checker's brief, with its retry routes (§3); how you check evidence yourself (§5); finding podcast episodes (§6) |
+| `references/evidence_check.md` | The checker's brief, with its retry routes (§3); how you check evidence yourself (§5); finding podcast episodes (§6); checking guideline tags (§7) |
 
 ## Roles: who writes, who grades, who checks
 

@@ -55,7 +55,10 @@ Planning notes:
   disease): the topic came by its schedule, the sub-topic is the engine's choice within it
   (`why`: `untested`, `weakest`, or `gap` when it retests a gap on that sub-topic). Ask about
   one of its `points` (the decision points the blueprint lists), or another decision point
-  of the same sub-topic, and write `subtopic: <subtopic.id>` in the key header (rule 9). Its
+  of the same sub-topic, and write `subtopic: <subtopic.id>` in the key header (rule 9). The
+  guideline in brackets at the end of a point is a baseline (rule 2.4): the plan already puts
+  a newer one in place of a tag found superseded, and the sub-topic's `guidelines`, where
+  given, say which of its tags changed or are uncertain; cite the guideline in force. Its
   `aspects`, where given, say which aspects matter most; the `aspect_hint` already follows
   them. `already_used` names the sub-topic of each earlier stem: a different decision point
   of a sub-topic tested before is welcome, the same vignette is not. An item you place in a
@@ -102,6 +105,10 @@ Planning notes:
     source, and correct every prepared block that a claim marked changed, regional difference
     or not verified names under **Blocks:** (state a claim not verified qualitatively).
     The candidates under `## Listening` are the checker's: leave them as they are.
+  - Read the tag results (`tag_results_<n>.md`) in the output folder, if there are any. Where a tag an item's decision
+    point rests on is marked `superseded` (or `changed`), make the key, the kit and the
+    verification list cite the newer guideline (or the change) and correct any block that
+    rests on the old edition (rule 2.4). Leave the file as it is.
   - Read `lint.md` in the output folder, if there is one. For each line decide whether the
     rule it names is broken (rule 5: an abbreviation not spelled out at first use; rule 6:
     more than one time anchor) and correct the presented text where it is. A finding that is

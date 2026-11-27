@@ -266,6 +266,28 @@ A short question on an untested topic outside the theme, so breadth is not lost 
 **Drill-down**:
 Successive rounds coming back to one topic after wrong answers. Limited: no topic is in more than two rounds in a row; outside the theme a miss gets one retest, then at least a week between returns; inside the theme a topic missed on its second round of the block (or later) waits at least a week (the **pause**), and no gap retest or revisit brings it back before its date.
 
+**Guideline tag**:
+One guideline a decision point cites, at its end in brackets (`[ESC ACS 2023]`; two or more separated by semicolons); the unit that is checked, once for every point that cites it. A baseline, not the only source.
+_Avoid_: citation check per point, reference
+
+**Tag check record**:
+What is known of one guideline tag (`data/guidelines.json`): when it was last checked, its status (current, changed, superseded, uncertain), the guideline that superseded it, the source and a note. Kept per learner, for their guideline region.
+_Avoid_: guideline cache
+
+**Overlay** (of a superseded tag):
+The record putting the newer guideline in place of a superseded tag wherever the engine hands decision points to the author; the learner's blueprint itself is never rewritten.
+_Avoid_: blueprint update, migration
+
+**Rolling sweep**:
+The tags checked at each preparation besides the items' own: a fixed share of the whole set (1/12 by default, up to 1/16) of those not checked within 90 days, never-checked first, then the oldest.
+
+**Review sweep**:
+Every tag not checked within 30 days, checked in a preparation when a progress review falls due within the gap between rounds (at least a week), apart from the round and filed after it is stashed, so that the review only reports it.
+
+**Teaching to re-check**:
+The review's queue for its guideline-change check: the teaching points of rounds held before a tag was found changed or superseded, on a sub-topic citing it. Derived from the records and the ledger, never stored; an erratum follows only where the teaching actually differs.
+_Avoid_: tag erratum
+
 **Guideline region**:
 The learner's choice of whose guidelines items are written and graded against; asked at setup, default Iceland/Europe.
 _Avoid_: country, locale

@@ -1461,7 +1461,7 @@ LEDGER_SHAPE = (
     ("mappings", list, []),                  # the blueprint mappings applied (issue #81)
 )
 # Kept only while it means something: absent is a value of its own (see content_gen).
-LEDGER_OPTIONAL = {"content_gen": int, "applied_steps": list}
+LEDGER_OPTIONAL = {"content_gen": int, "applied_steps": list, "guidelines_gen": int}
 # The types of the settings and the profile, read off their defaults; a null default declares
 # the type the value has once set.
 CONFIG_NULLABLE = {"round_set_at": str}
@@ -4137,7 +4137,8 @@ def timing_stats(st):
 
 def cmd_stats(args):
     today = today_from(args)
-    st, _ = current_ledger(*job(args))
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
     cfg, prof, rv = st["config"], st["profile"], st["review"]
     log = st["sessions"]
     start = parse_date(rv["period_start"])
@@ -4220,6 +4221,8 @@ def cmd_stats(args):
         # the learner's position notes in force, each listed at the review to keep or drop
         "positions": [dict(p, label=(st["topics"].get(p.get("topic")) or {}).get("label"),
                            lapses=iso(position_lapses(p))) for p in standing_positions(st, today)],
+        # the blueprint's guideline tags (issue #90): what their check records say, for the review
+        "guidelines": stats_guidelines(work, info, st, today),
     }
     print(json.dumps(out, indent=1, ensure_ascii=False))
 
@@ -5422,6 +5425,510 @@ def plan_counts(st, args=None):
     return {"mcqs": int(cfg["mcqs"]), "focused": int(cfg["focused"]), "case": 1 if cfg["case"] else 0}
 
 
+# ---------------------------------------------------------------- guideline tags (issue #90)
+#
+# A decision point of the blueprint ends with the guideline it rests on, in brackets ("[ESC ACS
+# 2023]"; two or more separated by semicolons). The tags are a baseline: each distinct tag has a
+# check record (tag, last_checked, status, superseded_by, source, note) in a store file of its own,
+# data/guidelines.json, so that the ledger does not grow; the ledger keeps only the generation of
+# the last one written (`guidelines_gen`), so that a job that did not read it never publishes over it.
+# Tags are checked while the next round is prepared, never while the learner waits (`prepare` lists
+# them in chunks for checkers side by side, `finish-prepare` files the results): the tags of the
+# decision points the next round's items rest on unless checked within TAG_FRESH_DAYS, and a rolling
+# sweep of a fixed share of the whole set (ceil(N / sweep)), never-checked first, then the oldest;
+# in a preparation before a progress review falls due, every tag not checked within TAG_REVIEW_DAYS
+# instead, filed after the round is stashed. A tag found changed or superseded writes no erratum: the
+# review's guideline-change check gets the teaching that rested on it (guideline_recheck). A superseded tag is never written back into the learner's blueprint: the
+# record overlays it wherever the engine hands decision points to the author (ADR 0011).
+
+GUIDELINES_PATH = "data/guidelines.json"
+GUIDELINES_KIND = "guideline_checks"
+GUIDELINE_SEED = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "templates",
+                              "guideline_checks.json")
+GUIDELINE_STATUSES = ("current", "changed", "superseded", "uncertain")
+TAG_FRESH_DAYS = 90             # a tag an item rests on, and the rolling sweep: not checked within this
+TAG_REVIEW_DAYS = 30            # before a progress review: every tag not checked within this
+SWEEP_DIVISORS = (12, 16)       # the rolling sweep checks ceil(N / sweep) tags; the default is the first
+TAG_BRACKET_RE = re.compile(r"\[([^\[\]]+)\][ \t]*$")
+TAG_LINE_RE = re.compile(r"^[ \t>*_`-]*Tag[ \t*_`]*:[ \t*_`]*(.+?)[ \t]*$", re.M | re.I)
+TAG_CHUNK_MAX = 40              # tags per checker: a large sweep goes out in lists of 30 to 40
+TAG_FILE_RE = re.compile(r"^(?:tag|review)_(?:checks|results)_\d+\.md$")   # in next/: the lists and their results
+REVIEW_LOOKAHEAD_MIN = 7        # days: a review falling due within this (or the gap between rounds) is swept ahead
+
+
+def point_tags(point):
+    """The guideline tags a decision point ends with ([] when it has none)."""
+    m = TAG_BRACKET_RE.search(point or "")
+    return [t.strip() for t in m.group(1).split(";") if t.strip()] if m else []
+
+
+def blueprint_tags(st):
+    """{tag: decision points citing it}, over the sub-topics of the live topics, as the blueprint has them."""
+    live = bp_live_topics(st)
+    out = {}
+    for info in bp_subtopics(st).values():
+        if info["topic"] in live:
+            for p in info.get("points") or []:
+                for t in point_tags(p):
+                    out[t] = out.get(t, 0) + 1
+    return out
+
+
+def guideline_records(doc):
+    """{tag: record} of a records document."""
+    return {r["tag"]: r for r in (doc or {}).get("records") or [] if isinstance(r, dict) and r.get("tag")}
+
+
+def new_guidelines(st):
+    return {"v": 1, "kind": GUIDELINES_KIND, "gen": 0, "region": guideline_context(st)["guideline_region"],
+            "sweep": SWEEP_DIVISORS[0], "updated": None, "records": []}
+
+
+def seeded_guidelines(st):
+    """The records a learner starts with: for the default region, the default blueprint's tags already
+    checked before issue #90 (templates/guideline_checks.json, from the #82 and #89 passes), as far as
+    this learner's blueprint cites them; for any other region none (they were checked for Europe)."""
+    doc = new_guidelines(st)
+    if doc["region"].strip().lower() != DEFAULT_CONFIG["guideline_region"].lower() or not os.path.isfile(GUIDELINE_SEED):
+        return doc, "new"
+    tags = blueprint_tags(st)
+    doc["records"] = [dict(r) for r in load_json(GUIDELINE_SEED).get("records") or []
+                      if isinstance(r, dict) and r.get("tag") in tags]
+    return doc, "seeded" if doc["records"] else "new"
+
+
+def merge_guidelines(docs):
+    """Copies of the records document (the store's now, and as this job first read it) as one: the
+    copy with the highest `gen` for the rest, and per tag the record checked last."""
+    docs = [d for d in docs if isinstance(d, dict) and d.get("kind") == GUIDELINES_KIND]
+    if not docs:
+        return None
+    out = copy.deepcopy(max(docs, key=lambda d: int(d.get("gen") or 0)))
+    best = {}
+    for d in docs:
+        for tag, r in guideline_records(d).items():
+            if tag not in best or (r.get("last_checked") or "") >= (best[tag].get("last_checked") or ""):
+                best[tag] = r
+    out["records"] = [copy.deepcopy(best[t]) for t in sorted(best)]
+    return out
+
+
+def load_guidelines(work, info, st):
+    """(records document, how) for this job: "job" (written in this job), "read" (the store's copy),
+    "seeded" or "new" (the store has none yet); or (None, "not read") when the ledger says the store
+    holds a records file newer than any copy this job has: it was not read, and is never published over.
+    The store's copy is looked for at its place, under its bare name or by its content, and kept as
+    first read (<work>/steps/0/), so a rebase that does not read it again still builds on it. A
+    document kept for another guideline region counts as never checked (its overlays stay)."""
+    own = in_work(work, os.path.join(PUBLISH_DIR, *GUIDELINES_PATH.split("/")))
+    if own:
+        return load_json(own), "job"
+    store = info.get("store")
+    found = (info.get("found") or {}).get(GUIDELINES_PATH)
+    path = found if found and os.path.isfile(found) else store_copy_file(store, GUIDELINES_PATH)
+    if not path and store and os.path.isdir(store):
+        path = store_documents(store)[0].get(GUIDELINES_PATH)
+    first = os.path.join(work, STEPS_DIR, "0", *GUIDELINES_PATH.split("/"))
+    if path and not os.path.isfile(first):
+        os.makedirs(os.path.dirname(first), exist_ok=True)
+        shutil.copyfile(path, first)
+    docs = []
+    for p in dict.fromkeys(x for x in (path, first) if x and os.path.isfile(x)):
+        try:
+            docs.append(load_json(p))
+        except CmeError:
+            pass
+    doc, flag = merge_guidelines(docs), int(st.get("guidelines_gen") or 0)
+    if doc is None:
+        return (None, "not read") if flag else seeded_guidelines(st)
+    if int(doc.get("gen") or 0) < flag:
+        return None, "not read"
+    region = guideline_context(st)["guideline_region"]
+    if (doc.get("region") or "") != region:
+        for r in doc.get("records") or []:
+            r["last_checked"] = None
+        doc["region"] = region
+    return doc, "read"
+
+
+NOT_READ = ("data/guidelines.json is in the store but was not read in this job: read it into the store copy "
+            "(store.md section 4) and run the command again")
+
+
+def sweep_divisor(doc):
+    try:
+        n = int((doc or {}).get("sweep") or SWEEP_DIVISORS[0])
+    except (TypeError, ValueError):
+        n = SWEEP_DIVISORS[0]
+    return min(max(n, SWEEP_DIVISORS[0]), SWEEP_DIVISORS[1])
+
+
+def current_tag(tag, idx):
+    """The tag a record says is cited now: the newest guideline down the chain of supersessions."""
+    seen = set()
+    while tag not in seen:
+        seen.add(tag)
+        r = idx.get(tag) or {}
+        if r.get("status") != "superseded" or not r.get("superseded_by"):
+            break
+        tag = r["superseded_by"]
+    return tag
+
+
+def overlay_point(point, idx):
+    """A decision point with each superseded tag replaced by the guideline that superseded it."""
+    m = TAG_BRACKET_RE.search(point or "")
+    if not m:
+        return point
+    tags = point_tags(point)
+    new = list(dict.fromkeys(current_tag(t, idx) for t in tags))
+    return point if new == tags else point[:m.start()] + "[%s]" % "; ".join(new)
+
+
+def tag_stale(rec, today, days):
+    """Not checked within `days` (never checked counts as stale)."""
+    d = parse_date((rec or {}).get("last_checked"))
+    return d is None or (today - d).days > days
+
+
+def tag_age(idx, tag):
+    """Oldest first: never-checked tags, then by the day each was last checked, then by name."""
+    d = (idx.get(tag) or {}).get("last_checked")
+    return (d is not None, d or "", tag)
+
+
+def due_tags(st, idx, today, items=(), kind="rolling", sweep=SWEEP_DIVISORS[0]):
+    """The tags to check now, as (the items' tags, the sweep's), each sorted. The items' tags: those
+    not checked within TAG_FRESH_DAYS. The rolling sweep: ceil(N / sweep) of the other tags not checked
+    within TAG_FRESH_DAYS (N: the whole set, so the quota does not shrink as tags become fresh),
+    oldest first; the review sweep: every other tag not checked within TAG_REVIEW_DAYS."""
+    tags = sorted({current_tag(t, idx) for t in blueprint_tags(st)})
+    mine = sorted({t for t in items if tag_stale(idx.get(t), today, TAG_FRESH_DAYS)})
+    days = TAG_REVIEW_DAYS if kind == "review" else TAG_FRESH_DAYS
+    rest = sorted((t for t in tags if t not in mine and tag_stale(idx.get(t), today, days)),
+                  key=lambda t: tag_age(idx, t))
+    if kind != "review":
+        rest = rest[:int(math.ceil(len(tags) / float(sweep)))]
+    return mine, sorted(rest)
+
+
+def plan_tags(plan):
+    """The tags of the decision points the plan's items rest on (their sub-topics' points, as handed over)."""
+    return sorted({t for c in plan.get("items") or [] for p in (c.get("subtopic") or {}).get("points") or []
+                   for t in point_tags(p)})
+
+
+def overlay_plan(plan, idx):
+    """The records over the plan's decision points: a superseded tag is replaced by its successor, and
+    each sub-topic whose tags have a record other than "current" gets `guidelines` (what the record
+    says), so that the key and the kit cite the guideline in force. Returns the points changed."""
+    changed = 0
+    for c in plan.get("items") or []:
+        sub = c.get("subtopic")
+        if not sub or not sub.get("points"):
+            continue
+        new = [overlay_point(p, idx) for p in sub["points"]]
+        changed += sum(1 for a, b in zip(new, sub["points"]) if a != b)
+        notes = []
+        for t in dict.fromkeys(t for p in sub["points"] for t in point_tags(p)):
+            r = idx.get(t)
+            if r and r.get("status") in ("changed", "superseded", "uncertain"):
+                notes.append({k: r.get(k) for k in ("tag", "status", "superseded_by", "last_checked", "note", "source")})
+        sub["points"] = new
+        if notes:
+            sub["guidelines"] = notes
+    return changed
+
+
+def tag_chunks(tags):
+    """The tags split for checkers working side by side: ceil(n / TAG_CHUNK_MAX) lists of nearly equal
+    size, in order (a large sweep in lists of 30 to 40)."""
+    tags = sorted(tags)
+    k = max(1, int(math.ceil(len(tags) / float(TAG_CHUNK_MAX))))
+    size, extra = divmod(len(tags), k)
+    out, at = [], 0
+    for i in range(k):
+        n = size + (1 if i < extra else 0)
+        out.append(tags[at:at + n])
+        at += n
+    return [c for c in out if c]
+
+
+def write_tag_list(path, st, idx, tags, today):
+    """One list a checker works from (references/evidence_check.md §7): one line per tag, sorted, with
+    what its record says; the items' tags are not told apart from the sweep's."""
+    ctx = guideline_context(st)
+    lines = ["# Guideline tags to check", "",
+             "Region: %s · Specialty: %s · Date: %s" % (ctx["guideline_region"], ctx["specialty"], iso(today)),
+             "Brief: references/evidence_check.md section 7. Write one line per tag into the output file:",
+             "`Tag: <tag> | current|changed|superseded|uncertain | <the newer guideline, or -> | <source link> | <note>`",
+             ""]
+    for t in sorted(tags):
+        r = idx.get(t) or {}
+        lines.append("- %s — %s" % (t, "last checked %s: %s" % (r["last_checked"], r.get("status"))
+                                    if r.get("last_checked") else "never checked"))
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")
+
+
+def write_tag_lists(folder, kind, st, idx, tags, today):
+    """The tags in chunks (tag_chunks), each list <kind>_checks_<n>.md beside its results file
+    <kind>_results_<n>.md; returns [{"list", "results"}] (absolute paths)."""
+    out = []
+    for n, chunk in enumerate(tag_chunks(tags), 1):
+        lst = os.path.abspath(os.path.join(folder, "%s_checks_%d.md" % (kind, n)))
+        write_tag_list(lst, st, idx, chunk, today)
+        out.append({"list": lst, "results": os.path.abspath(os.path.join(folder, "%s_results_%d.md" % (kind, n)))})
+    return out
+
+
+def clear_tag_lists(folder):
+    if os.path.isdir(folder):
+        for name in os.listdir(folder):
+            if TAG_FILE_RE.match(name):
+                os.remove(os.path.join(folder, name))
+
+
+def read_tag_results(paths):
+    """The `Tag:` lines of several results files as one ({tag: result}, unreadable lines, files missing)."""
+    results, bad, missing = {}, 0, 0
+    for path in paths:
+        if not os.path.isfile(path):
+            missing += 1
+            continue
+        res, b = parse_tag_results(read_text(path))
+        results.update(res)
+        bad += b
+    return results, bad, missing
+
+
+def parse_tag_results(text):
+    """The checker's `Tag: <tag> | <status> | <superseded_by> | <source> | <note>` lines: ({tag: result},
+    the number of lines that could not be read: an unknown status, or "superseded" without its successor)."""
+    out, bad = {}, 0
+    for m in TAG_LINE_RE.finditer(text or ""):
+        cells = [c.strip().strip("`*_").strip() for c in m.group(1).split("|")]
+        cells += [""] * (5 - len(cells))
+        tag, status, by = cells[0], cells[1].lower(), cells[2]
+        by = None if by.lower() in KEY_EMPTY else by
+        if not tag or status not in GUIDELINE_STATUSES or (status == "superseded" and (not by or by == tag)):
+            bad += 1
+            continue
+        out[tag] = {"status": status, "superseded_by": by if status == "superseded" else None,
+                    "source": clip(cells[3] if cells[3].lower() not in KEY_EMPTY else None, 300),
+                    "note": clip(" | ".join(c for c in cells[4:] if c) or None, 400)}
+    return out, bad
+
+
+def file_tag_results(st, doc, results, today):
+    """The checker's results into the records, each checked today. A tag found changed or superseded
+    keeps `since`, the day that finding was first made (the review's queue of teaching to re-check
+    counts the rounds held before it: guideline_recheck). A superseded tag's successor gets a record
+    of its own (current, checked today) unless the results say otherwise. Nothing is written into the
+    ledger: whether earlier teaching is wrong is decided at the review, point by point. Returns the
+    counts by status."""
+    idx = guideline_records(doc)
+    counts = {s: 0 for s in GUIDELINE_STATUSES}
+    for tag in sorted(results):
+        r, old = results[tag], idx.get(tag) or {}
+        rec = {"tag": tag, "last_checked": iso(today), "status": r["status"], "superseded_by": r["superseded_by"],
+               "source": r["source"], "note": r["note"]}
+        if r["status"] in ("changed", "superseded"):
+            same = old.get("status") == r["status"] and old.get("superseded_by") == r["superseded_by"]
+            rec["since"] = old.get("since") if same and old.get("since") else iso(today)
+        idx[tag] = rec
+        counts[r["status"]] += 1
+        by = rec["superseded_by"]
+        if by and by not in results:
+            idx[by] = {"tag": by, "last_checked": iso(today), "status": "current", "superseded_by": None,
+                       "source": rec["source"], "note": "Replaces %s." % tag}
+    doc["records"] = [idx[t] for t in sorted(idx)]
+    return counts
+
+
+def guideline_recheck(st, doc):
+    """The review's queue for its guideline-change check (analysis_framework.md §2.3), derived from the
+    records and the rounds, never stored: for each tag found changed or superseded, the rounds held
+    before that finding (`since`) with items on a sub-topic citing it (as the blueprint cites it, or
+    down a chain of supersessions), and their teaching points not checked since. A round of an earlier
+    period keeps no teaching points in the ledger: it is listed with `points` null (its session
+    document holds them)."""
+    idx = guideline_records(doc)
+    raw = blueprint_tags(st)
+    subs = bp_subtopics(st)
+    checks = st["teaching_point_checks"]
+    out = []
+    for tag in sorted(idx):
+        rec = idx[tag]
+        if rec.get("status") not in ("changed", "superseded") or not rec.get("last_checked"):
+            continue
+        since = rec.get("since") or rec["last_checked"]
+
+        def cites(t, tag=tag):
+            seen = set()
+            while t not in seen:
+                if t == tag:
+                    return True
+                seen.add(t)
+                r = idx.get(t) or {}
+                if r.get("status") != "superseded" or not r.get("superseded_by"):
+                    return False
+                t = r["superseded_by"]
+            return False
+        on = {sid for sid, info in subs.items()
+              if any(cites(t) for p in info.get("points") or [] for t in point_tags(p) if t in raw)}
+        rounds = []
+        for s in st["previous"] + st["sessions"]:
+            if not (s.get("date") and s["date"] < since):
+                continue
+            if not any(it.get("subtopic") in on for it in s.get("items") or []):
+                continue
+            if "key_learning" in s:
+                points = [{"id": "%s.%d" % (s["id"], i + 1), "point": k}
+                          for i, k in enumerate(s.get("key_learning") or [])
+                          if ((checks.get("%s.%d" % (s["id"], i + 1)) or {}).get("checked") or "") < since]
+                if not points:
+                    continue
+            else:
+                points = None
+            rounds.append({"session": s.get("id"), "date": s.get("date"), "points": points})
+        if rounds:
+            out.append({"tag": tag, "status": rec["status"], "superseded_by": rec.get("superseded_by"),
+                        "since": since, "note": rec.get("note"), "source": rec.get("source"), "rounds": rounds})
+    return out
+
+
+def write_guidelines(work, info, st, doc, today, out):
+    """The records document into the publish set, a generation on, and the ledger with it (its
+    `guidelines_gen`): a content-neutral write, so the prepared round stays."""
+    refuse_newer(st, work)          # before any file goes into the publish set
+    doc["gen"] = max(int(doc.get("gen") or 0), int(st.get("guidelines_gen") or 0)) + 1
+    doc["updated"] = iso(today)
+    doc["region"] = guideline_context(st)["guideline_region"]
+    publish_json(work, GUIDELINES_PATH, doc)
+    st["guidelines_gen"] = doc["gen"]
+    bump_gen(st, content=False)
+    st["updated"] = iso(today)
+    publish_ledger(work, info, st, out)
+
+
+def guideline_summary(st, doc, how, today):
+    """What the records say of the blueprint's tags now (counts; the tags changed, superseded or
+    uncertain by name; the teaching to re-check): for the progress review and `tag-checks`."""
+    idx = guideline_records(doc)
+    raw = blueprint_tags(st)
+    tags = sorted({current_tag(t, idx) for t in raw})
+    recs = [idx[t] for t in tags if t in idx]
+    named = lambda s: [{k: idx[t].get(k) for k in ("tag", "superseded_by", "last_checked", "note", "source")}
+                       for t in sorted(set(raw) | set(tags)) if (idx.get(t) or {}).get("status") == s
+                       and (s == "superseded" or t in tags)]
+    div = sweep_divisor(doc)
+    return {"records": how, "tags": len(tags), "never_checked": sum(1 for t in tags if not (idx.get(t) or {}).get("last_checked")),
+            "checked_within_30_days": sum(1 for t in tags if not tag_stale(idx.get(t), today, TAG_REVIEW_DAYS)),
+            "not_checked_90_days": sum(1 for t in tags if tag_stale(idx.get(t), today, TAG_FRESH_DAYS)),
+            "review_sweep_due": sum(1 for t in tags if tag_stale(idx.get(t), today, TAG_REVIEW_DAYS)),
+            "by_status": {s: sum(1 for r in recs if r.get("status") == s and r.get("last_checked")) for s in GUIDELINE_STATUSES},
+            "sweep": "1/%d" % div, "rolling_quota": int(math.ceil(len(tags) / float(div))) if tags else 0,
+            "superseded": named("superseded"), "changed": named("changed"), "uncertain": named("uncertain"),
+            "teaching_to_recheck": guideline_recheck(st, doc), "updated": doc.get("updated")}
+
+
+def review_lookahead(st):
+    """How far ahead the preparation looks for a progress review falling due, so that the review sweep
+    runs in a preparation before it: the learner's expected gap between rounds (from their target
+    rounds a week), at least REVIEW_LOOKAHEAD_MIN days."""
+    try:
+        per_week = float(st["config"]["target_sessions_per_week"] or 0)
+    except (TypeError, ValueError):
+        per_week = 0
+    gap = int(math.ceil(7 / per_week)) if per_week > 0 else REVIEW_LOOKAHEAD_MIN
+    return max(REVIEW_LOOKAHEAD_MIN, gap)
+
+
+def prepare_tag_checks(work, info, st, plan, today, folder):
+    """`prepare`: the records over the plan (overlay_plan) and the lists of tags to check while the round
+    is prepared, in chunks of at most TAG_CHUNK_MAX, one checker each: with the round
+    (next/tag_checks_<n>.md), the items' tags and the rolling sweep; when a progress review falls due
+    within review_lookahead days, the items' tags with the round and the review sweep apart
+    (next/review_checks_<n>.md), filed after the round is stashed. Notes it in the plan (`tag_checks`);
+    returns what `prepare` prints (counts and paths only), or None for a blueprint without tags."""
+    clear_tag_lists(folder)
+    if not blueprint_tags(st):
+        return None
+    doc, how = load_guidelines(work, info, st)
+    if doc is None:
+        plan["tag_checks"] = {"count": 0, "skipped": "not read"}
+        return {"count": 0, "skipped": NOT_READ}
+    idx = guideline_records(doc)
+    overlaid = overlay_plan(plan, idx)
+    ahead = review_lookahead(st)
+    kind = "review" if review_status(st, today + dt.timedelta(days=ahead))[0] else "rolling"
+    mine, sweep = due_tags(st, idx, today, plan_tags(plan), kind, sweep_divisor(doc))
+    with_round = sorted(set(mine) | set(sweep)) if kind == "rolling" else mine
+    review = sweep if kind == "review" else []
+    checkers = write_tag_lists(folder, "tag", st, idx, with_round, today) if with_round else []
+    later = write_tag_lists(folder, "review", st, idx, review, today) if review else []
+    plan["tag_checks"] = {"count": len(with_round), "kind": kind, "items": mine, "overlaid": overlaid,
+                          "lists": [os.path.basename(c["list"]) for c in checkers],
+                          "review_count": len(review), "review_lists": [os.path.basename(c["list"]) for c in later]}
+    return {"count": len(with_round), "kind": kind, "records": how, "checkers": checkers,
+            "review_count": len(review), "review_checkers": later}
+
+
+def round_tag_results(folder, asked):
+    """The results files of the lists checked with the round (the plan's `tag_checks.lists`)."""
+    return [os.path.join(folder, n.replace("_checks_", "_results_")) for n in asked.get("lists") or []]
+
+
+def stats_guidelines(work, info, st, today):
+    if not blueprint_tags(st):
+        return None
+    doc, how = load_guidelines(work, info, st)
+    return guideline_summary(st, doc, how, today) if doc is not None else {"records": how, "say": NOT_READ}
+
+
+def cmd_tag_checks(args):
+    """The guideline tags' check records (data/guidelines.json). Alone: what they say (counts, the tags
+    changed, superseded or uncertain, the teaching to re-check at the review), writing nothing.
+    --list DIR: the tags due (--due review: every tag not checked within 30 days; rolling: the rolling
+    sweep) written into DIR in chunks for checkers. --results F (repeatable): the checkers' `Tag:` lines
+    filed (a step: the records and the ledger into the publish set). --sweep N: the rolling sweep's
+    share, 1/N (12 to 16)."""
+    today = today_from(args)
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
+    doc, how = load_guidelines(work, info, st)
+    if doc is None:
+        die(NOT_READ)
+    idx = guideline_records(doc)
+    if args.list:
+        os.makedirs(args.list, exist_ok=True)
+        clear_tag_lists(args.list)
+        mine, sweep = due_tags(st, idx, today, (), args.due, sweep_divisor(doc))
+        checkers = write_tag_lists(args.list, "tag", st, idx, sweep, today) if sweep else []
+        print(json.dumps({"ok": True, "due": args.due, "count": len(sweep), "checkers": checkers}))
+        return
+    if not args.results and args.sweep is None:
+        print(json.dumps(dict({"ok": True}, **guideline_summary(st, doc, how, today)), ensure_ascii=False))
+        return
+    refuse_newer(st)
+    out = {"ok": True}
+    if args.sweep is not None:
+        if not SWEEP_DIVISORS[0] <= args.sweep <= SWEEP_DIVISORS[1]:
+            die("--sweep is the rolling sweep's share 1/N, N from %d to %d" % SWEEP_DIVISORS)
+        doc["sweep"] = args.sweep
+        out["sweep"] = "1/%d" % args.sweep
+    if args.results:
+        results, bad, missing = read_tag_results(args.results)
+        if missing == len(args.results):
+            die("no results file among %s" % ", ".join(args.results))
+        counts = file_tag_results(st, doc, results, today)
+        out.update({"filed": len(results), "unreadable": bad, "files_missing": missing, "by_status": counts})
+    write_guidelines(work, info, st, doc, today, out)
+    out["gen"] = st["gen"]
+    print(json.dumps(published(work, info, out), ensure_ascii=False))
+
+
 def cmd_prepare(args):
     """After the close (or in a prepare-only job): plan the NEXT round as of tomorrow from the
     current ledger of the work folder, into <work>/next/plan.json, so that the whole round
@@ -5463,12 +5970,16 @@ def cmd_prepare(args):
     os.makedirs(folder, exist_ok=True)
     out = os.path.join(folder, PLAN_FILE)
     summary = plan_summary(plan, out)
+    tags = prepare_tag_checks(work, info, st, plan, today, folder)
     plan["prepared"] = {"gen": content_gen(st), "made": iso(today), "session_id": st.get("next_id")}
     save_json(plan, out)
+    if tags is not None:
+        summary["tag_checks"] = tags
     summary.update({"prepare": True, "gen": content_gen(st), "folder": os.path.abspath(folder),
                     "note": "Sealed: have the whole round drafted for this plan into this folder "
                             "(sealed_questions.md, sealed_case.md, kit_questions.md, kit_case.md), "
-                            "have each sealed file checked (evidence_questions.md, evidence_case.md), "
+                            "have each sealed file checked (evidence_questions.md, evidence_case.md) and the "
+                            "guideline tags of each list in tag_checks.checkers (one checker each), "
                             "then run finish-prepare --work on the same work folder."})
     if rewritten:
         summary.update(kept)
@@ -5662,13 +6173,28 @@ def cmd_finish_prepare(args):
         out.update({"evidence": per_file, "contradicted": total, "not_verified": checked,
                     "not_verified_total": sum(c["not_verified"] for c in checked.values()),
                     "claims_total": sum(c["claims"] for c in checked.values())})
+    # the guideline tags checked with the round (issue #90): counted now, filed when the round is stashed;
+    # a review sweep (review_checks_<n>.md) is never waited for: `tag-checks --results` files it afterwards
+    asked = plan.get("tag_checks") or {}
+    results, tagged = {}, None
+    if asked.get("lists"):
+        results, bad, missing = read_tag_results(round_tag_results(folder, asked))
+        tagged = {"asked": asked.get("count") or 0, "answered": len(results), "unreadable": bad,
+                  "by_status": {s: sum(1 for r in results.values() if r["status"] == s) for s in GUIDELINE_STATUSES},
+                  "items_changed": sum(1 for t in asked.get("items") or []
+                                       if (results.get(t) or {}).get("status") in ("changed", "superseded"))}
+        if missing:
+            tagged["results_missing"] = "%d of %d: those tags come due again at the next preparation" % (
+                missing, len(asked["lists"]))
+        out["tag_checks"] = tagged
     flagged = [name for name, counts in checked.items() if needs_recheck(counts)]
     # listening candidates are the checker's (it searched for them): a kit whose candidates are
     # not three episodes in form sends its checker back once, not the author
     relisten = [EVIDENCE_FOR[sealed] for sealed, kit in KIT_FOR.items()
                 if any(r["rule"] == 8 and r["file"] == kit for r in lint["review"])]
     out["lint"] = lint_summary(lint, write_lint_details(folder, lint))
-    out["revise"] = bool(total or any(r["rule"] != 8 for r in lint["review"])) and not args.revised
+    out["revise"] = bool(total or any(r["rule"] != 8 for r in lint["review"])
+                         or (tagged or {}).get("items_changed")) and not args.revised
     recheck = [] if args.revised else [n for n in EVIDENCE_FOR.values() if n in flagged or n in relisten]
     if not args.no_evidence:
         out["recheck"] = recheck
@@ -5689,11 +6215,19 @@ def cmd_finish_prepare(args):
                          "references/evidence_check.md §3 and §6) and wait for it" % " and ".join(recheck))
         if out["revise"] or flagged:
             steps.append("start the author once more with Parts `revise` on this folder (it reads the evidence "
-                         "files and lint.md there) and wait for it")
+                         "files, the tag results (tag_results_<n>.md) and lint.md there) and wait for it")
         out.update({"stashed": False,
                     "next": "%s, then run this command again with --revised" % "; then ".join(steps)})
         print(json.dumps(out, ensure_ascii=False))
         return
+    if results:
+        doc, how = load_guidelines(work, info, st)
+        if doc is None:
+            tagged["filed"], tagged["not_filed"] = 0, NOT_READ
+        else:
+            file_tag_results(st, doc, results, today_from(args))
+            write_guidelines(work, info, st, doc, today_from(args), out)
+            tagged["filed"] = len(results)
     publish_json(work, PREPARED_PATH, prepared_doc(st, plan, files, has))
     out.update({"gen": content_gen(st), "has": has, "stashed": True})
     print(json.dumps(published(work, info, out), ensure_ascii=False))
@@ -6521,7 +7055,20 @@ COMMANDS = (
      'unreflected` plans although the last session has no reflection yet (the scheduled task uses'
      ' it). A paragraph the learner wrote on the page (in the `--prefs` given to `open`) is '
      'written to the ledger first, into the publish set, and reported as `page_settings_applied` '
-     'with the `files` (§7.1); a round prepared for the old words does not count as usable.'),
+     'with the `files` (§7.1); a round prepared for the old words does not count as usable. With '
+     'guideline tags in the blueprint (issue #90, ADR 0011) it reads the check records '
+     '(`data/guidelines.json`; none yet: the default blueprint\'s earlier checks for the default '
+     'region), puts the guideline that superseded a tag in its place in the plan\'s decision points '
+     '(`subtopic.guidelines` says what the record holds) and lists the tags to check now, in lists '
+     'of at most 40, one checker each: with the round (`W/next/tag_checks_<n>.md` → '
+     '`tag_results_<n>.md`), the tags of the items\' decision points not checked within 90 days and '
+     'the rolling sweep (ceil(N/12) of the rest not checked within 90 days, never-checked first, then '
+     'the oldest); when a progress review falls due within the gap between rounds (at least 7 days), '
+     'the items\' tags with the round and every other tag not checked within 30 days apart '
+     '(`W/next/review_checks_<n>.md` → `review_results_<n>.md`), filed with `tag-checks --results` '
+     'after the round is stashed. Prints `tag_checks` (`count`, `kind`: rolling or review, '
+     '`checkers` and `review_checkers`: `list` and `results` paths, `review_count`; `skipped` when '
+     'the store holds records this job did not read).'),
     ('`finish-prepare --work W [--revised] [--no-evidence]`',
      'After the checkers: finish preparing the round planned in `W/next/plan.json` and drafted in'
      ' `W/next`. First lints it against the rulebook (`standards.md`, "The lint"). **Blocking**: '
@@ -6552,7 +7099,27 @@ COMMANDS = (
      'zero. `--no-evidence` is for a session that runs no checker: the round is stashed without '
      'evidence files, so the sources are checked at the session; the lint runs all the same. The '
      "first part's sealed file must be there; a missing case is a warning (it is then written at "
-     'the next session).'),
+     'the next session). With tag lists from `prepare` for the round, it reads their checkers\' `Tag:` '
+     'lines (`W/next/tag_results_<n>.md`, `evidence_check.md` §7) and prints `tag_checks` (counts by '
+     'status; `items_changed`: tags of the items found changed or superseded, which sends the author '
+     'back once, `revise`); when the round is stashed it files them as `tag-checks --results` does. '
+     'Missing results hold nothing up: those tags come due again. The review sweep is not read here.'),
+    ('`tag-checks --work W [--list DIR [--due review\\|rolling]] [--results F …] [--sweep N]`',
+     "The guideline tags' check records (`data/guidelines.json`, issue #90). Alone: what they say "
+     'of the blueprint\'s tags (`tags`, `never_checked`, `checked_within_30_days`, '
+     '`not_checked_90_days`, `review_sweep_due`, `by_status`, the `superseded`, `changed` and '
+     '`uncertain` tags by name, `sweep`, `rolling_quota`, and `teaching_to_recheck`: per tag found '
+     'changed or superseded, the rounds held before that finding on a sub-topic citing it, with their '
+     'teaching points not checked since, for the review\'s guideline-change check); writes nothing. '
+     '`--list DIR`: the tags due written into `DIR` in lists of at most 40 (`tag_checks_<n>.md`, one '
+     'checker each, results to `tag_results_<n>.md`; `--due review`, the default: every tag not '
+     'checked within 30 days; `rolling`: the rolling sweep); prints `count` and `checkers`. `--results '
+     'F` (once per file): the checkers\' `Tag: <tag> | <status> | <superseded_by> | <source> | <note>` '
+     'lines filed, each checked on the job\'s date; a superseded tag\'s successor gets a record of its '
+     'own; a tag found changed or superseded keeps the day of that finding (`since`); no erratum is '
+     'written. `--sweep N`: the rolling sweep\'s share, 1/N, N from 12 to 16. Either writes the records '
+     'and the ledger (`guidelines_gen`; the prepared round stays) into the publish set. Refused when '
+     'the store holds records this job did not read.'),
     ('`keys DIR\\|SEALED… [--plan PLAN]`',
      "The author's check before finishing: the key headers and rubric blocks of sealed files "
      "(`standards.md` rule 9) and, for a folder, the kits' sections (rule 8; a kit not written yet is not a problem "
@@ -6585,7 +7152,8 @@ COMMANDS = (
      'Review figures: period, previous period, all time; gaps, calibration, teaching points '
      'unchecked, blind spots; `timing` (medians of the last timed rounds: minutes, answering, '
      "waiting, reading; the pace; the hint); `positions`, the notes in force with their topic's "
-     '`label` and the day each `lapses`. Writes nothing.'),
+     '`label` and the day each `lapses`; `guidelines`, what the guideline tags\' check records say '
+     '(as `tag-checks` alone prints it). Writes nothing.'),
     ('`review --work W --review REVIEW.json`',
      'Record a review; closes the period. Its `positions` (`{"keep": [ids], "drop": [ids]}`) '
      'confirm or end position notes; lapsed notes leave the ledger.'),
@@ -6689,9 +7257,12 @@ WORK_FILES = (
      'examiner',
      '`close`'),
     ('`next/`',
-     "`prepare` (`plan.json`), the author and the checker (the next round's files), `finish-"
-     'prepare` (`lint.md`: what the lint found, for the author)',
-     '`finish-prepare`; the author for `lint.md`'),
+     "`prepare` (`plan.json`; `tag_checks_<n>.md` and `review_checks_<n>.md`, the guideline tags to "
+     "check), the author and the checkers (the next round's files; `tag_results_<n>.md`, "
+     "`review_results_<n>.md`, the tags' results), `finish-prepare` (`lint.md`: what the lint found, "
+     'for the author)',
+     '`finish-prepare` (`tag_results_<n>.md`), `tag-checks --results` (`review_results_<n>.md`); the '
+     'author for `lint.md` and the tag results; a tag checker for its list'),
     ('`publish/`',
      'every command that writes: the newest version of each store file this job changed, at its '
      'store path',
@@ -6719,7 +7290,7 @@ WORK_FILES = (
     ('`steps/`',
      'every command that writes: a file named in its options, as it was given (`<n>-<name>`), and '
      'the log documents of the publish set as the step left it (`<n>/`); a log document read from '
-     'the store, as first read (`0/`)',
+     'the store, and the guideline tags\' records, as first read (`0/`)',
      'a rebase'),
     ('`earlier/<n>/`',
      '`open`, `start`: the files of an earlier job in the same folder, set aside',
@@ -7288,7 +7859,7 @@ ANSWER_MARK_RE = re.compile(r"<!--\s*/?\s*answers\b")
 # The write order of the publish set: log entries before the page file that lists them, the
 # ledger last, so an interrupted write never leaves a ledger that points at a missing file.
 PUBLISH_FIRST = ("data/sessions/", "data/reviews/", "data/testing/")
-PUBLISH_LAST = (PAGE_PATH, "index.html", PREPARED_PATH, STATE_PATH)
+PUBLISH_LAST = (PAGE_PATH, "index.html", GUIDELINES_PATH, PREPARED_PATH, STATE_PATH)
 
 
 def read_text(path):
@@ -7505,14 +8076,14 @@ def set_aside_round(work):
 #   is kept, and this job's round is renumbered and applied after it. A clean rebase says
 #   nothing; when something of the learner's changed meanwhile, one line says what (`say`).
 
-STORE_DOCS = (STATE_PATH, PAGE_PATH, OLD_INDEX_PATH, PREPARED_PATH, "index.html")
+STORE_DOCS = (STATE_PATH, PAGE_PATH, OLD_INDEX_PATH, PREPARED_PATH, "index.html", GUIDELINES_PATH)
 STORE_DIRS = ("data/sessions/", "data/reviews/", "data/testing/")
 SESSION_ID_RE = re.compile(r"^S\d{3,}$")
 RECOGNISE_MAX_BYTES = 8 * 1024 * 1024       # larger files are not store documents
 # the commands that write the publish set, as steps of a job: a rebase applies them again in order
 # (`prepare` writes only what the next `start` or `save` writes again: it is not a step)
 STEP_COMMANDS = ("init", "settings", "theme", "review", "review-doc", "position", "snooze", "override",
-                 "apply-mapping", "save", "close", "addendum", "testing-note", "finish-prepare")
+                 "apply-mapping", "save", "close", "addendum", "testing-note", "finish-prepare", "tag-checks")
 _RUN = {"argv": None, "cmd": None, "replaying": False}
 
 
@@ -7557,6 +8128,8 @@ def store_role(path):
         return STATE_PATH
     if "page_version" in doc and isinstance(doc.get("sessions"), list):
         return PAGE_PATH
+    if doc.get("kind") == GUIDELINES_KIND and isinstance(doc.get("records"), list):
+        return GUIDELINES_PATH
     if "v" in doc and ("payload" in doc or doc.get("empty") is True):
         return PREPARED_PATH
     sid = doc.get("id")
@@ -7635,7 +8208,7 @@ def read_summary(st, path):
 
 
 STEP_FILE_ARGS = ("--md", "--mapping", "--feedback", "--review", "--reflection", "--scores", "--close-gaps",
-                  "--stops", "--config", "--profile", "--blueprint")
+                  "--stops", "--config", "--profile", "--blueprint", "--results")
 
 
 APPLIED_STEPS_MAX = 64          # the step tokens a ledger keeps: the latest jobs' writes
@@ -7906,8 +8479,20 @@ def rebase_job(work, store, version, prefs=None, today=None, offset=None):
         if code != 0 or out.get("ok") is False:
             why = out.get("error") or out.get("printed") or "exit status %s" % code
             if cmd == "finish-prepare":         # planned on the ledger as it was: the next round is written then
-                result["steps"].append({"cmd": cmd, "applied": "dropped: the round prepared ahead was planned "
-                                                              "on the ledger as it was"})
+                dropped = {"cmd": cmd, "applied": "dropped: the round prepared ahead was planned on the ledger as it was"}
+                plan_path = os.path.join(work, NEXT_DIR, PLAN_FILE)
+                asked = (load_json(plan_path).get("tag_checks") or {}) if os.path.isfile(plan_path) else {}
+                checked = [f for f in round_tag_results(os.path.join(work, NEXT_DIR), asked) if os.path.isfile(f)]
+                if checked:
+                    # the guideline tags it checked do not depend on the ledger: filed all the same
+                    argv = ["tag-checks", "--work", os.path.abspath(work)]
+                    for f in checked:
+                        argv += ["--results", os.path.abspath(f)]
+                    code, out = run_step(dict(step, argv=argv))
+                    if code == 0 and out.get("ok") is not False:
+                        dropped["tag_checks"] = "filed"
+                        replayed.append("tag-checks")
+                result["steps"].append(dropped)
                 continue
             die("this job could not be applied again on the store as read now: `%s` stopped: %s. Nothing of the "
                 "job is lost: its files are in %s (store.md section 6)" % (cmd, why, os.path.abspath(work)))
@@ -9348,6 +9933,8 @@ def build_parser():
     s.add_argument("--allow-unreflected", action="store_true")
     s = command("finish-prepare", cmd_finish_prepare); s.add_argument("--revised", action="store_true")
     s.add_argument("--no-evidence", action="store_true")
+    s = command("tag-checks", cmd_tag_checks); s.add_argument("--list"); s.add_argument("--results", action="append")
+    s.add_argument("--due", choices=("review", "rolling"), default="review"); s.add_argument("--sweep", type=int)
     s = command("keys", cmd_keys, work=False); s.add_argument("paths", nargs="+"); s.add_argument("--plan")
     s = command("key-table", cmd_key_table, work=False)
     s = command("command-table", cmd_command_table, work=False)
