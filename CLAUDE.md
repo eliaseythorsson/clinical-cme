@@ -38,7 +38,9 @@ do not add one. Run `claude plugin validate .` after touching either manifest.
 - Version bumps touch `SKILL.md` (heading), `README.md` (skill), and `PAGE_VERSION` in
   `scripts/cme.py` when the page changes.
 - `python3 -m py_compile skills/clinical-cme/scripts/cme.py` and `python3 -m pytest -q tests` must
-  pass before committing (GitHub Actions runs both on every pull request).
+  pass before committing (GitHub Actions runs both on every pull request). With `pytest-xdist`
+  installed (test-only; the engine stays standard library), `-n auto` runs it on every core, as CI
+  does; tests must stay independent under it: own `tmp_path`, nothing written into the repo tree.
 - Domain vocabulary: `CONTEXT.md`. Decisions: `docs/adr/`. Current plan: `docs/plan-v5.md`.
 - A rule for writing items is written once, in `references/standards.md`; briefs cite its number.
   After changing `KEY_*` in `cme.py`, paste `cme.py key-table` into rule 9 (a test compares them).

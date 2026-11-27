@@ -21,6 +21,8 @@ from test_finish_prepare import evidence
 SIZES = (10, 40, 100, 300)
 START_LIMIT = 1.0           # seconds for one `start` (or `open`), interpreter included
 GROWTH_LIMIT = 3.0          # the 300-session store against the 10-session one
+GROWTH_FLOOR = 0.05         # ... or this many seconds more: below it a ratio of timings is noise
+RUNS = 7                    # runs of each call; the fastest counts
 TRANSCRIPT = "Verbatim transcript of an example round. " * 600      # ~25 KB a session document
 
 
@@ -97,17 +99,24 @@ def stores(tmp_path_factory):
     return out
 
 
-def fastest(w, command, day, runs=5):
-    """The fastest of several runs of `start` or `open` on a fresh job, in seconds, and the
-    last run's output."""
-    best, out = None, None
+def timed(w, command, day):
+    """One run of `start` or `open` on a fresh job: seconds taken, and the output."""
+    w.forget_job()
+    t = time.perf_counter()
+    out = w.start(day) if command == "start" else w.open(today=day)
+    return time.perf_counter() - t, out
+
+
+def fastest(stores, command, runs=RUNS):
+    """{sessions: the fastest of several runs on that store, in seconds} and {sessions: the last
+    run's output}. The stores take turns, run by run, so that a burst of load on the machine
+    (other tests in parallel, CI neighbours) slows them alike rather than one of them."""
+    best, outs = {}, {}
     for _ in range(runs):
-        w.forget_job()
-        t = time.perf_counter()
-        out = getattr(w, command)(day) if command == "start" else w.open(today=day)
-        took = time.perf_counter() - t
-        best = took if best is None else min(best, took)
-    return best, out
+        for n, (w, day) in stores.items():
+            took, outs[n] = timed(w, command, day)
+            best[n] = min(best.get(n, took), took)
+    return best, outs
 
 
 def test_the_stores_grow_with_history_and_the_ledger_stays_capped(stores):
@@ -124,13 +133,17 @@ def test_the_stores_grow_with_history_and_the_ledger_stays_capped(stores):
 
 @pytest.mark.parametrize("command", ["start", "open"])
 def test_time_stays_flat_with_session_history(stores, command):
-    took = {}
-    for n, (w, day) in stores.items():
-        took[n], out = fastest(w, command, day)
+    """History must not make the call slower. The calls take tens of milliseconds, where a ratio
+    alone is noise (issue #72): the 300-session store may take GROWTH_LIMIT times the 10-session
+    one, or GROWTH_FLOOR seconds more, whichever is larger. That is too coarse to see one extra
+    read of every session document (about 20 ms for 300 here); the test below guards the work
+    itself, by the files `start` opens."""
+    took, outs = fastest(stores, command)
+    for n in stores:
         if command == "start":
-            assert out["prepared"]["used"] is True, out["prepared"]
+            assert outs[n]["prepared"]["used"] is True, outs[n]["prepared"]
         assert took[n] < START_LIMIT, "%s with %d sessions took %.2f s" % (command, n, took[n])
-    assert took[300] < GROWTH_LIMIT * took[10], took
+    assert took[300] < max(GROWTH_LIMIT * took[10], took[10] + GROWTH_FLOOR), took
 
 
 def test_start_reads_no_session_document_review_or_page_file(stores, monkeypatch, capsys):
