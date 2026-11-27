@@ -14,9 +14,12 @@ jobs:
         python-version: ["3.12", "3.8"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # uv, not setup-python: the runner image (Ubuntu 26.04) has no Python 3.8 for setup-python,
+      # while uv's standalone builds still include it
+      - uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
+          activate-environment: true
       # the page render tests (tests/test_page.py) run the page's script with node; without it
       # they fail here rather than skip
       - uses: actions/setup-node@v4
@@ -26,7 +29,8 @@ jobs:
       - run: python -m py_compile plugins/clinical-cme/skills/clinical-cme/scripts/cme.py
       # pytest-xdist runs the tests on every core (issue #72); pip picks a release that supports
       # the job's Python (3.6.x on 3.8)
-      - run: pip install pytest pytest-xdist && python -m pytest -q -n auto tests
+      - run: python --version
+      - run: uv pip install pytest pytest-xdist && python -m pytest -q -n auto tests
   # on main: every engine call as a real process, as the assistant runs cme.py (the slow job: about
   # 14 minutes on one core, hence -n auto)
   subprocess:
