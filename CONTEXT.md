@@ -91,6 +91,14 @@ _Avoid_: migration (nothing is migrated as an act of its own, ADR 0003)
 **Declared shape**:
 The one statement of what a current ledger holds and the defaults an older one gets: `LEDGER_SHAPE` with `DEFAULT_CONFIG` and `DEFAULT_PROFILE`, and how a null or empty setting reads. `validate` checks a ledger against it.
 
+**Usage setting**:
+How much of the learner's Claude usage rounds take (`config.usage`): **Full**, the engine as it always was, or **Economy**, a preset that decides some settings (a smaller mix with the case every other round, no listening, no evidence depth, no guideline sweeps of their own) and has the items written on the examiner's own model and only the claims the keys rest on checked. Asked at setup; changed by asking or on the page (issue #93, ADR 0015).
+_Avoid_: plan, tier (the learner's Claude plan is theirs and unknown to the skill), budget (that is the session's time)
+
+**Effective settings**:
+The settings as they take effect: the ledger's settings with the usage preset in place of each one it decides that the learner did not set themselves (`set_by_learner`), resolved whenever they are read and never written into the ledger (`effective_config`).
+_Avoid_: overrides (the learner's own settings are the rule, the preset the fallback)
+
 **Upgrade step**:
 One small named change in the load step that brings a ledger written before one change of the engine to what it reads since (`UPGRADES`, oldest first, each a no-op afterwards). History records (sessions, topics, gaps) are not upgraded: they are read as written.
 

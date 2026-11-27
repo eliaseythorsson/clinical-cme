@@ -6,6 +6,37 @@ feedback — in the mix each learner chooses — graded against current evidence
 reflection that feeds spaced repetition. Every round is coded (reasoning steps, error types,
 biases, calibration) and periodically analysed in a candid progress review.
 
+## Usage: Full or Economy (#93, not yet released)
+
+Rounds use your Claude usage, and setup asks how much of it they should take. You can switch at
+any time, by asking or under Settings on your page.
+
+- **Full**: the most capable model writes the questions, every claim the feedback rests on is
+  checked against its source, each round ends with podcast picks, and topics you keep answering
+  well get the studies behind the recommendation. Best on a plan with high usage limits.
+- **Economy**: noticeably lower usage, and lower quality. The questions are written by the same
+  model that grades them (a different assistant still grades them, never the one that wrote
+  them), only the facts the answer keys turn on are checked, there are no podcast picks and no
+  deeper evidence, and rounds are smaller: 2 MCQs and a focused question, with the full case every
+  other round. Anything you set yourself, such as your round mix, stays as you set it.
+
+How much less Economy uses: measured figures to follow.
+
+Technical: `config.usage` (`full`, the default and what every existing ledger reads as, or
+`economy`); a preset resolved whenever the settings are read, never written into the ledger;
+`config.set_by_learner` keeps what the learner set themselves (ADR 0015). `start`, `open`,
+`settings` and `init` print `usage` (who writes the items, how far the evidence check goes, the
+settings as they take effect). A usage set on the page is kept in the ledger at the next round
+and sets a round prepared before it aside. `start --case` brings the case into a round without
+it (Economy's every other round).
+
+## Page update 5.7.0
+
+- Settings has a **Full / Economy** control ("How much of your Claude usage rounds use"), saved
+  to `cme/prefs` as `usage` and applied from the next round; the settings list shows the usage.
+- With Economy's own round the mix reads "… + 1 case every other round"; a mix saved on the page
+  is the learner's own and has the case in every round.
+
 ## What is new in version 7.0
 
 Built on 2026-11-27 from the queue after 6.0 (#83 step 2, #84, #85, #89, #90, #56, #57, #72;

@@ -45,7 +45,7 @@ import zlib
 
 SCHEMA = 4
 SKILL_VERSION = "7.0.0"
-PAGE_VERSION = "5.6.0"   # templates/page.html carries <meta name="cme-page-version" content="5.6.0">
+PAGE_VERSION = "5.7.0"   # templates/page.html carries <meta name="cme-page-version" content="5.7.0">
 
 DEFAULT_CONFIG = {
     # The mix a new learner starts with: one focused question and the case, about 35 minutes
@@ -79,6 +79,11 @@ DEFAULT_CONFIG = {
     "show_coding": True,
     "reminders": False,
     "listening": True,                   # one podcast episode per topic at the end of a round (issue #50)
+    "usage": "full",                     # how much of the learner's Claude usage rounds take (issue #93, ADR 0015):
+                                         # full | economy (USAGE_PRESETS); read through effective_config
+    "usage_set_at": None,                # when `usage` was last set (setup, a chat, the page): see apply_prefs
+    "set_by_learner": [],                # the settings a usage preset decides that the learner set themselves:
+                                         # those keep their own value whatever the preset (PRESET_KEYS)
     "resource_preferences": {"free_only": False, "formats": ["guidelines", "review articles"]},
 }
 DEFAULT_PROFILE = {
@@ -110,7 +115,8 @@ PARAGRAPH_MAX = 4000     # characters kept of a paragraph
 # this list has never heard of, sets it aside. `round_set_at` is here because it only dates the
 # mix: the mix itself (mcqs, focused, case) is not. See state_schema.md §8.
 CONTENT_NEUTRAL_CONFIG = ("testing", "reminders", "prepare_task", "prepare_ahead", "helpers", "show_coding",
-                          "target_sessions_per_week", "review_interval_days", "round_set_at", "guideline_sweeps")
+                          "target_sessions_per_week", "review_interval_days", "round_set_at", "guideline_sweeps",
+                          "usage_set_at", "set_by_learner")
 # The labels are display only (never used to write an item), and the `_set_at` stamps only date
 # the paragraphs: the paragraphs themselves are not here.
 CONTENT_NEUTRAL_PROFILE = ("display_name", "onboarded_at", "journey_label", "aim_tags",
@@ -453,7 +459,8 @@ def mix_text(counts):
     if f:
         parts.append("%d focused question%s" % (f, "" if f == 1 else "s"))
     if c.get("case"):
-        parts.append("the case")
+        parts.append("the case" + (" every other round" if c.get("case_every") == 2
+                                   else " every %d rounds" % c["case_every"] if (c.get("case_every") or 1) > 2 else ""))
     return " + ".join(parts) or "no items"
 
 
@@ -482,8 +489,9 @@ def apply_prefs(state, prefs, warnings=None):
         warnings.append("page settings ignored: expected {round: {...}, base, updated}")
         return {}
     paragraphs = apply_paragraphs(state, prefs, warnings)
-    if "round" not in prefs and any(k in prefs for k, _, _ in PARAGRAPHS):
-        return paragraphs       # a document that holds paragraphs only
+    paragraphs.update(apply_usage_pref(state, prefs, warnings))
+    if "round" not in prefs and any(k in prefs for k in [p for p, _, _ in PARAGRAPHS] + ["usage"]):
+        return paragraphs       # a document that holds paragraphs or the usage only
     if not isinstance(prefs.get("round"), dict) or not prefs.get("updated"):
         warnings.append("page settings ignored: expected {round: {...}, base, updated}")
         return paragraphs
@@ -495,7 +503,8 @@ def apply_prefs(state, prefs, warnings=None):
         mine, theirs = parse_stamp(str(prefs["updated"])), parse_stamp(set_at)
         if set_at is not None and not (mine and theirs and mine > theirs):
             return paragraphs     # overtaken by a later change in a chat
-    trial = {k: cfg[k] for k in ("mcqs", "focused", "case")}
+    shown = mix_in_force(state)     # the mix the page showed: the usage preset's, where the learner has none
+    trial = {k: shown[k] for k in ("mcqs", "focused", "case")}
     for k in ("mcqs", "focused", "case"):
         if k in prefs["round"]:
             trial[k] = prefs["round"][k]
@@ -510,11 +519,37 @@ def apply_prefs(state, prefs, warnings=None):
     if not ok:
         warnings.append("page settings ignored: invalid round mix %s" % json.dumps(prefs["round"]))
         return paragraphs
-    changes = {k: v for k, v in trial.items() if cfg[k] != v}
+    changes = {k: v for k, v in trial.items() if shown[k] != v}
     cfg.update(trial)
+    note_set_by_learner(cfg, trial)      # a mix saved on the page is the learner's own (issue #93)
     cfg["round_set_at"] = str(prefs["updated"])
     changes.update(paragraphs)
     return changes or {"unchanged": True}
+
+
+def apply_usage_pref(state, prefs, warnings):
+    """The usage the learner chose on their page (issue #93): prefs["usage"] = {"value": "full" or
+    "economy", "updated": "<ISO time>"}. Applied when its `updated` is later than
+    config.usage_set_at (or that was never set), so it is applied once and a later change made in
+    a chat wins. Returns {"usage": <value>} when it changed the setting."""
+    doc = prefs.get("usage")
+    if doc is None:
+        return {}
+    value = doc.get("value") if isinstance(doc, dict) else None
+    stamp = parse_stamp(doc.get("updated")) if isinstance(doc, dict) else None
+    if value not in USAGE_MODES or not stamp:
+        warnings.append("page settings ignored: usage needs {value: %s, updated}" % " or ".join(USAGE_MODES))
+        return {}
+    cfg = state["config"]
+    set_at = cfg.get("usage_set_at")
+    theirs = parse_stamp(set_at)
+    if set_at is not None and not (theirs and stamp > theirs):
+        return {}           # applied before, or overtaken by a later change in a chat
+    cfg["usage_set_at"] = str(doc["updated"])
+    if usage_mode(cfg) == value:
+        return {}
+    cfg["usage"] = value
+    return {"usage": value}
 
 
 def apply_paragraphs(state, prefs, warnings):
@@ -552,6 +587,13 @@ def apply_paragraphs(state, prefs, warnings):
 def paragraphs_changed(changes):
     """The paragraphs among the changes apply_prefs returned, in the learner's terms."""
     return [name for key, _, name in PARAGRAPHS if key in (changes or {})]
+
+
+def page_rewrites(changes):
+    """What a page setting changed that a round prepared before it was not written for: the
+    paragraphs (what the author pitches to) and the usage (who writes the items and how far they
+    are checked, issue #93). Kept in the ledger at once; the prepared round is set aside."""
+    return paragraphs_changed(changes) + (["usage"] if "usage" in (changes or {}) else [])
 
 
 STAGE_FROM_ROLE = (      # an old `role`, read for a display label only; first match wins
@@ -758,9 +800,106 @@ def deep_merge(target, changes):
             target[k] = v
 
 
+# ---------------------------------------------------------------- usage: full or economy (issue #93, ADR 0015)
+#
+# `config.usage` says how much of the learner's Claude usage rounds take. `full` is the engine as it
+# always was. A preset (USAGE_PRESETS) decides some settings for the learner: it is resolved when the
+# settings are read (effective_config), never written into the config, so the config keeps what the
+# learner (or the default) set, and leaving the preset gives the settings back as they were. A setting
+# the learner set themselves (`config.set_by_learner`) keeps their value whatever the preset; the round
+# mix counts as one setting (MIX_KEYS: set one of them and the whole mix is theirs). What a preset
+# changes beyond the settings (the author's model, how far the evidence check goes) is printed as
+# `usage` by `start`, `open`, `settings` and `init`, and in the plan, for SKILL.md and the briefs.
+USAGE_MODES = ("full", "economy")
+MIX_KEYS = ("mcqs", "focused", "case")
+USAGE_PRESETS = {
+    "full": {},
+    # economy: no evidence deepening, no podcast search, no guideline sweeps of the learner's own, and a
+    # smaller round: 2 MCQs and 1 focused question, the case every other round (CASE_EVERY)
+    "economy": {"evidence_ladder": False, "listening": False, "guideline_sweeps": "off",
+                "mcqs": 2, "focused": 1, "case": True},
+}
+PRESET_KEYS = ("mcqs", "focused", "case", "evidence_ladder", "listening", "guideline_sweeps")
+# per preset: who writes the items (`most_capable`: the most capable model the session offers;
+# `examiner`: the examiner's own model) and what the evidence check covers (`full`: the whole
+# verification list, evidence_check.md; `keys`: only the claims the keys rest on, capped, §1.1)
+USAGE_WORK = {"full": {"author": "most_capable", "evidence": "full"},
+              "economy": {"author": "examiner", "evidence": "keys"}}
+CASE_EVERY = {"economy": 2}         # the preset's mix has the case every Nth round (case_in_turn)
+
+
+def usage_mode(cfg):
+    """The usage mode of a config: `full` unless it names another known mode."""
+    v = str(cfg.get("usage") or USAGE_MODES[0]).strip().lower()
+    return v if v in USAGE_MODES else USAGE_MODES[0]
+
+
+def mix_set_by_learner(cfg):
+    return any(k in (cfg.get("set_by_learner") or []) for k in MIX_KEYS)
+
+
+def effective_config(cfg):
+    """The settings as they take effect: the config with the usage preset in place of every
+    setting it decides that the learner did not set themselves, and `case_every` (1: the case in
+    every round the mix has one; 2: every other round, the preset's own mix). Reads only."""
+    out = dict(cfg)
+    mode = usage_mode(cfg)
+    mine = set(cfg.get("set_by_learner") or [])
+    own_mix = mix_set_by_learner(cfg)
+    preset = USAGE_PRESETS[mode]
+    for k, v in preset.items():
+        if (own_mix if k in MIX_KEYS else k in mine):
+            continue
+        out[k] = v
+    out["case_every"] = CASE_EVERY.get(mode, 1) if any(k in preset for k in MIX_KEYS) and not own_mix else 1
+    return out
+
+
+def usage_status(st):
+    """What `start`, `open`, `settings` and `init` print as `usage`: the mode, who writes the items
+    and how far the evidence check goes (SKILL.md reads both), the settings the preset decides as
+    they take effect, and which of them the learner set themselves (`kept`)."""
+    cfg = st["config"]
+    mode = usage_mode(cfg)
+    eff = effective_config(cfg)
+    preset = USAGE_PRESETS[mode]
+    mine = set(cfg.get("set_by_learner") or [])
+    kept = sorted({"mix" if k in MIX_KEYS else k for k in preset
+                   if (mix_set_by_learner(cfg) if k in MIX_KEYS else k in mine)})
+    return dict(USAGE_WORK[mode], mode=mode, evidence_ladder=bool(eff["evidence_ladder"]),
+                listening=eff["listening"] is not False, guideline_sweeps=guideline_sweeps(st),
+                case_every=eff["case_every"], kept=kept)
+
+
+def note_set_by_learner(cfg, changes):
+    """Record which settings a usage preset decides were set by the learner in `changes` (a
+    settings change, setup, a page setting). `set_by_learner` given in the change replaces the
+    list first (`[]`: let the preset decide them all again)."""
+    if "set_by_learner" in changes:
+        cfg["set_by_learner"] = [k for k in PRESET_KEYS if k in (changes["set_by_learner"] or [])]
+    mine = list(cfg.get("set_by_learner") or [])
+    for k in PRESET_KEYS:
+        if k in changes and k not in mine:
+            mine.append(k)
+    cfg["set_by_learner"] = [k for k in PRESET_KEYS if k in mine]
+
+
+def case_in_turn(st):
+    """With the preset's case every other round (`case_every` 2): whether the next round has the
+    case. It has it unless the last round recorded had one, so it goes by what was played, not by
+    a count: a round stopped before its case leaves the case for the next one. Topics not played
+    keep their schedule: the case slot is simply not planned."""
+    every = effective_config(st["config"])["case_every"]
+    if every <= 1:
+        return True
+    log = st["previous"] + st["sessions"]
+    recent = log[-(every - 1):] if log else []
+    return not any(s.get("case") for s in recent)
+
+
 def listening_on(st):
-    """Listening is on unless the learner turned it off."""
-    return st["config"]["listening"] is not False
+    """Listening is on unless the learner turned it off (or their usage preset does)."""
+    return effective_config(st["config"])["listening"] is not False
 
 
 def podcast_sources(value, where="podcast_sources"):
@@ -1196,7 +1335,7 @@ def evidence_depth(st, tid, aspect=None, retests=False, subtopic=None):
     item's sub-topic where it has one (issue #81), else on the topic. A focused question goes at
     most one depth beyond what its own aspect has earned; an item on an open gap (`retests`, or
     a gap open on the topic that bears on its sub-topic) stays at the first depth."""
-    if not st["config"]["evidence_ladder"]:
+    if not effective_config(st["config"])["evidence_ladder"]:
         return None
     run = answered_in_a_row(st, tid, subtopic=subtopic) if tid else 0
     level = depth_level(run)
@@ -1469,7 +1608,7 @@ LEDGER_SHAPE = (
 LEDGER_OPTIONAL = {"content_gen": int, "applied_steps": list, "guidelines_gen": int}
 # The types of the settings and the profile, read off their defaults; a null default declares
 # the type the value has once set.
-CONFIG_NULLABLE = {"round_set_at": str}
+CONFIG_NULLABLE = {"round_set_at": str, "usage_set_at": str}
 PROFILE_NULLABLE = {"display_name": str, "subspecialty": str, "journey_set_at": str, "aim_set_at": str,
                     "journey_label": str, "aim_tags": list, "onboarded_at": str, "podcast_sources": dict,
                     "utc_offset": NUMBER}
@@ -1478,9 +1617,9 @@ PROFILE_NULLABLE = {"display_name": str, "subspecialty": str, "journey_set_at": 
 # `listening` is on unless it is false.
 CONFIG_NULL = {"mcqs": 0, "focused": 0, "new_topics_per_round": 0, "case": False, "evidence_ladder": False,
                "helpers": False, "prepare_ahead": False, "prepare_task": False, "testing": False,
-               "show_coding": False, "reminders": False, "round_set_at": None}
+               "show_coding": False, "reminders": False, "round_set_at": None, "usage_set_at": None}
 # Settings whose empty value (0, "", []) means "not set": they read as the default.
-CONFIG_EMPTY = ("review_interval_days", "intervals_days", "guideline_region", "guideline_sweeps")
+CONFIG_EMPTY = ("review_interval_days", "intervals_days", "guideline_region", "guideline_sweeps", "usage")
 PROFILE_EMPTY = ("specialty",)
 # A ledger written before the round mix and its length were settings of their own keeps what every
 # round had then, whatever a new learner's default becomes (upgrade step `settings_of_4_2`).
@@ -1572,6 +1711,22 @@ def upgrade_blueprint_shape(st):
     return st
 
 
+def upgrade_set_by_learner(st):
+    """A ledger from before the usage setting (issue #93) has no `set_by_learner`: what its learner
+    set themselves is read off the settings. Its round mix was chosen at setup (or is the mix of
+    its era), so the mix is theirs; a preset-decided setting that differs from the default was
+    set by them too. So a learner who moves to Economy keeps what they chose. Usage stays full."""
+    cfg = st.get("config")
+    if not isinstance(cfg, dict) or "set_by_learner" in cfg:
+        return st
+    mine = list(MIX_KEYS)
+    for k in PRESET_KEYS:
+        if k not in MIX_KEYS and k in cfg and cfg[k] is not None and cfg[k] != DEFAULT_CONFIG[k]:
+            mine.append(k)
+    cfg["set_by_learner"] = mine
+    return st
+
+
 # The upgrade steps, oldest first: each brings a ledger written before one change to what the
 # engine reads since, in place, and is a no-op afterwards. A new step goes at the end.
 UPGRADES = (
@@ -1580,6 +1735,7 @@ UPGRADES = (
     ("blueprint_shape", upgrade_blueprint_shape),     # two-level blueprint, flat in the ledger (issue #81)
     ("one_code_per_area", migrate_domains),           # TOX and EMRG one area (issue #80)
     ("old_default_region", upgrade_old_default_region),  # no region of its own: Iceland/Europe kept (issue #56)
+    ("set_by_learner", upgrade_set_by_learner),       # what the learner set, before the usage presets (issue #93)
 )
 
 
@@ -2166,7 +2322,8 @@ def all_sessions_for_novelty(state):
 # The command line takes them as --mcqs N, --focused N, --domain D, --seed N and the flags.
 PLAN_OPTIONS = (("focused", None, int), ("mcqs", None, int), ("domain", None, str), ("seed", None, int),
                 ("allow_repeat", False, bool), ("no_drill", False, bool), ("force_drill", False, bool),
-                ("no_new", False, bool), ("no_case", False, bool))
+                ("no_new", False, bool), ("no_case", False, bool),
+                ("case", False, bool))      # the case this round, also on an Economy round without it (#93)
 
 
 def plan_options(given=None):
@@ -2185,7 +2342,9 @@ def plan_options_given(given):
 def round_size(st, opts):
     """(case, mcqs, focused): the round's counts, the mix in force unless an option changes it."""
     mix = plan_counts(st)
-    n_case = 0 if opts["no_case"] else mix["case"]
+    if opts["case"] and opts["no_case"]:
+        die("--case and --no-case cannot both be given")
+    n_case = 0 if opts["no_case"] else 1 if opts["case"] else mix["case"]
     n_mcqs = opts["mcqs"] if opts["mcqs"] is not None else mix["mcqs"]
     n_focused = opts["focused"] if opts["focused"] is not None else mix["focused"]
     for name, v in (("--mcqs", n_mcqs), ("--focused", n_focused)):
@@ -2702,8 +2861,12 @@ def briefed(st, el, chosen, mix, opts, rng):
         "lab_units": cfg["lab_units"], "blood_gas_units": cfg["blood_gas_units"],
         "session_minutes": cfg["session_minutes"], **guideline_context(st),
         "feedback_depth": cfg["feedback_depth"], "show_coding": cfg["show_coding"],
-        "evidence_ladder": bool(cfg["evidence_ladder"]),
+        "evidence_ladder": bool(effective_config(cfg)["evidence_ladder"]),
         **speed_settings(st),
+        # with a usage preset other than full (issue #93): who writes the items and how far the
+        # evidence check goes (author.md; absent: full, the most capable model and the whole list)
+        **({"usage": {k: v for k, v in usage_status(st).items() if k in ("mode", "author", "evidence")}}
+           if usage_mode(cfg) != "full" else {}),
         # listening (rule 8): whether the kits get a "## Listening" section, and whose shows
         "listening": listening_on(st),
         "podcast_sources": podcast_sources(st["profile"]["podcast_sources"], "profile.podcast_sources"),
@@ -4467,7 +4630,10 @@ def round_estimate(st):
     """What settings and init print about the round: the mix, its estimate and, once rounds
     are timed, what the estimate rests on (`basis`) and the hint."""
     mix, minutes, n = mix_estimate(st)
-    out = {"mix": mix_text(mix), "estimated_minutes": minutes}
+    force = mix_in_force(st)
+    out = {"mix": mix_text(force if force["case_every"] > 1 else mix), "estimated_minutes": minutes}
+    if force["case_every"] > 1:
+        out["next_round"] = mix_text(mix)       # the estimate is for the next round, with or without its case
     if n:
         out["basis"] = based_on(n)
     hint = time_hint(st)
@@ -4481,7 +4647,8 @@ def settings_in_effect(st, section):
     form they take effect in, for comparing two versions of the settings."""
     out = dict(st[section])
     if section == "config":
-        out["listening"] = listening_on(st)
+        out = effective_config(out)             # the usage preset's settings as they take effect
+        out["listening"] = out["listening"] is not False
         out["evidence_ladder"] = bool(out["evidence_ladder"])
     else:
         out["podcast_sources"] = podcast_sources(out["podcast_sources"], "profile.podcast_sources")
@@ -4499,6 +4666,11 @@ def check_setting_changes(changes):
             die("config.%s must be true or false" % k)
     if "guideline_sweeps" in changes and changes["guideline_sweeps"] not in GUIDELINE_SWEEPS:
         die("config.guideline_sweeps must be one of %s" % ", ".join(GUIDELINE_SWEEPS))
+    if "usage" in changes and changes["usage"] not in USAGE_MODES:
+        die("config.usage must be one of %s" % ", ".join(USAGE_MODES))
+    mine = changes.get("set_by_learner", [])
+    if not isinstance(mine, list) or any(k not in PRESET_KEYS for k in mine):
+        die("config.set_by_learner must be a list of settings among %s" % ", ".join(PRESET_KEYS))
     v = changes.get("session_minutes")
     if v is not None and (isinstance(v, bool) or not isinstance(v, (int, float)) or v <= 0):
         die("config.session_minutes must be a positive number of minutes")
@@ -4517,6 +4689,9 @@ def cmd_settings(args):
     prof_changes = load_json_arg(args.profile) if args.profile else {}
     check_setting_changes(cfg_changes or {})
     deep_merge(st["config"], cfg_changes or {})
+    note_set_by_learner(st["config"], cfg_changes or {})
+    if "usage" in (cfg_changes or {}) and "usage_set_at" not in cfg_changes:
+        st["config"]["usage_set_at"] = now_ts()   # a later page setting of the usage is judged against it
     if "utc_offset" in (prof_changes or {}):
         utc_offset(prof_changes["utc_offset"])
     deep_merge(st["profile"], prof_changes or {})
@@ -4548,7 +4723,7 @@ def cmd_settings(args):
 
     def report():
         out = {"ok": True, "gen": st["gen"], "config": st["config"], "review": st["review"],
-               **guideline_context(st), "listening": listening_status(st)}
+               **guideline_context(st), "listening": listening_status(st), "usage": usage_status(st)}
         out["round"] = round_estimate(st)       # what to confirm a new mix with
         if any(k in (prof_changes or {}) for k in ("journey", "aim", "journey_label", "aim_tags")):
             out["profile"] = {k: st["profile"][k] for k in ("journey", "journey_label", "aim", "aim_tags")}
@@ -4979,6 +5154,9 @@ def cmd_init(args):
     cfg_changes = load_json_arg(args.config) or {}
     check_setting_changes(cfg_changes)
     deep_merge(st["config"], cfg_changes)
+    note_set_by_learner(st["config"], cfg_changes)     # what setup was told counts as the learner's own
+    if "usage" in cfg_changes:
+        st["config"]["usage_set_at"] = st["config"]["usage_set_at"] or now_ts()
     if blank(st["config"].get("guideline_region")):     # a skipped answer: today's default, never an older one
         st["config"]["guideline_region"] = DEFAULT_CONFIG["guideline_region"]
     make_current(st)            # a profile given in the old fields (role, goals, notes) is folded too; a null reads as always
@@ -5009,6 +5187,7 @@ def cmd_init(args):
     def report():
         out = {"ok": True, "gen": st["gen"], "domains": list(st["blueprint"]), "topics": len(bp_live_topics(st))}
         out["round"] = round_estimate(st)
+        out["usage"] = usage_status(st)
         if labels_needed(st):
             out["labels_needed"] = labels_needed(st)
         return out
@@ -5286,6 +5465,10 @@ def page_doc(st, lists=None):
     mix, minutes, timed = mix_estimate(st)
     factor, hint = pace(st)["factor"], time_hint(st)
     per = lambda k: MINUTES_PER[k] if factor == 1.0 else round(MINUTES_PER[k] * factor, 2)
+    force = mix_in_force(st)
+    if force["case_every"] > 1:     # the usage preset's mix, the case every other round: shown with its case
+        mix = force
+        minutes = paced(round_minutes(mix["mcqs"], mix["focused"], True, next_case_format(st)), factor)
     block = st.get("block")
     if isinstance(block, dict) and block.get("theme"):
         length = int(block.get("length") or BLOCK_LENGTH)
@@ -5345,6 +5528,8 @@ def page_doc(st, lists=None):
             "case_style": cfg["case_format"], "order": cfg["item_order"],
             "feedback": cfg["feedback_depth"], "coding_line": bool(cfg["show_coding"]),
             "review_every_days": cfg["review_interval_days"], "reminders": bool(cfg["reminders"]),
+            # full or economy (issue #93), and when it was last set: the page's `usage` setting goes by it
+            "usage": {"value": usage_mode(cfg), "set_at": cfg["usage_set_at"]},
             "emphasis": dict(prof["domain_emphasis"]), "self_ratings": ratings,
             "level": level, "aim": aim,                  # {"label", "text"} and {"tags", "text"}
         },
@@ -5377,8 +5562,11 @@ def status_dict(st, path, today):
         "drills_active": len(st["drills"]),
         # the block the next round belongs to; `line` is what the opening line says about it
         "block": status_block(st),
-        "round": {"mcqs": cfg["mcqs"], "focused": cfg["focused"], "case": bool(cfg["case"]),
-                  "minutes": cfg["session_minutes"], "item_order": cfg["item_order"]},
+        "round": dict({k: v for k, v in mix_in_force(st).items() if k != "case_every"},
+                      minutes=cfg["session_minutes"], item_order=cfg["item_order"]),
+        # usage: full or economy (issue #93): who writes the items, how far the evidence check goes,
+        # and the settings the preset decides as they take effect
+        "usage": usage_status(st),
         # display labels the assistant still has to derive from the learner's paragraphs (None: none)
         "labels_needed": labels_needed(st),
         **speed_settings(st),
@@ -5457,12 +5645,13 @@ def cmd_start(args):
         extra["utc_offset_recorded"] = offset
     prefs_warn = []
     prefs_changes = apply_prefs(st, info.get("prefs"), prefs_warn)
-    rewritten = paragraphs_changed(prefs_changes)
+    rewritten = page_rewrites(prefs_changes)
     kept = {}
     if rewritten:
-        # a paragraph written on the page changes what the author pitches to: it is kept in the
-        # ledger at once (the labels the assistant derives next are set on it), and the round
-        # prepared for the old words is set aside
+        # a paragraph written on the page changes what the author pitches to, and the usage who
+        # writes the items and how far they are checked: either is kept in the ledger at once (the
+        # labels the assistant derives next are set on a paragraph), and the round prepared before
+        # it is set aside
         path, _ = write_ledger(work, info, st, today, ROUND, kept)
     status = status_dict(st, path, today)
     status.update(extra)
@@ -5499,7 +5688,9 @@ def cmd_start(args):
             "used": used, "prepared": prepared["mix"], "source": source,
             "say": "Using the mix %s: %s. The round prepared ahead was written for %s and is set aside, "
                    "so this round is written now." % (
-                       "you set on your page" if source == "page" else "in your settings",
+                       "you set on your page" if source == "page" and any(k in prefs_changes for k in MIX_KEYS)
+                       else "of the usage you set on your page (%s)" % usage_mode(st["config"]).capitalize()
+                       if source == "page" and "usage" in prefs_changes else "in your settings",
                        mix_text(used), mix_text(prepared["mix"]))}
     if prepared["used"]:
         plan_out = prepared["summary"]
@@ -5516,9 +5707,13 @@ def cmd_start(args):
         else "case")
     status["started_at"] = start_times(work, st.get("next_id"), first, bool(prepared["used"]), args.at)
     status["opening"] = opening_line(status, plan_out, today)
-    if rewritten:
+    paragraphs = [r for r in rewritten if r != "usage"]
+    if paragraphs:
         status["opening"] += (" This round is written now, for what you wrote on your page about %s."
-                              % " and ".join(rewritten))
+                              % " and ".join(paragraphs))
+    if "usage" in rewritten:
+        status["opening"] += (" This round is written now, for the usage you set on your page: %s."
+                              % usage_mode(st["config"]).capitalize())
     if prepared["used"]:
         ready = prepared["ready"]
         status["prepared"]["unchecked"] = [n for n in SEALED_FILES if n in ready and EVIDENCE_FOR[n] not in ready]
@@ -5557,10 +5752,19 @@ def unpack(text):
     return json.loads(zlib.decompress(base64.b64decode(text)).decode("utf-8"))
 
 
+def mix_in_force(st):
+    """The round mix in force, with the usage preset's where the learner has not set one:
+    {"mcqs", "focused", "case": bool, "case_every"}."""
+    cfg = effective_config(st["config"])
+    return {"mcqs": int(cfg["mcqs"]), "focused": int(cfg["focused"]), "case": bool(cfg["case"]),
+            "case_every": cfg["case_every"]}
+
+
 def plan_counts(st, args=None):
-    """The round mix in force: {"mcqs", "focused", "case": 1 or 0}."""
-    cfg = st["config"]
-    return {"mcqs": int(cfg["mcqs"]), "focused": int(cfg["focused"]), "case": 1 if cfg["case"] else 0}
+    """The next round's mix: {"mcqs", "focused", "case": 1 or 0}; the mix in force, with the case
+    left out of a round whose turn it is not (case_in_turn)."""
+    mix = mix_in_force(st)
+    return {"mcqs": mix["mcqs"], "focused": mix["focused"], "case": 1 if mix["case"] and case_in_turn(st) else 0}
 
 
 # ---------------------------------------------------------------- guideline tags (issue #90)
@@ -5767,7 +5971,7 @@ def effective_guidelines(st, doc, central=None):
 
 
 def guideline_sweeps(st):
-    v = str(st["config"].get("guideline_sweeps") or GUIDELINE_SWEEPS[0]).strip().lower()
+    v = str(effective_config(st["config"]).get("guideline_sweeps") or GUIDELINE_SWEEPS[0]).strip().lower()
     return v if v in GUIDELINE_SWEEPS else GUIDELINE_SWEEPS[0]
 
 
@@ -6430,7 +6634,7 @@ def cmd_prepare(args):
     refuse_newer(st)                # the round would be tied to a ledger this engine cannot write
     # the round is written for the mix the next `start` will use: a mix set on the page and not
     # yet in the ledger counts here too (in memory only; `start` and `save` apply it for good)
-    rewritten = paragraphs_changed(apply_prefs(st, info.get("prefs")))
+    rewritten = page_rewrites(apply_prefs(st, info.get("prefs")))
     cfg = st["config"]
     why = None
     if not cfg["prepare_ahead"]:
@@ -6449,6 +6653,7 @@ def cmd_prepare(args):
         # is only planned with; `start` and `save` keep that.)
         fresh, _ = current_ledger(work, info)
         apply_paragraphs(fresh, info.get("prefs") or {}, [])
+        apply_usage_pref(fresh, info.get("prefs") or {}, [])
         write_ledger(work, info, fresh, today, ROUND, kept)
         bump_gen(st)            # the ledger planned with is that one, plus a mix still waiting
     plan = plan_round(st, None, today + dt.timedelta(days=1))        # no one-off options: the round as set
@@ -7466,7 +7671,8 @@ COMMANDS = (
      ' into the work folder, with `prepared.unchecked` naming the sealed files that came without '
      'an evidence file (start a checker for each); otherwise `prepared.why` says why not and the '
      'round is planned as usual. Plan options, for this round only: `--mcqs N`, `--focused N`, '
-     '`--no-case`, `--domain CODE`, `--no-new`, `--allow-repeat`, `--no-drill`.'),
+     '`--no-case`, `--case` (the case also on a round without it, such as Economy\'s every other '
+     'round), `--domain CODE`, `--no-new`, `--allow-repeat`, `--no-drill`.'),
     ('`present --work W --block questions\\|case\\|bank`',
      'Print only the text the learner is to see from the sealed files in `W` (one `present` '
      "block, or the case's results bank), so it can be sent without opening the keys. For the "

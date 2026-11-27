@@ -84,6 +84,10 @@ Planning notes:
   fills in the candidates.
 - Every vignette and stem is clearly different from `already_used` and
   `recent_cases_any_topic`: patient, setting, presentation, twist.
+- With `usage` in the plan and its `evidence` `keys` (the learner chose Economy usage), the
+  verification lists hold only the claims the keys rest on: one line per short question, at
+  most two for the case (`evidence_check.md` §1.1); the items, keys and kits are written to the
+  same rules. Without `usage` in the plan, the lists are as below.
 
 ## 2. Parts and order
 

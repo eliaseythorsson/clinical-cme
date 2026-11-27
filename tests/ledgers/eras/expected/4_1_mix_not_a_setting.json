@@ -63,6 +63,11 @@
   "focused": 0,
   "case": true,
   "session_minutes": 20,
+  "set_by_learner": [
+   "mcqs",
+   "focused",
+   "case"
+  ],
   "round_set_at": null,
   "evidence_ladder": true,
   "guideline_sweeps": "custom",
@@ -70,7 +75,9 @@
   "prepare_ahead": true,
   "prepare_task": false,
   "testing": false,
-  "listening": true
+  "listening": true,
+  "usage": "full",
+  "usage_set_at": null
  },
  "review": {
   "last": null,

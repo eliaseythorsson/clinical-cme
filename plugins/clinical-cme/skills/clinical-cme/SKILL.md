@@ -27,8 +27,8 @@ next round, written and source-checked in advance). The skill holds no learner d
 2. **Realistic information, no cueing.** A case gives what a ward team would have; specialised
    tests are requested by the learner (rule 7). No short question or its feedback cues it.
 3. **Teach in the feedback**, with verified, granular sources, so the gap closes in the session.
-4. **The learner never waits for something that could have been made ready.** Quality of items
-   and feedback, and completeness of the log, are fixed; only waiting is cut.
+4. **The learner never waits for something that could have been made ready.** Quality (at the
+   learner's `usage`, Full or Economy) and a complete log are fixed; only waiting is cut.
 5. **Whoever grades did not write the items.** Where the session has helper agents, an author
    writes the round and you examine: you grade against the evidence, not against a key you
    wrote, and you mark the answer before you use any feedback the author prepared.
@@ -76,7 +76,7 @@ With `helpers` true in the `start` output and a session that can start helper ag
 
 | Role | Who | Model | Does |
 |---|---|---|---|
-| **Author** | a helper agent | the most capable model the session offers, never below your own | writes the round: sealed questions, sealed case with its results bank, the kits with the feedback's prepared text (`author.md`) |
+| **Author** | a helper agent | `usage.author` `most_capable`: the most capable model the session offers, never below your own; `examiner`: your own model | writes the round: sealed questions, sealed case with its results bank, the kits with the feedback's prepared text (`author.md`) |
 | **Examiner** | you, in this conversation | the model the learner runs the round with | presents, marks against the evidence, writes and adapts all feedback, codes, records |
 | **Checker** | a helper agent | a mid-tier model: one step below the most capable, not the smallest | verifies the evidence on the verification lists and finds the podcast candidates (`evidence_check.md`) |
 
@@ -98,7 +98,7 @@ Starting a helper: a prompt that carries no content, and a neutral description.
 > Write into: `<folder>`. Parts: `all`. Reply only "done".
 >
 > Checker ("Check sources"): Follow `<skill>/references/evidence_check.md`. List:
-> `<folder>/sealed_questions.md`. Write: `<folder>/evidence_questions.md`. Reply only "done".
+> `<folder>/sealed_questions.md`. Write: `<folder>/evidence_questions.md`. Scope: `<usage.evidence>`. Reply only "done".
 > (For the case: `sealed_case.md` → `evidence_case.md`.)
 
 Run checkers in the background and do not wait for them; wait for an author. When a helper
@@ -153,12 +153,12 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
      `prepare_only.md` §1, not a round. Any other request → `requests.md`.
    - `review_due` → offer the progress review in one line; default to after the round.
    - `last_session.unreflected` → one neutral line: it was saved without its reflection and stays so.
-   - `round_mix` → its `say` after the opening line; else a mix in `page_settings_applied`
-     → "Using the mix you set on your page: …"; page-settings `warnings` → one line.
+   - `round_mix` → its `say` after the opening line; else `page_settings_applied` → "Using the
+     mix (or: Economy / Full) you set on your page: …"; page-settings `warnings` → one line.
    - `opening` → the opening line, word for word. Nothing more specific about the block: not
      which questions are on its theme, not the domain of any other item.
    - keep `helpers`, `prepared`, `testing`, `speed_settings_new`, `pending_errata_count`,
-     `listening`, `guideline_region`, `specialty` and `pitch` (the feedback uses them).
+     `listening`, `usage`, `guideline_region`, `specialty` and `pitch` (the feedback uses them).
 3. **Send the first message**: `opening` (after a long gap at most add "Welcome back — N items
    are waiting; we'll start with the most overdue", without scolding or enlarging the round),
    then, with `prepared.used` true, `present` exactly as printed (it ends with its answer

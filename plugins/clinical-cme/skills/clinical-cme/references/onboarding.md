@@ -24,6 +24,8 @@ are in, or attach your `state.json`."
 >   questions. Short questions come first, on unrelated topics, with their feedback as soon as
 >   you answer; then the case and its feedback. Sized to the time you set (typically 15–45
 >   minutes including feedback). You can change the mix at any time.
+> - **You choose how much of your Claude usage it takes.** Full, or Economy: noticeably lower
+>   usage, with less checking and smaller rounds. You can switch at any time.
 > - **No waiting.** Each round is written at the end of the one before, so it starts at once;
 >   the sources are checked while you answer; and your answers are graded by a different
 >   assistant than the one that wrote the questions.
@@ -107,7 +109,36 @@ specialty is geriatrics", "I've started as a fellow") or, for the two paragraphs
 round mix, on the page. An answer of "defaults" or no answer keeps the defaults; `cme.py
 init` fills them in when they are left out.
 
-**Batch 2 — how you want to work**: what a round should contain. Recommend **one focused
+**Batch 2 — how you want to work.** First, one plain question about usage (it decides what the
+round looks like), asked word for word, with its two answers:
+
+> How much of your Claude usage should rounds use?
+> - **Full**: the strongest model writes the questions, more sources are checked, and each round
+>   ends with podcast picks. Best on a plan with high usage limits.
+> - **Economy**: noticeably lower usage, and lower quality: the questions are not written by the
+>   strongest model (the same model that grades them writes them, though never the assistant
+>   that grades them) and fewer sources are checked. No podcast picks, and smaller rounds: 2 MCQs
+>   and a focused question, with the full case every other round.
+
+→ `config.usage` `full` / `economy`. There is no default to accept silently: a learner who does
+not know their plan, or answers "not sure", gets **Economy**, said in one line ("Economy for now;
+say 'full' any time"). The reason (ADR 0015): running out of usage in the middle of a round costs
+a learner more than a less polished item, and going up to Full is one sentence or one tap on the
+page, while nobody notices usage they did not spend. Say in the same line that it can be changed
+on the page or by asking.
+
+With **Economy**, Economy's own round is the recommendation in place of the one below: if the
+learner takes it, pass no `mcqs`, `focused` or `case` to `init`, so that the preset decides them
+(and they follow the usage if it changes later); a mix they pick instead is passed and stays
+theirs. Against the session-length table below, Economy's round is "2 MCQs + 1 focused" at about
+20 minutes on the rounds without the case and about 45 with an unfolding case (35 with a
+one-step one): it fits a session of 25 minutes or more on most rounds; for a shorter session, or
+the case in every round, offer the table's cell instead, and a mix chosen from the table becomes
+the learner's own (passed to `init`, kept whatever the usage). Do not offer the listening line
+or deeper evidence (Economy has neither) unless they ask; one they ask for is passed and stays
+theirs too.
+
+Then what a round should contain. Recommend **one focused
 question and the full case** (the default, about 35 minutes): free-text answers show the
 reasoning, which is what the feedback and the reviews work from. MCQs are there for whoever
 asks for them (quick recognition checks, exam practice); do not add them unasked. The three
@@ -125,8 +156,8 @@ allowing several answers; if nothing is chosen, use the default.
 
 Helpers, one question (only where this session can start helper agents; otherwise keep the
 default and do not ask): **With helpers (default)** — a separate author writes each round on
-the most capable model, a lighter helper checks the sources while you answer, and this
-conversation only grades, so the grader never marks its own questions and feedback follows
+the most capable model (with Economy, on this conversation's model), a lighter helper checks
+the sources while you answer, and this conversation only grades, so the grader never marks its own questions and feedback follows
 your answers at once · **Single assistant** — one assistant writes, checks and grades; less
 usage, a short wait before each feedback. With helpers → `helpers` true; Single → `helpers`
 false. `prepare_ahead` stays true unless the learner asks otherwise. Add in one line that the
@@ -135,7 +166,7 @@ most capable model they have.
 
 **Batch 3 — where you stand** (free text is fine): the domain list with a 1–5 self-rating per
 domain, or the two or three strongest and weakest areas; resource preferences (free only?);
-anything else to know. And one line on listening: "Each round ends with a podcast
+anything else to know. And (with Full, or when they asked for it) one line on listening: "Each round ends with a podcast
 episode per topic, as a Spotify link. Any shows you trust, or want me to avoid? (Or say you'd
 rather not have it.)" → `profile.podcast_sources`, always written at setup, with two empty
 lists when none are named, so that it is not asked again; "rather not" → `config.listening`
@@ -171,6 +202,7 @@ pick other numbers, here or on the page.
 | Answer | Setting |
 |---|---|
 | Where you are / where you're aiming | `profile.journey` / `profile.aim`, the learner's words; `profile.journey_label`, `profile.aim_tags` derived |
+| Usage: Full / Economy (also "not sure", or no answer) | `usage` "full" / "economy" (Economy) |
 | Guidelines: International / UK / North America / a country / other | `guideline_region` "International" (also when skipped) / "UK" / "North America" / "<country>/Europe" for a European country, else the country / the learner's words |
 | Specialty | `profile.specialty` (default "Internal/hospital medicine") |
 | Time per session | `session_minutes` 15 / 25 / 35 / 45, and the mix from the table above |
@@ -187,7 +219,10 @@ pick other numbers, here or on the page.
 ## 3. Create the ledger and the page
 
 `store.md` §5: `cme.py --today <date> init --work <work>` with the answers (the profile holds `journey`, `aim`
-and their labels; the config holds `mcqs`, `focused`, `case`), then create the store from the `files` it prints: where the
+and their labels; the config holds `usage` and, unless the learner took Economy's own round, `mcqs`,
+`focused`, `case`). Pass only what the learner chose or answered: `init` counts every setting a
+usage preset decides that it is given as the learner's own, kept whatever the usage (`usage.kept`
+in its output). Then create the store from the `files` it prints: where the
 app can host a private page with files, publish `templates/page.html` with the ledger
 files as the page "Clinical CME" and pin it; otherwise a folder the learner names or files
 they keep. Ask which only if more than one is possible and the learner has a preference;
@@ -224,6 +259,17 @@ Tell the learner (show this):
   never adjusted from scores on its own.
 
 ## 5. FAQ (answer on request)
+
+**What is the difference between Full and Economy?** How much of your Claude usage the rounds
+take. Full: the most capable model writes the questions, every claim the feedback rests on is
+checked against its source, each round ends with podcast picks, and repeat topics you answer
+well get the studies behind the recommendation. Economy uses noticeably less: the questions are
+written by the same model that grades them (a different assistant still grades them), only the
+facts the answer keys turn on are checked, there are no podcast picks or deeper evidence, and
+rounds are smaller (2 MCQs and a focused question, the case every other round). The quality is
+lower: the questions are not written by the strongest model, and fewer sources are checked.
+Switch at any time: "use Full", "economy please", or Settings on your page. A setting you chose
+yourself (the round mix, listening) stays as you chose it either way.
 
 **How long does a session take?** As long as you set; ask for a shorter or longer round any time
 ("just three MCQs today", "only focused questions today").
@@ -274,7 +320,7 @@ start. To be sure a round is always ready, say "prepare my rounds overnight": a 
 scheduled task checks each night and prepares one only if none is ready.
 
 **Who writes the questions and who grades them?** With helpers on, three different assistants.
-An *author* on the most capable model writes the round. The assistant you talk to *examines*:
+An *author* on the most capable model (with Economy usage, the same model as the examiner) writes the round. The assistant you talk to *examines*:
 it grades your answers against the checked evidence, and treats the author's answer key as a
 colleague's opinion, not as the truth — if the key is wrong or too narrow, it says so and
 credits you. A lighter *checker* looks up and reports the sources; that needs care rather than

@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Clinical CME</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="cme-page-version" content="5.6.0">
+<meta name="cme-page-version" content="5.7.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
@@ -173,6 +173,11 @@ table.plain tr.sub td:first-child{padding-left:32px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px 20px;display:flex;flex-direction:column;gap:4px}
 .card h2{font-size:1rem;font-weight:600;margin:0}
 .card .lead{color:var(--muted);font-size:.86rem;margin:2px 0 8px}
+.usage-opts{display:flex;flex-direction:column;gap:8px;margin:4px 0}
+.usage-opt{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:none;color:inherit;font:inherit;cursor:pointer}
+.usage-opt[aria-checked="true"]{border-color:var(--accent,currentColor);box-shadow:inset 0 0 0 1px var(--accent,currentColor)}
+.usage-opt:disabled{cursor:default}
+.usage-opt .hint{color:var(--muted);font-size:.82rem}
 .mix-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 20px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
 .mix-row .lbl{font-weight:500}
 .mix-row .hint{grid-column:1;color:var(--muted);font-size:.82rem}
@@ -308,6 +313,18 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   </section>
 
   <section class="panel" id="v-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
+    <section class="card" id="usage" aria-labelledby="usage-h" hidden>
+      <h2 id="usage-h">How much of your Claude usage rounds use</h2>
+      <p class="lead" id="usage-lead">The change applies from your next round.</p>
+      <div class="usage-opts" role="radiogroup" aria-labelledby="usage-h">
+        <button class="usage-opt" type="button" role="radio" aria-checked="false" id="us-full"><span class="lbl">Full</span><span class="hint">The most capable model writes the questions, more sources are checked, and each round ends with podcast picks.</span></button>
+        <button class="usage-opt" type="button" role="radio" aria-checked="false" id="us-economy"><span class="lbl">Economy</span><span class="hint">Noticeably lower usage: the questions are written by the same model that grades them, fewer sources are checked, no podcast picks, and smaller rounds (2 MCQs and a focused question, the case every other round).</span></button>
+      </div>
+      <div class="mix-foot">
+        <span class="mix-status" id="usage-status" role="status" aria-live="polite"></span>
+        <button class="btn primary" id="usage-save" type="button" disabled>Save</button>
+      </div>
+    </section>
     <section class="card" id="mix" aria-labelledby="mix-h" hidden>
       <h2 id="mix-h">What goes into a round</h2>
       <p class="lead" id="mix-lead">Choose the question types for your rounds. The change applies from your next round.</p>
@@ -646,6 +663,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
       ["Session length", c.session_length ? c.session_length + " min" : ""], ["Round", mixText(effectiveMix()) + (mixPending() ? " (from your next round)" : "") + (c.order ? ", " + words(c.order) : "")], ["Case format", c.case_style],
       ["Feedback", (c.feedback || "") + (c.coding_line ? ", with coding line" : "")], ["Target", c.per_week ? c.per_week + " sessions/week" : ""],
       ["Review interval", c.review_every_days ? c.review_every_days + " days" : ""], ["Units", (u.labs || "") + (u.gases ? ", gases in " + u.gases : "")], ["Guidelines", c.region],
+      ["Usage", usageName(effectiveUsage()) + (usagePending() ? " (from your next round)" : "")],
       ["Reminders", c.reminders ? "On" : "Off"],
       ["Domain emphasis", Object.entries(c.emphasis || {}).map(([k, v]) => k + " ×" + v).join(", ") || "None"],
       ["Self-ratings", Object.entries(c.self_ratings || {}).map(([k, v]) => k + " " + v).join(", ")]];
@@ -706,16 +724,17 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
   // nothing has set the mix since, so a later change made in a chat wins. The limits and the
   // minutes per item come with the file: nothing about them is kept here.
   const R = () => (page && page.round) || {};
-  const fileMix = () => { const m = R().mix || {}; return {mcqs: +m.mcqs || 0, focused: +m.focused || 0, case: m.case !== false}; };
+  // case_every 2: the case every other round (the Economy usage's own mix); a mix saved here has it in every round
+  const fileMix = () => { const m = R().mix || {}; return {mcqs: +m.mcqs || 0, focused: +m.focused || 0, case: m.case !== false, case_every: +m.case_every || 1}; };
   const baseOf = () => R().set_at != null ? R().set_at : null;
   const mixPending = () => !!(prefs && prefs.round && (prefs.base ?? null) === baseOf());
-  const effectiveMix = () => mixPending() ? Object.assign(fileMix(), prefs.round) : fileMix();
+  const effectiveMix = () => mixPending() ? Object.assign(fileMix(), prefs.round, {case_every: 1}) : fileMix();
   const limits = (k) => { const l = (R().limits || {})[k] || [0, 0]; return [Math.max(1, +l[0] || 0), +l[1] || 0]; };
   function mixText(m){
     const parts = [];
     if (m.mcqs) parts.push(m.mcqs + (m.mcqs === 1 ? " MCQ" : " MCQs"));
     if (m.focused) parts.push(m.focused + (m.focused === 1 ? " focused question" : " focused questions"));
-    if (m.case) parts.push("1 case");
+    if (m.case) parts.push(m.case_every > 1 ? "1 case every other round" : "1 case");
     return parts.join(" + ") || "–";
   }
   function estimate(m){
@@ -764,7 +783,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     ["sw-mcq", "sw-foc", "sw-case"].forEach(id => { $(id).disabled = !dbRef; });
     $("mix-save").hidden = !dbRef;
     $("mix-lead").textContent = dbRef
-      ? "Choose the question types for your rounds. The change applies from your next round."
+      ? "Choose the question types for your rounds. The change applies from your next round." + (m.case_every > 1 ? " Your rounds now have the case every other round; a mix you save here has it in every round." : "")
       : "Your rounds: " + mixText(m) + ". To change this, ask your assistant (for example “add a focused question to my rounds”); this view of the page cannot save settings.";
     refreshMix();
   }
@@ -789,6 +808,50 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
       $("mix-save").disabled = false;
     } finally { saving = false; }
   });
+  // ---- usage: Full or Economy -----------------------------------------------------------------
+  // Stored in cme/prefs as usage: {value, updated}; the next round applies it if nothing set the
+  // usage later (the page file's settings.usage.set_at), so a later change made in a chat wins.
+  const USAGE = [["full", "us-full"], ["economy", "us-economy"]];
+  const usageName = (v) => v === "economy" ? "Economy" : "Full";
+  const U = () => (page && page.settings && page.settings.usage) || {};
+  const fileUsage = () => U().value || "full";
+  const later = (a, b) => b == null || new Date(a) > new Date(b);
+  const usagePending = () => !!(prefs && prefs.usage && prefs.usage.value && prefs.usage.value !== fileUsage()
+    && later(prefs.usage.updated, U().set_at));
+  const effectiveUsage = () => usagePending() ? prefs.usage.value : fileUsage();
+  let usageChoice = null, savingUsage = false;
+  function usageStatus(text, cls){ const el = $("usage-status"); el.textContent = text || ""; el.className = "mix-status" + (cls ? " " + cls : ""); }
+  function paintUsage(){
+    USAGE.forEach(([v, id]) => { $(id).setAttribute("aria-checked", String(usageChoice === v)); $(id).disabled = !dbRef; });
+    const changed = usageChoice !== effectiveUsage();
+    $("usage-save").hidden = !dbRef;
+    $("usage-save").disabled = !dbRef || !changed;
+    if (dbRef && changed) usageStatus("Not saved yet", "pending");
+    else if (dbRef && usagePending()) usageStatus("Saved · applies from your next round", "ok");
+    else usageStatus("");
+  }
+  function initUsage(){
+    if (!page || !page.settings) { $("usage").hidden = true; return; }
+    $("usage").hidden = false;
+    usageChoice = effectiveUsage();
+    $("usage-lead").textContent = dbRef ? "The change applies from your next round."
+      : "Your rounds use: " + usageName(usageChoice) + ". To change this, ask your assistant (for example “use less of my usage”); this view of the page cannot save settings.";
+    paintUsage();
+  }
+  USAGE.forEach(([v, id]) => $(id).addEventListener("click", () => { if (dbRef) { usageChoice = v; paintUsage(); } }));
+  $("usage-save").addEventListener("click", async () => {
+    if (!dbRef || savingUsage || usageChoice === effectiveUsage()) return;
+    savingUsage = true; $("usage-save").disabled = true; usageStatus("Saving…");
+    const doc = Object.assign({}, prefs || {}, {usage: {value: usageChoice, updated: new Date().toISOString()}});
+    try {
+      await dbRef.doc("cme/prefs").set(doc);
+      prefs = doc;
+      renderSettings(); paintUsage();
+    } catch (e) {
+      usageStatus("Could not save. Try again, or ask your assistant to change it.", "err");
+      $("usage-save").disabled = false;
+    } finally { savingUsage = false; }
+  });
   async function loadPrefs(){
     // Never blocks the page: everything else is already shown; the controls light up when ready.
     try {
@@ -800,7 +863,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
         prefs = snap && snap.exists ? snap.data() : null;
       }
     } catch (e) { prefs = null; }
-    initMix(); renderSettings(); renderAbout();
+    initUsage(); initMix(); renderSettings(); renderAbout();
   }
 
   // ---- loading -------------------------------------------------------------------------------

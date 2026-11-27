@@ -89,7 +89,7 @@ def test_a_ledger_from_before_the_mix_was_a_setting_keeps_the_mix_and_length_of_
 def test_a_4_2_ledger_gets_its_paragraphs_one_area_code_and_the_settings_of_later_versions():
     old = raw("4_2")
     st = cme.make_current(copy.deepcopy(old))
-    assert cme.upgrades_needed(old) == ["paragraphs", "one_code_per_area"]
+    assert cme.upgrades_needed(old) == ["paragraphs", "one_code_per_area", "set_by_learner"]
     prof = st["profile"]
     assert prof["journey"] == "Consultant physician\n\nExample: night shifts" and prof["journey_label"] == "attending"
     assert prof["aim"] == "Example: pass the exam" and prof["role"] == "Consultant physician"    # kept as it was
@@ -109,6 +109,8 @@ def test_a_6_0_ledger_is_left_as_it_is_but_for_what_came_after_it():
     old = raw("6_0")
     old["profile"]["utc_offset"] = None             # the learner's UTC offset (issue #84): unset, UTC
     old["config"]["guideline_sweeps"] = "custom"     # which guideline tags are swept per learner (issue #91)
+    # the usage setting (issue #93): full, and the mix the learner chose at setup is theirs
+    old["config"].update(usage="full", usage_set_at=None, set_by_learner=["mcqs", "focused", "case"])
     assert cme.make_current(raw("6_0")) == dict(old, positions=[], mappings=[], skill_version=cme.SKILL_VERSION)
 
 
@@ -119,6 +121,7 @@ def test_a_newer_ledger_is_filled_for_reading_and_nothing_else():
     assert st["config"]["a_setting_from_the_future"] is True
     assert st["profile"].pop("utc_offset") is None            # filled for reading (issue #84)
     assert st["config"].pop("guideline_sweeps") == "custom"   # filled for reading (issue #91)
+    assert [st["config"].pop(k) for k in ("usage", "usage_set_at", "set_by_learner")] == ["full", None, []]
     assert {k: v for k, v in st.items() if k not in ("positions", "mappings")} == old
 
 
@@ -149,7 +152,7 @@ def test_validate_reports_what_does_not_fit_the_declared_shape(tmp_path, capsys)
     cme.save_json(st, path)
     assert cme.main(["validate", path]) == 1
     out = json.loads(capsys.readouterr().out)
-    assert out["ok"] is False and out["upgrades"] == []
+    assert out["ok"] is False and out["upgrades"] == ["set_by_learner"]
     for part in ("config.mcqs is str", "config.helpers is int, not bool", "profile.aim_tags is str",
                  "blocks is dict, not list", "unreflected names session S0042"):
         assert any(p.startswith(part) for p in out["problems"]), part

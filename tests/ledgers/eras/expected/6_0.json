@@ -67,7 +67,14 @@
     "review articles"
    ]
   },
-  "guideline_sweeps": "custom"
+  "set_by_learner": [
+   "mcqs",
+   "focused",
+   "case"
+  ],
+  "guideline_sweeps": "custom",
+  "usage": "full",
+  "usage_set_at": null
  },
  "review": {
   "last": null,

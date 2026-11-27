@@ -60,7 +60,7 @@ review is saved"); the same commands then plan from the ledger the review wrote.
    `all`; prompt as in SKILL.md, "Roles") and wait for "done". Do not read the plan or what it
    writes. Without an author, write the four files yourself as `author.md` describes
    (description "Prepare the next round").
-3. **Check**: start one checker per sealed file, together (`<work>/next/sealed_questions.md` →
+3. **Check**: start one checker per sealed file (with the `Scope` of SKILL.md's prompt), together (`<work>/next/sealed_questions.md` →
    `<work>/next/evidence_questions.md`; `sealed_case.md` → `evidence_case.md`), and wait for
    both. Each also finds the listening candidates for its kit (`evidence_check.md` §6). At the
    same time start one tag checker per entry of `tag_checks.checkers` and of

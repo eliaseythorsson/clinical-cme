@@ -23,6 +23,8 @@ NEUTRAL_CONFIG = {
     "show_coding": False, "target_sessions_per_week": 5, "review_interval_days": 30,
     "round_set_at": "2026-11-01T08:00:00Z",
     "guideline_sweeps": "all",                          # which guideline tags are swept, not what is written (#91)
+    # what the learner set and when the usage was set (#93): their effect is through the settings
+    "usage_set_at": "2026-11-01T08:00:00Z", "set_by_learner": ["listening"],
 }
 CONTENT_CONFIG = {
     "session_minutes": 30, "mcqs": 2, "focused": 2, "case": False, "case_format": "discriminate",
@@ -31,6 +33,7 @@ CONTENT_CONFIG = {
     "item_order": "case_first", "resource_preferences": {"free_only": True},
     "listening": False,                                 # no "## Listening" in the kits (issue #50)
     "evidence_ladder": False,                           # no "Deeper" notes in the kits
+    "usage": "economy",                                 # the author's model and the evidence check (#93)
 }
 NEUTRAL_PROFILE = {"display_name": "Dr Example", "onboarded_at": "2026-10-01",
                    # display labels and the dates of the paragraphs (#55): never used to write an item
@@ -121,8 +124,10 @@ def test_a_setting_that_can_change_the_round_sets_the_prepared_round_aside_and_s
     before = w.read_ledger()
     out = settings(w, flag, json.dumps({key: value}))
     name = key if flag == "--config" else "profile." + key
-    assert out["prepared"]["kept"] is False and out["prepared"]["changed"] == [name]
-    assert out["prepared"]["why"].startswith("set aside: %s can change" % name)
+    # Economy (#93) also turns off what its preset decides and the learner did not set themselves
+    changed = {"usage": ["evidence_ladder", "listening", "usage"]}.get(key, [name])
+    assert out["prepared"]["kept"] is False and out["prepared"]["changed"] == changed
+    assert out["prepared"]["why"].startswith("set aside: %s can change" % ", ".join(changed))
     assert names(out) == ["data/page.json", "data/prepared.json", "data/state.json"]
     assert w.read_json("publish", "data", "prepared.json") == EMPTY
     st = w.read_json("publish", "data", "state.json")

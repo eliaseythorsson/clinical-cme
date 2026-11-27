@@ -65,8 +65,15 @@
     "review articles"
    ]
   },
+  "set_by_learner": [
+   "mcqs",
+   "focused",
+   "case"
+  ],
   "evidence_ladder": true,
-  "guideline_sweeps": "custom"
+  "guideline_sweeps": "custom",
+  "usage": "full",
+  "usage_set_at": null
  },
  "review": {
   "last": null,

@@ -64,13 +64,20 @@
     "review articles"
    ]
   },
+  "set_by_learner": [
+   "mcqs",
+   "focused",
+   "case"
+  ],
   "evidence_ladder": true,
   "guideline_sweeps": "custom",
   "helpers": true,
   "prepare_ahead": true,
   "prepare_task": false,
   "testing": false,
-  "listening": true
+  "listening": true,
+  "usage": "full",
+  "usage_set_at": null
  },
  "review": {
   "last": null,

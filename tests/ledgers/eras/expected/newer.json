@@ -68,7 +68,10 @@
    ]
   },
   "a_setting_from_the_future": true,
-  "guideline_sweeps": "custom"
+  "guideline_sweeps": "custom",
+  "usage": "full",
+  "usage_set_at": null,
+  "set_by_learner": []
  },
  "review": {
   "last": null,

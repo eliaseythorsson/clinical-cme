@@ -28,6 +28,22 @@ This repo is a Claude plugin marketplace with one plugin, `clinical-cme`, in `pl
 
 The skill holds no personal data; each learner's first run creates their own private store.
 
+## Usage: Full or Economy
+
+Rounds use your Claude usage, and setup asks how much of it they should take. You can switch at
+any time, by asking or under Settings on your page.
+
+- **Full**: the most capable model writes the questions, every claim the feedback rests on is
+  checked against its source, each round ends with podcast picks, and topics you keep answering
+  well get the studies behind the recommendation. Best on a plan with high usage limits.
+- **Economy**: noticeably lower usage, and lower quality. The questions are written by the same
+  model that grades them (a different assistant still grades them, never the one that wrote
+  them), only the facts the answer keys turn on are checked, there are no podcast picks and no
+  deeper evidence, and rounds are smaller: 2 MCQs and a focused question, with the full case every
+  other round. Anything you set yourself, such as your round mix, stays as you set it.
+
+How much less Economy uses: measured figures to follow.
+
 ## Where it runs
 
 - **Claude app** (desktop, web, mobile): everything. The ledger lives in the learner's private

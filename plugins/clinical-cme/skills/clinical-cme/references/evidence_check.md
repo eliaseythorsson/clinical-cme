@@ -54,6 +54,22 @@ position note, `standards_positions.md` rule 12) gets **changed** only for a cha
 published after that date, with the source and its date; otherwise **confirmed** (unchanged).
 Nothing else, apart from the listening candidates of §6.
 
+### 1.1 Scope: `full` or `keys`
+
+The prompt names the scope (`Scope: full` or `Scope: keys`; none named: `full`). It is the
+learner's usage setting (Full or Economy, `usage.evidence` in the `start` output): with Economy
+they chose fewer sources checked for less of their Claude usage.
+
+- **`full`**: everything in §1, by every route in §3.
+- **`keys`**: only the claims the keys rest on: for each item, the one fact that makes its key
+  right (an MCQ's correct option; a focused question's or the case's decisive recommendation,
+  threshold or dose), never the background, a pearl, a reading pointer or a figure the key does
+  not turn on. At most **four searches and four fetches per list file**, each in one parallel
+  batch; a claim whose source was not reached gets **one** other route (the first of §3 for its
+  kind) before it is "not verified". The retry pass works within the same caps. Write the
+  file exactly as §4 says, counting only the claims you checked. There are no listening
+  candidates (with Economy the kits have no `## Listening` section).
+
 ## 2. How
 
 1. Run every search on the list in one parallel batch.
@@ -143,7 +159,8 @@ honestly. What the script then does:
 
 Same steps and the same routes (§3), run only **after that part's answers are in** (a search
 names the topic, and the learner can see your searches): one batch of searches, one batch of
-fetches, then grade. No file is needed; cite from what you fetched. This is for a part that
+fetches, then grade. With `usage.evidence` `keys`, §1.1's scope and caps hold for you too.
+No file is needed; cite from what you fetched. This is for a part that
 has **no evidence file**. Where a file exists, its list is not run again: search only for
 what the answers raise (`grading.md` §1).
 
