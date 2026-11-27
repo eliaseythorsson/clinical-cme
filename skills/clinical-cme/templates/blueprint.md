@@ -1,15 +1,20 @@
 # Curriculum Blueprint — Hospital / Internal Medicine
 
 The map of what can be tested. Each session samples topics from here; your performance
-against it is kept in `learner_ledger.json`.
+against it is kept in your ledger (`data/state.json` in your store), which keeps its own copy
+of the blueprint: a later change to this file does not change yours (see
+`references/state_schema.md` §9 for moving onto a new one).
 
 **Format the skill relies on**
 - Each domain is a `##` heading ending in `(weight: high | medium | low)` or a number.
   Weights are sampling priorities for new topics; your scores, due dates, gaps and
-  self-ratings override them over time.
+  self-ratings override them over time. In a blueprint with sub-topics the weight is the
+  area's share, divided among its diseases; in one without, each topic carries it.
 - Each topic is a bullet starting with a stable ID: `- CODE-NN  Topic label`. The part
   before the hyphen is the domain code. The ledger refers to these IDs, so never renumber:
-  add new topics with new IDs, and retire old ones by marking them `(retired)`.
+  add new topics with new IDs, and retire old ones by marking them `(retired)`. A retired
+  topic stays listed so that ledgers which tested it still resolve its ID; it is never
+  planned.
 - Cross-references such as "(see HEME-04)" are fine.
 - Optional second level: a topic (the disease, which returns on schedule) may list its
   sub-topics (which rotate and are recorded) as bullets indented under it, each starting
@@ -18,112 +23,1599 @@ against it is kept in `learner_ledger.json`.
   sub-topic, without an ID, are its decision points: the author's list to draw on, never
   scheduled. A topic without sub-topics works as a one-level topic.
 
-This default blueprint suits a hospitalist or general internist and is adapted from the
-SHM Core Competencies in Hospital Medicine and the ABIM Internal Medicine certification
-blueprint. For other specialties, the setup step drafts an equivalent blueprint in the
-same format for you to check.
+This default blueprint suits a hospitalist or general internist: 16 areas, 144 diseases and
+347 sub-topics, each sub-topic with two to five decision points. It is adapted from the ABIM
+Internal Medicine certification blueprint, for breadth (our own classification informed by
+it, not a copy), with European guidance for what is correct: each decision point ends with
+the guideline it rests on, in brackets (ESC, ERS, ESCMID, EASL, EULAR, KDIGO and the like;
+NICE or BTS where no European society covers it). An area's weight is its share of the ABIM
+blueprint (areas ABIM does not have are set from hospital practice), scaled so that the
+largest, Cardiology at 14%, is 1.0; an aspect's importance follows the ABIM Internal Medicine:
+Inpatient blueprint where the sub-topic appears there. For other specialties, the setup step
+drafts an equivalent blueprint in the same format for you to check.
 
 ---
 
-## A. Cardiology  (weight: high)
-- CARD-01  Acute coronary syndrome (STEMI/NSTEMI/UA)
-- CARD-02  Acute decompensated heart failure (HFrEF / HFpEF)
-- CARD-03  Atrial fibrillation & rate/rhythm control, anticoagulation
-- CARD-04  Bradyarrhythmias & tachyarrhythmias, syncope
-- CARD-05  Valvular disease & infective endocarditis
-- CARD-06  Hypertensive emergency/urgency
-- CARD-07  Pericardial disease, myocarditis
-- CARD-08  Venous thromboembolism — PE (see also PULM/HEME)
 
-## B. Pulmonary & Critical Care  (weight: high)
-- PULM-01  Community- & hospital-acquired pneumonia
-- PULM-02  COPD exacerbation
-- PULM-03  Asthma exacerbation
-- PULM-04  Acute respiratory failure, ARDS, mechanical ventilation basics
-- PULM-05  Pleural effusion / empyema
-- PULM-06  Pulmonary embolism (management)
-- PULM-07  Sepsis & septic shock
-- PULM-08  Shock differentiation & resuscitation
+## A. Cardiology  (weight: 1.0)
+- CARD-01  Acute coronary syndrome
+  - CARD-01a  Recognition and triage  (aspects: diagnosis very high, testing high, disposition high)
+    - Which ECG patterns without classic ST elevation call for immediate reperfusion [ESC ACS 2023]
+    - How to act on a 0/1-hour high-sensitivity troponin result that falls in the observe zone [ESC ACS 2023]
+    - Which patients ruled out for infarction can be discharged, and what testing follows [ESC ACS 2023]
+  - CARD-01b  Reperfusion and timing of the invasive strategy  (aspects: management very high, disposition high)
+    - Primary PCI or fibrinolysis, by the expected delay to PCI [ESC ACS 2023]
+    - Immediate, early (within 24 hours) or selective invasive strategy in NSTE-ACS, by risk criteria [ESC ACS 2023]
+    - Whether and when to revascularise non-culprit lesions [ESC ACS 2023]
+    - How far frailty and comorbidity change the invasive strategy in the older patient [ESC ACS 2023]
+  - CARD-01c  Antithrombotic therapy  (aspects: management very high)
+    - Whether to pre-treat with a P2Y12 inhibitor before angiography [ESC ACS 2023]
+    - Choice of P2Y12 inhibitor and length of dual antiplatelet therapy by bleeding risk, including de-escalation [ESC ACS 2023]
+    - Choice and dosing of the parenteral anticoagulant in renal impairment [ESC ACS 2023]
+  - CARD-01d  Complications and care after infarction  (aspects: diagnosis medium, management high, prognosis medium)
+    - Which mechanical complication explains a new murmur or shock days after infarction, and how urgent repair is [ESC ACS 2023]
+    - Whether a left ventricular thrombus calls for anticoagulation, and for how long [ESC ACS 2023]
+    - Whether a beta-blocker is indicated after infarction with preserved ejection fraction [ESC ACS 2023]
+    - When to reassess ejection fraction before considering an ICD after infarction [ESC VA 2022]
+- CARD-09  Chronic coronary disease and chest pain
+  - CARD-09a  Work-up of stable chest pain  (aspects: diagnosis high, testing very high)
+    - Estimating the clinical likelihood of obstructive coronary disease and whether to test at all [ESC CCS 2024]
+    - Coronary CT angiography or functional imaging as the first test [ESC CCS 2024]
+    - When to go directly to invasive angiography [ESC CCS 2024]
+  - CARD-09b  Antianginal and preventive therapy  (aspects: management high, prevention high)
+    - First-line antianginal drug and add-on, by heart rate, blood pressure and comorbidity [ESC CCS 2024]
+    - Long-term antithrombotic choice: aspirin, clopidogrel monotherapy, or an added second agent [ESC CCS 2024]
+    - Whether revascularisation adds prognostic or only symptomatic benefit to medical therapy [ESC CCS 2024]
+  - CARD-09c  Troponin rise without plaque rupture (type 2 infarction, MINOCA, spasm)  (aspects: diagnosis very high, testing medium, management high)
+    - Whether a troponin rise is type 1 infarction, type 2 infarction or non-ischaemic myocardial injury [Fifth UDMI 2026]
+    - Whether a type 2 infarction calls for coronary investigation and antiplatelet therapy [ESC ACS 2023]
+    - How to work up MINOCA, including the place of cardiac MRI [ESC ACS 2023]
+    - Drug treatment of suspected vasospastic angina [ESC CCS 2024]
+- CARD-02  Heart failure
+  - CARD-02a  Acute decompensation: relieving congestion  (aspects: management very high, testing medium)
+    - Initial intravenous loop-diuretic dose and how to judge early response (urine sodium, urine output) [ESC HF 2026]
+    - What to add when diuretic response is inadequate (acetazolamide, thiazide) [ESC HF 2026]
+    - Whether a creatinine rise during decongestion is a reason to slow diuresis [ESC HF 2026]
+    - Whether to continue beta-blocker and renin-angiotensin blockade during decompensation [ESC HF 2026]
+  - CARD-02b  HFrEF: starting and sequencing therapy  (aspects: management very high, prognosis medium)
+    - Order and pace of starting the foundational drug classes, including before discharge [ESC HF 2026]
+    - Sacubitril-valsartan or ACE inhibitor as the renin-angiotensin agent [ESC HF 2026]
+    - Whether iron deficiency calls for intravenous iron [ESC HF 2026]
+    - When to refer for ICD or resynchronisation after drug optimisation [ESC HF 2026]
+  - CARD-02c  HFpEF and mildly reduced EF  (aspects: diagnosis high, management high)
+    - Whether breathlessness with preserved ejection fraction is heart failure (natriuretic peptides, echocardiographic criteria) [ESC HF 2026]
+    - Which disease-modifying drugs apply with preserved or mildly reduced ejection fraction [ESC HF 2026]
+    - Whether obesity with preserved ejection fraction calls for an incretin-based drug [ESC HF 2026]
+    - How to treat an ejection fraction of 41 to 49% now that it falls under reduced EF [ESC HF 2026]
+  - CARD-02d  Precipitants, deterioration and shock  (aspects: diagnosis high, management high, disposition high)
+    - Which precipitants to look for and correct in decompensation [ESC HF 2026]
+    - Recognising cardiogenic shock and choosing an inotrope or vasopressor [ESC HF 2026]
+    - When to refer for mechanical circulatory support or advanced-heart-failure assessment [ESC HF 2026]
+- CARD-10  Cardiomyopathies
+  - CARD-10a  Hypertrophic  (aspects: diagnosis medium, management high, prognosis medium)
+    - How to treat hypotension or heart failure with outflow-tract obstruction (fluids, vasodilators, diuretics, inotropes) [ESC cardiomyopathies 2023]
+    - Estimating sudden-death risk and whether to refer for an ICD [ESC cardiomyopathies 2023]
+    - Whether AF in hypertrophic cardiomyopathy needs anticoagulation regardless of risk score [ESC cardiomyopathies 2023]
+    - Which relatives to screen, and how [ESC cardiomyopathies 2023]
+  - CARD-10b  Dilated, including tachycardia- and alcohol-related  (aspects: diagnosis high, management medium)
+    - Work-up of new dilated cardiomyopathy, including excluding coronary disease and genetic testing [ESC cardiomyopathies 2023]
+    - Whether reduced ejection fraction with persistent tachyarrhythmia is tachycardia-induced and reversible [ESC AF 2024]
+    - Timing of ICD consideration when recovery is expected (alcohol, tachycardia) [ESC cardiomyopathies 2023]
+  - CARD-10c  Restrictive and infiltrative; cor pulmonale  (aspects: diagnosis high, testing high)
+    - Which red flags point to cardiac amyloidosis, and the non-invasive diagnostic pathway [ESC cardiomyopathies 2023]
+    - Whether transthyretin amyloid cardiomyopathy calls for disease-specific therapy [ESC cardiomyopathies 2023]
+    - When an echocardiographic probability of pulmonary hypertension with lung disease warrants referral [ESC/ERS PH 2022]
+- CARD-03  Atrial fibrillation
+  - CARD-03a  Stroke prevention decision  (aspects: management very high, testing low)
+    - Whether a CHA2DS2-VA score of 1 calls for anticoagulation [ESC AF 2024]
+    - Whether and when to restart anticoagulation after an intracranial bleed [ESC AF 2024]
+    - Whether a reduced DOAC dose is justified (label criteria versus underdosing) [ESC AF 2024]
+    - Whether device-detected subclinical AF calls for anticoagulation [ESC AF 2024]
+  - CARD-03b  Rate versus rhythm control and cardioversion  (aspects: management high, disposition medium)
+    - Up to what duration of AF cardioversion may proceed without prior anticoagulation or imaging to exclude thrombus [ESC AF 2024]
+    - Choice of rate-control drug by ejection fraction and blood pressure [ESC AF 2024]
+    - Wait-and-see or early cardioversion for recent-onset AF [ESC AF 2024]
+    - Whether early rhythm control is indicated in recently diagnosed AF [ESC AF 2024]
+  - CARD-03c  Antithrombotic combinations after PCI or ACS  (aspects: management high)
+    - Length of triple therapy [ESC AF 2024]
+    - Which antiplatelet stays with the anticoagulant [ESC AF 2024]
+    - When to stop the antiplatelet and continue the anticoagulant alone [ESC AF 2024]
+  - CARD-03d  New AF in acute illness or after surgery  (aspects: management high, prognosis medium)
+    - Whether AF triggered by sepsis or another acute illness calls for long-term anticoagulation [ESC AF 2024]
+    - Rate or rhythm control in AF with haemodynamic compromise during acute illness [ESC AF 2024]
+    - Follow-up and monitoring for recurrence once AF has resolved with the acute illness [ESC AF 2024]
+- CARD-04  Arrhythmias and conduction disease
+  - CARD-04a  Bradycardia, AV block and pacing  (aspects: diagnosis high, management high)
+    - Whether AV block has a reversible cause (drugs, hyperkalaemia, inferior infarction) or needs a pacemaker [ESC pacing 2021]
+    - Acute treatment of symptomatic bradycardia: drugs or temporary pacing [ERC ALS 2025]
+    - Whether asymptomatic sinus pauses or nocturnal bradycardia need treatment [ESC pacing 2021]
+  - CARD-04b  Narrow-complex tachycardia  (aspects: diagnosis high, management high)
+    - Acute termination of regular narrow-complex tachycardia: the order of treatments, and the next step when the first fail [ESC SVT 2019]
+    - Recognising atrial flutter with 2:1 conduction [ESC SVT 2019]
+    - Which drugs to avoid in pre-excited AF [ESC SVT 2019]
+    - When to refer for catheter ablation [ESC SVT 2019]
+  - CARD-04c  Wide-complex tachycardia and QT prolongation  (aspects: diagnosis very high, management high)
+    - Whether a wide-complex tachycardia of uncertain mechanism is treated as ventricular tachycardia [ESC VA 2022]
+    - Cardioversion or drug therapy for haemodynamically tolerated ventricular tachycardia [ESC VA 2022]
+    - At what QTc to stop or avoid QT-prolonging drugs, and acute treatment of torsades de pointes [ESC VA 2022]
+  - CARD-04d  Cardiac arrest and care after resuscitation  (aspects: management very high, prognosis high)
+    - Which reversible causes to seek and treat during an in-hospital arrest [ERC ALS 2025]
+    - Whether to do immediate coronary angiography after return of circulation without ST elevation [ERC/ESICM post-resuscitation care 2025]
+    - Temperature control after return of circulation [ERC/ESICM post-resuscitation care 2025]
+    - Timing and components of neuroprognostication [ERC/ESICM post-resuscitation care 2025]
+- CARD-11  Syncope
+  - CARD-11a  Initial evaluation and risk stratification  (aspects: diagnosis very high, disposition very high)
+    - Whether transient loss of consciousness was syncope, seizure or another cause [ESC syncope 2018]
+    - Which high-risk features call for admission and which allow discharge [ESC syncope 2018]
+    - Which tests are worth ordering in syncope, and which are low-yield [ESC syncope 2018]
+  - CARD-11b  Reflex syncope and orthostatic hypotension  (aspects: diagnosis high, management medium)
+    - Diagnosing orthostatic hypotension, including delayed and initial forms [ESC syncope 2018]
+    - Which drugs to withdraw or reduce in drug-induced orthostatic hypotension [ESC syncope 2018]
+    - When to add midodrine or fludrocortisone [ESC syncope 2018]
+    - When to perform carotid sinus massage [ESC syncope 2018]
+  - CARD-11c  Cardiac syncope work-up  (aspects: diagnosis high, testing high)
+    - Which ECG findings point to arrhythmic syncope [ESC syncope 2018]
+    - Choice and duration of rhythm monitoring (telemetry, Holter, implantable loop recorder) [ESC syncope 2018]
+    - Electrophysiology study or empirical pacing for unexplained syncope with bifascicular block [ESC pacing 2021]
+- CARD-05  Valvular heart disease
+  - CARD-05a  Aortic stenosis  (aspects: diagnosis high, management high)
+    - Timing of valve replacement in the asymptomatic patient [ESC/EACTS VHD 2025]
+    - How to grade low-gradient aortic stenosis with discordant measurements [ESC/EACTS VHD 2025]
+    - Transcatheter or surgical replacement, by age and risk [ESC/EACTS VHD 2025]
+  - CARD-05b  Regurgitant lesions and mitral stenosis  (aspects: diagnosis medium, management high)
+    - When severe primary mitral regurgitation calls for surgery [ESC/EACTS VHD 2025]
+    - Whether secondary mitral regurgitation warrants transcatheter repair after optimised therapy [ESC/EACTS VHD 2025]
+    - When severe aortic regurgitation calls for surgery [ESC/EACTS VHD 2025]
+    - Choice of anticoagulant for AF with moderate-to-severe rheumatic mitral stenosis [ESC AF 2024]
+  - CARD-05c  Prosthetic valves  (aspects: diagnosis medium, management high)
+    - Anticoagulant and INR target after mechanical valve replacement [ESC/EACTS VHD 2025]
+    - Antithrombotic therapy after bioprosthetic or transcatheter valve replacement [ESC/EACTS VHD 2025]
+    - Thrombolysis or surgery for suspected prosthetic valve thrombosis [ESC/EACTS VHD 2025]
+- CARD-12  Infective endocarditis
+  - CARD-12a  Diagnosis and imaging  (aspects: diagnosis high, testing high)
+    - Repeat echocardiography after a negative first study [ESC endocarditis 2023]
+    - Which bacteraemias call for echocardiography, and when transoesophageal [ESC endocarditis 2023]
+    - When PET-CT adds to diagnosis (prosthetic valve, device) [ESC endocarditis 2023]
+    - Work-up of blood-culture-negative endocarditis [ESC endocarditis 2023]
+  - CARD-12b  Antimicrobial therapy, including oral step-down  (aspects: management high)
+    - Criteria for oral step-down [ESC endocarditis 2023]
+    - Empirical regimen for native versus prosthetic valve endocarditis [ESC endocarditis 2023]
+    - When rifampicin or an aminoglycoside is part of the regimen [ESC endocarditis 2023]
+  - CARD-12c  Surgery, complications, prophylaxis, device infection  (aspects: management high, prognosis medium)
+    - Indications and urgency of surgery (heart failure, uncontrolled infection, embolic risk) [ESC endocarditis 2023]
+    - Timing of cardiac surgery after an ischaemic stroke or intracranial haemorrhage [ESC endocarditis 2023]
+    - Whether device infection requires complete extraction [ESC endocarditis 2023]
+    - Who needs antibiotic prophylaxis before dental procedures [ESC endocarditis 2023]
+- CARD-06  Hypertension
+  - CARD-06a  Hypertensive emergency  (aspects: diagnosis high, management very high)
+    - Whether severe hypertension is an emergency, by acute organ damage [ESC hypertension 2024]
+    - Rate and target of blood-pressure lowering by type of emergency [ESC hypertension 2024]
+    - Choice of intravenous agent by type of emergency [ESC hypertension 2024]
+  - CARD-06b  Raised blood pressure in the inpatient without organ damage  (aspects: management high)
+    - Whether asymptomatic severe inpatient hypertension calls for urgent or intravenous lowering [ESC hypertension 2024]
+    - Whether to change long-term therapy on the basis of inpatient readings [ESC hypertension 2024]
+  - CARD-06c  Chronic hypertension: diagnosis and targets  (aspects: diagnosis high, management high)
+    - Whether out-of-office measurement is needed to confirm the diagnosis [ESC hypertension 2024]
+    - When elevated (not yet hypertensive) blood pressure calls for drug treatment [ESC hypertension 2024]
+    - Systolic target, and when to relax it (frailty, older age, orthostatic hypotension) [ESC hypertension 2024]
+    - Whether to start with a single-pill combination [ESC hypertension 2024]
+  - CARD-06d  Secondary and resistant hypertension  (aspects: diagnosis high, testing high)
+    - Which patients to screen for primary aldosteronism [ESC hypertension 2024]
+    - How interfering drugs and potassium affect the aldosterone-renin ratio [ESC hypertension 2024]
+    - Excluding pseudo-resistance and choosing the fourth drug [ESC hypertension 2024]
+- CARD-07  Pericardial disease and myocarditis
+  - CARD-07a  Acute and recurrent pericarditis  (aspects: diagnosis high, management high, disposition medium)
+    - Which features call for admission and further work-up [ESC myocarditis and pericarditis 2025]
+    - First-line anti-inflammatory regimen and length of colchicine [ESC myocarditis and pericarditis 2025]
+    - Place of corticosteroids and interleukin-1 blockers in recurrence [ESC myocarditis and pericarditis 2025]
+  - CARD-07b  Effusion, tamponade, constriction  (aspects: diagnosis high, management high)
+    - Whether an effusion is causing tamponade, and how urgently to drain it [ESC myocarditis and pericarditis 2025]
+    - Work-up of a large effusion without inflammation [ESC myocarditis and pericarditis 2025]
+    - Distinguishing constriction from restrictive cardiomyopathy [ESC myocarditis and pericarditis 2025]
+  - CARD-07c  Myocarditis, including immune-checkpoint-inhibitor myocarditis  (aspects: diagnosis high, testing high, management medium)
+    - When cardiac MRI suffices and when endomyocardial biopsy is needed [ESC myocarditis and pericarditis 2025]
+    - Immunosuppression and stopping the checkpoint inhibitor in suspected immune-related myocarditis [ESC cardio-oncology 2022]
+    - Restriction of exercise and when to resume [ESC myocarditis and pericarditis 2025]
+- CARD-08  Pulmonary embolism
+  - CARD-08a  Diagnostic strategy  (aspects: diagnosis very high, testing high)
+    - Pre-test probability and whether to use an age-adjusted D-dimer [ESC PE 2019]
+    - Which imaging to use when CT pulmonary angiography is contraindicated [ESC PE 2019]
+    - Bedside echocardiography in suspected high-risk PE too unstable for CT [ESC PE 2019]
+  - CARD-08b  Risk stratification and reperfusion  (aspects: prognosis high, management high, disposition high)
+    - Classifying intermediate-high versus intermediate-low risk (PESI, RV dysfunction, troponin) [ESC PE 2019]
+    - Whether systemic thrombolysis is indicated, including rescue in intermediate-high risk [ESC PE 2019]
+    - Which low-risk patients qualify for early discharge [ESC PE 2019]
+  - CARD-08c  Anticoagulant choice and duration  (aspects: management very high)
+    - Three months or extended anticoagulation, by provoking factor [ESC PE 2019]
+    - Choice of anticoagulant in cancer-associated PE [ESC cardio-oncology 2022]
+    - Whether a DOAC is appropriate with antiphospholipid syndrome [ESC PE 2019]
+- CARD-13  Aortic and peripheral vascular disease
+  - CARD-13a  Acute aortic syndromes  (aspects: diagnosis very high, management high)
+    - Clinical probability, D-dimer and imaging in suspected acute aortic syndrome [ESC PAAD 2024]
+    - Target heart rate and blood pressure, and the order of drugs, before definitive treatment [ESC PAAD 2024]
+    - Medical or endovascular treatment of type B dissection [ESC PAAD 2024]
+  - CARD-13b  Aneurysm, peripheral arterial disease, acute limb ischaemia  (aspects: diagnosis medium, management high)
+    - Size threshold for repair of an abdominal aortic aneurysm and surveillance interval below it [ESC PAAD 2024]
+    - Urgency of revascularisation in acute limb ischaemia, by severity [ESC PAAD 2024]
+    - Antithrombotic therapy in symptomatic peripheral arterial disease [ESC PAAD 2024]
+  - CARD-13c  Carotid disease  (aspects: management high, testing medium)
+    - Timing of endarterectomy after TIA or minor stroke with symptomatic stenosis [ESVS carotid 2023]
+    - Whether asymptomatic carotid stenosis warrants intervention [ESVS carotid 2023]
+- CARD-14  Lipids and cardiovascular prevention
+  - CARD-14a  Risk estimation and targets  (aspects: prevention high, testing medium)
+    - Which patients need no risk score because they are already high or very high risk, and which score to use for the rest (SCORE2, SCORE2-OP) [ESC CVD prevention 2021]
+    - LDL-cholesterol target by risk category [ESC/EAS dyslipidaemias 2019, focused update 2025]
+    - Whether to measure lipoprotein(a), and what to do with the result [ESC/EAS dyslipidaemias focused update 2025]
+  - CARD-14b  Statin intolerance and add-on therapy  (aspects: management high)
+    - Whether muscle symptoms on a statin are true intolerance, and how to rechallenge [ESC/EAS dyslipidaemias 2019]
+    - Order of add-on therapy when the LDL target is not reached (ezetimibe, PCSK9 inhibitor, bempedoic acid) [ESC/EAS dyslipidaemias focused update 2025]
+- CARD-15  Adult congenital disease and murmurs
+  - CARD-15a  Septal defects, PFO, bicuspid valve  (aspects: diagnosis medium, management medium)
+    - Whether a PFO after an apparently cryptogenic stroke should be closed [ESO PFO 2024]
+    - Aortic imaging and family screening in bicuspid aortic valve [ESC PAAD 2024]
+    - Whether an atrial septal defect calls for closure [ESC ACHD 2020]
+  - CARD-15b  Evaluating a murmur  (aspects: diagnosis high, testing high)
+    - Which murmurs call for echocardiography [ESC/EACTS VHD 2025]
+    - What clinical signs suggest a murmur reflects severe valve disease [ESC/EACTS VHD 2025]
 
-## C. Infectious Disease  (weight: high)
-- ID-01  Sepsis source identification & empiric antibiotics / stewardship
-- ID-02  Skin & soft tissue infections, necrotizing fasciitis
-- ID-03  UTI / pyelonephritis / catheter-associated
-- ID-04  Meningitis & encephalitis
-- ID-05  Endocarditis (see CARD-05)
-- ID-06  C. difficile infection
-- ID-07  Bone & joint infection (osteomyelitis, septic arthritis)
-- ID-08  Fever of unknown origin, febrile neutropenia
-- ID-09  HIV inpatient issues & opportunistic infection
-- ID-10  Healthcare-associated / MDRO, antibiotic selection
+## B. Haematology & Oncology  (weight: 0.79)
+- HEME-01  Anaemia
+  - HEME-01a  Approach in the inpatient  (aspects: diagnosis high, testing high, interpretation medium)
+    - Which first-line tests a new inpatient anaemia calls for before transfusion [BSG IDA 2021]
+    - When a new anaemia with other cytopenias calls for a blood film review and haematology referral rather than haematinic replacement [ESMO MDS 2021]
+    - Whether iron deficiency in an adult man or postmenopausal woman calls for bidirectional endoscopy and coeliac serology [BSG IDA 2021]
+  - HEME-01b  Iron deficiency and anaemia of chronic disease  (aspects: interpretation high, management high, testing medium)
+    - Which ferritin and transferrin saturation thresholds establish iron deficiency when inflammation is present [BSG IDA 2021]
+    - Oral versus intravenous iron, and oral dosing frequency, in the inpatient [BSG IDA 2021]
+    - Whether iron deficiency in heart failure calls for intravenous iron regardless of haemoglobin [ESC HF 2026]
+  - HEME-01c  Macrocytic and megaloblastic anaemia  (aspects: diagnosis high, testing medium, management high)
+    - Which test confirms B12 deficiency when serum B12 is indeterminate, and when to test for autoimmune gastritis [NICE NG239 2024]
+    - Whether neurological signs change the intramuscular B12 loading schedule [NICE NG239 2024]
+    - Whether folate may be given before B12 status is known [NICE NG239 2024]
+- HEME-09  Haemolytic anaemia
+  - HEME-09a  Autoimmune haemolysis  (aspects: diagnosis high, testing high, management high)
+    - How the direct antiglobulin test pattern (IgG versus C3d) separates warm from cold autoimmune haemolysis [BSH AIHA 2017]
+    - What screening for a secondary cause a new autoimmune haemolysis calls for [BSH AIHA 2017]
+    - First-line treatment of warm haemolysis, and when to add rituximab [BSH AIHA 2017]
+    - Whether transfusion should be withheld because of a positive crossmatch in severe haemolysis [BSH AIHA 2017]
+  - HEME-09b  Non-immune haemolysis (G6PD, mechanical, microangiopathic approach)  (aspects: diagnosis high, testing high, management medium)
+    - When fragments on the film with thrombocytopenia must be treated as thrombotic microangiopathy before the cause is known [ISTH TTP 2025]
+    - Whether G6PD status must be known before an oxidant drug such as primaquine [WHO malaria 2026]
+- HEME-02  Thrombocytopenia and thrombotic microangiopathy
+  - HEME-02a  Approach and immune thrombocytopenia  (aspects: diagnosis high, management high, testing medium)
+    - Which platelet count and bleeding pattern call for treating immune thrombocytopenia [ASH ITP 2026]
+    - Corticosteroid choice and duration as first-line treatment, and when to add a thrombopoietin receptor agonist [ASH ITP 2026]
+    - When intravenous immunoglobulin and platelet transfusion are added for bleeding or a procedure [ASH ITP 2026]
+  - HEME-02b  Heparin-induced thrombocytopenia  (aspects: diagnosis very high, testing high, management very high)
+    - How the 4Ts score decides whether to send antibody testing and stop heparin [BSH HIT 2023]
+    - Which non-heparin anticoagulant to start, including a DOAC, and at what dose [BSH HIT 2023]
+    - Whether platelet transfusion and warfarin are avoided in acute heparin-induced thrombocytopenia [BSH HIT 2023]
+    - Duration of anticoagulation with and without thrombosis [BSH HIT 2023]
+  - HEME-02c  TTP, HUS and complement-mediated TMA  (aspects: diagnosis very high, management very high, testing high)
+    - Whether plasma exchange starts before the ADAMTS13 result, using a clinical risk score [ISTH TTP 2025]
+    - When caplacizumab and rituximab are added to plasma exchange and steroids in immune TTP [ISTH TTP 2025]
+    - When thrombotic microangiopathy with acute kidney injury and normal ADAMTS13 calls for complement inhibition [KDIGO aHUS/C3G 2017]
+  - HEME-02d  Disseminated intravascular coagulation  (aspects: diagnosis high, management high, interpretation medium)
+    - How a DIC score is built and what it means for prognosis [ISTH DIC 2013]
+    - When platelets, plasma, fibrinogen or cryoprecipitate are given in DIC, bleeding versus not bleeding [ISTH DIC 2013]
+    - Whether prophylactic or therapeutic heparin is appropriate in non-bleeding DIC [ISTH DIC 2013]
+- HEME-03  Anticoagulation and reversal
+  - HEME-03a  Choosing and monitoring an anticoagulant  (aspects: management very high, testing medium)
+    - Whether a DOAC or a vitamin K antagonist suits the indication [ESC AF 2024]
+    - When DOAC levels or anti-Xa activity are worth measuring [EHRA NOAC 2021]
+    - How long to interrupt a DOAC before a procedure, and whether to bridge [EHRA NOAC 2021]
+  - HEME-03b  Major bleeding and reversal  (aspects: management very high, disposition medium)
+    - Which reversal agent and dose for a vitamin K antagonist in life-threatening bleeding [European trauma bleeding 2023]
+    - Whether andexanet, prothrombin complex concentrate or idarucizumab is used for DOAC-associated intracerebral haemorrhage [ESO ICH 2025]
+    - When and how to restart anticoagulation after a major bleed [ESO ICH 2025]
+  - HEME-03c  Anticoagulation in renal failure, extremes of weight, interactions  (aspects: management high, testing medium)
+    - Which creatinine clearance formula and thresholds set DOAC dose reduction or avoidance [EHRA NOAC 2021]
+    - Whether a DOAC is appropriate at a body weight above 120 kg or BMI above 40, or after bariatric surgery [EHRA NOAC 2021]
+    - Which interacting drugs rule out a DOAC [EHRA NOAC 2021]
+- HEME-04  Venous thrombosis
+  - HEME-04a  Deep vein thrombosis: diagnosis and treatment  (aspects: diagnosis high, testing high, management high)
+    - How pre-test probability decides between D-dimer and compression ultrasound, and age-adjusted D-dimer [ESVS 2021]
+    - Whether an isolated distal DVT is anticoagulated or followed with repeat ultrasound [ESVS 2021]
+    - Whether a first DVT is provoked by a transient or a persistent factor, and so the length of anticoagulation [ESC PE 2019]
+  - HEME-04b  Cancer-associated and unusual-site thrombosis  (aspects: management high, diagnosis medium)
+    - Low-molecular-weight heparin versus a DOAC in cancer-associated thrombosis, by bleeding risk and tumour site [ESMO VTE 2023]
+    - Whether incidental splanchnic vein thrombosis is anticoagulated, and with which agent in cirrhosis [EASL vascular liver 2025]
+  - HEME-04c  Thrombophilia testing and antiphospholipid syndrome  (aspects: testing high, management high)
+    - Whether heritable thrombophilia testing after a VTE would change management [BSH thrombophilia 2022]
+    - When and how antiphospholipid antibody testing is timed relative to anticoagulation and the acute event [EULAR APS 2019]
+    - Whether a DOAC may be used in triple-positive or arterial antiphospholipid syndrome [EULAR APS 2019]
+- HEME-06  Transfusion
+  - HEME-06a  Thresholds and choice of product  (aspects: management very high)
+    - Which haemoglobin threshold for transfusion in a stable inpatient, and whether acute coronary syndrome changes it [AABB 2023]
+    - Single-unit transfusion and reassessment versus a fixed volume [NICE NG24 2015]
+    - When irradiated or CMV-safe components are needed [NICE NG24 2015]
+  - HEME-06b  Transfusion reactions  (aspects: diagnosis high, management high)
+    - Whether a febrile or allergic reaction allows the transfusion to continue [BSH acute transfusion reactions 2023]
+    - How to tell transfusion-associated circulatory overload from TRALI, and what each calls for [BSH acute transfusion reactions 2023]
+    - Which investigations and reporting a suspected haemolytic or septic reaction requires [BSH acute transfusion reactions 2023]
+- HEME-07  Sickle cell disease and haemoglobinopathies
+  - HEME-07a  Vaso-occlusive crisis and acute chest syndrome  (aspects: management very high, diagnosis high, disposition medium)
+    - Time to first analgesic dose and choice of opioid in a painful crisis [NICE CG143 2012]
+    - What defines acute chest syndrome on a ward and which antibiotics cover it [BSH acute chest syndrome 2015]
+    - When top-up versus exchange transfusion is needed in acute chest syndrome [BSH acute chest syndrome 2015]
+  - HEME-07b  Thalassaemia and long-term complications  (aspects: management high, prevention medium)
+    - Which ferritin or liver iron level calls for chelation, and choice of chelator [TIF 2025]
+    - How iron cardiomyopathy is detected and when it changes treatment [TIF 2025]
+    - What infection risk after splenectomy calls for [TIF 2025]
+- HEME-10  Leukaemia and myelodysplasia
+  - HEME-10a  Acute leukaemia: recognition and emergencies  (aspects: diagnosis very high, management high, disposition high)
+    - Which blood count and film findings call for same-day haematology referral as suspected acute leukaemia [NICE NG12 2015]
+    - When suspected acute promyelocytic leukaemia calls for all-trans retinoic acid before confirmation, and how its coagulopathy is supported [ELN AML 2022]
+    - Whether hyperleucocytosis calls for cytoreduction, and whether red cells may be transfused meanwhile [ELN AML 2022]
+  - HEME-10b  Chronic leukaemias  (aspects: diagnosis high, management medium, prognosis medium)
+    - Whether lymphocytosis in an older adult calls for flow cytometry and when CLL needs treatment [EHA CLL 2026]
+    - Infection prevention in CLL (vaccination, immunoglobulin replacement) [EHA CLL 2026]
+    - Whether neutrophilia with basophilia and splenomegaly calls for BCR::ABL1 testing, and what drug interactions matter on a tyrosine kinase inhibitor [ELN CML 2025]
+  - HEME-10c  Myelodysplasia and unexplained cytopenia  (aspects: diagnosis high, testing high, management medium)
+    - When an unexplained cytopenia calls for marrow examination rather than surveillance [ESMO MDS 2021]
+    - Transfusion and iron chelation in lower-risk myelodysplasia [ESMO MDS 2021]
+- HEME-11  Lymphoma and plasma cell disorders
+  - HEME-11a  Lymphoma: presentation and staging  (aspects: diagnosis high, testing high)
+    - Excisional or core biopsy versus fine-needle aspiration for suspected lymphoma [EHA LBCL 2025]
+    - Whether steroids should be withheld before biopsy in suspected lymphoma [EHA LBCL 2025]
+    - Which staging test (PET-CT, marrow) and what B symptoms mean for stage [Lugano 2014]
+  - HEME-11b  Myeloma and monoclonal gammopathy  (aspects: diagnosis high, testing high, management high)
+    - Which CRAB and SLiM features distinguish myeloma from smouldering myeloma and MGUS [IMWG 2014]
+    - Risk stratification and follow-up interval in MGUS [IMWG 2014]
+    - Management of myeloma kidney injury and hypercalcaemia at presentation, including free light chain removal [EHA-EMN myeloma 2025]
+- HEME-12  Myeloproliferative neoplasms
+  - HEME-12a  Polycythaemia, thrombocythaemia, myelofibrosis  (aspects: diagnosis high, management high)
+    - Whether an erythrocytosis is primary or secondary, and when to test for JAK2 [ELN MPN 2018]
+    - Haematocrit target and indication for cytoreduction in polycythaemia vera [ELN MPN 2018]
+    - Aspirin and cytoreduction by thrombosis risk in essential thrombocythaemia [ELN MPN 2018]
+  - HEME-12b  Leucocytosis and eosinophilia: approach  (aspects: diagnosis high, testing medium)
+    - Whether a leucocytosis is reactive or needs a film, flow cytometry or BCR::ABL1 [ELN CML 2025]
+    - Which hypereosinophilia calls for urgent organ assessment and corticosteroids, and strongyloides cover beforehand [WHO-HAEM5 2022]
+- HEME-05  Oncological emergencies
+  - HEME-05a  Tumour lysis syndrome  (aspects: prevention high, management high)
+    - Which risk category calls for rasburicase rather than allopurinol [BSH TLS 2025]
+    - Whether any test must precede rasburicase [BSH TLS 2025]
+    - When established tumour lysis needs renal replacement therapy [BSH TLS 2025]
+  - HEME-05b  Cord compression and brain metastases  (aspects: diagnosis very high, management high, disposition high)
+    - Which symptoms call for whole-spine MRI and within what time [NICE NG234 2023]
+    - Dexamethasone dose in suspected cord compression and when to involve surgery versus radiotherapy [NICE NG234 2023]
+    - Whether asymptomatic brain metastases need steroids and whether seizure prophylaxis is indicated [EANO-ESMO brain metastases 2021]
+  - HEME-05c  Superior vena cava obstruction and malignant effusions  (aspects: management high, diagnosis medium)
+    - Whether a malignant effusion is drained by indwelling pleural catheter or talc pleurodesis, given lung re-expansion [BTS pleural 2023]
+    - Whether lung re-expansion and prognosis decide therapeutic aspiration versus a definitive procedure [ERS/EACTS MPE 2018]
+  - HEME-05d  Hypercalcaemia and hyponatraemia of malignancy  (aspects: diagnosis medium, management high)
+    - Choice between a bisphosphonate and denosumab in hypercalcaemia of malignancy, including renal impairment [Endocrine Society hypercalcaemia of malignancy 2022]
+    - When calcitonin or steroids add to fluids and antiresorptives [Endocrine Society hypercalcaemia of malignancy 2022]
+    - Correction rate and choice of treatment in hyponatraemia from tumour SIAD [ESE/ESICM/ERA hyponatraemia 2014]
+- HEME-08  Febrile neutropenia
+  - HEME-08a  Risk stratification and empirical therapy  (aspects: management very high, disposition high)
+    - Time to first antibiotic and choice of empirical beta-lactam [ESMO FN 2016]
+    - Whether the MASCC score permits oral outpatient treatment [ESMO FN 2016]
+    - When vancomycin or other Gram-positive cover is added to the empirical regimen [ESMO FN 2016]
+  - HEME-08b  Persistent fever, neutropenic enterocolitis, invasive fungal infection  (aspects: diagnosis high, management high, testing medium)
+    - Whether persistent fever in a stable patient warrants changing antibiotics [ESMO FN 2016]
+    - When persistent fever calls for CT chest and galactomannan, and pre-emptive versus empirical antifungal therapy [ESCMID-ECMM-ERS aspergillosis 2017]
+    - Antibiotic cover and surgical criteria in neutropenic enterocolitis [ESMO FN 2016]
+- HEME-13  Solid tumours for the internist
+  - HEME-13a  Suspected cancer and unknown primary: work-up  (aspects: diagnosis high, testing high, disposition medium)
+    - Which minimum work-up a suspected cancer of unknown primary needs before oncology [ESMO CUP 2023]
+    - Which favourable-subset unknown primaries must not be missed [ESMO CUP 2023]
+    - Whether tumour markers have a role in the work-up of suspected cancer [ESMO CUP 2023]
+  - HEME-13b  Lung, breast, prostate, colorectal: staging and principles  (aspects: diagnosis medium, prognosis medium)
+    - Which referral pathway an unexplained finding (haemoptysis, breast lump, raised PSA, rectal bleeding with anaemia) triggers [NICE NG12 2015]
+    - Whether thrombocytosis or unexplained weight loss in an older adult calls for cancer investigation, and which first [NICE NG12 2015]
+  - HEME-13c  Screening and prevention  (aspects: prevention high)
+    - Which population cancer screening programmes are recommended in the EU, and at what ages [Council of the EU cancer screening 2022]
+    - Whether PSA screening is offered to a well man and on what conditions [Council of the EU cancer screening 2022]
+- HEME-14  Complications of cancer treatment
+  - HEME-14a  Immune-checkpoint-inhibitor toxicity  (aspects: diagnosis high, management very high)
+    - How toxicity grade decides holding immunotherapy and the corticosteroid dose [ESMO irAE 2022]
+    - When steroid-refractory colitis or hepatitis calls for infliximab or mycophenolate [ESMO irAE 2022]
+    - Which endocrine toxicities need hormone replacement rather than high-dose steroids [ESMO irAE 2022]
+    - Whether suspected myocarditis calls for troponin, ECG and high-dose steroids at once [ESC cardio-oncology 2022]
+  - HEME-14b  Chemotherapy toxicity (cardiac, neuropathy, emesis)  (aspects: management high, prevention medium)
+    - Cardiac monitoring and when to stop for anthracycline or trastuzumab cardiotoxicity [ESC cardio-oncology 2022]
+    - Which antiemetic regimen matches the emetic risk of the chemotherapy [MASCC/ESMO antiemesis 2023]
+    - Whether duloxetine has a role in chemotherapy-induced neuropathy [ESMO CIPN 2020]
+  - HEME-14c  Survivorship and late effects  (aspects: prevention medium, prognosis medium)
+    - Which cardiovascular surveillance a survivor of anthracycline or chest radiotherapy needs [ESC cardio-oncology 2022]
+    - Which late effects a survivor's routine care must cover [ESMO survivorship 2022]
 
-## D. Nephrology & Acid-Base/Electrolytes  (weight: high)
-- RENAL-01  Acute kidney injury (pre/intra/post-renal)
-- RENAL-02  Hyponatremia / hypernatremia
-- RENAL-03  Potassium disorders
-- RENAL-04  Acid-base disorders (mixed disturbances)
-- RENAL-05  Calcium / phosphate / magnesium disorders
-- RENAL-06  CKD inpatient management, indications for dialysis
-- RENAL-07  Rhabdomyolysis, contrast nephropathy
+## C. Infectious Disease  (weight: 0.64)
+- ID-01  Sepsis: source and empirical antibiotics
+  - ID-01a  Recognition and finding the source  (aspects: diagnosis very high, testing high)
+    - Whether a screening tool (qSOFA, NEWS, SIRS) is used alone to identify sepsis [SSC 2026]
+    - Which cultures and imaging are taken before antibiotics, without delaying them [SSC 2026]
+    - Whether procalcitonin is used to decide on starting antibiotics [SSC 2026]
+  - ID-01b  Empirical choice and resistance risk  (aspects: management very high)
+    - Time to antibiotics in probable sepsis with and without shock [SSC 2026]
+    - Whether risk factors for MRSA or multidrug-resistant Gram-negatives justify broader empirical cover [SSC 2026]
+    - Whether a reported penicillin allergy rules out a beta-lactam, and how it is assessed [ESCMID antibiotic allergy 2026]
+  - ID-01c  De-escalation and duration  (aspects: management high)
+    - When to narrow therapy once cultures and source are known [SSC 2026]
+    - Whether a short course suffices once the source is controlled, and whether procalcitonin guides stopping [SSC 2026]
+- ID-02  Skin and soft tissue infection
+  - ID-02a  Cellulitis and abscess  (aspects: diagnosis high, management high)
+    - Which mimics argue against cellulitis [NICE NG141 2019]
+    - Whether an abscess needs antibiotics after drainage [IDSA SSTI 2014]
+    - When oral rather than intravenous antibiotics and what duration suit cellulitis [NICE NG141 2019]
+  - ID-02b  Necrotising infection  (aspects: diagnosis very high, management very high, disposition high)
+    - Which signs call for surgical exploration without waiting for imaging [IDSA SSTI 2014]
+    - Whether clindamycin is added to broad-spectrum empirical therapy [IDSA SSTI 2014]
+  - ID-02c  Diabetic foot infection  (aspects: diagnosis high, management high, testing medium)
+    - How infection severity is classified and which wounds should not be treated with antibiotics [IWGDF/IDSA 2023]
+    - Which samples guide therapy, and when probe-to-bone and imaging point to osteomyelitis [IWGDF/IDSA 2023]
+    - Duration of antibiotics for soft tissue infection versus osteomyelitis after resection [IWGDF/IDSA 2023]
+- ID-03  Urinary tract infection
+  - ID-03a  Cystitis, pyelonephritis, asymptomatic bacteriuria  (aspects: diagnosis high, management high)
+    - Whether bacteriuria without urinary symptoms is treated, including in confusion or a fall in an older patient [EAU urological infections 2026]
+    - First-line agent and duration for uncomplicated pyelonephritis [EAU urological infections 2026]
+    - When pyelonephritis calls for imaging to look for obstruction or abscess [EAU urological infections 2026]
+  - ID-03b  Catheter-associated and complicated infection, prostatitis  (aspects: management high, diagnosis medium)
+    - Whether the catheter is changed before culture and treatment of catheter-associated infection [EAU urological infections 2026]
+    - Duration of therapy in complicated urinary infection, including men, by clinical response [IDSA cUTI 2025]
+    - Choice and length of treatment in acute bacterial prostatitis [EAU urological infections 2026]
+- ID-04  Central nervous system infection
+  - ID-04a  Bacterial meningitis  (aspects: diagnosis very high, management very high)
+    - Which features require CT before lumbar puncture, and whether antibiotics are given first [ESCMID meningitis 2016]
+    - Empirical regimen by age and risk, including when to add amoxicillin for listeria [ESCMID meningitis 2016]
+    - Whether dexamethasone is given, when, and when it is stopped [ESCMID meningitis 2016]
+    - Who needs chemoprophylaxis after meningococcal disease [ESCMID meningitis 2016]
+  - ID-04b  Encephalitis  (aspects: diagnosis high, testing high, management high)
+    - Whether aciclovir is started before CSF results in suspected encephalitis [EAN-ESCMID encephalitis 2026]
+    - Whether a negative HSV PCR early in the illness is repeated before stopping aciclovir [EAN-ESCMID encephalitis 2026]
+    - When autoimmune encephalitis should be considered and antibodies sent [EAN-ESCMID encephalitis 2026]
+  - ID-04c  Brain and epidural abscess  (aspects: diagnosis high, management high)
+    - Whether to aspirate or excise a brain abscess before antibiotics, and empirical cover [ESCMID brain abscess 2024]
+    - Duration of therapy and early switch to oral antibiotics in brain abscess [ESCMID brain abscess 2024]
+- ID-05  Bloodstream and line infection
+  - ID-05a  Staphylococcus aureus bacteraemia  (aspects: management very high, testing high, prognosis medium)
+    - Which features make S. aureus bacteraemia low risk, and so the echocardiography and length of therapy it needs [IDSA/ESCMID SAB 2026]
+    - Choice between cefazolin and an antistaphylococcal penicillin for MSSA [IDSA/ESCMID SAB 2026]
+    - Whether oral step-down is appropriate after initial intravenous therapy [IDSA/ESCMID SAB 2026]
+    - Whether repeat blood cultures and an infectious diseases consultation are required [IDSA/ESCMID SAB 2026]
+  - ID-05b  Catheter-related infection and candidaemia  (aspects: management high, testing medium)
+    - Whether a central line must be removed in candidaemia [Global candidiasis 2025]
+    - Echinocandin as first-line treatment, step-down to fluconazole, and duration after first negative culture [Global candidiasis 2025]
+    - Whether candidaemia calls for an ophthalmological examination [Global candidiasis 2025]
+- ID-06  Clostridioides difficile
+  - ID-06a  Diagnosis and first episode  (aspects: diagnosis high, testing high, management high)
+    - Which two-step testing algorithm confirms infection, and whom to test [ESCMID CDI 2021]
+    - Fidaxomicin versus vancomycin for a first episode [ESCMID CDI 2021]
+    - Whether other antibiotics and acid suppression should be stopped [ESCMID CDI 2021]
+  - ID-06b  Recurrence and fulminant disease  (aspects: management high, disposition medium)
+    - Treatment of a first recurrence, including bezlotoxumab where available [ESCMID CDI 2021]
+    - When faecal microbiota transplantation is indicated [ESCMID CDI 2021]
+    - Which signs of fulminant colitis call for surgery and what medical regimen meanwhile [ESCMID CDI 2021]
+- ID-07  Bone and joint infection
+  - ID-07a  Septic arthritis  (aspects: diagnosis very high, management high)
+    - Whether joint aspiration is done before antibiotics, and how crystals are interpreted alongside it [SEIMC septic arthritis 2024]
+    - Empirical regimen and total duration in native-joint septic arthritis [SEIMC septic arthritis 2024]
+    - Whether arthroscopic lavage or repeated needle aspiration drains the joint [SEIMC septic arthritis 2024]
+  - ID-07b  Osteomyelitis, vertebral and prosthetic infection  (aspects: diagnosis high, testing high, management high)
+    - Whether antibiotics are withheld until a biopsy in a stable patient with vertebral osteomyelitis [IDSA vertebral osteomyelitis 2015]
+    - Which findings meet criteria for prosthetic joint infection [ICM 2025]
+    - Whether implant retention (DAIR) is possible, given time since implantation and symptom duration [ICM 2025]
+- ID-08  Fever syndromes
+  - ID-08a  Fever of unknown origin  (aspects: diagnosis high, testing high)
+    - When FDG-PET/CT is placed in the work-up of fever of unknown origin [EANM/SNMMI FDG-PET infection 2013]
+    - Whether fever of unknown origin in an older adult calls for imaging for large-vessel vasculitis [EULAR LVV imaging 2023]
+  - ID-08b  Fever in the returning traveller  (aspects: diagnosis very high, testing high, management high)
+    - How many malaria tests, and over what interval, exclude malaria [WHO malaria 2026]
+    - Which features define severe falciparum malaria and call for intravenous artesunate [WHO malaria 2026]
+    - Which warning signs in dengue call for admission and fluid management [WHO arboviral diseases 2025]
+- ID-09  HIV
+  - ID-09a  New diagnosis and timing of antiretroviral therapy  (aspects: diagnosis high, management high, testing medium)
+    - Which inpatient presentations (indicator conditions) call for an HIV test [EACS 13.0 2025]
+    - How soon ART is started in tuberculosis and in cryptococcal meningitis [EACS 13.0 2025]
+    - Which baseline tests shape the first antiretroviral regimen [EACS 13.0 2025]
+  - ID-09b  Opportunistic infections and prophylaxis  (aspects: diagnosis high, management high, prevention high)
+    - At which CD4 count Pneumocystis and toxoplasma prophylaxis starts and stops [EACS 13.0 2025]
+    - Whether Pneumocystis pneumonia with hypoxaemia calls for adjunctive corticosteroids [EACS 13.0 2025]
+    - Whether cryptococcal antigen screening is done at a low CD4 count [EACS 13.0 2025]
+  - ID-09c  Immune reconstitution and long-term complications  (aspects: diagnosis medium, management high)
+    - Whether immune reconstitution syndrome calls for continuing ART and adding corticosteroids [EACS 13.0 2025]
+    - Which drug interactions with ART must be checked before a new prescription [EACS 13.0 2025]
+    - Cardiovascular risk assessment and statin use in people with HIV [EACS 13.0 2025]
+- ID-10  Healthcare-associated and resistant organisms
+  - ID-10a  Treating resistant organisms (ESBL, carbapenemase producers, MRSA, VRE)  (aspects: management very high, interpretation high)
+    - Whether a carbapenem is preferred over piperacillin-tazobactam for a serious ESBL infection [ESCMID MDR-GNB 2022]
+    - Which agent suits a carbapenem-resistant Enterobacterales infection, by carbapenemase type [ESCMID MDR-GNB 2022]
+    - Whether combination therapy adds anything for carbapenem-resistant infection [ESCMID MDR-GNB 2022]
+  - ID-10b  Infection control and post-exposure prophylaxis  (aspects: prevention high, management medium)
+    - Whether MRSA carriers are decolonised before surgery [ESCMID/EUCIC decolonisation 2024]
+    - Whether a needlestick exposure calls for HIV post-exposure prophylaxis, and how soon [EACS 13.0 2025]
+    - Hepatitis B vaccine and immunoglobulin after exposure, by the exposed person's immunity [EASL HBV 2025]
+- ID-11  Invasive fungal infection
+  - ID-11a  Aspergillosis and other moulds  (aspects: diagnosis high, testing high, management high)
+    - Which hosts and CT findings call for galactomannan and bronchoscopy [ESCMID-ECMM-ERS aspergillosis 2017]
+    - First-line antifungal for invasive aspergillosis and the role of drug-level monitoring [ESCMID-ECMM-ERS aspergillosis 2017]
+    - Whether Candida in sputum or bronchoalveolar lavage is treated [Global candidiasis 2025]
+  - ID-11b  Candida and cryptococcus  (aspects: management high, testing medium)
+    - Induction regimen for cryptococcal meningitis and how raised intracranial pressure is handled [Global cryptococcosis 2024]
+    - Whether Candida in urine is treated, and when [Global candidiasis 2025]
+- ID-12  Tuberculosis
+  - ID-12a  Diagnosis and isolation  (aspects: diagnosis high, testing high, disposition high)
+    - Which samples and tests (molecular rapid test, culture) are sent in suspected pulmonary tuberculosis [WHO TB module 3 2025]
+    - When airborne isolation is started and when it may end [ERS/ECDC European TB standards 2017]
+  - ID-12b  Treatment and latent infection  (aspects: management high, prevention high)
+    - Standard regimen and when a shorter four-month regimen is eligible [WHO TB module 4 2025]
+    - How drug-induced liver injury during treatment is managed and drugs reintroduced [WHO TB module 4 2025]
+    - Who should be tested and treated for latent infection before biological therapy or transplant [EULAR infections 2022]
+- ID-13  Abdominal and hepatobiliary infection
+  - ID-13a  Intra-abdominal infection and abscess  (aspects: management high, disposition medium)
+    - Whether a short fixed course suffices after source control [IDSA cIAI 2024]
+    - When percutaneous drainage is preferred to surgery for an abscess [IDSA cIAI 2024]
+    - Whether empirical cover for enterococcus or Candida is needed [IDSA cIAI 2024]
+  - ID-13b  Viral hepatitis: acute presentation and exposure  (aspects: diagnosis high, testing high, management medium)
+    - Which serology pattern separates acute hepatitis B from a flare of chronic disease [EASL HBV 2025]
+    - Whether severe acute hepatitis B is treated with an antiviral [EASL HBV 2025]
+    - Whether hepatitis B reactivation risk before immunosuppression calls for prophylaxis [EASL HBV 2025]
+    - Whether acute hepatitis C is treated straight away [EASL HCV 2020]
+- ID-14  Sexually transmitted and genital infection
+  - ID-14a  Syphilis  (aspects: interpretation high, management high)
+    - How treponemal and non-treponemal results are combined to stage syphilis and judge treatment response [IUSTI syphilis 2020]
+    - Which stage and which signs call for lumbar puncture and intravenous treatment [IUSTI syphilis 2020]
+    - Treatment of early syphilis in penicillin allergy [IUSTI syphilis 2020]
+  - ID-14b  Urethritis, pelvic infection, genital ulcers  (aspects: diagnosis medium, management high)
+    - First-line treatment of gonorrhoea, and test of cure [IUSTI gonorrhoea 2020]
+    - When pelvic inflammatory disease calls for admission and intravenous therapy [IUSTI PID 2017]
+- ID-15  Prevention and the immunocompromised host
+  - ID-15a  Adult immunisation  (aspects: prevention high)
+    - Which vaccines are due before starting immunosuppression, and how long before [EULAR vaccination AIIRD 2019]
+    - Whether live vaccines are contraindicated on a given immunosuppressant [EULAR vaccination AIIRD 2019]
+    - Revaccination schedule after haematopoietic stem cell transplant [ECIL-7 vaccination 2019]
+  - ID-15b  Infection on immunosuppressants and after transplant  (aspects: prevention high, diagnosis high, management medium)
+    - At which steroid dose and duration Pneumocystis prophylaxis is started [EULAR infections 2022]
+    - Which screening is done before biological therapy [EULAR infections 2022]
 
-## E. Gastroenterology & Hepatology  (weight: medium)
-- GI-01  Upper & lower GI bleeding
-- GI-02  Acute pancreatitis
-- GI-03  Cirrhosis & its complications (ascites, SBP, HRS, varices)
-- GI-04  Acute liver failure, drug-induced liver injury
-- GI-05  Inflammatory bowel disease flare
-- GI-06  Bowel obstruction, ischemia
+## D. Pulmonary & Critical Care  (weight: 0.64)
+- PULM-01  Pneumonia
+  - PULM-01a  Community-acquired: severity and empirical therapy  (aspects: management very high, disposition high, testing medium)
+    - Whether a CURB-65 score calls for ward, high-dependency or intensive care admission [NICE NG250 2025]
+    - Whether a hospitalised patient needs atypical cover or Legionella and pneumococcal urinary antigens [NICE NG250 2025; ERS/ESICM/ESCMID/ALAT sCAP 2023]
+    - Whether to give hydrocortisone in severe community-acquired pneumonia [ERS/ESICM/ESCMID/ALAT sCAP 2023]
+    - How long to treat once the patient is stable [NICE NG250 2025]
+  - PULM-01b  Hospital-acquired and ventilator-associated  (aspects: management very high, diagnosis medium)
+    - Whether risk factors for resistant organisms call for anti-pseudomonal or MRSA cover [ERS/ESICM/ESCMID/ALAT HAP/VAP 2017]
+    - Narrow empirical therapy versus broad empirical therapy in the low-risk ward patient [ERS/ESICM/ESCMID/ALAT HAP/VAP 2017; NICE NG250 2025]
+    - Length of therapy once the patient responds [ERS/ESICM/ESCMID/ALAT HAP/VAP 2017]
+  - PULM-01c  Non-resolving pneumonia, aspiration, complications  (aspects: diagnosis high, management high, testing medium)
+    - Whether aspiration pneumonia needs dedicated anaerobic cover [NICE NG250 2025]
+    - When a slow response calls for repeat imaging, a pleural tap or a search for another diagnosis [NICE NG250 2025; BTS pleural 2023]
+    - Timing and need of follow-up chest imaging after recovery [NICE NG250 2025]
+- PULM-02  COPD
+  - PULM-02a  Exacerbation  (aspects: management very high, diagnosis medium, disposition medium)
+    - Dose and length of systemic corticosteroid [GOLD 2027; ERS/ATS COPD exacerbations 2017]
+    - Whether the exacerbation calls for an antibiotic [GOLD 2027; ERS/ATS COPD exacerbations 2017]
+    - Whether the presentation is an exacerbation or a mimic (heart failure, pulmonary embolism, pneumonia) [GOLD 2027]
+    - What changes at discharge to prevent the next exacerbation [GOLD 2027]
+  - PULM-02b  Non-invasive ventilation and respiratory failure  (aspects: management very high, interpretation high, disposition medium)
+    - The target saturation for controlled oxygen [BTS oxygen 2017]
+    - Whether the blood gas meets the threshold for non-invasive ventilation [ERS/ATS NIV 2017; GOLD 2027]
+    - When failure of non-invasive ventilation calls for intubation or a ceiling of care [ERS/ATS NIV 2017]
+  - PULM-02c  Stable disease: treatment  (aspects: management high, prevention medium, diagnosis medium)
+    - Which inhaled regimen fits the patient's group and exacerbation history [GOLD 2027]
+    - Whether the blood eosinophil count supports adding or withdrawing an inhaled corticosteroid [GOLD 2027]
+    - Who qualifies for long-term oxygen [GOLD 2027]
+    - Whether to start home non-invasive ventilation after a hypercapnic admission [GOLD 2027]
+- PULM-03  Asthma
+  - PULM-03a  Acute severe asthma  (aspects: management very high, disposition high, interpretation medium)
+    - Which features make the attack acute severe or life-threatening [GINA 2026]
+    - Whether intravenous magnesium is indicated [GINA 2026]
+    - What a normal or rising pCO2 means in an attack [GINA 2026]
+    - The treatment the patient leaves hospital on [GINA 2026]
+  - PULM-03b  Long-term treatment and mimics  (aspects: management high, diagnosis medium)
+    - Whether to use as-needed ICS-formoterol rather than a short-acting beta-agonist alone [GINA 2026]
+    - When poor control means a wrong diagnosis or poor technique rather than severe asthma [GINA 2026]
+    - Who to refer for biologic therapy [GINA 2026]
+- PULM-04  Respiratory failure and ventilation
+  - PULM-04a  Hypoxaemic failure and oxygen delivery  (aspects: management very high, interpretation high, disposition medium)
+    - The oxygen target in the patient without hypercapnic risk [BTS oxygen 2017]
+    - High-flow nasal oxygen, CPAP or non-invasive ventilation for hypoxaemic failure [ERS HFNC 2022; ERS/ATS NIV 2017]
+    - When rising oxygen needs call for intensive care review [ERS HFNC 2022]
+  - PULM-04b  Hypercapnic failure  (aspects: interpretation high, management high, diagnosis medium)
+    - Whether the blood gas shows acute, chronic or acute-on-chronic hypercapnia [BTS oxygen 2017]
+    - Whether the cause is airway, chest wall, neuromuscular or central [ERS/ATS NIV 2017]
+    - Whether non-invasive ventilation is indicated outside COPD [ERS/ATS NIV 2017]
+  - PULM-04c  ARDS and ventilator basics  (aspects: management high, diagnosis medium)
+    - Whether the patient meets the definition of ARDS [ESICM ARDS 2023]
+    - Tidal volume and plateau pressure limits [ESICM ARDS 2023]
+    - When prone positioning is indicated [ESICM ARDS 2023]
+    - Whether to give corticosteroids in ARDS [ESICM ARDS 2023]
+- PULM-05  Pleural disease
+  - PULM-05a  Effusion: work-up  (aspects: diagnosis high, testing high, interpretation high)
+    - Whether a unilateral effusion needs diagnostic aspiration [BTS pleural 2023]
+    - Whether pleural fluid is exudate or transudate by Light's criteria [BTS pleural 2023]
+    - Which tests to send on pleural fluid [BTS pleural 2023]
+    - Management of a recurrent malignant effusion [BTS pleural 2023]
+  - PULM-05b  Parapneumonic effusion and empyema  (aspects: management very high, interpretation high)
+    - Whether pleural fluid pH or appearance calls for a chest drain [BTS pleural 2023]
+    - Whether to give intrapleural tPA and DNase [BTS pleural 2023]
+    - When to refer for surgery [BTS pleural 2023]
+  - PULM-05c  Pneumothorax  (aspects: management high, disposition high)
+    - Conservative care, aspiration or drain for a primary pneumothorax [BTS pleural 2023]
+    - Management of a secondary pneumothorax [BTS pleural 2023]
+    - Advice on flying and diving after a pneumothorax [BTS pleural 2023]
+- PULM-06  Pulmonary embolism (retired: merged into CARD-08)
+- PULM-07  Septic shock: resuscitation
+  - PULM-07a  Fluids and vasopressors  (aspects: management very high, interpretation medium)
+    - Type and amount of resuscitation fluid [SSC 2026; ESICM shock 2025]
+    - The mean arterial pressure target, including in older patients [SSC 2026]
+    - When to start noradrenaline and whether peripheral infusion is acceptable [SSC 2026; ESICM shock 2025]
+    - What lactate and capillary refill tell you during resuscitation [SSC 2026; ESICM shock 2025]
+  - PULM-07b  Corticosteroids, adjuncts, source control  (aspects: management high, disposition medium)
+    - Whether hydrocortisone is indicated in septic shock [SSC 2026]
+    - When vasopressin is added [SSC 2026]
+    - How soon a drainable source must be controlled [SSC 2026]
+- PULM-08  Shock
+  - PULM-08a  Telling the types apart  (aspects: diagnosis very high, testing high)
+    - What bedside findings point to distributive, cardiogenic, hypovolaemic or obstructive shock [ESICM shock 2025]
+    - Whether to use point-of-care echocardiography to classify shock [ESICM shock 2025]
+    - Whether further fluid is likely to help [ESICM shock 2025]
+  - PULM-08b  Cardiogenic and obstructive shock  (aspects: management high, diagnosis high, disposition high)
+    - Choice of vasopressor and inotrope in cardiogenic shock [ESC HF 2026; ESICM shock 2025]
+    - When to call the shock team for mechanical support [ESC HF 2026]
+    - Whether shock is caused by tamponade, tension pneumothorax or pulmonary embolism [ESICM shock 2025]
+  - PULM-08c  Hypovolaemic and haemorrhagic shock  (aspects: management high, diagnosis medium)
+    - Crystalloid or colloid for volume replacement [ESICM shock 2025]
+    - When vasopressors are used in hypovolaemic shock [ESICM shock 2025]
+- PULM-09  Pulmonary hypertension
+  - PULM-09a  Recognition and classification  (aspects: diagnosis high, testing high)
+    - Whether the echocardiogram shows a high probability of pulmonary hypertension [ESC/ERS PH 2022]
+    - Which clinical group the patient belongs to [ESC/ERS PH 2022]
+    - Whether to screen for chronic thromboembolic disease after pulmonary embolism [ESC/ERS PH 2022]
+    - When to refer to a pulmonary hypertension centre [ESC/ERS PH 2022]
+  - PULM-09b  The decompensated right ventricle  (aspects: management high, prognosis medium)
+    - Volume removal or volume loading in right ventricular failure [ESC/ERS PH 2022]
+    - Vasopressor and inotrope choice [ESC/ERS PH 2022]
+    - Risks of intubation and sedation in pulmonary hypertension [ESC/ERS PH 2022]
+- PULM-10  Interstitial lung disease and sarcoidosis
+  - PULM-10a  Approach to diffuse lung disease  (aspects: diagnosis high, testing high)
+    - Which CT pattern is seen, and whether it is enough for a diagnosis of IPF [ATS/ERS/JRS/ALAT IPF/PPF 2022]
+    - Which serology and exposure history to take [ATS/ERS/JRS/ALAT IPF/PPF 2022]
+    - Whether to refer for multidisciplinary discussion and biopsy [ATS/ERS/JRS/ALAT IPF/PPF 2022]
+  - PULM-10b  Specific diseases (fibrosis, hypersensitivity, connective tissue, drug) and acute exacerbation  (aspects: management high, prognosis medium)
+    - Whether the disease meets the criteria for progressive pulmonary fibrosis and antifibrotic therapy [ATS/ERS/JRS/ALAT IPF/PPF 2022]
+    - Whether pulmonary sarcoidosis needs treatment, and with what [ERS sarcoidosis 2021]
+    - Whether corticosteroids are used in IPF [ATS/ERS/JRS/ALAT IPF/PPF 2022]
+- PULM-11  Nodules, lung cancer and haemoptysis
+  - PULM-11a  The pulmonary nodule and suspected cancer  (aspects: management high, testing high)
+    - Whether a nodule needs follow-up and at what interval [BTS nodules 2015; Fleischner 2017]
+    - When to use a malignancy risk score and PET-CT [BTS nodules 2015]
+    - Which tests come first in suspected lung cancer [NICE NG122]
+  - PULM-11b  Haemoptysis  (aspects: management high, diagnosis medium)
+    - Which patients with haemoptysis go on the urgent cancer pathway [NICE NG12]
+    - When massive haemoptysis calls for bronchial artery embolisation [BTS bronchiectasis 2019]
+- PULM-12  Sleep and hypoventilation
+  - PULM-12a  Obstructive sleep apnoea  (aspects: diagnosis medium, management medium)
+    - Whom to test for sleep apnoea and with which test [NICE NG202 2021]
+    - When CPAP is offered [NICE NG202 2021]
+    - What to advise about driving [EU Directive 2014/85/EU]
+  - PULM-12b  Obesity hypoventilation and neuromuscular failure  (aspects: diagnosis high, management high)
+    - Whether the serum bicarbonate calls for a blood gas [ATS OHS 2019]
+    - CPAP or non-invasive ventilation in obesity hypoventilation [ATS OHS 2019]
+    - When to start non-invasive ventilation in motor neurone disease [NICE NG42]
+- PULM-13  Bronchiectasis and chronic cough
+  - PULM-13a  Bronchiectasis and cystic fibrosis in adults  (aspects: management high, diagnosis medium)
+    - Which tests to send in new bronchiectasis [ERS bronchiectasis 2025]
+    - Length and choice of antibiotic in an exacerbation [ERS bronchiectasis 2025]
+    - Who qualifies for long-term macrolide or inhaled antibiotic [ERS bronchiectasis 2025]
+    - Whether Pseudomonas eradication is attempted [ERS bronchiectasis 2025]
+  - PULM-13b  Chronic cough and breathlessness: approach  (aspects: diagnosis high, management medium)
+    - Which tests to order for chronic cough [ERS chronic cough 2020]
+    - Whether to use low-dose morphine or gabapentin for refractory cough [ERS chronic cough 2020]
+    - Whether opioids help chronic breathlessness [ERS symptom management 2024]
+- PULM-14  Critical care for the ward physician
+  - PULM-14a  Recognising deterioration and escalation  (aspects: disposition very high, diagnosis high)
+    - When an early-warning score calls for urgent review [NICE CG50; RCP NEWS2 2017]
+    - Whether escalation to intensive care fits the patient's frailty and goals [ESICM very old patients 2025]
+  - PULM-14b  Sedation, analgesia and life after intensive care  (aspects: management high, prognosis medium)
+    - Light sedation versus deep sedation [SCCM PADIS 2018 and 2025 focused update]
+    - Choice of sedative [SCCM PADIS 2018 and 2025 focused update]
+    - Rehabilitation needs after intensive care [NICE CG83]
+
+## E. Gastroenterology & Hepatology  (weight: 0.64)
+- GI-01  Gastrointestinal bleeding
+  - GI-01a  Upper, non-variceal  (aspects: management very high, disposition high, diagnosis medium)
+    - Whether a Glasgow-Blatchford score allows discharge without inpatient endoscopy [ESGE NVUGIH 2026]
+    - The haemoglobin threshold for red cell transfusion, with and without cardiovascular disease [ESGE NVUGIH 2026]
+    - How soon endoscopy is done after resuscitation [ESGE NVUGIH 2026]
+    - Dose and length of proton pump inhibitor after endoscopic haemostasis [ESGE NVUGIH 2026]
+    - When to restart antiplatelet or anticoagulant therapy [ESGE NVUGIH 2026; ESGE/BSG antithrombotics 2021]
+  - GI-01b  Variceal  (aspects: management very high, disposition high)
+    - Which drugs to start before endoscopy in suspected variceal bleeding [Baveno VIII 2026]
+    - Whether to give antibiotic prophylaxis [Baveno VIII 2026]
+    - Who qualifies for pre-emptive TIPS [Baveno VIII 2026; EASL TIPS 2025]
+    - Secondary prophylaxis after the bleed [Baveno VIII 2026]
+  - GI-01c  Lower and obscure  (aspects: management high, testing high, disposition high)
+    - Whether a lower GI bleed is safe for discharge on a risk score [ESGE LGIB 2021]
+    - CT angiography or colonoscopy first in the unstable patient [ESGE LGIB 2021]
+    - Whether haematochezia with shock calls for upper endoscopy [ESGE LGIB 2021]
+    - Next test after negative upper and lower endoscopy [ESGE small-bowel 2022]
+- GI-02  Pancreatitis
+  - GI-02a  Acute: diagnosis, severity, fluids and feeding  (aspects: management very high, diagnosis high, testing medium)
+    - Whether the criteria for acute pancreatitis are met, and whether CT is needed [IAP 2025]
+    - Rate and type of intravenous fluid [IAP 2025]
+    - When to start oral feeding [IAP 2025]
+    - Whether prophylactic antibiotics are indicated [IAP 2025]
+  - GI-02b  Complications and finding the cause  (aspects: management high, diagnosis high, testing medium)
+    - When ERCP is indicated in biliary pancreatitis [IAP 2025]
+    - Timing of cholecystectomy after mild biliary pancreatitis [IAP 2025]
+    - When and how infected necrosis is drained [IAP 2025]
+    - Which tests to send when no cause is found [IAP 2025]
+  - GI-02c  Chronic pancreatitis  (aspects: diagnosis medium, management medium)
+    - How to diagnose exocrine insufficiency and dose enzyme replacement [UEG HaPanEU 2017]
+    - Which diabetes treatment fits pancreatogenic diabetes [UEG HaPanEU 2017]
+    - Management of pain [UEG HaPanEU 2017]
+- GI-03  Cirrhosis
+  - GI-03a  Ascites and spontaneous bacterial peritonitis  (aspects: management very high, testing high, interpretation high)
+    - Whether diagnostic paracentesis is needed on admission [EASL decompensated cirrhosis 2018]
+    - Whether the ascitic neutrophil count means SBP, and the albumin dose with treatment [EASL decompensated cirrhosis 2018]
+    - How much albumin after large-volume paracentesis [EASL decompensated cirrhosis 2018; Baveno VIII 2026]
+    - Who gets primary SBP prophylaxis [EASL decompensated cirrhosis 2018]
+  - GI-03b  Kidney injury and hepatorenal syndrome  (aspects: management very high, diagnosis high)
+    - How AKI in cirrhosis is staged, and what is stopped first [EASL decompensated cirrhosis 2018]
+    - Whether the criteria for hepatorenal syndrome-AKI are met [EASL decompensated cirrhosis 2018]
+    - Vasoconstrictor choice, and when terlipressin is unsafe [EASL decompensated cirrhosis 2018]
+  - GI-03c  Varices and portal hypertension  (aspects: management high, prevention high)
+    - Whether clinically significant portal hypertension can be diagnosed without endoscopy [Baveno VIII 2026]
+    - Carvedilol, propranolol or band ligation to prevent first bleeding or decompensation [Baveno VIII 2026]
+    - When to reduce or stop a beta-blocker in decompensated cirrhosis [Baveno VIII 2026]
+  - GI-03d  Decompensation, transplant referral, liver cancer surveillance  (aspects: disposition high, prognosis high, prevention medium)
+    - When to refer for transplant assessment [EASL liver transplantation 2024]
+    - Whether the patient has acute-on-chronic liver failure, and its grade [EASL ACLF 2023]
+    - Who needs surveillance for liver cancer, and how often [EASL HCC 2024]
+    - Whether the patient meets the criteria for recompensation [Baveno VIII 2026]
 - GI-07  Hepatic encephalopathy
+  - GI-07a  Diagnosis and precipitants  (aspects: diagnosis very high, testing high)
+    - What a blood ammonia does and does not tell you [EASL hepatic encephalopathy 2022]
+    - Which precipitants to look for [EASL hepatic encephalopathy 2022]
+    - What else could cause confusion in a patient with cirrhosis [EASL hepatic encephalopathy 2022]
+  - GI-07b  Treatment and prevention  (aspects: management very high, prevention high)
+    - How to dose and titrate lactulose [EASL hepatic encephalopathy 2022]
+    - When rifaximin is added [EASL hepatic encephalopathy 2022]
+    - Whether to restrict dietary protein [EASL hepatic encephalopathy 2022]
+- GI-04  Acute liver failure and acute liver injury
+  - GI-04a  Recognition and referral  (aspects: diagnosis high, disposition very high)
+    - Whether the definition of acute liver failure is met [EASL acute liver failure 2017]
+    - When to contact a transplant centre [EASL acute liver failure 2017]
+    - Whether to correct the INR before procedures [EASL acute liver failure 2017]
+    - Whether to give acetylcysteine in liver failure not caused by paracetamol [EASL acute liver failure 2017]
+  - GI-04b  Drug-induced injury  (aspects: diagnosis high, management medium)
+    - Which pattern of injury the R ratio shows [EASL DILI 2019]
+    - When rising liver tests require stopping the drug [EASL DILI 2019]
+    - Whether to rechallenge [EASL DILI 2019]
+  - GI-04c  Alcohol-related hepatitis  (aspects: management high, prognosis high, diagnosis medium)
+    - Whether disease severity justifies corticosteroids [EASL alcohol-related liver disease 2025]
+    - Whether to stop steroids at day 7 [EASL alcohol-related liver disease 2025]
+    - What to exclude before starting steroids [EASL alcohol-related liver disease 2025]
+    - Who is considered for early transplantation [EASL alcohol-related liver disease 2025]
+- GI-08  Chronic liver disease
+  - GI-08a  Abnormal liver tests and steatotic liver disease  (aspects: testing high, diagnosis high, management medium)
+    - Which tests make up a liver screen for abnormal liver tests [BSG abnormal liver tests 2018]
+    - How to stage fibrosis in steatotic liver disease [EASL-EASD-EASO MASLD 2024]
+    - Which drug treatment fits MASLD with fibrosis [EASL-EASD-EASO MASLD 2024]
+  - GI-08b  Chronic viral hepatitis  (aspects: management high, prevention high, interpretation medium)
+    - How to read hepatitis B serology [EASL HBV 2025]
+    - Who needs prophylaxis against hepatitis B reactivation during immunosuppression [EASL HBV 2025]
+    - Who should be treated for chronic hepatitis B [EASL HBV 2025]
+    - Whether hepatitis C can be treated without genotyping or specialist work-up [EASL HCV 2020]
+  - GI-08c  Autoimmune, cholestatic and metabolic liver disease  (aspects: diagnosis high, management medium)
+    - First-line induction in autoimmune hepatitis [EASL AIH 2025]
+    - When second-line therapy is needed in primary biliary cholangitis [EASL PBC 2025]
+    - How to confirm haemochromatosis after a high ferritin [EASL haemochromatosis 2022]
+    - When to suspect Wilson's disease [EASL-ERN Wilson 2025]
+- GI-05  Inflammatory bowel disease
+  - GI-05a  Acute severe colitis  (aspects: management very high, diagnosis high, disposition high)
+    - Whether the attack is acute severe colitis [ECCO UC 2026]
+    - What to exclude before or alongside intravenous steroids [ECCO UC 2026]
+    - When steroid failure calls for rescue therapy or colectomy [ECCO UC 2026]
+    - Whether to give thromboprophylaxis [ECCO UC 2026]
+  - GI-05b  Crohn's disease: complications  (aspects: management high, diagnosis high)
+    - Whether an abscess is drained before biologic therapy [ECCO Crohn's 2024]
+    - Medical, endoscopic or surgical treatment of a stricture [ECCO Crohn's 2024]
+    - How perianal fistula is investigated and treated [ECCO Crohn's 2024]
+    - When to look for recurrence after resection [ECCO Crohn's 2024]
+  - GI-05c  Maintenance therapy and its risks  (aspects: management high, prevention high)
+    - Screening and vaccination before immunosuppression [ECCO infections 2021]
+    - Which maintenance drug follows steroid induction [ECCO UC 2026; ECCO Crohn's 2024]
+    - Whom JAK inhibitors put at risk [ECCO UC 2026]
+- GI-06  Bowel obstruction and ischaemia
+  - GI-06a  Obstruction, ileus, pseudo-obstruction  (aspects: diagnosis high, management high, disposition high)
+    - Which CT signs call for surgery [WSES adhesive small bowel obstruction 2017]
+    - Whether to use water-soluble contrast in adhesive obstruction [WSES adhesive small bowel obstruction 2017]
+    - When to give neostigmine or decompress in colonic pseudo-obstruction [ASGE colonic pseudo-obstruction 2020]
+  - GI-06b  Mesenteric ischaemia and ischaemic colitis  (aspects: diagnosis very high, management high)
+    - Whether a normal lactate rules out mesenteric ischaemia [ESVS mesenteric 2017]
+    - Whether to wait for renal function before CT angiography [ESVS mesenteric 2017]
+    - How long to anticoagulate mesenteric venous thrombosis [ESVS mesenteric 2017]
+- GI-09  Biliary disease
+  - GI-09a  Gallstones and cholecystitis  (aspects: management high, disposition high)
+    - Timing of cholecystectomy in acute cholecystitis [WSES acute cholecystitis 2020; Tokyo 2018]
+    - When to use percutaneous cholecystostomy [WSES acute cholecystitis 2020]
+    - Whether asymptomatic gallstones need treatment [EASL gallstones 2016]
+  - GI-09b  Bile duct stones and cholangitis  (aspects: management very high, diagnosis high)
+    - What grade the cholangitis is, and how urgently to drain [Tokyo 2018]
+    - ERCP, EUS or MRCP first in suspected duct stones [ESGE bile duct stones 2019]
+    - How long to give antibiotics after drainage [Tokyo 2018]
+- GI-10  Oesophagus and stomach
+  - GI-10a  Reflux, Barrett's, dysphagia  (aspects: diagnosis high, management medium)
+    - Which alarm features call for endoscopy, not a trial of PPI [ESGE Barrett 2023; Lyon 2.0 2023]
+    - Surveillance interval in Barrett's oesophagus [ESGE Barrett 2023]
+    - Which biopsies to take in dysphagia [EUREOS EoE 2017]
+  - GI-10b  Peptic ulcer, Helicobacter, dyspepsia  (aspects: management high, testing high)
+    - Which Helicobacter test, and which medicines to stop first [Maastricht VI 2022]
+    - Choice of eradication regimen [Maastricht VI 2022]
+    - Whether eradication must be confirmed [Maastricht VI 2022]
+    - Who needs gastroprotection with NSAIDs or antiplatelets [Maastricht VI 2022]
+- GI-11  Diarrhoea and malabsorption
+  - GI-11a  Acute diarrhoea in hospital and community  (aspects: management high, testing high)
+    - Which patients need stool tests [IDSA infectious diarrhoea 2017]
+    - When an antibiotic helps and when it harms [IDSA infectious diarrhoea 2017]
+  - GI-11b  Chronic diarrhoea: coeliac disease, microscopic colitis, irritable bowel  (aspects: diagnosis high, testing high)
+    - How to test for coeliac disease, and on what diet [ESsCD coeliac 2019]
+    - Whether calprotectin separates inflammatory disease from irritable bowel syndrome [BSG chronic diarrhoea 2018]
+    - Whether to biopsy a normal colon in watery diarrhoea [UEG/EMCG microscopic colitis 2021]
+    - When to test for bile acid diarrhoea [BSG chronic diarrhoea 2018]
+- GI-12  Colon
+  - GI-12a  Colorectal cancer screening and polyps  (aspects: prevention high, management medium)
+    - Surveillance colonoscopy interval after polypectomy [ESGE post-polypectomy surveillance 2020]
+    - When to stop surveillance [ESGE post-polypectomy surveillance 2020]
+  - GI-12b  Diverticular disease and constipation  (aspects: management high, diagnosis medium)
+    - Whether uncomplicated diverticulitis needs antibiotics [ESCP diverticular disease 2020]
+    - Whether colonoscopy is needed after an episode [ESCP diverticular disease 2020]
+    - Laxative choice in opioid-induced constipation [ESNM/UEG constipation 2020]
 
-## F. Endocrinology  (weight: medium)
-- ENDO-01  DKA & hyperosmolar hyperglycemic state
-- ENDO-02  Inpatient glycemic management
-- ENDO-03  Thyroid storm & myxedema coma
-- ENDO-04  Adrenal insufficiency / crisis
-- ENDO-05  Pituitary emergencies, SIADH (see RENAL-02)
-- ENDO-06  Pheochromocytoma, hypercalcemia of malignancy
+## F. Endocrinology  (weight: 0.57)
+- ENDO-01  Hyperglycaemic emergencies
+  - ENDO-01a  Diagnosis: DKA, HHS, euglycaemic ketoacidosis  (aspects: diagnosis very high, testing high)
+    - Whether ketosis and acidosis with near-normal glucose on an SGLT2 inhibitor meet the criteria for DKA [ADA/EASD/JBDS hyperglycaemic crises consensus 2024]
+    - Whether a picture with high osmolality and ketosis is DKA, HHS or both, and which protocol leads [JBDS HHS 2022]
+    - Which ketone measurement defines and tracks the episode, and whether venous gas suffices [JBDS DKA 2023]
+  - ENDO-01b  Fluids, insulin and potassium  (aspects: management very high)
+    - Choice and rate of fluid in the older patient or one with heart failure [ADA/EASD/JBDS hyperglycaemic crises consensus 2024]
+    - The potassium level at which insulin is delayed, and how much potassium each litre carries [ADA/EASD/JBDS hyperglycaemic crises consensus 2024]
+    - Whether the usual basal insulin continues alongside the fixed-rate infusion [JBDS DKA 2023]
+    - When glucose is added as glucose falls while ketones persist [JBDS DKA 2023]
+    - When insulin starts in HHS, and the acceptable rate of fall of glucose and sodium [JBDS HHS 2022]
+  - ENDO-01c  Resolution, transition and the precipitant  (aspects: management high, disposition medium)
+    - Which criteria define resolution of DKA [ADA/EASD/JBDS hyperglycaemic crises consensus 2024]
+    - Timing of subcutaneous insulin relative to stopping the infusion [ADA/EASD/JBDS hyperglycaemic crises consensus 2024]
+    - Whether, and when, an SGLT2 inhibitor is restarted after ketoacidosis [ADA/EASD/JBDS hyperglycaemic crises consensus 2024]
+    - Which precipitants, including insulin omission, must be sought before discharge [JBDS DKA 2023]
+- ENDO-02  Inpatient glycaemic management
+  - ENDO-02a  Targets and insulin regimens  (aspects: management high)
+    - The glucose target range in the ward patient and in the critically ill [ADA Standards of Care 2026]
+    - Whether correction insulin alone is acceptable or a basal-bolus regimen is needed [ADA Standards of Care 2026]
+    - Which glucose-lowering drugs are held on admission in acute illness [JBDS Diabetes at the Front Door 2023]
+  - ENDO-02b  Steroids, feeding and procedures  (aspects: management high)
+    - Choice and timing of treatment for hyperglycaemia on once-daily morning prednisolone [JBDS steroids 2023]
+    - Matching the insulin regimen to continuous or intermittent enteral feeding [JBDS enteral feeding 2024]
+    - Whether a variable-rate infusion or the usual regimen covers surgery and fasting [JBDS/CPOC perioperative 2023]
+    - When an SGLT2 inhibitor is stopped before surgery and restarted after [JBDS/CPOC perioperative 2023]
+  - ENDO-02c  Hypoglycaemia  (aspects: management high, prevention high)
+    - Treatment when the patient cannot swallow: intravenous glucose or glucagon [JBDS hypoglycaemia 2023]
+    - Whether the next insulin dose is given, reduced or withheld after an episode [JBDS hypoglycaemia 2023]
+    - How long monitoring continues after sulfonylurea-induced hypoglycaemia [JBDS hypoglycaemia 2023]
+- ENDO-07  Diabetes: long-term management
+  - ENDO-07a  Choice of glucose-lowering drug by comorbidity  (aspects: management very high)
+    - Whether an SGLT2 inhibitor or GLP-1 receptor agonist is started for heart failure, CKD or atherosclerotic disease regardless of HbA1c [ADA/EASD consensus 2026]
+    - Which class suits heart failure and which suits atherosclerotic disease [ESC diabetes and CVD 2023]
+    - Whether sulfonylurea or insulin is deintensified in the frail or hypoglycaemia-prone [ADA/EASD consensus 2026]
+    - Choice of incretin-based therapy when weight loss is a treatment goal [ADA/EASD consensus 2026]
+  - ENDO-07b  Complications and screening  (aspects: prevention high, testing medium)
+    - How often albuminuria is measured and what a raised ACR changes [ADA Standards of Care 2026]
+    - Which foot findings call for urgent referral to a foot team [IWGDF 2023]
+    - Whether rapid glucose lowering in established retinopathy needs eye review first [ADA Standards of Care 2026]
+  - ENDO-07c  Type 1 and atypical diabetes  (aspects: diagnosis high, management medium)
+    - Whether a new adult diagnosis needs islet autoantibodies or C-peptide to classify it [ADA/EASD type 1 diabetes consensus 2021]
+    - When monogenic diabetes is suspected and genetic testing requested [ADA/EASD type 1 diabetes consensus 2021]
+    - Recognition and insulin need in diabetes caused by an immune checkpoint inhibitor [ESE immune checkpoint inhibitor endocrinopathies 2022]
+- ENDO-03  Thyroid emergencies
+  - ENDO-03a  Thyroid storm  (aspects: diagnosis high, management very high)
+    - Whether the picture is thyroid storm, and what the diagnosis rests on (clinical score or free T4 level) [ETA thyroid storm consensus 2026]
+    - Choice of thionamide, and timing of iodine relative to it [ETA thyroid storm consensus 2026]
+    - Choice and dose of beta-blocker when storm comes with heart failure or low output [ETA thyroid storm consensus 2026]
+    - When plasmapheresis or urgent thyroidectomy is considered [ETA thyroid storm consensus 2026]
+  - ENDO-03b  Myxoedema coma  (aspects: diagnosis high, management high)
+    - Whether hydrocortisone is given before thyroid hormone [ATA hypothyroidism 2014]
+    - Intravenous levothyroxine loading dose in the older or cardiac patient, and whether liothyronine is added [ATA hypothyroidism 2014]
+- ENDO-08  Thyroid disease
+  - ENDO-08a  Hyperthyroidism and thyroiditis  (aspects: diagnosis high, management high)
+    - Distinguishing Graves' disease from thyroiditis before starting an antithyroid drug [ETA Graves' hyperthyroidism 2018]
+    - What fever and sore throat on an antithyroid drug call for [ETA Graves' hyperthyroidism 2018]
+    - Type of amiodarone-induced thyrotoxicosis and the treatment each calls for [ETA amiodarone 2018]
+  - ENDO-08b  Hypothyroidism and thyroid tests in illness  (aspects: interpretation very high, management medium)
+    - Whether an abnormal TSH during acute illness is acted on or repeated after recovery [ETA subclinical hypothyroidism 2013]
+    - The TSH threshold for treating subclinical hypothyroidism in the older patient [ETA subclinical hypothyroidism 2013]
+    - Whether immune checkpoint inhibitor therapy continues through thyroiditis, and when replacement starts [ESE immune checkpoint inhibitor endocrinopathies 2022]
+  - ENDO-08c  Nodules and cancer  (aspects: testing high, management medium)
+    - Which nodules need fine-needle aspiration, by ultrasound category and size [ETA thyroid nodules 2023]
+    - Whether scintigraphy precedes aspiration when TSH is low [ETA thyroid nodules 2023]
+    - What an incidental FDG-avid thyroid nodule calls for [ETA thyroid nodules 2023]
+- ENDO-04  Adrenal insufficiency
+  - ENDO-04a  Diagnosis  (aspects: diagnosis very high, testing very high)
+    - What a random or morning cortisol rules in or out, and when a short Synacthen test is needed [Endocrine Society primary adrenal insufficiency 2016]
+    - How the axis is tested in a patient taking oral, inhaled or topical glucocorticoids [ESE/Endocrine Society glucocorticoid-induced adrenal insufficiency 2024]
+    - Separating primary from secondary insufficiency, and whether mineralocorticoid is needed [Endocrine Society primary adrenal insufficiency 2016]
+  - ENDO-04b  Crisis, stress dosing and steroid withdrawal  (aspects: management very high, prevention high)
+    - Whether hydrocortisone is given before the diagnosis is confirmed in suspected crisis [Endocrine Society primary adrenal insufficiency 2016]
+    - Glucocorticoid cover for surgery and intercurrent illness in a patient on long-term steroids [ESE/Endocrine Society glucocorticoid-induced adrenal insufficiency 2024]
+    - How long-term glucocorticoids are tapered towards a physiological dose [ESE/Endocrine Society glucocorticoid-induced adrenal insufficiency 2024]
+- ENDO-09  Adrenal excess and adrenal masses
+  - ENDO-09a  Cushing's syndrome  (aspects: diagnosis high, testing high)
+    - Choice of first screening test, and the drugs and states that confound each [Pituitary Society Cushing's disease consensus 2021]
+    - Whether screening is meaningful during acute illness [Pituitary Society Cushing's disease consensus 2021]
+    - Infection and thrombosis prophylaxis in severe hypercortisolism [Pituitary Society Cushing's disease consensus 2021]
+  - ENDO-09b  Primary aldosteronism and endocrine hypertension  (aspects: testing high, management medium)
+    - Which hypertensive patients are screened for primary aldosteronism [Endocrine Society primary aldosteronism 2025]
+    - Interpreting the aldosterone-renin ratio on interfering drugs and with hypokalaemia [Endocrine Society primary aldosteronism 2025]
+    - Whether to pursue lateralisation and surgery or treat with a mineralocorticoid antagonist [Endocrine Society primary aldosteronism 2025]
+  - ENDO-09c  Incidentaloma and phaeochromocytoma  (aspects: testing high, management medium)
+    - Which incidental adrenal masses need no further imaging [ESE/ENSAT adrenal incidentaloma 2023]
+    - Which hormonal tests an incidentaloma needs, including metanephrines [ESE/ENSAT adrenal incidentaloma 2023]
+    - What mild autonomous cortisol secretion calls for [ESE/ENSAT adrenal incidentaloma 2023]
+- ENDO-06  Calcium and bone
+  - ENDO-06a  Hypercalcaemia  (aspects: diagnosis high, management high)
+    - Separating PTH-dependent from PTH-independent hypercalcaemia and the next test in each [Fifth International Workshop on primary hyperparathyroidism 2022]
+    - Choice between bisphosphonate and denosumab, and dose, in renal impairment [Endocrine Society hypercalcaemia of malignancy 2022]
+    - When glucocorticoids or calcitonin are used [Endocrine Society hypercalcaemia of malignancy 2022]
+    - Which patients with primary hyperparathyroidism are referred for surgery [Fifth International Workshop on primary hyperparathyroidism 2022]
+  - ENDO-06b  Osteoporosis and metabolic bone disease  (aspects: prevention high, management high)
+    - Whether treatment starts after a fragility fracture without waiting for densitometry [ESCEO/IOF 2019]
+    - Whether an anabolic agent comes first at very high fracture risk [ESCEO/IOF 2019]
+    - What follows when denosumab is stopped [ECTS denosumab discontinuation 2021]
+    - Which patients on long-term glucocorticoids start bone protection [NOGG 2024]
+- ENDO-05  Pituitary and water balance
+  - ENDO-05a  Apoplexy and hypopituitarism  (aspects: diagnosis high, management high)
+    - Whether hydrocortisone is given before pituitary testing in suspected apoplexy [SfE pituitary apoplexy 2011]
+    - Which findings in apoplexy call for surgery rather than conservative care [SfE pituitary apoplexy 2011]
+    - The order in which deficient hormones are replaced [Endocrine Society hypopituitarism 2016]
+  - ENDO-05b  Pituitary tumours and hyperprolactinaemia  (aspects: interpretation high, testing medium)
+    - Whether a raised prolactin reflects a drug, macroprolactin, stalk compression or a prolactinoma [Pituitary Society prolactinoma consensus 2023]
+    - When a falsely low prolactin from the hook effect is suspected [Pituitary Society prolactinoma consensus 2023]
+    - Whether macroprolactinoma with visual loss is treated medically or surgically first [Pituitary Society prolactinoma consensus 2023]
+  - ENDO-05c  Arginine vasopressin deficiency and resistance  (aspects: diagnosis high, management high)
+    - How desmopressin and fluids are managed when a patient with AVP deficiency is nil by mouth [Endocrine Society hypopituitarism 2016]
+    - What a falling or rising sodium after pituitary surgery calls for [Endocrine Society hypopituitarism 2016]
+- ENDO-10  Gonadal endocrinology
+  - ENDO-10a  Male hypogonadism  (aspects: diagnosis high, testing high)
+    - When and how testosterone is measured, and whether a level taken in acute illness counts [EAU sexual and reproductive health 2026]
+    - Separating functional from organic hypogonadism, and when pituitary imaging is needed [EAU sexual and reproductive health 2026]
+    - Whether testosterone is started, given haematocrit, prostate and cardiovascular risk [EAU sexual and reproductive health 2026]
+  - ENDO-10b  Polycystic ovary syndrome and amenorrhoea  (aspects: diagnosis medium, management medium)
+    - Which conditions are excluded before diagnosing polycystic ovary syndrome [International PCOS guideline 2023]
+    - How premature ovarian insufficiency is confirmed, and whether hormone therapy follows [ESHRE premature ovarian insufficiency 2024]
+- ENDO-11  Hypoglycaemia without diabetes and endocrine tumours
+  - ENDO-11a  Hypoglycaemia in the non-diabetic  (aspects: diagnosis high, testing high)
+    - Whether Whipple's triad is documented before any investigation [Endocrine Society adult hypoglycaemic disorders 2009]
+    - Which samples are drawn during the episode to separate insulinoma, sulfonylurea and exogenous insulin [Endocrine Society adult hypoglycaemic disorders 2009]
+    - Which non-insulin causes are considered in the ill inpatient [Endocrine Society adult hypoglycaemic disorders 2009]
+  - ENDO-11b  Neuroendocrine tumours and multiple endocrine syndromes  (aspects: diagnosis medium, testing medium)
+    - How a biochemically proven insulinoma is localised [ENETS functioning pancreatic NET 2023]
+    - Which presentations call for testing for MEN1 [MEN1 clinical practice guideline 2012]
 
-## G. Hematology & Oncology  (weight: medium)
-- HEME-01  Anemia workup (inpatient)
-- HEME-02  Thrombocytopenia, HIT, TTP/HUS
-- HEME-03  Anticoagulation & reversal, DOAC management
-- HEME-04  VTE prophylaxis & treatment
-- HEME-05  Oncologic emergencies (tumor lysis, cord compression, SVC, hypercalcemia)
-- HEME-06  Transfusion medicine & reactions
-- HEME-07  Sickle cell crisis
-- HEME-08  Febrile neutropenia (see ID-08)
+## G. Rheumatology, Allergy & Immunology  (weight: 0.5)
+- RHEUM-01  Crystal arthritis and the acute joint
+  - RHEUM-01a  The acute hot joint: approach  (aspects: diagnosis very high, testing high)
+    - Whether the joint is aspirated before antibiotics, and whether crystals exclude sepsis [EULAR gout diagnosis 2018]
+    - What a serum urate taken during a flare means [EULAR gout diagnosis 2018]
+    - Which imaging is used when aspiration is not possible [EULAR gout diagnosis 2018]
+  - RHEUM-01b  Gout flare: treatment with comorbidity and interactions  (aspects: management very high)
+    - Choice among colchicine, NSAID and glucocorticoid given renal function, heart failure and anticoagulation [EULAR gout 2016]
+    - Colchicine dose, or avoidance, with a CYP3A4 or P-glycoprotein inhibitor [EULAR gout 2016]
+    - When interleukin-1 blockade is used [EULAR gout 2016]
+    - Whether urate-lowering therapy already taken continues through the flare [EULAR gout 2016]
+  - RHEUM-01c  Urate lowering and flare prophylaxis; CPPD  (aspects: management high, prevention high)
+    - Which patients start urate-lowering therapy, and when relative to a flare [EULAR gout 2016]
+    - Allopurinol starting dose and titration in CKD [EULAR gout 2016]
+    - Serum urate target and how long flare prophylaxis lasts [EULAR gout 2016]
+    - What acute CPPD arthritis is treated with, and which young patients are screened for a metabolic cause [EULAR CPPD 2011]
+- RHEUM-02  Vasculitis
+  - RHEUM-02a  Giant cell arteritis and polymyalgia  (aspects: diagnosis very high, management very high)
+    - Whether glucocorticoids start before ultrasound or biopsy in suspected giant cell arteritis [EULAR PMR and LVV 2025]
+    - Starting glucocorticoid dose, and when intravenous pulses are given for visual symptoms [EULAR PMR and LVV 2025]
+    - When a steroid-sparing agent is added [EULAR PMR and LVV 2025]
+    - Which features of apparent polymyalgia point to another diagnosis [EULAR PMR and LVV 2025]
+  - RHEUM-02b  ANCA-associated vasculitis  (aspects: diagnosis high, management high)
+    - Which tests are sent at once when vasculitis is suspected [EULAR AAV 2022]
+    - Choice of induction agent and glucocorticoid dose [EULAR AAV 2022]
+    - Whether plasma exchange is added for severe kidney disease or alveolar haemorrhage [KDIGO ANCA vasculitis 2024]
+    - Infection prophylaxis during induction [EULAR AAV 2022]
+  - RHEUM-02c  Other vasculitides  (aspects: diagnosis medium, testing medium)
+    - Which infections are sought in cryoglobulinaemic vasculitis before immunosuppression [KDIGO glomerular diseases 2021]
+    - How kidney involvement is assessed and followed in adult IgA vasculitis [KDIGO glomerular diseases 2021]
+- RHEUM-03  Lupus and antiphospholipid syndrome
+  - RHEUM-03a  Flare and organ involvement  (aspects: diagnosis high, management high)
+    - Separating a lupus flare from infection [EULAR SLE 2023]
+    - Hydroxychloroquine dose and whether it continues [EULAR SLE 2023]
+    - Glucocorticoid dose ceiling and the maintenance target [EULAR SLE 2023]
+    - Which urinary findings call for kidney biopsy [KDIGO lupus nephritis 2024]
+  - RHEUM-03b  Pregnancy, drugs and drug-induced lupus  (aspects: management high, prevention medium)
+    - Choice of anticoagulant in thrombotic antiphospholipid syndrome, including whether a DOAC is acceptable [EULAR APS 2019]
+    - Intensity of anticoagulation after an arterial event [EULAR APS 2019]
+    - Whether a high-risk antibody profile without thrombosis calls for aspirin [EULAR APS 2019]
+    - Which lupus drugs continue in pregnancy [EULAR SLE 2023]
+- RHEUM-04  Anaphylaxis and drug hypersensitivity
+  - RHEUM-04a  Anaphylaxis  (aspects: diagnosis high, management very high, disposition medium)
+    - Route, dose and repetition of adrenaline, and when an infusion starts [EAACI anaphylaxis 2021]
+    - When tryptase is drawn [EAACI anaphylaxis 2021]
+    - Length of observation and who is discharged with an adrenaline auto-injector [EAACI anaphylaxis 2021]
+    - What refractory anaphylaxis on a beta-blocker calls for [EAACI anaphylaxis 2021]
+  - RHEUM-04b  Drug allergy and penicillin allergy assessment  (aspects: diagnosis high, management high)
+    - Which penicillin-allergy labels go straight to an oral challenge [EAACI/ENDA drug provocation testing 2024]
+    - Whether a cephalosporin or carbapenem is given to a patient with a penicillin allergy [EAACI beta-lactam hypersensitivity 2020]
+    - Which reactions rule out any challenge [EAACI/ENDA drug provocation testing 2024]
+  - RHEUM-04c  Urticaria and angioedema  (aspects: diagnosis high, management high)
+    - Whether angioedema without urticaria is bradykinin- or histamine-mediated, and what each is treated with [WAO/EAACI hereditary angioedema 2025]
+    - How far chronic urticaria is investigated [EAACI/GA²LEN international urticaria guideline 2026]
+    - Treatment steps in chronic urticaria after a standard-dose antihistamine [EAACI/GA²LEN international urticaria guideline 2026]
+- RHEUM-05  Rheumatoid arthritis
+  - RHEUM-05a  Diagnosis and systemic disease  (aspects: diagnosis high, management medium)
+    - Whether early inflammatory arthritis meets criteria for rheumatoid arthritis [ACR/EULAR RA classification 2010]
+    - Which comorbidities are screened for and managed, cardiovascular risk among them [EULAR cardiovascular risk in RMDs 2024]
+  - RHEUM-05b  Complications of DMARDs and biologics  (aspects: management very high, prevention high)
+    - Which infections are screened for, and prophylaxis given, before a biologic or JAK inhibitor [EULAR infection screening points to consider 2022]
+    - Whether a JAK inhibitor is used in the older patient with cardiovascular or cancer risk [EULAR RA 2025]
+    - How glucocorticoids are tapered once a DMARD is working [EULAR RA 2025]
+- RHEUM-06  Spondyloarthritis
+  - RHEUM-06a  Axial disease and inflammatory back pain  (aspects: diagnosis high, management medium)
+    - Which back pain features call for referral and sacroiliac imaging [ASAS-EULAR axSpA 2022]
+    - Order of NSAID and biologic treatment [ASAS-EULAR axSpA 2022]
+  - RHEUM-06b  Psoriatic, reactive and enteropathic arthritis  (aspects: diagnosis medium, management medium)
+    - Choice of biologic class by the domains involved, including bowel and skin [EULAR PsA 2023]
+    - When a conventional DMARD is skipped in favour of a biologic [EULAR PsA 2023]
+- RHEUM-07  Connective tissue disease
+  - RHEUM-07a  Systemic sclerosis and Raynaud's  (aspects: diagnosis high, management high)
+    - Choice of antihypertensive in scleroderma renal crisis, and the glucocorticoid dose that provokes it [EULAR SSc 2023]
+    - Escalation of treatment for Raynaud's phenomenon and digital ulcers [EULAR SSc 2023]
+    - Screening for pulmonary hypertension and interstitial lung disease [ESC/ERS pulmonary hypertension 2022]
+  - RHEUM-07b  Myositis  (aspects: diagnosis high, testing high)
+    - Which tests confirm inflammatory myopathy: enzymes, antibodies, imaging, biopsy [EULAR/ACR myositis classification 2017]
+    - What muscle weakness and troponin rise on an immune checkpoint inhibitor call for [ESC cardio-oncology 2022]
+  - RHEUM-07c  Sjögren's, adult Still's and overlap syndromes  (aspects: diagnosis medium, management medium)
+    - Which systemic features of Sjögren's call for treatment, and when lymphoma is suspected [EULAR Sjögren's 2019]
+    - Whether fever, rash, arthritis and high ferritin are Still's disease or macrophage activation [EULAR/ACR HLH/MAS points to consider 2023]
+- RHEUM-08  Regional musculoskeletal problems
+  - RHEUM-08a  Back pain and its red flags  (aspects: diagnosis high, testing medium)
+    - Which red flags call for imaging, and which imaging [NICE low back pain NG59]
+    - Which symptoms call for emergency MRI for cauda equina syndrome [NICE low back pain NG59]
+  - RHEUM-08b  Osteoarthritis, soft tissue and fibromyalgia  (aspects: management medium)
+    - Order of drug treatment in knee osteoarthritis, including topical NSAID and opioids [ESCEO knee osteoarthritis 2019]
+    - First-line treatment in fibromyalgia: exercise or drugs [EULAR fibromyalgia 2016]
+- RHEUM-09  Immunodeficiency
+  - RHEUM-09a  Antibody deficiency and recurrent infection  (aspects: diagnosis medium, testing medium)
+    - Which pattern of infection calls for immunoglobulins and vaccine responses [ESID diagnostic criteria 2019]
+    - What separates common variable immunodeficiency from secondary hypogammaglobulinaemia [ESID diagnostic criteria 2019]
+  - RHEUM-09b  Secondary immunodeficiency  (aspects: prevention high, management medium)
+    - Which vaccines are given, and when, before or during immunosuppression [EULAR vaccination in AIIRD 2019]
+    - Which immunosuppressed patients receive Pneumocystis prophylaxis [EULAR infection screening points to consider 2022]
 
-## H. Neurology  (weight: medium)
-- NEURO-01  Acute ischemic stroke & TIA
-- NEURO-02  Intracranial hemorrhage
-- NEURO-03  Seizure & status epilepticus
-- NEURO-04  Altered mental status / delirium
-- NEURO-05  Acute weakness (GBS, myasthenic crisis, cord)
-- NEURO-06  Headache — dangerous causes
+## H. Nephrology & Electrolytes  (weight: 0.5)
+- RENAL-01  Acute kidney injury
+  - RENAL-01a  Approach: pre-renal, intrinsic, obstructive  (aspects: diagnosis very high, testing high)
+    - Which baseline creatinine and which criterion stage the injury [KDIGO AKI 2012]
+    - Whether, and how soon, the urinary tract is imaged [KDIGO AKI 2012]
+    - Which drugs are stopped or held during the injury [KDIGO AKI 2012]
+  - RENAL-01b  Tubular, interstitial and embolic causes  (aspects: diagnosis high, testing medium)
+    - Which findings in unexplained AKI call for kidney biopsy [KDIGO AKI 2012]
+    - Whether suspected drug-induced interstitial nephritis is treated by withdrawal alone or with glucocorticoids [no guideline; expert review]
+  - RENAL-01c  Cardiorenal and volume decisions  (aspects: management very high)
+    - Choice of fluid, and whether more fluid is given, in the oliguric patient [KDIGO AKI 2012]
+    - Whether decongestion continues as creatinine rises in acute heart failure [ESC heart failure 2021/2023]
+    - Whether diuretics have a role in AKI other than for volume overload [KDIGO AKI 2012]
+- RENAL-02  Sodium
+  - RENAL-02a  Hyponatraemia: diagnosis  (aspects: diagnosis very high, interpretation very high)
+    - Which samples are taken before treatment, and what each excludes [ESE/ESICM/ERA hyponatraemia 2014]
+    - Which conditions are excluded before diagnosing SIAD [ESE/ESICM/ERA hyponatraemia 2014]
+    - How urine sodium is read in a patient taking diuretics [ESE/ESICM/ERA hyponatraemia 2014]
+    - What a very low urine osmolality means [ESE/ESICM/ERA hyponatraemia 2014]
+  - RENAL-02b  Hyponatraemia: treatment and overcorrection  (aspects: management very high)
+    - Hypertonic saline in severe symptoms: volume, repetition and target rise [ESE/ESICM/ERA hyponatraemia 2014]
+    - The correction ceiling, and what is done when it is reached or passed [ESE/ESICM/ERA hyponatraemia 2014]
+    - Choice among fluid restriction, urea and a vaptan in SIAD [ESE/ESICM/ERA hyponatraemia 2014]
+  - RENAL-02c  Hypernatraemia  (aspects: diagnosis medium, management high)
+    - Rate of correction in acute versus chronic hypernatraemia [no guideline; expert review]
+    - Choice of fluid and route for replacing free water [no guideline; expert review]
+- RENAL-03  Potassium
+  - RENAL-03a  Hyperkalaemia  (aspects: management very high)
+    - Which potassium levels and ECG findings call for intravenous calcium [UK Kidney Association hyperkalaemia 2023]
+    - Insulin-glucose dose and how long glucose is monitored after it [UK Kidney Association hyperkalaemia 2023]
+    - Whether a potassium binder allows renin-angiotensin inhibition to continue [KDIGO CKD 2024]
+    - Which hyperkalaemia calls for emergency dialysis [UK Kidney Association hyperkalaemia 2023]
+  - RENAL-03b  Hypokalaemia and its work-up  (aspects: diagnosis high, management high)
+    - Whether hypokalaemia with hypertension leads to testing for primary aldosteronism [Endocrine Society primary aldosteronism 2025]
+    - Separating renal from extrarenal potassium loss, and the role of magnesium [no guideline; expert review]
+- RENAL-04  Acid-base
+  - RENAL-04a  Metabolic acidosis  (aspects: interpretation very high, management high)
+    - Whether sodium bicarbonate is given in lactic acidosis or severe acidaemia with AKI [SSC 2021]
+    - When a raised osmolar gap leads to antidote and dialysis for toxic alcohol [EXTRIP methanol 2015]
+    - Whether oral bicarbonate is given in chronic kidney disease [KDIGO CKD 2024]
+  - RENAL-04b  Metabolic alkalosis  (aspects: interpretation high, management medium)
+    - What urine chloride says about cause and treatment [no guideline; expert review]
+    - Whether acetazolamide is used for diuretic or post-hypercapnic alkalosis [no guideline; expert review]
+  - RENAL-04c  Respiratory and mixed disturbances  (aspects: interpretation very high)
+    - Whether the compensation is appropriate or a second disorder is present [no guideline; expert review]
+    - When hypercapnic acidosis calls for non-invasive ventilation [ERS/ATS non-invasive ventilation 2017]
+- RENAL-05  Calcium, phosphate, magnesium
+  - RENAL-05a  Hypocalcaemia  (aspects: diagnosis high, management high)
+    - Which hypocalcaemia is treated with intravenous calcium [SfE emergency hypocalcaemia 2016]
+    - Whether magnesium is replaced first [SfE emergency hypocalcaemia 2016]
+    - Treatment of chronic hypoparathyroidism, including calcium and urine targets [ESE hypoparathyroidism 2025]
+  - RENAL-05b  Phosphate and magnesium  (aspects: management medium, prevention medium)
+    - Which patients are at risk of refeeding hypophosphataemia, and how feeding starts [NICE nutrition support CG32]
+    - When hypophosphataemia is replaced intravenously [no guideline; expert review]
+- RENAL-06  Chronic kidney disease
+  - RENAL-06a  Progression and complications  (aspects: management very high, prevention high)
+    - eGFR and albuminuria thresholds for starting an SGLT2 inhibitor [KDIGO CKD 2024]
+    - How much creatinine rise is accepted after starting renin-angiotensin inhibition [KDIGO CKD 2024]
+    - Whether a non-steroidal mineralocorticoid antagonist is added in diabetic CKD [KDIGO CKD 2024]
+    - Which patients are referred to nephrology, by risk equation or eGFR [KDIGO CKD 2024]
+  - RENAL-06b  Dialysis: indications and emergencies  (aspects: management high, disposition high)
+    - When renal replacement starts in AKI, and whether creatinine alone decides it [KDIGO AKI 2012]
+    - Choice of continuous or intermittent therapy in the unstable patient [KDIGO AKI 2012]
+  - RENAL-06c  Prescribing in kidney disease; the transplant recipient  (aspects: management very high)
+    - Whether drug doses follow eGFR, creatinine clearance or cystatin C [KDIGO CKD 2024]
+    - Which new drugs interact with a calcineurin inhibitor, and what is done about it [KDIGO transplant recipient 2009]
+- RENAL-07  Rhabdomyolysis and toxic injury
+  - RENAL-07a  Rhabdomyolysis  (aspects: diagnosis medium, management high)
+    - Fluid volume and target urine output, and whether bicarbonate is added [no guideline; expert review]
+    - Whether hypocalcaemia in rhabdomyolysis is treated [no guideline; expert review]
+  - RENAL-07b  Contrast and nephrotoxic drugs  (aspects: prevention high)
+    - Which patients receive prophylactic hydration before iodinated contrast [ESUR contrast media 2018]
+    - Whether metformin is held around contrast [ESUR contrast media 2018]
+- RENAL-08  Glomerular disease
+  - RENAL-08a  Nephritic syndrome and rapidly progressive disease  (aspects: diagnosis very high, testing high)
+    - Which serology is sent urgently, and whether immunosuppression waits for biopsy [KDIGO glomerular diseases 2021]
+    - Whether plasma exchange is used in anti-GBM disease when the patient already needs dialysis [KDIGO glomerular diseases 2021]
+  - RENAL-08b  Nephrotic syndrome  (aspects: management high, testing medium)
+    - Whether a positive PLA2R antibody makes biopsy unnecessary [KDIGO glomerular diseases 2021]
+    - Which nephrotic patients receive prophylactic anticoagulation [KDIGO glomerular diseases 2021]
+    - Which secondary causes are sought [KDIGO glomerular diseases 2021]
+  - RENAL-08c  Haematuria and proteinuria: work-up  (aspects: testing high, diagnosis medium)
+    - How proteinuria is quantified and confirmed [KDIGO CKD 2024]
+    - Whether microscopic haematuria points to a glomerular or a urological cause [KDIGO glomerular diseases 2021]
+- RENAL-09  Stones and urology for the internist
+  - RENAL-09a  Kidney stones  (aspects: management high, testing medium)
+    - Which imaging confirms a stone [EAU urolithiasis 2026]
+    - Whether an obstructed, infected kidney is decompressed urgently [EAU urolithiasis 2026]
+    - Analgesia, and whether medical expulsive therapy is given [EAU urolithiasis 2026]
+    - Which patients receive metabolic evaluation [EAU urolithiasis 2026]
+  - RENAL-09b  Retention, prostate disease, incontinence  (aspects: management medium)
+    - Catheter, alpha-blocker and timing of trial without catheter in acute retention [EAU non-neurogenic male LUTS 2026]
+    - Whether an antimuscarinic is used for urgency incontinence in an older patient [EAU urinary incontinence 2026]
 
-## I. Rheumatology & Immunology  (weight: low)
-- RHEUM-01  Acute mono/polyarthritis, crystal arthropathy
-- RHEUM-02  Systemic vasculitis, GCA
-- RHEUM-03  SLE flare & complications
-- RHEUM-04  Anaphylaxis, drug hypersensitivity
+## I. Neurology  (weight: 0.43)
+- NEURO-01  Ischaemic stroke and TIA
+  - NEURO-01a  Hyperacute care and reperfusion  (aspects: management very high, diagnosis high, testing medium)
+    - Whether a patient taking a DOAC, or one who wakes with symptoms, can receive thrombolysis [ESO IVT 2021]
+    - Tenecteplase or alteplase, and at which dose [ESO tenecteplase expedited recommendation 2023]
+    - Whether a large-vessel occlusion late in the window or with a large core goes to thrombectomy [ESO-ESMINT thrombectomy 2019, expedited update 2023]
+    - The blood pressure threshold before and after reperfusion [ESO BP in AIS and ICH 2025]
+  - NEURO-01b  TIA and secondary prevention  (aspects: management high, testing high, disposition medium)
+    - How urgently a TIA is assessed and imaged, and whether that happens as an inpatient [ESO TIA 2021]
+    - Whether a TIA or minor stroke calls for dual antiplatelet therapy, and for how long [ESO TIA 2021]
+    - Timing of anticoagulation after a cardioembolic ischaemic stroke [ESC AF 2024]
+    - Blood pressure and LDL targets after stroke [ESO secondary prevention 2022]
+  - NEURO-01c  Stroke unit care and complications  (aspects: management high, prevention high, prognosis medium)
+    - Whether a patient may eat, drink or take tablets before a swallow screen [ESO-ESSD dysphagia 2021]
+    - Mechanical or pharmacological thromboprophylaxis in an immobile stroke patient [NICE NG128 2019]
+    - Which patients with a space-occupying MCA infarct are referred for decompressive surgery, and when [ESO space-occupying infarction 2021]
+- NEURO-02  Intracranial haemorrhage
+  - NEURO-02a  Intracerebral haemorrhage  (aspects: management very high, diagnosis medium, prognosis medium)
+    - How far and how fast to lower systolic pressure [ESO BP in AIS and ICH 2025]
+    - Which anticoagulant reversal for an ICH on a DOAC or warfarin [ESO-EANS ICH 2025]
+    - Which patients need angiography or MRI to look for an underlying cause [ESO-EANS ICH 2025]
+    - Whether antiplatelet therapy is restarted after the bleed [ESO-EANS ICH 2025]
+  - NEURO-02b  Subarachnoid haemorrhage  (aspects: management high, prognosis medium, diagnosis medium)
+    - Nimodipine: route, dose and what to do when it drops the blood pressure [ESO-EANS-ESMINT aSAH 2026]
+    - How soon the aneurysm is secured, and whether antifibrinolytics bridge the wait [ESO-EANS-ESMINT aSAH 2026]
+    - Hyponatraemia after SAH: whether to restrict fluid [ESO-EANS-ESMINT aSAH 2026]
+    - Whether new deficit after day three is delayed cerebral ischaemia and how it is managed [ESO-EANS-ESMINT aSAH 2026]
+- NEURO-03  Seizures
+  - NEURO-03a  First and provoked seizures  (aspects: diagnosis high, testing high, management medium)
+    - Whether a first unprovoked seizure calls for an antiseizure drug [NICE NG217 2022]
+    - Which tests after a first seizure, and how soon EEG and MRI are needed [NICE NG217 2022]
+    - Driving advice after a first or provoked seizure [EU Directive 2006/126/EC, Annex III]
+  - NEURO-03b  Status epilepticus  (aspects: management very high, diagnosis medium)
+    - Benzodiazepine dose and route, and when to move on to the second line [ICS status epilepticus 2025]
+    - Which second-line drug (levetiracetam, valproate, phenytoin) for this patient [ICS status epilepticus 2025]
+    - When to escalate to anaesthetic agents and intensive care [ICS status epilepticus 2025]
+  - NEURO-03c  Antiseizure drugs and interactions  (aspects: management high, prevention medium)
+    - Whether valproate may be used in a woman who could become pregnant [EMA valproate 2018]
+    - Whether an enzyme-inducing antiseizure drug can be combined with a DOAC [EHRA DOAC practical guide 2021]
+    - Whether a carbapenem can be given to a patient on valproate [EMA valproate SmPC]
+- NEURO-04  Encephalopathy
+  - NEURO-04a  Approach to the confused or drowsy patient  (aspects: diagnosis very high, testing high)
+    - Whether a confused patient has delirium, dementia or both, by a validated tool [NICE CG103 2023]
+    - When a fluctuating or unexplained coma calls for EEG to exclude non-convulsive status [ICS status epilepticus 2025]
+  - NEURO-04b  Toxic and metabolic causes, including drug-induced hyperammonaemia  (aspects: diagnosis high, testing high, management medium)
+    - Whether hyperammonaemia on valproate with normal liver tests calls for stopping the drug [EMA valproate SmPC]
+    - Whether a drug accumulating in renal failure (cefepime, opioid metabolites, baclofen) explains the encephalopathy [EMA SmPC]
+- NEURO-05  Acute weakness
+  - NEURO-05a  Guillain-Barré syndrome  (aspects: diagnosis high, management high, disposition high)
+    - Which bedside measures prompt intensive care referral [EAN/PNS GBS 2023]
+    - Whether a normal CSF protein in the first week argues against the diagnosis [EAN/PNS GBS 2023]
+    - IVIg or plasma exchange, and whether a second course or corticosteroids help [EAN/PNS GBS 2023]
+  - NEURO-05b  Myasthenia gravis and crisis  (aspects: management high, disposition high, diagnosis medium)
+    - Which common drugs can worsen myasthenia, and whether to avoid them [EJN MG treatment guidance 2024]
+    - IVIg or plasma exchange in crisis, and whether pyridostigmine is held while ventilated [EJN MG treatment guidance 2024]
+    - Whether starting high-dose prednisolone risks a transient worsening [EJN MG treatment guidance 2024]
+  - NEURO-05c  Spinal cord syndromes  (aspects: diagnosis high, testing high, management high)
+    - Whether bilateral leg weakness with a sensory level calls for emergency whole-spine MRI [NICE NG234 2023]
+    - Whether suspected cauda equina compression needs MRI the same night [GIRFT national suspected CES pathway 2023]
+- NEURO-06  Headache: dangerous causes
+  - NEURO-06a  Thunderclap headache  (aspects: diagnosis very high, testing very high)
+    - Whether a normal CT within six hours of onset excludes SAH or a lumbar puncture is still needed [ESO-EANS-ESMINT aSAH 2026]
+    - When to time the lumbar puncture and how to read xanthochromia [ESO-EANS-ESMINT aSAH 2026]
+    - Whether a negative SAH work-up calls for vascular imaging for RCVS or dissection [ICHD-3 2018]
+  - NEURO-06b  Cervical artery dissection and venous sinus thrombosis  (aspects: diagnosis high, management high)
+    - Antiplatelet or anticoagulant for cervical artery dissection [ESO CeAD 2021]
+    - Which imaging confirms cerebral venous thrombosis [ESO CVT 2017]
+    - Whether a venous thrombosis with haemorrhagic infarction is anticoagulated [ESO CVT 2017]
+    - Which anticoagulant after the acute phase, and for how long [ESO CVT 2017]
+  - NEURO-06c  Raised pressure, giant cell arteritis, infection  (aspects: diagnosis high, management high, testing medium)
+    - Whether papilloedema with a normal CT needs venography before diagnosing idiopathic intracranial hypertension [IIH UK consensus 2018]
+    - Whether a new headache after 50 with raised CRP starts glucocorticoids before the diagnosis is confirmed [EULAR LVV 2023]
+    - Whether a headache with fever needs CT before the lumbar puncture [ESCMID bacterial meningitis 2016]
+  - NEURO-06d  Primary headache in hospital  (aspects: management high, diagnosis medium)
+    - Which acute treatment for a migraine attack in hospital, and whether opioids have a place [NICE CG150 2021]
+    - Whether a triptan is safe with vascular disease [NICE CG150 2021]
+    - Whether daily analgesic use is causing the headache and calls for withdrawal [NICE CG150 2021]
+- NEURO-07  Movement, cognition and neuropathy
+  - NEURO-07a  Parkinson's disease in hospital  (aspects: management very high, prevention high)
+    - Timing of levodopa, and how to replace it when the patient cannot swallow [NICE NG71 2017]
+    - Which antiemetic for a patient with Parkinson's disease [NICE NG71 2017]
+    - Whether sudden withdrawal of dopaminergic drugs explains fever and rigidity [NICE NG71 2017]
+  - NEURO-07b  Dementia: evaluation  (aspects: diagnosis high, testing medium)
+    - Which reversible causes are tested for in suspected dementia [NICE NG97 2018]
+    - Whether to diagnose dementia during an acute admission or defer it [NICE NG97 2018]
+    - Whether a cholinesterase inhibitor is appropriate (dementia type, bradycardia, syncope) [NICE NG97 2018]
+  - NEURO-07c  Peripheral neuropathy and dizziness  (aspects: diagnosis high, testing high)
+    - Whether an acute vestibular syndrome is central despite a normal CT [Bárány Society vestibular neuritis criteria 2022]
+    - Whether a neuropathy progressing beyond eight weeks is CIDP and calls for nerve conduction studies [EAN/PNS CIDP 2021]
 
-## J. General & Perioperative Hospital Medicine  (weight: high)
-- GEN-01  Perioperative risk assessment & medical consultation
-- GEN-02  Perioperative anticoagulation / antiplatelet bridging
-- GEN-03  Delirium prevention & management (see NEURO-04)
-- GEN-04  Pain management & opioid stewardship
-- GEN-05  Alcohol withdrawal & substance use
-- GEN-06  Nutrition, refeeding syndrome
-- GEN-07  Venous thromboembolism prophylaxis (see HEME-04)
-- GEN-08  Palliative & end-of-life care, goals of care
-- GEN-09  Transitions of care, discharge safety, readmission
-- GEN-10  Diagnostic reasoning & cognitive bias (meta-skill; good for CPC essays)
-- GEN-11  Patient safety, quality improvement, high-value care
-- GEN-12  Fluid & electrolyte therapy, maintenance fluids
+## J. General Hospital Medicine  (weight: 0.43)
+- GEN-01  Perioperative risk assessment (retired: now PERIOP-01)
+- GEN-02  Perioperative anticoagulation and antiplatelet bridging (retired: now PERIOP-02)
+- GEN-03  Delirium
+  - GEN-03a  Prevention and non-drug care  (aspects: prevention very high, management high)
+    - Which multicomponent measures to start in a patient at risk of delirium [NICE CG103 2023]
+    - Which admission medicines to review or stop as delirium precipitants [NICE CG103 2023]
+    - Whether physical restraint or a urinary catheter is ever justified in the delirious patient [NICE CG103 2023]
+  - GEN-03b  Drug treatment and its risks  (aspects: management very high)
+    - Whether distress or risk justifies an antipsychotic, at which dose and for how long [NICE CG103 2023]
+    - Whether a benzodiazepine has a place outside alcohol or benzodiazepine withdrawal [NICE CG103 2023]
+    - Whether an antipsychotic started for delirium continues after discharge [NICE CG103 2023]
+- GEN-04  Pain and opioids
+  - GEN-04a  Acute pain with comorbidity  (aspects: management high)
+    - Whether an NSAID is acceptable in CKD, heart failure or on an anticoagulant [KDIGO CKD 2024]
+    - Which opioid, and at what dose, in renal impairment [ESMO cancer pain 2018]
+    - Which first-line drug for neuropathic pain in the inpatient [NICE CG173 2020]
+  - GEN-04b  Opioid stewardship, conversion and dependence  (aspects: management high, prevention medium)
+    - How to convert between opioids and routes, including starting or stopping a fentanyl patch [ESMO cancer pain 2018]
+    - How to treat acute pain in a patient on methadone or buprenorphine maintenance [FPM Opioids Aware]
+    - How much opioid to supply at discharge, and the plan to stop it [FPM Opioids Aware]
+- GEN-05  Alcohol and substance withdrawal
+  - GEN-05a  Alcohol withdrawal  (aspects: management very high, diagnosis high, disposition medium)
+    - Symptom-triggered or fixed-dose benzodiazepine regimen [NICE CG100 2017]
+    - Which benzodiazepine when the liver is failing [NICE CG100 2017; EASL ALD 2018]
+    - Whether a withdrawal seizure calls for an antiseizure drug [NICE CG100 2017]
+    - When delirium tremens or refractory withdrawal needs intensive care [NICE CG100 2017]
+  - GEN-05b  Wernicke's and nutritional complications  (aspects: prevention high, management high, diagnosis medium)
+    - Which patients get parenteral thiamine, and at which dose [EFNS Wernicke 2010]
+    - Whether Wernicke's encephalopathy is diagnosed without the classic triad [EFNS Wernicke 2010]
+    - Whether glucose must wait for thiamine in a hypoglycaemic patient [EFNS Wernicke 2010]
+  - GEN-05c  Opioid and stimulant withdrawal  (aspects: management high, diagnosis medium)
+    - Whether to continue a community opioid agonist dose in hospital, and how to verify it [WHO opioid dependence 2009]
+    - When buprenorphine can be started without precipitating withdrawal [WHO opioid dependence 2009]
+    - Which adjuncts relieve opioid withdrawal when agonist therapy is declined [WHO opioid dependence 2009]
+- GEN-06  Nutrition
+  - GEN-06a  Refeeding syndrome  (aspects: prevention very high, management high)
+    - Which patients are at high risk of refeeding syndrome [NICE CG32 2017]
+    - Starting energy intake and how fast to increase it [NICE CG32 2017; ESPEN polymorbid inpatients 2023]
+    - Which electrolytes and vitamins to give and monitor before and during refeeding [NICE CG32 2017; ESPEN polymorbid inpatients 2023]
+  - GEN-06b  Enteral and parenteral feeding decisions  (aspects: management high, prognosis medium)
+    - When a malnourished or non-eating patient starts nutritional support [ESPEN polymorbid inpatients 2023]
+    - Enteral or parenteral route when oral intake fails [ESPEN polymorbid inpatients 2023]
+- GEN-07  Thromboprophylaxis
+  - GEN-07a  Medical inpatients: who and how  (aspects: prevention very high, management high)
+    - Whether a medical inpatient needs pharmacological prophylaxis, weighing VTE and bleeding risk [NICE NG89 2019]
+    - Whether to extend prophylaxis after discharge [NICE NG89 2019]
+    - Mechanical prophylaxis when pharmacological is contraindicated [NICE NG89 2019]
+  - GEN-07b  Special populations  (aspects: prevention high, management high)
+    - Prophylaxis dose in obesity and renal failure [NICE NG89 2019]
+    - Prophylaxis in the inpatient and ambulatory patient with cancer [ESMO cancer-associated thrombosis 2023]
+- GEN-08  Palliative and end-of-life care
+  - GEN-08a  Goals of care and capacity  (aspects: management high, prognosis high)
+    - Whether CPR would be futile, and how the DNACPR decision is discussed [ERC ethics 2025]
+    - Whether a treatment ceiling (no ICU, no ventilation) is set, and with whom [ERC ethics 2025]
+    - When to start advance care planning [EAPC advance care planning 2017]
+  - GEN-08b  Symptom control at the end of life  (aspects: management very high)
+    - Which anticipatory medicines and route in the last days of life [NICE NG31 2015]
+    - Which drug for terminal agitation or delirium [NICE NG31 2015]
+    - Whether an opioid relieves breathlessness at the end of life [ESMO dyspnoea 2020]
+    - Whether clinically assisted hydration is started or stopped [NICE NG31 2015]
+- GEN-09  Transitions of care
+  - GEN-09a  Discharge safety and medicines reconciliation  (aspects: disposition very high, management high, prevention medium)
+    - Which discrepancies found at medicines reconciliation must be resolved before discharge [NICE NG5 2015]
+    - Whether drugs held during the admission (ACE inhibitor, diuretic, anticoagulant) restart, and who decides [NICE NG5 2015]
+    - What the discharge summary must hand over, including pending results [NICE NG27 2015]
+- GEN-10  Diagnostic reasoning
+- GEN-11  Safety, value and evidence
+  - GEN-11a  Patient safety and high-value care  (aspects: testing high, management medium)
+    - Whether a routine test (daily bloods, telemetry, repeat imaging) will change management [Choosing Wisely SHM 2013]
+    - How an error is disclosed to the patient [WHO Global Patient Safety Action Plan 2021-2030]
+  - GEN-11b  Reading tests and studies; ethics  (aspects: interpretation very high)
+    - Whether a test result moves the probability across the treatment threshold [GRADE diagnostic tests 2020]
+    - Whether a trial's relative effect matters for this patient (absolute risk, NNT, surrogate outcome) [GRADE 2011]
+    - What may be shared with relatives without the patient's consent [Icelandic Patients' Rights Act 74/1997]
+- GEN-12  Fluid therapy
+  - GEN-12a  Maintenance and resuscitation fluids  (aspects: management very high)
+    - Which maintenance fluid, and how much, in a patient at risk of hyponatraemia [NICE CG174 2017]
+    - Balanced crystalloid or saline for resuscitation [ESICM fluid therapy part 1 2024]
+    - Whether albumin is used for resuscitation [ESICM fluid therapy part 1 2024]
+    - When to stop fluids and start removing them [ESICM fluid therapy part 3 2025]
+- GEN-13  Eye and ENT for the internist
+  - GEN-13a  Red eye and acute visual loss  (aspects: diagnosis high, disposition high)
+    - Whether a painful red eye with a mid-dilated pupil is acute angle closure, and what to give before ophthalmology [EGS 2020]
+    - Whether sudden painless monocular loss is treated as a stroke [AHA CRAO scientific statement 2021]
+  - GEN-13b  Vertigo, epistaxis, hearing loss  (aspects: diagnosis high, management high)
+    - Which positional test and repositioning manoeuvre for suspected BPPV [AAO-HNS BPPV 2017]
+    - Whether an anticoagulant is stopped for epistaxis [AAO-HNS epistaxis 2020]
+    - Whether sudden sensorineural hearing loss gets corticosteroids and urgent ENT review [AAO-HNS sudden hearing loss 2019]
 
-## K. Emergencies / Toxicology  (weight: medium)
-- TOX-01  Common poisonings & antidotes (acetaminophen, salicylate, TCA, etc.)
-- TOX-02  Serotonin syndrome / NMS / malignant hyperthermia
-- TOX-03  Environmental (hypothermia, hyperthermia)
-- EMRG-01 Anaphylaxis (see RHEUM-04)
-- EMRG-02 Acute agitation, behavioral emergency
+## K. Emergencies & Toxicology  (weight: 0.21)
+- TOX-01  Poisoning
+  - TOX-01a  Paracetamol  (aspects: management very high, interpretation high)
+    - Whether a staggered or unknown-time ingestion is treated regardless of the level [MHRA paracetamol 2012]
+    - Which acetylcysteine regimen, and how to manage an infusion reaction [UK TOXBASE; SNAP regimen]
+    - Whether acetylcysteine continues past the standard course (ALT, INR, level) [UK TOXBASE]
+  - TOX-01b  Salicylate, tricyclic and other common poisonings  (aspects: management high, diagnosis medium)
+    - Whether activated charcoal is given, and how late [AACT/EAPCCT single-dose charcoal position 2005]
+    - When salicylate poisoning needs haemodialysis [EXTRIP salicylates 2015]
+    - Whether a widened QRS after a tricyclic overdose calls for sodium bicarbonate [UK TOXBASE]
+    - When high-dose insulin is used for calcium-channel-blocker poisoning [CCB poisoning expert consensus 2017]
+  - TOX-01c  Toxic alcohols and the unknown overdose  (aspects: diagnosis high, testing high, management high)
+    - Whether an unexplained high anion gap acidosis with an osmolar gap starts fomepizole before levels return [UK TOXBASE]
+    - When methanol or ethylene glycol poisoning needs haemodialysis [EXTRIP ethylene glycol 2023; EXTRIP methanol 2015]
+    - Which tests every unknown overdose gets [UK TOXBASE]
+- TOX-02  Drug-induced hyperthermia
+  - TOX-02a  Serotonin syndrome  (aspects: diagnosis high, management high)
+    - Whether clonus and hyperreflexia on serotonergic drugs meet the criteria for serotonin syndrome [Hunter criteria 2003]
+    - When to give cyproheptadine, and when sedation, paralysis and cooling are needed [UK TOXBASE]
+    - Which serotonergic drugs and combinations to avoid once the syndrome has settled [EMA SmPC]
+  - TOX-02b  Neuroleptic malignant syndrome and malignant hyperthermia  (aspects: diagnosis high, management high)
+    - Whether fever and rigidity on an antipsychotic is NMS rather than serotonin syndrome or sepsis [NMS international consensus 2011]
+    - Whether dantrolene or bromocriptine has a place in NMS [NMS international consensus 2011]
+    - When an antipsychotic may be restarted after NMS [NMS international consensus 2011]
+    - Dantrolene and referral for testing after suspected malignant hyperthermia [EMHG 2020]
+- TOX-03  Environmental emergencies
+  - TOX-03a  Hypothermia  (aspects: management high, prognosis medium)
+    - Whether a hypothermic patient in cardiac arrest goes to extracorporeal rewarming [ERC special circumstances 2025]
+    - How to rewarm a hypothermic patient with a pulse, and where [ERC special circumstances 2025]
+    - When resuscitation of a hypothermic arrest may be stopped [ERC special circumstances 2025]
+  - TOX-03b  Heat illness, carbon monoxide, altitude  (aspects: diagnosis high, management high)
+    - Which cooling method for exertional or classic heatstroke [ERC special circumstances 2025]
+    - Whether a normal pulse oximetry excludes carbon monoxide poisoning [ECHM consensus 2016]
+    - Whether carbon monoxide poisoning warrants hyperbaric oxygen [ECHM consensus 2016]
+- EMRG-02  Acute agitation
+  - EMRG-02a  Rapid tranquillisation and QT risk  (aspects: management very high)
+    - Oral or intramuscular, and which drug (lorazepam, promethazine, haloperidol) [NICE NG10 2015]
+    - Whether an ECG is needed before haloperidol [NICE NG10 2015]
+    - What monitoring follows parenteral rapid tranquillisation [NICE NG10 2015]
+  - EMRG-02b  The agitated patient: finding the cause  (aspects: diagnosis very high, testing high)
+    - Which physical causes must be excluded before agitation is attributed to psychiatric illness [NICE NG10 2015]
+    - Whether a sympathomimetic-intoxicated, hyperthermic patient is sedated with a benzodiazepine first [UK TOXBASE]
+- TOX-04  Opioid and sedative overdose
+  - TOX-04a  Recognition, antidotes and observation  (aspects: management very high, disposition high)
+    - Naloxone dose and route, and the end point it is titrated to [ERC special circumstances 2025]
+    - How long to observe after naloxone, especially after methadone or modified-release opioids [UK TOXBASE]
+    - Whether flumazenil is ever given for a benzodiazepine overdose [UK TOXBASE]
+- EMRG-01  Anaphylaxis (retired: now RHEUM-04a)
+
+## L. Psychiatry  (weight: 0.21)
+- PSYCH-01  Depression and suicide risk
+  - PSYCH-01a  Depression in the medically ill  (aspects: diagnosis high, management high)
+    - Whether low mood in the medically ill is depression, adjustment or hypoactive delirium [NICE CG91 2009]
+    - Which antidepressant with heart disease, anticoagulation or risk of hyponatraemia [NICE NG222 2022]
+    - Whether to start an antidepressant during the admission or defer it [NICE NG222 2022]
+    - Whether an antidepressant may be stopped abruptly when the patient is nil by mouth [NICE NG222 2022]
+  - PSYCH-01b  Suicide risk assessment  (aspects: management very high, disposition very high)
+    - Whether a risk scale decides disposition after self-harm [NICE NG225 2022]
+    - Whether a medically fit patient after self-harm may leave before psychosocial assessment [NICE NG225 2022]
+    - What a safety plan and the discharge supply of medicines should contain [NICE NG225 2022]
+- PSYCH-02  Psychosis and bipolar disorder
+  - PSYCH-02a  Recognition on the medical ward  (aspects: diagnosis high, testing medium)
+    - Whether new psychosis has a medical cause, and which tests to send [NICE CG178 2014]
+    - Whether mutism and immobility are catatonia, and whether a lorazepam challenge is given [BAP catatonia 2023]
+  - PSYCH-02b  Adverse effects of psychotropic drugs (QT, metabolic, lithium)  (aspects: management high, prevention high, testing medium)
+    - Whether a lithium level is toxic, and which drugs and illnesses raise it [NICE CG185 2023]
+    - Whether a prolonged QTc calls for changing the antipsychotic [ESC VA 2022]
+    - Whether fever, tachycardia or neutropenia on clozapine calls for stopping it [EMA clozapine SmPC]
+    - Which metabolic monitoring an antipsychotic needs [NICE CG178 2014]
+- PSYCH-03  Anxiety and functional disorders
+  - PSYCH-03a  Anxiety, panic and post-traumatic stress  (aspects: management high, diagnosis medium)
+    - Whether a benzodiazepine is given beyond a short-term crisis [NICE CG113 2011]
+    - Which first-line drug for generalised anxiety or panic disorder [NICE CG113 2011]
+    - Which treatment for PTSD, and whether drugs come first [NICE NG116 2018]
+  - PSYCH-03b  Somatic symptom and functional neurological disorder  (aspects: diagnosis high, management medium)
+    - Whether positive signs establish a functional neurological disorder without exhaustive exclusion [DSM-5-TR 2022]
+    - Whether somatic symptoms with excessive concern meet somatic symptom disorder, and whether more tests are ordered [DSM-5-TR 2022]
+- PSYCH-04  Substance use disorder
+  - PSYCH-04a  Long-term treatment and harm reduction  (aspects: management high, prevention high)
+    - Which relapse-prevention drug for alcohol dependence with liver disease [EASL ALD 2018]
+    - Methadone or buprenorphine for long-term opioid agonist therapy [WHO opioid dependence 2009]
+    - Whether take-home naloxone is supplied at discharge [WHO community opioid overdose 2014]
+- PSYCH-05  Eating disorders
+  - PSYCH-05a  Medical complications and safe refeeding  (aspects: management very high, disposition high, prognosis medium)
+    - Which findings mark high medical risk [RCPsych MEED 2022]
+    - Starting energy intake in severe anorexia nervosa [RCPsych MEED 2022]
+    - Whether bradycardia or QTc prolongation needs cardiac monitoring [RCPsych MEED 2022]
+- PSYCH-06  Capacity and sleep
+  - PSYCH-06a  Capacity, consent and detention  (aspects: management very high, diagnosis high)
+    - Whether the patient has capacity for this particular decision [Icelandic Patients' Rights Act 74/1997]
+    - Whether an incapacitated patient may be treated or restrained under necessity [Icelandic Patients' Rights Act 74/1997]
+    - Whether a patient who wants to leave can be held involuntarily, and by whose decision [Icelandic Legal Competence Act 71/1997]
+  - PSYCH-06b  Insomnia in hospital  (aspects: management high)
+    - Whether a hypnotic is indicated, and for how long [ESRS European Insomnia Guideline 2023]
+    - Which hypnotic, if any, suits an older inpatient [ESRS European Insomnia Guideline 2023; STOPP/START v3 2023]
+    - Whether melatonin has a place [ESRS European Insomnia Guideline 2023]
+
+## M. Geriatrics  (weight: 0.21)
+- GERI-01  Falls
+  - GERI-01a  Assessment after a fall  (aspects: diagnosis high, testing high)
+    - Whether a fall calls for a full multifactorial assessment, by risk stratification [World Falls Guidelines 2022]
+    - Whether a fall on an anticoagulant needs head CT without symptoms, and how soon [NICE NG232 2023]
+  - GERI-01b  Prevention, including medicines  (aspects: prevention very high, management high)
+    - Which fall-risk-increasing drugs to stop or reduce [STOPPFall 2021]
+    - Which exercise or physiotherapy intervention to arrange [World Falls Guidelines 2022]
+    - Whether vitamin D is given to prevent falls [World Falls Guidelines 2022]
+- GERI-02  Dementia in hospital
+  - GERI-02a  Behavioural symptoms  (aspects: management very high)
+    - Whether pain or another unmet need explains the agitation before any drug [NICE NG97 2018]
+    - Whether an antipsychotic is justified for agitation or aggression, which, and for how long [NICE NG97 2018]
+    - Whether an antipsychotic can be given in Lewy body or Parkinson's disease dementia [NICE NG97 2018]
+  - GERI-02b  Decisions in advanced dementia  (aspects: management high, prognosis high)
+    - Whether tube feeding is offered in advanced dementia [ESPEN nutrition and hydration in dementia 2024]
+    - Whether pneumonia in end-stage dementia is treated with antibiotics [EAPC dementia white paper 2014]
+    - Whether to transfer to hospital or treat in place [EAPC dementia white paper 2014]
+- GERI-03  Polypharmacy
+  - GERI-03a  Deprescribing  (aspects: management high, prevention medium)
+    - Which preventive drugs to stop when life expectancy is limited [STOPPFrail v2 2021]
+    - Whether the anticholinergic burden explains the presentation and what to stop [STOPP/START v3 2023]
+    - How to taper a long-term benzodiazepine or proton pump inhibitor [STOPP/START v3 2023]
+  - GERI-03b  Prescribing in frailty  (aspects: management high, prevention medium)
+    - Which beneficial drugs are omitted and should be started [STOPP/START v3 2023]
+    - Which blood pressure target for a frail patient or one over 85 [ESC hypertension 2024]
+- GERI-04  Frailty and function
+  - GERI-04a  Comprehensive assessment and frailty  (aspects: prognosis high, disposition high, diagnosis medium)
+    - Whether the patient is frail and needs comprehensive geriatric assessment [ICFSR frailty 2019]
+    - Whether low grip strength or slow gait calls for sarcopenia assessment [EWGSOP2 2019]
+  - GERI-04b  Hip fracture and rehabilitation  (aspects: management high, disposition high)
+    - Whether surgery waits for anything (anticoagulant, echocardiogram, anaemia) beyond 36 hours [NICE CG124 2023]
+    - Which analgesia before surgery, including a nerve block [NICE CG124 2023]
+    - Whether orthogeriatric care and mobilisation the day after surgery are in place [NICE CG124 2023]
+- GERI-05  Geriatric syndromes
+  - GERI-05a  Incontinence and constipation  (aspects: management medium, diagnosis medium)
+    - Whether an indwelling catheter is justified for incontinence in hospital [EAU urinary incontinence 2025]
+    - Whether an antimuscarinic is acceptable in cognitive impairment [STOPP/START v3 2023]
+  - GERI-05b  Swallowing, nutrition and pressure injury  (aspects: prevention high, management high)
+    - Whether texture-modified food or thickened fluids are prescribed after a swallow assessment [ESPEN geriatrics 2022]
+    - Whether a malnourished older inpatient gets oral nutritional supplements [ESPEN geriatrics 2022]
+    - Which risk assessment, repositioning and support surface prevent pressure injury [International Pressure Injury Guideline 2026]
+
+## N. Dermatology  (weight: 0.14)
+- DERM-01  Drug eruptions and skin emergencies
+  - DERM-01a  Benign rash versus DRESS, SJS and TEN  (aspects: diagnosis very high, management high)
+    - Which features separate a severe cutaneous reaction from a benign exanthem [DRESS international consensus 2024; S3 SJS/TEN 2024]
+    - Which drug to stop, judged by timing of exposure [S3 SJS/TEN 2024]
+    - Whether DRESS is treated with systemic corticosteroids, and how slowly they are tapered [DRESS international consensus 2024]
+    - Whether TEN calls for transfer to a burns or intensive care unit [S3 SJS/TEN 2024]
+  - DERM-01b  Erythroderma and blistering disease  (aspects: diagnosis high, management high)
+    - Which tests confirm bullous pemphigoid [EADV bullous pemphigoid 2022]
+    - Superpotent topical or systemic corticosteroid for bullous pemphigoid [EADV bullous pemphigoid 2022]
+    - Whether a DPP-4 inhibitor is stopped in bullous pemphigoid [EADV bullous pemphigoid 2022]
+- DERM-02  Inflammatory skin disease
+  - DERM-02a  Eczema and psoriasis in the inpatient  (aspects: management high, diagnosis medium)
+    - Whether systemic corticosteroids are given for a psoriasis flare [EuroGuiDerm psoriasis 2025]
+    - Whether methotrexate or a biologic is held during infection or renal impairment [EuroGuiDerm psoriasis 2025]
+    - Whether punched-out erosions in eczema are eczema herpeticum needing aciclovir [EuroGuiDerm atopic eczema 2022]
+- DERM-03  Skin signs of systemic disease
+  - DERM-03a  Purpura and vasculitic rash  (aspects: diagnosis high, testing high)
+    - Whether palpable purpura is biopsied, with direct immunofluorescence, and from which lesion [CHCC dermatologic addendum 2018]
+    - Whether cutaneous vasculitis has systemic involvement (urine, renal function) [CHCC dermatologic addendum 2018]
+    - Whether fever with a non-blanching rash gets antibiotics before any test [ESCMID bacterial meningitis 2016]
+  - DERM-03b  Erythema nodosum, pyoderma and other reactive rashes  (aspects: diagnosis high, management medium)
+    - Which work-up erythema nodosum needs [ERS sarcoidosis 2021]
+    - Whether a rapidly enlarging ulcer is pyoderma gangrenosum before it is debrided [PG Delphi criteria 2018]
+- DERM-04  Skin lesions and cancer
+  - DERM-04a  The suspicious lesion  (aspects: diagnosis very high, disposition high)
+    - Which features of a pigmented lesion warrant urgent referral [EADO melanoma diagnostics 2024]
+    - Excision or partial biopsy of a suspected melanoma [EADO melanoma diagnostics 2024]
+    - Which skin cancer surveillance a transplant recipient or immunosuppressed patient needs [EADO cSCC 2023]
+- DERM-05  Wounds and ulcers
+  - DERM-05a  Leg ulcers  (aspects: diagnosis high, management high)
+    - Whether ankle-brachial index is measured before compression [ESVS chronic venous disease 2022]
+    - Whether a non-healing ulcer is biopsied [ESVS chronic venous disease 2022]
+  - DERM-05b  Pressure injury  (aspects: management high, diagnosis medium)
+    - Which stage an established pressure injury is, including unstageable and deep tissue injury [International Pressure Injury Guideline 2026]
+    - Whether a deep sacral ulcer has underlying osteomyelitis [International Pressure Injury Guideline 2026]
+    - Which debridement and dressing for the stage [International Pressure Injury Guideline 2026]
+
+## O. Women's Health  (weight: 0.14)
+- WH-01  Medical disorders in pregnancy
+  - WH-01a  Hypertension and pre-eclampsia  (aspects: diagnosis high, management very high, prevention medium)
+    - Blood-pressure threshold for treatment and target in pregnancy [ESC CVD and pregnancy 2025]
+    - Choice of agent for severe hypertension in pregnancy [ESC CVD and pregnancy 2025]
+    - Whether new hypertension after 20 weeks with symptoms or abnormal bloods is pre-eclampsia needing obstetric admission and magnesium [ESC CVD and pregnancy 2025]
+    - Which women should take aspirin to prevent pre-eclampsia [ESC CVD and pregnancy 2025]
+  - WH-01b  Thrombosis, heart and endocrine disease in pregnancy  (aspects: diagnosis high, testing medium, management high)
+    - Diagnostic pathway for suspected PE in pregnancy (D-dimer, leg ultrasound, CT or perfusion scan) [ESC PE 2019]
+    - Dosing of low-molecular-weight heparin and its timing around delivery [ESC CVD and pregnancy 2025]
+    - Anticoagulation strategy for a mechanical heart valve in pregnancy [ESC CVD and pregnancy 2025]
+    - Recognising peripartum cardiomyopathy and the decisions on breastfeeding and bromocriptine [ESC CVD and pregnancy 2025]
+  - WH-01c  Prescribing in pregnancy and breastfeeding  (aspects: management high, prevention medium)
+    - Which cardiovascular drugs to stop or switch when pregnancy is planned or found [ESC CVD and pregnancy 2025]
+    - Which cardiovascular drugs are compatible with breastfeeding [ESC CVD and pregnancy 2025]
+- WH-02  Menopause and contraception
+  - WH-02a  Menopausal hormone therapy  (aspects: management high, prevention medium)
+    - Route of oestrogen in a woman at raised risk of venous thromboembolism [NICE menopause NG23 2024]
+    - Whether a progestogen is needed, and in what form [NICE menopause NG23 2024]
+    - How to counsel on breast cancer and cardiovascular risk when starting or continuing HRT [NICE menopause NG23 2024]
+    - Whether premature ovarian insufficiency calls for hormone replacement until the usual age of menopause [NICE menopause NG23 2024]
+  - WH-02b  Contraception with medical comorbidity  (aspects: management high)
+    - Whether combined hormonal contraception is acceptable with migraine with aura, hypertension, prior VTE or other cardiovascular risk [WHO MEC 2025]
+    - Which methods remain effective with enzyme-inducing drugs [WHO MEC 2025]
+    - Which methods are acceptable in the first weeks after delivery [WHO MEC 2025]
+- WH-03  Gynaecological presentations for the internist
+  - WH-03a  Abnormal bleeding and pelvic pain  (aspects: diagnosis high, disposition high)
+    - Whether abdominal pain or bleeding in a woman of reproductive age needs a pregnancy test and assessment for ectopic pregnancy [NICE ectopic pregnancy and miscarriage NG126 2019, updated 2025]
+    - Investigations for heavy menstrual bleeding with iron deficiency, including when to test for a bleeding disorder [NICE heavy menstrual bleeding NG88 2018]
+    - Urgency of referral for postmenopausal bleeding [NICE suspected cancer NG12]
+  - WH-03b  Breast problems  (aspects: diagnosis medium, management medium, disposition medium)
+    - Which breast symptoms call for urgent referral [NICE suspected cancer NG12]
+    - Whether a woman starting an aromatase inhibitor needs bone protection [ESMO bone health in cancer 2020]
+    - Cardiac monitoring during anthracycline or HER2-targeted therapy [ESC cardio-oncology 2022]
+- WH-04  Osteoporosis in women (see ENDO-06)
+  - WH-04a  Screening and treatment decisions  (aspects: prevention high, management high, testing medium)
+    - Whether fracture-risk assessment calls for bone densitometry, treatment or neither [NOGG 2024]
+    - Whether very high fracture risk calls for an anabolic drug first [NOGG 2024]
+    - Starting bone therapy after a fragility fracture in hospital, including timing of zoledronate [NOGG 2024]
+    - Length of bisphosphonate treatment, and how denosumab is stopped [NOGG 2024]
+
+## P. Perioperative Medicine  (weight: 0.14)
+- PERIOP-01  Risk assessment
+  - PERIOP-01a  Cardiac risk and testing  (aspects: testing high, management high, prognosis medium)
+    - Whether to measure natriuretic peptides and troponin before intermediate- or high-risk surgery [ESC NCS 2022]
+    - Whether poor functional capacity warrants stress imaging before surgery [ESC NCS 2022]
+    - Whether echocardiography is needed before surgery for a new murmur or breathlessness [ESC NCS 2022]
+    - Whether to postpone elective surgery for recent infarction, unstable symptoms or severe valve disease [ESC NCS 2022]
+  - PERIOP-01b  Pulmonary and other risk  (aspects: prognosis high, testing medium, management medium)
+    - Which preoperative blood tests and chest radiographs are indicated, and which are routine waste [ESAIC preoperative assessment 2025]
+    - Which risk score or biomarker to use for postoperative pulmonary and overall complications [ESAIC preoperative assessment 2025]
+    - Which high-risk patients need planned postoperative critical care [ESAIC preoperative assessment 2025]
+  - PERIOP-01c  Managing regular medicines  (aspects: management very high)
+    - Whether to withhold ACE inhibitors and angiotensin-receptor blockers before surgery [ESC NCS 2022]
+    - Whether to start or continue a beta-blocker before surgery [ESC NCS 2022]
+    - How long before surgery to stop an SGLT2 inhibitor [ESC NCS 2022]
+    - Whether to continue a GLP-1 receptor agonist through elective surgery [UK multidisciplinary consensus on GLP-1 RA and SGLT2i (Anaesthesia) 2025]
+- PERIOP-02  Anticoagulants and antiplatelets around surgery
+  - PERIOP-02a  Interrupting and bridging anticoagulation  (aspects: management very high)
+    - How long before surgery to stop a DOAC, by bleeding risk and renal function [ESC NCS 2022]
+    - Whether interrupted warfarin needs heparin bridging (AF, venous thromboembolism, mechanical valve) [ACCP perioperative antithrombotic 2022]
+    - When to resume full-dose anticoagulation after surgery with high bleeding risk [ACCP perioperative antithrombotic 2022]
+  - PERIOP-02b  Antiplatelets and stents  (aspects: management very high)
+    - Minimum delay of elective surgery after coronary stenting [ESC NCS 2022]
+    - Whether to continue aspirin through surgery [ESC NCS 2022]
+    - How long before surgery to stop each P2Y12 inhibitor, and when to restart [ESC NCS 2022]
+- PERIOP-03  Medical complications after surgery
+  - PERIOP-03a  Post-operative AF, myocardial injury and delirium  (aspects: diagnosis high, management high)
+    - Whether AF after non-cardiac surgery calls for long-term anticoagulation [ESC AF 2024]
+    - How to work up and treat an asymptomatic postoperative troponin rise [ESC NCS 2022]
+    - Prevention and drug treatment of postoperative delirium [ESAIC postoperative delirium 2024]
+  - PERIOP-03b  Co-managing the surgical patient  (aspects: management high, disposition medium)
+    - Fluid and nephrotoxin decisions in postoperative acute kidney injury [KDIGO AKI 2012]
+    - Glucose targets and insulin adjustment in the surgical patient with diabetes [CPOC perioperative diabetes 2022]
+    - When to restart held cardiovascular and diabetes medicines after surgery [ESC NCS 2022]

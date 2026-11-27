@@ -111,9 +111,9 @@ def test_a_sub_topic_id_used_twice_is_refused():
 
 
 def test_a_one_level_blueprint_and_its_ledgers_are_read_as_before():
-    with open(os.path.join(ROOT, "skills", "clinical-cme", "templates", "blueprint.md"), encoding="utf-8") as fh:
+    with open(os.path.join(ROOT, "tests", "one_level", "blueprint.md"), encoding="utf-8") as fh:
         md = cme.blueprint_from_md(fh.read())
-    with open(os.path.join(ROOT, "skills", "clinical-cme", "templates", "blueprint.json"), encoding="utf-8") as fh:
+    with open(os.path.join(ROOT, "tests", "one_level", "blueprint.json"), encoding="utf-8") as fh:
         assert md == json.load(fh)
     # a blueprint whose topic bullets are all indented is still one level
     indented = cme.blueprint_from_md("## A. Alpha (weight: high)\n  - AAA-01  One\n  - AAA-02  Two\n")

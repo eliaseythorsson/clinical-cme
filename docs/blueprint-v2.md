@@ -1,5 +1,11 @@
 # Blueprint v2 (proposal for #82)
 
+**Status: applied** (#82). This is now the default blueprint, `skills/clinical-cme/templates/blueprint.md`
+and `blueprint.json`, with the decision points and aspect importance per sub-topic; weights
+there are the shares below scaled so that the largest, 14%, is 1.0. The retired ids stay listed,
+marked `(retired)`, so that old ledgers keep resolving them. An existing learner moves onto it
+through `settings --blueprint` and a mapping (`references/state_schema.md` §9).
+
 144 diseases and 347 sub-topics in 16 areas, for the two-level blueprint of #81: **the
 disease returns on schedule; the sub-topic rotates and is recorded.**
 
@@ -7,7 +13,7 @@ disease returns on schedule; the sub-topic rotates and is recorded.**
   is our own classification informed by it, not a copy.
 - **What is correct**: European guidelines (rule 2 of `references/standards.md`). Decision
   points (two to five per sub-topic, each with the guideline it rests on) are written by the
-  builder and are not listed here.
+  builder and are not listed here (they are in the template).
 - **Areas**: the existing area codes are kept; `DERM`, `PSYCH`, `GERI` and `WH` are new.
   Allergy and immunology sit in `RHEUM`, eye and ENT in `GEN`, oncology in `HEME`;
   `TOX` and `EMRG` are one area (`TOX`).
@@ -18,7 +24,7 @@ disease returns on schedule; the sub-topic rotates and is recorded.**
   top. Where a sub-topic also appears in the ABIM *Internal Medicine: Inpatient* blueprint,
   its importance per task decides which aspect is tested most often.
 - **Approved by the learner**: cardiology (format and grain), 2026-11-27. The other areas
-  follow the same format.
+  follow the same format; the decision points were delegated to the builder (#82).
 
 | Area | Share | Diseases | Sub-topics |
 |---|---|---|---|

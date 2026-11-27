@@ -69,7 +69,13 @@ changed guideline on it once more; it is not raised again. A ledger without `pos
 A two-level blueprint adds `subtopics`: per topic, its sub-topics in order, each with `label`,
 optional `points` (the author's list of decision points to draw on; not scheduled) and
 optional `aspects` ({aspect: importance}, the weights of `weight_from_text`). A topic without
-sub-topics, and a blueprint without any, work exactly as before. In markdown a sub-topic is a
+sub-topics, and a blueprint without any, work exactly as before. A topic whose label is marked
+`(retired)` (`(retired: now RHEUM-04a)`) stays only so that ledgers which tested it still
+resolve its id: it is never planned, as new, due or a gap retest. In a two-level blueprint an
+area's `weight` is its share of new material, divided among its diseases (`new_topic_weights`);
+in a one-level blueprint each topic carries its area's weight, as before. The ledger keeps its own copy
+of the blueprint, set at `init` and changed only by `settings --blueprint`: a new default in
+`templates/` never reaches an existing ledger by itself (§9). In markdown a sub-topic is a
 bullet indented under its topic, starting with its id, with `(aspects: management high,
 testing low)` at the end where known; a decision point is a bullet indented under its
 sub-topic, without an id. A JSON blueprint may nest them (`"CARD-03": {"label": "…",
@@ -722,7 +728,7 @@ order with the ledger last) and `publish`, the path of the manifest `W/publish.j
 | `snooze --work W [--days 7]` | Postpone a due review. Keeps the prepared round. |
 | `settings --work W [--config J] [--profile J] [--blueprint FILE]` | Change settings: the changed ledger, the page file and the page if it is out of date go into the publish set, with an emptied `data/prepared.json` when the change can alter a round; `prepared` says whether the prepared round was kept and why (§8). A change to `mcqs`, `focused` or `case` is checked (at least one item) and supersedes any older page setting; a refused change writes nothing. Prints `round`: the mix in force in words, its `estimated_minutes`, and once rounds are timed `basis` ("based on your last N rounds") and `time_hint` (§6.2). `--profile '{"journey": "…"}'` or `'{"aim": "…"}'` stores a new paragraph in the learner's words, dates it and clears its label unless the same change gives one; `'{"journey_label": "…", "aim_tags": […]}'` sets the display labels (from their fixed lists, §1) and keeps the prepared round. With a paragraph or a label in the change it prints `profile` (the two paragraphs and their labels), and `labels_needed` while a label is still to derive. |
 | `theme --work W [--set DOMAIN \| --another]` | The learner changes the theme of the block (§4.1): `--set` a domain by id or name, `--another` the next proposal. Prints `block`, `was`, `say` and, like `settings`, the `files` to publish. Alone: the block, the proposal and the domains to choose from; writes nothing. |
-| `apply-mapping --work W --mapping FILE [--check]` | Move a ledger with history onto a two-level blueprint, once (§9): the mapping file (JSON, or a markdown table) says which sub-topic each past item tested, where each open gap goes and which retired topics fold into another. Items keep their scores and the topic they were recorded under (`recorded_under`); a topic keeps its due date; gaps landing on one topic are merged. Set the two-level blueprint with `settings --blueprint` first. Refused while a round awaits its reflection, and for a mapping already applied. Prints what moved (`items`, `gaps`, `merged`, `retired`, `new_records`), the rounds that can no longer be applied again (`frozen`), topics left outside the blueprint (`not_in_blueprint`) and, like `settings`, the `files` to publish. `--check`: the same, written nowhere. |
+| `apply-mapping --work W --mapping FILE [--check]` | Move a ledger with history onto a two-level blueprint, once (§9): the mapping file (JSON, or a markdown table) says which sub-topic each past item tested, where each open gap goes and which retired topics fold into another. Items keep their scores and the topic they were recorded under (`recorded_under`); a topic keeps its due date; gaps landing on one topic are merged. Set the two-level blueprint with `settings --blueprint` first. Refused while a round awaits its reflection, and for a mapping already applied. Prints what moved (`items`, `gaps`, `merged`, `retired`, `new_records`), the rounds that can no longer be applied again (`frozen`), topic records left outside the blueprint or on a retired topic (`not_in_blueprint`) and, like `settings`, the `files` to publish. `--check`: the same, written nowhere. |
 | `init --work W --profile J --config J --blueprint FILE [--start-over]` | Setup: the first ledger, its page file and the page, into the publish set. Prints `round` (the mix in words and its `estimated_minutes`) to confirm the mix with, and `labels_needed` when a paragraph came without its label. A profile given in the old fields (`role`, `goals`, `notes`) is folded into the paragraphs (§1). `W` needs no store yet. In a work folder opened on a store that already holds a ledger it stops unless `--start-over` is given. |
 
 Maintenance tools, outside the protocol; they take their own files and folders:
@@ -1012,7 +1018,13 @@ session, from the same plan, while the learner answers the part that is there.
 
 A ledger with history moves to a two-level blueprint once: set the blueprint
 (`settings --work W --blueprint FILE`), then, in the same job, `apply-mapping --work W
---mapping FILE` (§6; `--check` first to see what it would do). Each past question goes to the
+--mapping FILE` (§6; `--check` first to see what it would do). This is also how an existing
+learner moves onto the two-level default (`templates/blueprint.json`, issue #82), and only
+when they ask: its mapping folds the retired ids into their successors (`PULM-06` into
+`CARD-08`, `EMRG-01` into `RHEUM-04`, and, for a ledger that had them, `GEN-01`/`GEN-02` into
+`PERIOP-01`/`PERIOP-02`) and sends each past item to the sub-topic it tested. A learner who
+added topics or areas of their own (a `PERIOP` area, say) merges them into the new file before
+it is set: `settings --blueprint` replaces the whole blueprint. Each past question goes to the
 sub-topic it actually tested; sub-topics never tested start as new; a disease keeps its due
 date. It goes through the publish set like any change: never edit the ledger by hand.
 
@@ -1059,5 +1071,7 @@ target, so `CARD-02d (touches CARD-10b)` reads as `CARD-02d` and `stays GEN-10` 
 - Refused, with nothing changed: while a round awaits its reflection; when the blueprint has no
   sub-topics; for a mapping already applied (the same file, by `sha256`); and whenever any
   entry does not resolve (every problem is named at once). `not_in_blueprint` lists topic
-  records left outside the blueprint, to retire with a further mapping.
+  records left outside the blueprint, or on a topic the blueprint marks retired, to fold into
+  another with a further mapping (a retired topic is never planned, so its record would
+  otherwise wait unused).
 - A learner's mapping is learner data: it is never committed to the skill's repository.

@@ -181,9 +181,10 @@ and their labels; the config holds `mcqs`, `focused`, `case`), then create the s
 app can host a private page with files, publish `templates/page.html` with the ledger
 files as the page "Clinical CME" and pin it; otherwise a folder the learner names or files
 they keep. Ask which only if more than one is possible and the learner has a preference;
-default to the page. Blueprint: `templates/blueprint.json` for internal/hospital medicine; for another
+default to the page. Blueprint: `templates/blueprint.json` for internal/hospital medicine (two
+levels: 16 areas, 144 topics, 347 sub-topics with their decision points); for another
 specialty draft one in the same shape (domains with weights, topics with stable IDs such as
-`PEDS-01`) from that specialty's core-competency or board outline and show the domain list for a
+`PEDS-01`; sub-topics optional) from that specialty's core-competency or board outline and show the domain list for a
 quick check before saving. Lower weights for domains that do not fit the practice setting.
 
 Tell the learner (show this):

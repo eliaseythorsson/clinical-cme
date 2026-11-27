@@ -316,7 +316,7 @@ def test_the_default_blueprint_has_each_area_once_and_md_and_json_agree():
     assert md == js and "EMRG" not in js
     names = [info["name"] for info in js.values()]
     assert len(names) == len(set(names))
-    assert list(js["TOX"]["topics"]) == ["TOX-01", "TOX-02", "TOX-03", "EMRG-01", "EMRG-02"]
+    assert list(js["TOX"]["topics"]) == ["TOX-01", "TOX-02", "TOX-03", "EMRG-02", "TOX-04", "EMRG-01"]
 
 
 def test_a_ledger_with_tox_and_emrg_is_migrated_on_load():

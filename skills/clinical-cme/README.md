@@ -191,7 +191,7 @@ references/preparing.md       preparing a round ahead: after the close, prepare-
                               overnight preparation, a round that was not prepared
 references/requests.md        requests other than a round, testing mode, round variants
 templates/page.html           the learner's page, published at setup
-templates/blueprint.json      default internal/hospital-medicine curriculum (also blueprint.md)
+templates/blueprint.json      default internal/hospital-medicine curriculum, two levels (also blueprint.md)
 templates/resource_library.md dependable sources by domain
 ```
 

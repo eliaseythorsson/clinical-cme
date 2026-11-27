@@ -21,7 +21,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILL = os.path.join(ROOT, "skills", "clinical-cme")
 CME = os.path.join(SKILL, "scripts", "cme.py")
 SIM = os.path.join(ROOT, "sim", "simulate.py")
-BLUEPRINT = os.path.join(SKILL, "templates", "blueprint.json")
+# The default blueprint as it was before the two-level one (issue #82), frozen: most tests plan on a
+# fresh ledger and expect its topics. Tests of the shipped default read DEFAULT_BLUEPRINT.
+BLUEPRINT = os.path.join(ROOT, "tests", "one_level", "blueprint.json")
+DEFAULT_BLUEPRINT = os.path.join(SKILL, "templates", "blueprint.json")
 
 SUBPROCESS = os.environ.get("CME_TEST_SUBPROCESS") == "1"
 

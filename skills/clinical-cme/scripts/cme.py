@@ -793,7 +793,7 @@ def blueprint_from_md(text):
     sub-topic of it ("  - CARD-03a  Stroke prevention decision (aspects: management high)"); a
     bullet indented under a sub-topic without an id is one of its decision points. A blueprint
     without indented bullets is the one-level blueprint, as before."""
-    bp, cur, topic, sub = {}, None, None, None
+    bp, cur, topic, sub, sub_indent = {}, None, None, None, None
     for raw in text.splitlines():
         line = raw.strip()
         indent = len(raw) - len(raw.lstrip())
@@ -820,7 +820,10 @@ def blueprint_from_md(text):
             continue
         if indent <= base or topic is None:
             continue
-        if m:                       # a sub-topic of the topic above
+        # a bullet deeper than the sub-topic above is one of its decision points, even when its
+        # first word looks like an id ("LDL-cholesterol target …")
+        if m and not (sub is not None and sub_indent is not None and indent > sub_indent):
+            sub_indent = indent     # a sub-topic of the topic above
             label, aspects = m.group(2), {}
             a = ASPECTS_RE.search(label)
             if a:
@@ -893,6 +896,21 @@ def bp_topics(state):
     return out
 
 
+RETIRED_RE = re.compile(r"\(\s*retired\b", re.I)
+
+
+def is_retired(label):
+    """A topic the blueprint keeps only so that old ledgers still resolve its id: its label is
+    marked "(retired)" or "(retired: …)". It is never planned (new, due or gap); its record and
+    its history stay where they are until a mapping folds it into another (§9)."""
+    return bool(RETIRED_RE.search(label or ""))
+
+
+def bp_live_topics(state):
+    """The blueprint's topics that can be planned: bp_topics without the retired ones."""
+    return {tid: i for tid, i in bp_topics(state).items() if not is_retired(i.get("label"))}
+
+
 def bp_subtopics(state):
     """Every sub-topic of the blueprint: {sub-topic id: {"topic", "domain", "label", "points",
     "aspects"}}, in blueprint order. Empty for a one-level blueprint."""
@@ -911,6 +929,21 @@ def subtopics_of(state, tid):
         if group:
             return list(group)
     return []
+
+
+def new_topic_weights(state, eff=None):
+    """The pull of each plannable topic (retired ones left out) when new material is drawn: its
+    area's effective weight (domain_weights). In a two-level blueprint an area's weight is its
+    share of what is tested (issue #82), so it is divided among the area's diseases: the area's
+    share of new picks then holds whatever its disease count. A one-level blueprint keeps the
+    weight per topic, as before."""
+    eff = domain_weights(state) if eff is None else eff
+    live = bp_live_topics(state)
+    per_area = bool(bp_subtopics(state))
+    n = {}
+    for i in live.values():
+        n[i["domain"]] = n.get(i["domain"], 0) + 1
+    return {tid: eff.get(i["domain"], 1.0) / (n[i["domain"]] if per_area else 1) for tid, i in live.items()}
 
 
 def bp_weights(state):
@@ -1299,7 +1332,8 @@ def block_open(st):
 def block_length(st, theme):
     """The rounds in a block on `theme`: BLOCK_LENGTH, or for an area with fewer than
     SHORT_BLOCK_TOPICS blueprint topics a short block of SHORT_BLOCK_ROUNDS per topic."""
-    n = len((((st.get("blueprint") or {}).get(theme) or {}).get("topics")) or {})
+    n = sum(1 for label in ((((st.get("blueprint") or {}).get(theme) or {}).get("topics")) or {}).values()
+            if not is_retired(label))
     return SHORT_BLOCK_ROUNDS * n if 0 < n < SHORT_BLOCK_TOPICS else BLOCK_LENGTH
 
 
@@ -1757,7 +1791,9 @@ def plan_round(st, args, today):
         die("the round would be empty: ask for at least one MCQ, focused question or the case")
     topics = st["topics"]
     bpt = bp_topics(st)
+    live = bp_live_topics(st)
     eff = domain_weights(st)
+    pull = new_topic_weights(st, eff)
     log = st["sessions"]
     rng = random.Random(args.seed if args.seed is not None else int(today.strftime("%Y%m%d")) * 100 + len(log))
     restrict = canon_domain(st, args.domain.upper()) if args.domain else None
@@ -1791,6 +1827,8 @@ def plan_round(st, args, today):
     recent_domains = [topic_domain(st, t, bpt) for s in log[-10:] for t in (s.get("topics") or [])]
 
     def allowed(tid):
+        if tid in bpt and tid not in live:        # retired from the blueprint: never planned
+            return False
         if (tid in resting or tid in drilled or tid in paused) and not args.allow_repeat:
             return False
         if restrict and topic_domain(st, tid, bpt) != restrict:
@@ -1842,7 +1880,7 @@ def plan_round(st, args, today):
             d = info["domain"]
             if tid in topics or tid in recent or not allowed(tid):
                 continue
-            w = eff.get(d, 1.0) / (1.0 + recent_domains.count(d))
+            w = pull.get(tid, 0.0) / (1.0 + recent_domains.count(d))
             if w > 0:
                 pool.append((w, tid, d))
         return pool
@@ -2031,8 +2069,8 @@ def plan_round(st, args, today):
         # no untested topic of the theme left for the author to choose (the others resting,
         # drilled or paused, or taken by this round's items left to the author): a short question
         # goes elsewhere rather than to a topic the limits hold back; the case stays on the theme
-        untested = [tid for tid, i in bpt.items() if i["domain"] == theme and tid not in topics and tid not in used_topics]
-        tested_out = slot != "case" and any(i["domain"] == theme for i in bpt.values()) and len(untested) <= sum(
+        untested = [tid for tid, i in live.items() if i["domain"] == theme and tid not in topics and tid not in used_topics]
+        tested_out = slot != "case" and any(i["domain"] == theme for i in live.values()) and len(untested) <= sum(
             1 for c in chosen if c.get("topic") is None and c.get("domain") == theme)
         if (eff.get(theme, 0) > 0 or theme in bp_weights(st)) and not tested_out:
             return {"slot": slot, "topic": None, "domain": theme, "share": "theme", "reason_code": "new_in_domain",
@@ -4419,7 +4457,7 @@ def apply_mapping(st, mapping, today):
     out = {"mapping": mapping.get("name"), "items": moved_out, "gaps": gaps_out, "merged": merged,
            "retired": [{"topic": a, "into": b} for a, b in retire.items()], "new_records": new_records,
            "frozen": frozen,
-           "not_in_blueprint": sorted(t for t in st["topics"] if t not in bpt)}
+           "not_in_blueprint": sorted(t for t in st["topics"] if t not in bpt or is_retired(bpt[t]["label"]))}
     return out
 
 
@@ -4497,7 +4535,7 @@ def cmd_init(args):
             if in_work(work, os.path.join(PUBLISH_DIR, rel)):
                 os.remove(os.path.join(work, PUBLISH_DIR, rel))
     save_json(info, os.path.join(work, WORK_FILE))
-    out = {"ok": True, "gen": st["gen"], "domains": list(st["blueprint"]), "topics": len(bp_topics(st))}
+    out = {"ok": True, "gen": st["gen"], "domains": list(st["blueprint"]), "topics": len(bp_live_topics(st))}
     out["round"] = round_estimate(st)
     if labels_needed(st):
         out["labels_needed"] = labels_needed(st)
@@ -6145,7 +6183,8 @@ COMMANDS = (
      'are merged. Set the two-level blueprint with `settings --blueprint` first. Refused while a '
      'round awaits its reflection, and for a mapping already applied. Prints what moved (`items`, '
      '`gaps`, `merged`, `retired`, `new_records`), the rounds that can no longer be applied again '
-     '(`frozen`), topics left outside the blueprint (`not_in_blueprint`) and, like `settings`, '
+     '(`frozen`), topic records left outside the blueprint or on a retired topic '
+     '(`not_in_blueprint`) and, like `settings`, '
      'the `files` to publish. `--check`: the same, written nowhere.'),
     ('`init --work W --profile J --config J --blueprint FILE [--start-over]`',
      'Setup: the first ledger, its page file and the page, into the publish set. Prints `round` '

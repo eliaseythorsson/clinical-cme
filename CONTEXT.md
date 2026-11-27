@@ -121,7 +121,7 @@ A score the learner asks to have recorded in place of the examiner's ("record it
 _Avoid_: override (fine for the command), dispute
 
 **Stop**:
-The learner's instruction that a topic is known and should not keep returning ("I know this, stop bringing it back"); sets their score, closes the topic's gaps and schedules it at the longest interval. One more amendment of a round, the same before or after the close. No topic is retired for good.
+The learner's instruction that a topic is known and should not keep returning ("I know this, stop bringing it back"); sets their score, closes the topic's gaps and schedules it at the longest interval. One more amendment of a round, the same before or after the close. No topic is retired for good by a stop (only the blueprint retires a topic).
 _Avoid_: retire, suspend, mute
 
 **Position note**:
@@ -171,6 +171,13 @@ _Avoid_: output folder, files list
 
 **Blueprint**:
 The list of domains and topics the curriculum covers; one level (topics), or two (topics with their sub-topics).
+
+**Default blueprint**:
+The blueprint a new internal/hospital-medicine learner gets (`templates/blueprint.md` and `.json`): two levels, 16 domains, 144 topics, 347 sub-topics with their decision points, on the ABIM general skeleton with European guidance. A learner's ledger keeps its own copy: a new default reaches an existing learner only through `settings --blueprint` and a mapping file.
+
+**Retired topic**:
+A topic the blueprint keeps only so that ledgers which tested it still resolve its id, marked `(retired)` or `(retired: now RHEUM-04a)` in its label. Never planned (not as new, due or a gap retest); its record stays until a mapping folds it into another topic.
+_Avoid_: deleted topic (ids are never removed)
 
 **Domain**:
 A blueprint grouping such as cardiology or gastroenterology, one `##` heading of the markdown blueprint, with one code (`TOX`); a topic id may carry another prefix (`EMRG-01` is in `TOX`).
