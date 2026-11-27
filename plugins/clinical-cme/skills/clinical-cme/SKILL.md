@@ -193,10 +193,10 @@ graded. If answers are missing, ask once; proceed if the learner says so.
   reflection prompt included, as `feedback.md`) and go to turn 4, step 4.
 - A disputed grade → settle it briefly now (`feedback_guide.md` §7), file the exchange with
   `answer --part notes`, and return to the case.
-- The learner stops here ("no time for the case") → close the round without it: send turn 4's
-  final feedback without the case (gap summary, reading, Listening for the topics answered,
-  reflection prompt) and save with the items answered. Say "the case is set aside unread and
-  comes back in a later round" (never "sealed": rule 11); its topic stays due.
+- The learner stops here or later (read each message first: a stop goes to `answer --part notes`,
+  never in as an answer) → close the round without the case: turn 4's final feedback without it
+  (gap summary, reading, Listening for the topics answered, reflection prompt), saved with the items
+  answered. Say "the case is set aside unread and comes back in a later round" (never "sealed": rule 11).
 
 ### Turn 3. Stage 1 answer in → Stage 2 (unfolding cases)
 

@@ -55,7 +55,8 @@ On while the skill is being tested (`config.testing`; `testing` true in the `sta
   items, 1–5? 3. The feedback, 1–5? 4. Anything else, in a line?"
 - **Store check**, behind the scenes after every publish and the `finish-prepare` of the
   closing turn, last of all: read the store again as at the start, plus
-  `data/sessions/<id>.json`, into a separate folder `<work>/reread/`; then `python3 cme.py
+  `data/sessions/<id>.json` and, when the publish set held it, `data/guidelines.json`, into a
+  separate folder `<work>/reread/`; then `python3 cme.py
   verify --work <work> --store <work>/reread` (it compares the whole publish set with what
   the store now holds and writes `<work>/verify.json`). `"ok": false` → tell the learner at
   once in one line which files did not save, and follow `store.md` §6.

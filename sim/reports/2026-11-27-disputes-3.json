@@ -1,0 +1,340 @@
+{
+ "schema": 2,
+ "ok": true,
+ "date": "2026-11-27",
+ "persona": "disputes",
+ "skill_version": "7.0.0",
+ "commit": "bdab9c6",
+ "examiner_model": "claude-opus-5-5",
+ "learner_model": "claude-opus-5-5",
+ "config": {
+  "session_minutes": 35,
+  "mcqs": 0,
+  "focused": 1,
+  "case": true,
+  "round_set_at": "2026-11-27T17:56:03Z",
+  "case_format": "unfolding",
+  "feedback_depth": "detailed",
+  "evidence_ladder": true,
+  "target_sessions_per_week": 3,
+  "review_interval_days": 42,
+  "intervals_days": [
+   1,
+   3,
+   7,
+   16,
+   35,
+   90
+  ],
+  "new_topics_per_round": 1,
+  "lab_units": "SI",
+  "blood_gas_units": "mmHg",
+  "guideline_region": "International",
+  "item_order": "mcqs_first",
+  "helpers": false,
+  "prepare_ahead": false,
+  "prepare_task": false,
+  "testing": false,
+  "show_coding": true,
+  "reminders": false,
+  "listening": true,
+  "resource_preferences": {
+   "free_only": false,
+   "formats": [
+    "guidelines",
+    "review articles"
+   ]
+  }
+ },
+ "round": {
+  "session": "S0001",
+  "shape": "1 focused, case (two stages)",
+  "score": 5.0,
+  "confident_misses": 0,
+  "continued_from_earlier_run": false
+ },
+ "messages": {
+  "examiner": 8,
+  "learner": 6
+ },
+ "checks": {
+  "blinding": {
+   "ok": true,
+   "leaks": 0,
+   "to_review": 0,
+   "seal_lifted_at": {
+    "questions": 3,
+    "case": 8
+   },
+   "never_lifted": [],
+   "terms_checked": 446,
+   "block_line": "Block: Cardiology, round 1 of 12",
+   "findings": [],
+   "problems": []
+  },
+  "saved": {
+   "ok": true,
+   "session": "S0001",
+   "publish_set": [
+    "data/sessions/S0001.json",
+    "data/page.json",
+    "data/prepared.json",
+    "data/state.json"
+   ],
+   "files_compared": 4,
+   "problems": []
+  },
+  "log": {
+   "ok": true,
+   "sections": [
+    "a_case",
+    "a_final",
+    "a_questions",
+    "case",
+    "coded",
+    "discussion",
+    "fb_questions",
+    "feedback",
+    "grade_changes",
+    "questions",
+    "reflection",
+    "stage2"
+   ],
+   "problems": [],
+   "examiner_text_not_logged": [
+    {
+     "message": 2,
+     "starts": "Today's round: 1 focused question + the case, about 35 minutes. Block: Cardiology, round 1"
+    },
+    {
+     "message": 14,
+     "starts": "- **Topics tested:** lipids and cardiovascular prevention (focused question, 5/5) and sync"
+    }
+   ]
+  },
+  "standards": {
+   "ok": true,
+   "abbreviations": 0,
+   "time_anchors": 0,
+   "to_review": 8,
+   "feedback": [
+    {
+     "id": "questions",
+     "glossary": true,
+     "abbreviations": 4,
+     "not_in_glossary": [
+      "AND"
+     ]
+    },
+    {
+     "id": "final",
+     "glossary": true,
+     "abbreviations": 12,
+     "not_in_glossary": [
+      "LAFB",
+      "CCU",
+      "CCB",
+      "APHRS",
+      "LAHRS",
+      "EAS",
+      "IDEA"
+     ]
+    }
+   ],
+   "findings": [
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "AND"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "LAFB"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "CCU"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "CCB"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "APHRS"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "LAHRS"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "EAS"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "IDEA"
+    }
+   ],
+   "problems": []
+  },
+  "listening": {
+   "ok": true,
+   "on": true,
+   "picks": 0,
+   "topics": 2,
+   "from_kit": 0,
+   "from_search": 0,
+   "problems": []
+  },
+  "prepared": {
+   "ok": true,
+   "unmarked": 0,
+   "unquoted": 0,
+   "prepared_feedback": {
+    "offered": 17,
+    "as_prepared": 2,
+    "changed": 11,
+    "discarded": 4
+   },
+   "problems": []
+  },
+  "dispute": {
+   "ok": true,
+   "logged_in": [
+    "discussion"
+   ],
+   "problems": [],
+   "grade_changes": [
+    {
+     "item": "Q1",
+     "topic": "CARD-14",
+     "from": 5,
+     "to": 5,
+     "outcome": "learner_right"
+    }
+   ]
+  }
+ },
+ "timings": {
+  "steps": [
+   {
+    "step": 1,
+    "label": "start of round",
+    "learner_message": 1,
+    "wait_s": 53.8,
+    "turn_s": 260.7,
+    "examiner_messages": 1,
+    "examiner_chars": 1718,
+    "learner_s": null
+   },
+   {
+    "step": 2,
+    "label": "after the answers to the questions",
+    "learner_message": 3,
+    "wait_s": 63.1,
+    "turn_s": 150.2,
+    "examiner_messages": 2,
+    "examiner_chars": 7358,
+    "learner_s": 14.3
+   },
+   {
+    "step": 3,
+    "label": "after the Stage 1 answer",
+    "learner_message": 6,
+    "wait_s": 105.8,
+    "turn_s": 126.1,
+    "examiner_messages": 1,
+    "examiner_chars": 1913,
+    "learner_s": 43.2
+   },
+   {
+    "step": 4,
+    "label": "after the final answers",
+    "learner_message": 8,
+    "wait_s": 294.6,
+    "turn_s": 454.1,
+    "examiner_messages": 2,
+    "examiner_chars": 10573,
+    "learner_s": 38.7
+   },
+   {
+    "step": 5,
+    "label": "after the reflection",
+    "learner_message": 11,
+    "wait_s": 121.0,
+    "turn_s": 150.3,
+    "examiner_messages": 1,
+    "examiner_chars": 2033,
+    "learner_s": 30.0
+   },
+   {
+    "step": 6,
+    "label": "after learner message 13",
+    "learner_message": 13,
+    "wait_s": 118.5,
+    "turn_s": 127.5,
+    "examiner_messages": 1,
+    "examiner_chars": 686,
+    "learner_s": 8.8
+   }
+  ],
+  "total_wait_s": 756.8,
+  "longest_wait_s": 294.6,
+  "elapsed_s": 1394.9
+ },
+ "quality": {
+  "scorer_model": "claude-opus-5-5",
+  "items": [
+   {
+    "id": "Q1",
+    "type": "focused",
+    "topic": "CARD-14",
+    "answered": true,
+    "score": 4,
+    "note": "Accurate ESC/EAS 2019 key (very high risk via TOD, LDL <1.4 + >=50%, atorva 80 then ezetimibe); ESC 2023 narrower severe-TOD definition leaves category debatable, action same."
+   },
+   {
+    "id": "Case",
+    "type": "case",
+    "topic": "CARD-11",
+    "answered": true,
+    "score": 5,
+    "note": "Coherent, realistic bifascicular block syncope; results fit (2:1 to CHB, HV 78); decisive monitoring left to learner; key asks for monitored admission and DDD pacing."
+   }
+  ],
+  "feedback": [
+   {
+    "id": "questions",
+    "score": 4,
+    "note": "Grade fair, sources right; the ESC 2023 'refinement' was framed as a divergence for this patient that was later withdrawn, a debatable point taught too firmly."
+   },
+   {
+    "id": "final",
+    "score": 5,
+    "note": "Accurate pacing/syncope teaching; DVLA group 1/2 pacemaker rules checked on gov.uk and correct; unordered CSM and D-dimer marked as not ordered; fair 5/5."
+   },
+   {
+    "id": "dispute",
+    "score": 4,
+    "note": "Re-checked source and conceded with citation (ACC summary); concession may overstate, as ESC 2023 lipid goals key to very-high-risk defined by severe TOD; unsure, full text not checked."
+   }
+  ],
+  "item_mean": 4.5,
+  "feedback_mean": 4.33,
+  "score": 4,
+  "note": "Strong, well-pitched round with accurate case and feedback; only soft spot is the unstable framing of ESC 2023 severe target-organ damage in Q1.",
+  "concerns": [
+   "Q1: ESC 2023 diabetes guideline - check whether its LDL <1.4 goal applies to any TOD or only severe TOD/SCORE2-Diabetes >=20%; the dispute concession may be an over-correction (not verified against f…"
+  ],
+  "problems": []
+ },
+ "note": null
+}

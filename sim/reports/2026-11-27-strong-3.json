@@ -1,0 +1,342 @@
+{
+ "schema": 2,
+ "ok": true,
+ "date": "2026-11-27",
+ "persona": "strong",
+ "skill_version": "7.0.0",
+ "commit": "bdab9c6",
+ "examiner_model": "claude-opus-5-5",
+ "learner_model": "claude-opus-5-5",
+ "config": {
+  "session_minutes": 35,
+  "mcqs": 0,
+  "focused": 1,
+  "case": true,
+  "round_set_at": "2026-11-27T17:56:02Z",
+  "case_format": "unfolding",
+  "feedback_depth": "detailed",
+  "evidence_ladder": true,
+  "target_sessions_per_week": 3,
+  "review_interval_days": 42,
+  "intervals_days": [
+   1,
+   3,
+   7,
+   16,
+   35,
+   90
+  ],
+  "new_topics_per_round": 1,
+  "lab_units": "SI",
+  "blood_gas_units": "mmHg",
+  "guideline_region": "International",
+  "item_order": "mcqs_first",
+  "helpers": false,
+  "prepare_ahead": false,
+  "prepare_task": false,
+  "testing": false,
+  "show_coding": true,
+  "reminders": false,
+  "listening": true,
+  "resource_preferences": {
+   "free_only": false,
+   "formats": [
+    "guidelines",
+    "review articles"
+   ]
+  }
+ },
+ "round": {
+  "session": "S0001",
+  "shape": "1 focused, case (two stages)",
+  "score": 5.0,
+  "confident_misses": 0,
+  "continued_from_earlier_run": false
+ },
+ "messages": {
+  "examiner": 6,
+  "learner": 5
+ },
+ "checks": {
+  "blinding": {
+   "ok": true,
+   "leaks": 0,
+   "to_review": 1,
+   "seal_lifted_at": {
+    "questions": 3,
+    "case": 7
+   },
+   "never_lifted": [],
+   "terms_checked": 433,
+   "block_line": "Block: Cardiology, round 1 of 12",
+   "findings": [
+    {
+     "part": "questions",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "lipids",
+     "message": 2,
+     "excerpt": "…bA1c 61 mmol/mol, CK 110 U/L, ALT 28 U/L. Fasting lipids: total cholesterol 4.3 mmol/L, LDL-cholesterol 2.…"
+    }
+   ],
+   "problems": []
+  },
+  "saved": {
+   "ok": true,
+   "session": "S0001",
+   "publish_set": [
+    "data/sessions/S0001.json",
+    "data/page.json",
+    "data/prepared.json",
+    "data/state.json"
+   ],
+   "files_compared": 4,
+   "problems": []
+  },
+  "log": {
+   "ok": true,
+   "sections": [
+    "a_case",
+    "a_final",
+    "a_questions",
+    "case",
+    "coded",
+    "discussion",
+    "fb_questions",
+    "feedback",
+    "grade_changes",
+    "questions",
+    "reflection",
+    "stage2"
+   ],
+   "problems": [],
+   "examiner_text_not_logged": [
+    {
+     "message": 2,
+     "starts": "Today's round: 1 focused question + the case, about 35 minutes. Block: Cardiology, round 1"
+    },
+    {
+     "message": 11,
+     "starts": "Saved: session S0001 — lipids and cardiovascular prevention (focused question) and syncope"
+    },
+    {
+     "message": 11,
+     "starts": "Your reflection added two points to come back to: comparing the lipid frameworks (ESC, NIC"
+    },
+    {
+     "message": 11,
+     "starts": "At your target of three sessions a week, the next round fits on Sunday or Monday."
+    }
+   ]
+  },
+  "standards": {
+   "ok": true,
+   "abbreviations": 0,
+   "time_anchors": 0,
+   "to_review": 10,
+   "feedback": [
+    {
+     "id": "questions",
+     "glossary": true,
+     "abbreviations": 8,
+     "not_in_glossary": [
+      "CV",
+      "AND",
+      "US"
+     ]
+    },
+    {
+     "id": "final",
+     "glossary": true,
+     "abbreviations": 14,
+     "not_in_glossary": [
+      "ILR",
+      "NOT",
+      "IDEA",
+      "REBOOT",
+      "MD",
+      "US",
+      "ICD"
+     ]
+    }
+   ],
+   "findings": [
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "CV"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "AND"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "US"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "ILR"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "NOT"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "IDEA"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "REBOOT"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "MD"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "US"
+    },
+    {
+     "rule": "5.3",
+     "where": "the final feedback",
+     "detail": "ICD"
+    }
+   ],
+   "problems": []
+  },
+  "listening": {
+   "ok": true,
+   "on": true,
+   "picks": 2,
+   "topics": 2,
+   "from_kit": 0,
+   "from_search": 2,
+   "problems": []
+  },
+  "prepared": {
+   "ok": true,
+   "unmarked": 0,
+   "unquoted": 0,
+   "prepared_feedback": {
+    "offered": 17,
+    "as_prepared": 3,
+    "changed": 11,
+    "discarded": 3
+   },
+   "problems": []
+  }
+ },
+ "timings": {
+  "steps": [
+   {
+    "step": 1,
+    "label": "start of round",
+    "learner_message": 1,
+    "wait_s": 55.8,
+    "turn_s": 252.0,
+    "examiner_messages": 1,
+    "examiner_chars": 1867,
+    "learner_s": null
+   },
+   {
+    "step": 2,
+    "label": "after the answers to the questions",
+    "learner_message": 3,
+    "wait_s": 78.7,
+    "turn_s": 155.7,
+    "examiner_messages": 1,
+    "examiner_chars": 9601,
+    "learner_s": 18.2
+   },
+   {
+    "step": 3,
+    "label": "after the Stage 1 answer",
+    "learner_message": 5,
+    "wait_s": 95.5,
+    "turn_s": 100.5,
+    "examiner_messages": 1,
+    "examiner_chars": 2069,
+    "learner_s": 68.8
+   },
+   {
+    "step": 4,
+    "label": "after the final answers",
+    "learner_message": 7,
+    "wait_s": 415.1,
+    "turn_s": 425.4,
+    "examiner_messages": 2,
+    "examiner_chars": 11668,
+    "learner_s": 67.4
+   },
+   {
+    "step": 5,
+    "label": "after the reflection",
+    "learner_message": 10,
+    "wait_s": 136.9,
+    "turn_s": 143.6,
+    "examiner_messages": 1,
+    "examiner_chars": 488,
+    "learner_s": 36.7
+   }
+  ],
+  "total_wait_s": 782.0,
+  "longest_wait_s": 415.1,
+  "elapsed_s": 1261.7
+ },
+ "quality": {
+  "scorer_model": "claude-opus-5-5",
+  "items": [
+   {
+    "id": "Q1",
+    "type": "focused",
+    "topic": "CARD-14",
+    "answered": true,
+    "score": 5,
+    "note": "Accurate ESC/EAS + ESC 2023 diabetes classification (eGFR<45 = severe TOD); binding 1.4 goal well built into baseline 3.9; tests a common real undertreatment decision."
+   },
+   {
+    "id": "Case",
+    "type": "case",
+    "topic": "CARD-11",
+    "answered": true,
+    "score": 4,
+    "note": "Realistic, coherent bifascicular-block syncope with fitting results; ECG upfront is routine (no rule 7 issue). Stage 2 resolves the diagnosis by a monitored event, so it tests less."
+   }
+  ],
+  "feedback": [
+   {
+    "id": "questions",
+    "score": 5,
+    "note": "Grades fair; ESC vs NICE NG238 vs ACC/AHA contrast accurate (checked NG238 points from knowledge); corrects 2025 combination claim to the narrower ACS IIa."
+   },
+   {
+    "id": "final",
+    "score": 4,
+    "note": "Grades fair; DVLA pacemaker rules correct (checked gov.uk). Flaws: unordered CSM/CT results in table, MCV 99 pinned on 10 u/wk alcohol; EPS-vs-empirical class unverified."
+   }
+  ],
+  "item_mean": 4.5,
+  "feedback_mean": 4.5,
+  "score": 4,
+  "note": "Strong, accurate round well pitched for internal medicine; minor noise and unseen-result handling in the case feedback keep it from unchanged teaching use.",
+  "concerns": [
+   "Rule 10: case differential quotes carotid sinus massage 'negative' and a CT small-vessel change, marked not ordered but without what they would have changed; no CT exists in the case.",
+   "Final feedback attributes MCV 99 fL to ~10 units/week alcohol; a weak explanation that teaches a questionable inference.",
+   "Final feedback says empirical pacing in bifascicular block is part of the same IIa EPS recommendation (not IIb); scorer could not verify the class, worth checking ESC 2021 pacing section 5.3."
+  ],
+  "problems": [
+   "feedback dispute has no score"
+  ]
+ },
+ "note": null
+}

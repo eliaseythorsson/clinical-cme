@@ -1,0 +1,314 @@
+{
+ "schema": 2,
+ "ok": true,
+ "date": "2026-11-27",
+ "persona": "stops-halfway",
+ "skill_version": "7.0.0",
+ "commit": "bdab9c6",
+ "examiner_model": "claude-opus-5-5",
+ "learner_model": "claude-opus-5-5",
+ "config": {
+  "session_minutes": 35,
+  "mcqs": 0,
+  "focused": 1,
+  "case": true,
+  "round_set_at": "2026-11-27T17:56:03Z",
+  "case_format": "unfolding",
+  "feedback_depth": "detailed",
+  "evidence_ladder": true,
+  "target_sessions_per_week": 3,
+  "review_interval_days": 42,
+  "intervals_days": [
+   1,
+   3,
+   7,
+   16,
+   35,
+   90
+  ],
+  "new_topics_per_round": 1,
+  "lab_units": "SI",
+  "blood_gas_units": "mmHg",
+  "guideline_region": "International",
+  "item_order": "mcqs_first",
+  "helpers": false,
+  "prepare_ahead": false,
+  "prepare_task": false,
+  "testing": false,
+  "show_coding": true,
+  "reminders": false,
+  "listening": true,
+  "resource_preferences": {
+   "free_only": false,
+   "formats": [
+    "guidelines",
+    "review articles"
+   ]
+  }
+ },
+ "round": {
+  "session": "S0001",
+  "shape": "1 focused",
+  "score": 4.0,
+  "confident_misses": 0,
+  "continued_from_earlier_run": false
+ },
+ "messages": {
+  "examiner": 5,
+  "learner": 4
+ },
+ "checks": {
+  "blinding": {
+   "ok": true,
+   "leaks": 0,
+   "to_review": 2,
+   "seal_lifted_at": {
+    "questions": 3
+   },
+   "never_lifted": [
+    "case"
+   ],
+   "terms_checked": 489,
+   "block_line": "Block: Cardiology, round 1 of 12",
+   "findings": [
+    {
+     "part": "questions",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "cardiovascular",
+     "message": 2,
+     "excerpt": "…nsion; gout (last attack two years ago); no known cardiovascular disease. Medications: metformin 1 g twice daily, …"
+    },
+    {
+     "part": "questions",
+     "kind": "topic word",
+     "level": "warn",
+     "term": "lipids",
+     "message": 2,
+     "excerpt": "…te 0.34 mmol/L; ALT 38 U/L; TSH 1.9 mU/L. Fasting lipids: total cholesterol 5.6 mmol/L, low-density lipopr…"
+    }
+   ],
+   "problems": []
+  },
+  "saved": {
+   "ok": true,
+   "session": "S0001",
+   "publish_set": [
+    "data/sessions/S0001.json",
+    "data/page.json",
+    "data/prepared.json",
+    "data/state.json"
+   ],
+   "files_compared": 4,
+   "problems": []
+  },
+  "log": {
+   "ok": true,
+   "sections": [
+    "a_case",
+    "a_questions",
+    "case",
+    "coded",
+    "discussion",
+    "fb_questions",
+    "feedback",
+    "grade_changes",
+    "notes",
+    "questions",
+    "reflection"
+   ],
+   "problems": [],
+   "examiner_text_not_logged": [
+    {
+     "message": 2,
+     "starts": "Today's round: 1 focused question + the case, about 35 minutes. Block: Cardiology, round 1"
+    },
+    {
+     "message": 9,
+     "starts": "- **Saved:** session S0001 — CARD-14 Lipids and cardiovascular prevention, score 4/5; your"
+    }
+   ]
+  },
+  "standards": {
+   "ok": true,
+   "abbreviations": 0,
+   "time_anchors": 0,
+   "to_review": 5,
+   "feedback": [
+    {
+     "id": "questions",
+     "glossary": true,
+     "abbreviations": 9,
+     "not_in_glossary": [
+      "QRISK",
+      "UK",
+      "JACC",
+      "FLJ",
+      "RS"
+     ]
+    },
+    {
+     "id": "final",
+     "glossary": true,
+     "abbreviations": 3,
+     "not_in_glossary": []
+    }
+   ],
+   "findings": [
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "QRISK"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "UK"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "JACC"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "FLJ"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "RS"
+    }
+   ],
+   "problems": []
+  },
+  "listening": {
+   "ok": true,
+   "on": true,
+   "picks": 0,
+   "topics": 1,
+   "from_kit": 0,
+   "from_search": 0,
+   "problems": []
+  },
+  "prepared": {
+   "ok": true,
+   "unmarked": 0,
+   "unquoted": 0,
+   "prepared_feedback": {
+    "offered": 7,
+    "as_prepared": 1,
+    "changed": 6,
+    "discarded": 0
+   },
+   "problems": []
+  },
+  "stopped": {
+   "ok": true,
+   "case_topic": "CARD-11",
+   "case_topic_schedule": {
+    "last": null,
+    "attempts": 0,
+    "step": 0,
+    "due": null
+   },
+   "items_saved": 1,
+   "problems": []
+  }
+ },
+ "timings": {
+  "steps": [
+   {
+    "step": 1,
+    "label": "start of round",
+    "learner_message": 1,
+    "wait_s": 61.0,
+    "turn_s": 285.1,
+    "examiner_messages": 1,
+    "examiner_chars": 1820,
+    "learner_s": null
+   },
+   {
+    "step": 2,
+    "label": "after the answers to the questions",
+    "learner_message": 3,
+    "wait_s": 113.2,
+    "turn_s": 125.4,
+    "examiner_messages": 1,
+    "examiner_chars": 9900,
+    "learner_s": 14.2
+   },
+   {
+    "step": 3,
+    "label": "after the case answer",
+    "learner_message": 5,
+    "wait_s": 104.7,
+    "turn_s": 163.4,
+    "examiner_messages": 2,
+    "examiner_chars": 2335,
+    "learner_s": 5.9
+   },
+   {
+    "step": 4,
+    "label": "after the reflection",
+    "learner_message": 8,
+    "wait_s": 81.9,
+    "turn_s": 486.0,
+    "examiner_messages": 1,
+    "examiner_chars": 605,
+    "learner_s": 6.8
+   }
+  ],
+  "total_wait_s": 360.8,
+  "longest_wait_s": 113.2,
+  "elapsed_s": 682.7
+ },
+ "quality": {
+  "scorer_model": "claude-opus-5-5",
+  "items": [
+   {
+    "id": "Q1",
+    "type": "focused",
+    "topic": "CARD-14",
+    "answered": true,
+    "score": 3,
+    "note": "Core accurate (DM+eGFR 52+A2 = ESC very high risk; high-intensity statin). Target key ESC-only; ACC/AHA 2026 <70 mg/dL is a 2nd defensible goal; key cites 2018 (web-checked)."
+   },
+   {
+    "id": "Case",
+    "type": "case",
+    "topic": "CARD-11",
+    "answered": false,
+    "score": 4,
+    "note": "Coherent, realistic bifascicular-block syncope with fair twists; telemetry withheld per rule 7. Rubric's 'avoid CT head' is shaky: age 76, head strike after LOC."
+   }
+  ],
+  "feedback": [
+   {
+    "id": "questions",
+    "score": 4,
+    "note": "Fair 4/5; NICE credited, ESC goals right, 2026 ACC/AHA added (checked). Says <1.8 'would have been credited' though rubric gives partial; NICE recheck timing loose."
+   },
+   {
+    "id": "final",
+    "score": 4,
+    "note": "Clean stop, case deferred; gap stated precisely and retestably; calibration and reading accurate. Coding line is jargon for the learner."
+   }
+  ],
+  "item_mean": 3.5,
+  "feedback_mean": 4.0,
+  "score": 4,
+  "note": "Accurate, well-sourced lipid item and feedback; graded fairly. Main flaw: ESC-only target in an international round where ACC/AHA 2026 offers <1.8.",
+  "concerns": [
+   "Q1 key: for region International, ACC/AHA 2026 (Mar 2026) LDL-C goal <70 mg/dL for high risk is defensible; key marks <1.8 partial and cites ACC/AHA 2018.",
+   "Q1 feedback: says a <1.8 goal 'would have been credited', inconsistent with the rubric's partial mark.",
+   "Q1 rubric wording 'eGFR 30-59 with albuminuria' is imprecise: ESC severe TOD is eGFR <45 alone, or 45-59 with microalbuminuria.",
+   "Case rubric: penalising CT head is questionable in a 76-year-old with head strike and LOC (head-injury rules favour CT); accept it if ordered."
+  ],
+  "problems": [
+   "feedback dispute has no score"
+  ]
+ },
+ "note": null
+}
