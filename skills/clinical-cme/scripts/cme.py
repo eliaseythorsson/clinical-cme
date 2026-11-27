@@ -64,16 +64,13 @@ DEFAULT_CONFIG = {
     "helpers": True,                     # helper agents where the app has them: an author drafts the items, a
                                          # checker verifies the evidence; the conversation grades
     "prepare_ahead": True,               # draft the whole next round after each close
-    "prepare_task": False,
-    "testing": False,                    # testing mode: feedback check + store check at the end of each round               # a scheduled task also prepares the round when none is ready
+    "prepare_task": False,               # a scheduled task also prepares the round when none is ready
+    "testing": False,                    # testing mode: feedback check + store check at the end of each round
     "show_coding": True,
     "reminders": False,
     "listening": True,                   # one podcast episode per topic at the end of a round (issue #50)
     "resource_preferences": {"free_only": False, "formats": ["guidelines", "review articles"]},
 }
-# A ledger written before the mix was a setting of its own has no `mcqs`, `focused` or `case`: it
-# keeps the mix every round had then, whatever a new learner's default becomes.
-LEGACY_MIX = {"mcqs": 3, "focused": 0, "case": True}
 DEFAULT_PROFILE = {
     "display_name": None, "specialty": "Internal/hospital medicine", "subspecialty": None,
     # Where you are / where you're aiming: the learner's own paragraphs, which the author pitches
@@ -321,15 +318,15 @@ def check_round_mix(cfg):
     """Validate mcqs / focused / case in a config (after a change). Dies with a plain message."""
     for k, (lo, hi) in ROUND_LIMITS.items():
         try:
-            v = int(cfg.get(k, 0) or 0)
+            v = int(cfg[k] or 0)      # a change may give null
         except (TypeError, ValueError):
             die("%s must be a whole number" % k)
         if not lo <= v <= hi:
             die("%s must be between %d and %d" % (k, lo, hi))
         cfg[k] = v
-    if not isinstance(cfg.get("case", True), bool):
+    if not isinstance(cfg["case"], bool):
         die("case must be true or false")
-    if not cfg["mcqs"] and not cfg["focused"] and not cfg.get("case", True):
+    if not cfg["mcqs"] and not cfg["focused"] and not cfg["case"]:
         die("a round needs at least one item: MCQs, focused questions or the case")
 
 
@@ -390,14 +387,14 @@ def apply_prefs(state, prefs, warnings=None):
         warnings.append("page settings ignored: expected {round: {...}, base, updated}")
         return paragraphs
     cfg = state["config"]
-    set_at = cfg.get("round_set_at")
+    set_at = cfg["round_set_at"]
     if prefs.get("base") != set_at:
         if str(prefs["updated"]) == set_at:
             return paragraphs     # applied before
         mine, theirs = parse_stamp(str(prefs["updated"])), parse_stamp(set_at)
         if set_at is not None and not (mine and theirs and mine > theirs):
             return paragraphs     # overtaken by a later change in a chat
-    trial = {k: cfg.get(k, LEGACY_MIX[k]) for k in ("mcqs", "focused", "case")}
+    trial = {k: cfg[k] for k in ("mcqs", "focused", "case")}
     for k in ("mcqs", "focused", "case"):
         if k in prefs["round"]:
             trial[k] = prefs["round"][k]
@@ -412,7 +409,7 @@ def apply_prefs(state, prefs, warnings=None):
     if not ok:
         warnings.append("page settings ignored: invalid round mix %s" % json.dumps(prefs["round"]))
         return paragraphs
-    changes = {k: v for k, v in trial.items() if cfg.get(k, LEGACY_MIX[k]) != v}
+    changes = {k: v for k, v in trial.items() if cfg[k] != v}
     cfg.update(trial)
     cfg["round_set_at"] = str(prefs["updated"])
     changes.update(paragraphs)
@@ -579,16 +576,6 @@ def migrate_domains(st):
     return st
 
 
-def migrate_ledger(st):
-    """Everything a ledger read from the store is brought up to: the profile's paragraphs, one
-    code per area, and the blueprint in the shape the engine reads (a one-level blueprint stays
-    as it is; a two-level one given with nested topics is flattened, issue #81). Changes `st` in
-    place; a no-op afterwards."""
-    if isinstance(st, dict) and isinstance(st.get("blueprint"), dict):
-        blueprint_shape(st["blueprint"])
-    return migrate_domains(migrate_profile(st))
-
-
 def check_paragraphs(prof):
     """Validate the paragraphs and their labels in a profile (after a change). Dies with a plain
     message."""
@@ -621,10 +608,10 @@ def set_paragraphs(prof, was, changes):
 def labels_needed(st):
     """What the assistant still has to derive for display: for each paragraph that has words and
     no label yet, the paragraph and the labels to choose from. None when nothing is needed."""
-    prof = st.get("profile") or {}
+    prof = st["profile"]
     out = {}
     for key, label, name in PARAGRAPHS:
-        if isinstance(prof.get(key), str) and prof[key].strip() and prof.get(label) is None:
+        if isinstance(prof[key], str) and prof[key].strip() and prof[label] is None:
             out[label] = {"from": prof[key], "paragraph": name,
                           "choose": ("one of" if key == "journey" else "any of"),
                           "labels": list(STAGE_LABELS if key == "journey" else AIM_TAGS)}
@@ -671,8 +658,8 @@ def deep_merge(target, changes):
 
 
 def listening_on(st):
-    """Listening is on unless the learner turned it off; a ledger older than the setting has it on."""
-    return (st.get("config") or {}).get("listening", True) is not False
+    """Listening is on unless the learner turned it off."""
+    return st["config"]["listening"] is not False
 
 
 def podcast_sources(value, where="podcast_sources"):
@@ -702,34 +689,40 @@ def listening_status(st):
     """What `start` and the plan say about listening: whether it is on, the shows to prefer and
     to avoid, and whether the learner is still to be asked for them (once)."""
     on = listening_on(st)
-    return dict(podcast_sources((st.get("profile") or {}).get("podcast_sources"), "profile.podcast_sources"),
-                on=on, ask_sources=on and (st.get("profile") or {}).get("podcast_sources") is None)
+    sources = st["profile"]["podcast_sources"]
+    return dict(podcast_sources(sources, "profile.podcast_sources"), on=on, ask_sources=on and sources is None)
 
 
 def guideline_context(st):
-    """Region and specialty the author and the examiner work to; the defaults stand in for a
-    ledger that has none (older ledgers, or a blank value)."""
-    def text(v, default):
-        return v.strip() if isinstance(v, str) and v.strip() else default
-    return {"guideline_region": text((st.get("config") or {}).get("guideline_region"),
-                                     DEFAULT_CONFIG["guideline_region"]),
-            "specialty": text((st.get("profile") or {}).get("specialty"), DEFAULT_PROFILE["specialty"])}
+    """Region and specialty the author and the examiner work to (the load step puts the default
+    where a ledger has none, or a blank one)."""
+    return {"guideline_region": st["config"]["guideline_region"], "specialty": st["profile"]["specialty"]}
+
+
+def speed_settings(st):
+    """The speed settings and testing mode, as `start` and the plan print them."""
+    cfg = st["config"]
+    return {"helpers": bool(cfg["helpers"]), "prepare_ahead": bool(cfg["prepare_ahead"]),
+            "testing": bool(cfg["testing"])}
+
+
+def speed_settings_new(path):
+    """True while the ledger as stored at `path` was last written before 4.3 (it has no speed
+    settings yet): the learner is told once about them (preparing.md section 5). A fact about the
+    stored ledger, which the load step has already filled in memory."""
+    try:
+        cfg = load_json(path).get("config")
+    except (CmeError, AttributeError, OSError):
+        return False
+    return isinstance(cfg, dict) and ("helpers" not in cfg or "prepare_ahead" not in cfg)
 
 
 def new_state(today):
-    return {
-        "schema": SCHEMA, STAMP_KEY: SKILL_VERSION, "gen": 0, "created": iso(today), "updated": iso(today),
-        "next_id": "S0001",
-        "profile": json.loads(json.dumps(DEFAULT_PROFILE)),
-        "config": json.loads(json.dumps(DEFAULT_CONFIG)),
-        "review": {"last": None, "next_due": None, "period_start": iso(today)},
-        "blueprint": {},
-        "topics": {}, "gaps": [], "resolved": [],
-        "sessions": [], "previous": [], "agg": empty_agg(),
-        "reviews": [], "drills": [], "errata": [], "pending_errata": [],
-        "teaching_point_checks": {}, "unreflected": None,
-        "block": None, "blocks": [],     # the current themed block (set when its first round is recorded) and finished ones
-    }
+    """A new learner's ledger: every field of LEDGER_SHAPE at its default, dated `today`."""
+    st = {key: fresh(default) for key, _, default in LEDGER_SHAPE}
+    st.update(created=iso(today), updated=iso(today))
+    st["review"]["period_start"] = iso(today)
+    return st
 
 
 def empty_agg():
@@ -747,8 +740,8 @@ def empty_agg():
 
 
 def agg_overrides(agg):
-    """The all-time counters of what the learner set themselves (ledgers before 5.0 have none)."""
-    return agg.setdefault("overrides", {"scores": 0, "gaps": 0})
+    """The all-time counters of what the learner set themselves."""
+    return agg["overrides"]
 
 
 # ---------------------------------------------------------------- blueprint
@@ -890,7 +883,7 @@ def blueprint_shape(bp):
 
 def bp_topics(state):
     out = {}
-    for d, info in (state.get("blueprint") or {}).items():
+    for d, info in state["blueprint"].items():
         for tid, label in (info.get("topics") or {}).items():
             out[tid] = {"domain": d, "label": label}
     return out
@@ -915,7 +908,7 @@ def bp_subtopics(state):
     """Every sub-topic of the blueprint: {sub-topic id: {"topic", "domain", "label", "points",
     "aspects"}}, in blueprint order. Empty for a one-level blueprint."""
     out = {}
-    for d, info in (state.get("blueprint") or {}).items():
+    for d, info in state["blueprint"].items():
         for tid, group in ((info or {}).get("subtopics") or {}).items():
             for sid, v in (group or {}).items():
                 out[sid] = dict(v, topic=tid, domain=d)
@@ -924,7 +917,7 @@ def bp_subtopics(state):
 
 def subtopics_of(state, tid):
     """The sub-topic ids of topic `tid`, in blueprint order ([] for a topic without any)."""
-    for info in (state.get("blueprint") or {}).values():
+    for info in state["blueprint"].values():
         group = ((info or {}).get("subtopics") or {}).get(tid)
         if group:
             return list(group)
@@ -947,7 +940,7 @@ def new_topic_weights(state, eff=None):
 
 
 def bp_weights(state):
-    return {d: float(info.get("weight", 0.6)) for d, info in (state.get("blueprint") or {}).items()}
+    return {d: float(info.get("weight", 0.6)) for d, info in state["blueprint"].items()}
 
 
 def significant_tokens(label):
@@ -1075,7 +1068,7 @@ def answered_in_a_row(st, tid, aspect=None, subtopic=None):
     were answered well; with `aspect`, only its focused questions on that aspect; with
     `subtopic`, only the items recorded on that sub-topic (issue #81)."""
     n = 0
-    for s in reversed((st.get("previous") or []) + (st.get("sessions") or [])):
+    for s in reversed(st["previous"] + st["sessions"]):
         for it in reversed(s.get("items") or []):
             if it.get("topic") != tid or (aspect and it.get("aspect") != aspect) \
                     or (subtopic and it.get("subtopic") != subtopic):
@@ -1102,13 +1095,13 @@ def evidence_depth(st, tid, aspect=None, retests=False, subtopic=None):
     item's sub-topic where it has one (issue #81), else on the topic. A focused question goes at
     most one depth beyond what its own aspect has earned; an item on an open gap (`retests`, or
     a gap open on the topic that bears on its sub-topic) stays at the first depth."""
-    if not st["config"].get("evidence_ladder", True):
+    if not st["config"]["evidence_ladder"]:
         return None
     run = answered_in_a_row(st, tid, subtopic=subtopic) if tid else 0
     level = depth_level(run)
     if aspect and level > 1:
         level = min(level, depth_level(answered_in_a_row(st, tid, aspect, subtopic)) + 1)
-    if retests or any(gap_on(g, tid, subtopic) for g in st.get("gaps") or []):
+    if retests or any(gap_on(g, tid, subtopic) for g in st["gaps"]):
         level = 1
     return {"level": level, "name": EVIDENCE_DEPTHS[level - 1][0], "in_a_row": run}
 
@@ -1124,7 +1117,7 @@ def subtopic_status(st, tid):
     {"rounds", "last", "mastery", "session"}}, `mastery` the mean score (as the schedule counts
     it) of its items in the last round that had it. A sub-topic never tested is absent."""
     out = {}
-    for s in (st.get("previous") or []) + (st.get("sessions") or []):
+    for s in st["previous"] + st["sessions"]:
         here = {}
         for it in s.get("items") or []:
             if it.get("topic") == tid and it.get("subtopic") and it.get("mastery") is not None:
@@ -1138,7 +1131,7 @@ def subtopic_status(st, tid):
 
 def last_round_subtopics(st, tid):
     """The sub-topics of the last recorded round that had an item on topic `tid`."""
-    for s in reversed((st.get("previous") or []) + (st.get("sessions") or [])):
+    for s in reversed(st["previous"] + st["sessions"]):
         items = [it for it in s.get("items") or [] if it.get("topic") == tid]
         if items:
             return {it.get("subtopic") for it in items if it.get("subtopic")}
@@ -1175,7 +1168,7 @@ def sibling_of(st, tid, subtopic):
     "mastery"}; None when there is none."""
     if not tid or not subtopic:
         return None
-    for s in reversed((st.get("previous") or []) + (st.get("sessions") or [])):
+    for s in reversed(st["previous"] + st["sessions"]):
         for it in reversed(s.get("items") or []):
             if it.get("topic") == tid and it.get("subtopic") and it["subtopic"] != subtopic:
                 return {"subtopic": it["subtopic"], "label": subtopic_label(st, it["subtopic"]),
@@ -1207,7 +1200,7 @@ def block_rounds_on(st, tid, block):
     if not block or not block.get("theme"):
         return 0
     want, n = int(block.get("round") or 0) - 1, 0
-    for s in reversed((st.get("previous") or []) + (st.get("sessions") or [])):
+    for s in reversed(st["previous"] + st["sessions"]):
         b = s.get("block") or {}
         if want < 1 or b.get("theme") != block["theme"] or int(b.get("round") or 0) != want:
             break
@@ -1249,12 +1242,9 @@ def ensure_topic(state, tid, domain=None, label=None):
 # ---------------------------------------------------------------- status
 
 def review_status(state, today):
-    rv = state.get("review") or {}
-    cfg = state.get("config") or {}
-    due = parse_date(rv.get("next_due"))
-    start = parse_date(rv.get("period_start")) or parse_date(state.get("created"))
-    n = len(state.get("sessions") or [])
-    interval = int(cfg.get("review_interval_days") or 42)
+    rv = state["review"]
+    due = parse_date(rv["next_due"])
+    n = len(state["sessions"])
     if due is None:
         return False, None
     if today >= due and n >= MIN_SESSIONS_FOR_REVIEW:
@@ -1318,7 +1308,25 @@ def refuse_newer(st, work=None):
     die(msg)
 
 
+# ---------------------------------------------------------------- the ledger's shape and the load step (issue #83)
+#
+# Every command reads the ledger through one step, make_current (current_ledger and open_work
+# for a work folder; the maintenance tools and `validate` too): check it, run the named upgrade
+# steps (UPGRADES) in order, fill what it lacks from the one declaration of the ledger's shape
+# (LEDGER_SHAPE, with DEFAULT_CONFIG and DEFAULT_PROFILE), and stamp this engine's version.
+# Code after it reads a current ledger, with no default of its own for a ledger field. ADR
+# 0003 holds: nothing is migrated as an act of its own; the step runs on every read, is a no-op
+# on a current ledger, and what it filled is stored with the next write (it is not a write:
+# `gen` stays). A ledger stamped by a newer engine is filled for reading only: no upgrade step
+# runs and it keeps its stamp, so a command that would write it is still refused (refuse_newer).
+# Filled are the settings and the top-level fields; the records of history (sessions, topics,
+# gaps, blocks) are read as they were written, by readers that know what older engines wrote.
+# `schema` stays 4: the engine stamp says which engine wrote a ledger, and an older engine that
+# met a schema 5 would refuse to read it at all, where the stamp lets it read and not write.
+
+
 def check_schema(st):
+    """The check of the load step: a version-4 ledger with the fields no ledger was ever without."""
     if not isinstance(st, dict) or st.get("schema") != SCHEMA:
         die("not a version-%d state file (schema=%r)." % (SCHEMA, (st or {}).get("schema")))
     for k in ("profile", "config", "topics", "gaps", "sessions", "blueprint"):
@@ -1326,12 +1334,208 @@ def check_schema(st):
             die("state lacks '%s'" % k)
 
 
+def fresh(default):
+    """A new copy of a declared default (a callable is called)."""
+    return default() if callable(default) else copy.deepcopy(default)
+
+
+NONE = type(None)
+NUMBER = (int, float)
+# The ledger's top-level fields: key, the types a value may have, the value a new ledger (and an
+# older one without it) gets. Order: as a new ledger is written.
+LEDGER_SHAPE = (
+    ("schema", int, SCHEMA),
+    (STAMP_KEY, str, SKILL_VERSION),         # the engine stamp
+    ("gen", int, 0),                         # counts every write (content_gen: see LEDGER_OPTIONAL)
+    ("created", (str, NONE), None),
+    ("updated", (str, NONE), None),
+    ("next_id", str, "S0001"),
+    ("profile", dict, DEFAULT_PROFILE),
+    ("config", dict, DEFAULT_CONFIG),
+    ("review", dict, {"last": None, "next_due": None, "period_start": None}),
+    ("blueprint", dict, {}),
+    ("topics", dict, {}), ("gaps", list, []), ("resolved", list, []),
+    ("sessions", list, []), ("previous", list, []), ("agg", dict, empty_agg),
+    ("reviews", list, []), ("drills", list, []), ("errata", list, []), ("pending_errata", list, []),
+    ("teaching_point_checks", dict, {}),
+    ("unreflected", (str, NONE), None),      # the id of the last session while its reflection is awaited
+    ("block", (dict, NONE), None),           # the current themed block, set when its first round is recorded
+    ("blocks", list, []),                    # the finished blocks
+    ("positions", list, []),                 # the learner's position notes (issue #75)
+    ("mappings", list, []),                  # the blueprint mappings applied (issue #81)
+)
+# Kept only while it means something: absent is a value of its own (see content_gen).
+LEDGER_OPTIONAL = {"content_gen": int}
+# The types of the settings and the profile, read off their defaults; a null default declares
+# the type the value has once set.
+CONFIG_NULLABLE = {"round_set_at": str}
+PROFILE_NULLABLE = {"display_name": str, "subspecialty": str, "journey_set_at": str, "aim_set_at": str,
+                    "journey_label": str, "aim_tags": list, "onboarded_at": str, "podcast_sources": dict}
+# A setting given as null (an older page, a hand edit) reads as the engine has always read it:
+# the counts as 0 and the switches as off; one not listed here reads null as its default.
+# `listening` is on unless it is false.
+CONFIG_NULL = {"mcqs": 0, "focused": 0, "new_topics_per_round": 0, "case": False, "evidence_ladder": False,
+               "helpers": False, "prepare_ahead": False, "prepare_task": False, "testing": False,
+               "show_coding": False, "reminders": False, "round_set_at": None}
+# Settings whose empty value (0, "", []) means "not set": they read as the default.
+CONFIG_EMPTY = ("review_interval_days", "intervals_days", "guideline_region")
+PROFILE_EMPTY = ("specialty",)
+# A ledger written before the round mix and its length were settings of their own keeps what every
+# round had then, whatever a new learner's default becomes (upgrade step `settings_of_4_2`).
+LEGACY_CONFIG = {"mcqs": 3, "focused": 0, "case": True, "session_minutes": 20}
+
+
+def declared_type(default, nullable, key):
+    if default is None:
+        return (nullable.get(key, object), NONE)
+    if isinstance(default, bool):
+        return bool
+    if isinstance(default, (int, float)):
+        return NUMBER
+    return type(default)
+
+
+def blank(v):
+    """An empty value: null, 0, blank text, an empty list or dict (never false)."""
+    if v is None:
+        return True
+    if isinstance(v, bool):
+        return False
+    if isinstance(v, (int, float)):
+        return v == 0
+    if isinstance(v, str):
+        return not v.strip()
+    return isinstance(v, (list, dict)) and not v
+
+
+def fill(target, defaults, null=None, empty=()):
+    """Add to `target` what it lacks of `defaults` (a dict within is filled the same way). A null
+    value reads as `null` gives it, else as the default; an empty one named in `empty` reads as
+    the default (and text there is trimmed). Returns `target`."""
+    null = null or {}
+    for k, default in defaults.items():
+        if k not in target:
+            target[k] = fresh(default)
+        elif target[k] is None:
+            target[k] = null[k] if k in null else fresh(default)
+        elif k in empty and blank(target[k]):
+            target[k] = fresh(default)
+        elif k in empty and isinstance(target[k], str):
+            target[k] = target[k].strip()
+        elif isinstance(default, dict) and default and isinstance(target[k], dict):
+            fill(target[k], default)
+    return target
+
+
+def upgrade_settings_of_4_2(st):
+    """Before 4.2 the round mix (mcqs, focused, case) and its length were not settings of their
+    own: a ledger without them keeps the mix every round had then, three MCQs and the case in 20
+    minutes. A missing or empty length reads as 20 whatever the ledger's era (it was the
+    default until 5.0, and what the statistics and the case format read for it); fill_defaults
+    reads it so too, after a settings change."""
+    cfg = st["config"] if isinstance(st.get("config"), dict) else {}
+    for k, v in LEGACY_CONFIG.items():
+        if k not in cfg or k == "session_minutes" and blank(cfg[k]):
+            cfg[k] = v
+    return st
+
+
+def upgrade_blueprint_shape(st):
+    """A two-level blueprint given with nested topics is flattened (issue #81); a one-level
+    blueprint stays as it is."""
+    if isinstance(st.get("blueprint"), dict):
+        blueprint_shape(st["blueprint"])
+    return st
+
+
+# The upgrade steps, oldest first: each brings a ledger written before one change to what the
+# engine reads since, in place, and is a no-op afterwards. A new step goes at the end.
+UPGRADES = (
+    ("settings_of_4_2", upgrade_settings_of_4_2),     # the round mix as a setting of its own
+    ("paragraphs", migrate_profile),                  # where you are / where you're aiming (issue #55)
+    ("blueprint_shape", upgrade_blueprint_shape),     # two-level blueprint, flat in the ledger (issue #81)
+    ("one_code_per_area", migrate_domains),           # TOX and EMRG one area (issue #80)
+)
+
+
+def fill_defaults(st):
+    """Fill what the ledger lacks of its declared shape, the settings and the profile included
+    (CONFIG_NULL, CONFIG_EMPTY, PROFILE_EMPTY say how a null or empty value reads). Also run
+    after a change is merged into the settings or the profile, so that a null given there reads
+    the same. Returns `st`."""
+    for key, types, default in LEDGER_SHAPE:
+        if key not in st or st[key] is None and not isinstance(None, types):
+            st[key] = fresh(default)
+    if blank(st["config"].get("session_minutes")):   # missing, null or empty: as upgrade_settings_of_4_2
+        st["config"]["session_minutes"] = LEGACY_CONFIG["session_minutes"]
+    fill(st["config"], DEFAULT_CONFIG, CONFIG_NULL, CONFIG_EMPTY)
+    fill(st["profile"], DEFAULT_PROFILE, empty=PROFILE_EMPTY)
+    fill(st["agg"], empty_agg())
+    rv = st["review"]
+    for k in ("last", "next_due", "period_start"):
+        rv.setdefault(k, None)
+    if not rv["period_start"]:
+        rv["period_start"] = st["created"]
+    return st
+
+
+def make_current(st):
+    """The load step: the ledger `st` as this engine reads it (see above). Changes `st` in place
+    and returns it; a no-op on a current ledger. Dies on what is not a ledger."""
+    check_schema(st)
+    newer = newer_engine(st)
+    if not newer:
+        for _, step in UPGRADES:
+            step(st)
+    fill_defaults(st)
+    if not newer:
+        st[STAMP_KEY] = SKILL_VERSION
+    return st
+
+
+def upgrades_needed(st):
+    """The names of the upgrade steps that would change the stored ledger `st` (not changed)."""
+    out, cur = [], copy.deepcopy(st)
+    for name, step in UPGRADES:
+        before = json.dumps(cur, sort_keys=True)
+        step(cur)
+        if json.dumps(cur, sort_keys=True) != before:
+            out.append(name)
+    return out
+
+
+def shape_problems(st):
+    """What in a current ledger does not have its declared type: top-level fields, settings and
+    profile. Plain sentences; [] when everything fits."""
+    out = []
+
+    def check(where, v, types):
+        if types is NUMBER or types == NUMBER:
+            ok = isinstance(v, NUMBER) and not isinstance(v, bool)
+        else:
+            ok = isinstance(v, types) and not (isinstance(v, bool) and types is int)
+        if not ok:
+            names = types if isinstance(types, tuple) else (types,)
+            out.append("%s is %s, not %s" % (where, type(v).__name__, " or ".join(
+                "null" if t is NONE else t.__name__ for t in names if t is not object) or "set"))
+    for key, types, _ in LEDGER_SHAPE:
+        check(key, st.get(key), types)
+    for key, types in LEDGER_OPTIONAL.items():
+        if key in st:
+            check(key, st[key], types)
+    for section, defaults, nullable in (("config", DEFAULT_CONFIG, CONFIG_NULLABLE),
+                                        ("profile", DEFAULT_PROFILE, PROFILE_NULLABLE)):
+        if isinstance(st.get(section), dict):
+            for k, default in defaults.items():
+                check("%s.%s" % (section, k), st[section].get(k), declared_type(default, nullable, k))
+    return out
+
+
 # ---------------------------------------------------------------- plan
 
 def domain_weights(state):
-    prof = state.get("profile") or {}
-    ratings = prof.get("domain_self_ratings") or {}
-    emphasis = prof.get("domain_emphasis") or {}
+    ratings = state["profile"]["domain_self_ratings"]
+    emphasis = state["profile"]["domain_emphasis"]
     weights = bp_weights(state)
     domains = set(weights) | set(ratings) | set(emphasis) | {t.get("domain") for t in state["topics"].values()}
     shown = {}       # domain -> [sum, n] of the current mastery of its tested topics
@@ -1367,7 +1571,7 @@ def domain_weights(state):
 # ---------------------------------------------------------------- themed blocks (ADR 0003)
 
 def domain_name(st, d):
-    return ((st.get("blueprint") or {}).get(d) or {}).get("name") or d
+    return (st["blueprint"].get(d) or {}).get("name") or d
 
 
 def block_line(st, block):
@@ -1378,7 +1582,7 @@ def block_line(st, block):
 def block_open(st):
     """The ledger's block, if it has one with rounds still to come and a theme the blueprint knows."""
     b = st.get("block")
-    if not isinstance(b, dict) or b.get("theme") not in (st.get("blueprint") or {}):
+    if not isinstance(b, dict) or b.get("theme") not in st["blueprint"]:
         return None
     return b if int(b.get("round") or 0) < int(b.get("length") or BLOCK_LENGTH) else None
 
@@ -1386,7 +1590,7 @@ def block_open(st):
 def block_length(st, theme):
     """The rounds in a block on `theme`: BLOCK_LENGTH, or for an area with fewer than
     SHORT_BLOCK_TOPICS blueprint topics a short block of SHORT_BLOCK_ROUNDS per topic."""
-    n = sum(1 for label in ((((st.get("blueprint") or {}).get(theme) or {}).get("topics")) or {}).values()
+    n = sum(1 for label in (((st["blueprint"].get(theme) or {}).get("topics")) or {}).values()
             if not is_retired(label))
     return SHORT_BLOCK_ROUNDS * n if 0 < n < SHORT_BLOCK_TOPICS else BLOCK_LENGTH
 
@@ -1417,7 +1621,7 @@ def propose_theme(st, exclude=()):
     after its own block, back to full after four other blocks; a domain never yet a theme counts
     in full. No chance involved; ties go to blueprint order. The theme of the block just finished
     is not proposed again straight away. A small domain gets a short block (block_length)."""
-    bp = st.get("blueprint") or {}
+    bp = st["blueprint"]
     eff = domain_weights(st)
     sizes = {d: len((info or {}).get("topics") or {}) for d, info in bp.items()}
     pool = [d for d in bp if eff.get(d, 0) > 0 and sizes[d]] or [d for d in bp if sizes[d]]
@@ -1428,12 +1632,12 @@ def propose_theme(st, exclude=()):
     pool = [d for d in pool if d not in skip] or [d for d in pool if d not in set(exclude)] or pool
     if not pool:
         return None
-    themes = [b.get("theme") for b in (st.get("blocks") or [])] + ([last] if last else [])
+    themes = [b.get("theme") for b in st["blocks"]] + ([last] if last else [])
     tested, open_gaps = {}, {}
     for t in st["topics"].values():
         if isinstance(t.get("mastery"), (int, float)):
             tested.setdefault(t.get("domain"), []).append(float(t["mastery"]))
-    for g in st.get("gaps") or []:
+    for g in st["gaps"]:
         d = topic_domain(st, g.get("topic") or "")
         open_gaps[d] = open_gaps.get(d, 0) + 1
 
@@ -1481,13 +1685,12 @@ def start_block(st, theme, chosen="auto", reason=None, length=None):
     """Make `theme` the ledger's block, at round 0, filing the block it replaces under `blocks`
     if any round was recorded in it. `chosen` says who picked the theme: "auto" or "learner".
     `length` defaults to the theme's block_length."""
-    if theme not in (st.get("blueprint") or {}):
-        die("unknown domain %r: the theme must be one of %s" % (theme, ", ".join(st.get("blueprint") or {})))
+    if theme not in st["blueprint"]:
+        die("unknown domain %r: the theme must be one of %s" % (theme, ", ".join(st["blueprint"])))
     old = st.get("block")
     if isinstance(old, dict) and old.get("theme") and int(old.get("round") or 0) > 0:
-        st.setdefault("blocks", []).append({k: old.get(k) for k in ("theme", "started", "last", "round", "length", "chosen")})
+        st["blocks"].append({k: old.get(k) for k in ("theme", "started", "last", "round", "length", "chosen")})
         st["blocks"] = st["blocks"][-CAP_BLOCKS:]
-    st.setdefault("blocks", [])
     length = block_length(st, theme) if length is None else length
     st["block"] = {"theme": theme, "round": 0, "length": int(length), "started": None, "last": None,
                    "chosen": chosen, "reason": reason}
@@ -1540,7 +1743,7 @@ def block_end(st):
 def find_domain(st, text):
     """The blueprint domain the learner named: its id, its name, or a part of either that fits
     one domain only."""
-    bp = st.get("blueprint") or {}
+    bp = st["blueprint"]
     want = (text or "").strip().lower()
     names = {d: str((info or {}).get("name") or d).lower() for d, info in bp.items()}
     alias = canon_domain(st, want.upper())       # a merged area's old code (EMRG) names its area
@@ -1579,7 +1782,7 @@ def change_theme(st, theme=None, another=False):
         theme, reason = p["theme"], p["reason"]
     else:
         theme = find_domain(st, theme)
-        n = len(((st.get("blueprint") or {}).get(theme) or {}).get("topics") or {})
+        n = len((st["blueprint"].get(theme) or {}).get("topics") or {})
         if not n:
             die("%s has no topics in the blueprint, so it cannot be a theme" % domain_name(st, theme))
         if theme == cur["theme"] and is_open:
@@ -1624,12 +1827,12 @@ def block_mix(shorts, n, backlog=False):
 def next_case_format(st):
     """The format the next round's case takes: the setting, alternating when asked to, and one
     step when the session is too short for an unfolding case."""
-    cfg = st.get("config") or {}
-    fmt = cfg.get("case_format", "unfolding")
+    cfg = st["config"]
+    fmt = cfg["case_format"]
     if fmt == "alternate":
-        last_fmt = next((s.get("format") for s in reversed(st.get("sessions") or []) if s.get("format")), None)
+        last_fmt = next((s.get("format") for s in reversed(st["sessions"]) if s.get("format")), None)
         fmt = "discriminate" if last_fmt == "unfolding" else "unfolding"
-    if int(cfg.get("session_minutes", 20) or 20) <= 12 and fmt == "unfolding":
+    if int(cfg["session_minutes"]) <= 12 and fmt == "unfolding":
         fmt = "discriminate"
     return fmt
 
@@ -1726,7 +1929,7 @@ def session_default_minutes(sess):
 
 def timed_rounds(st):
     """The last timed rounds (at most PACE_FULL_ROUNDS), oldest first."""
-    rounds = [s for s in (st.get("previous") or []) + (st.get("sessions") or [])
+    rounds = [s for s in st["previous"] + st["sessions"]
               if is_timed(s) and session_default_minutes(s) > 0]
     return rounds[-PACE_FULL_ROUNDS:]
 
@@ -1764,9 +1967,8 @@ def based_on(n):
 def mix_estimate(st):
     """(the round mix in force, the minutes a round of it is estimated to take at the learner's
     pace, the number of timed rounds that pace rests on)."""
-    cfg = st.get("config") or {}
-    mix = {"mcqs": int(cfg.get("mcqs", LEGACY_MIX["mcqs"]) or 0), "focused": int(cfg.get("focused", 0) or 0),
-           "case": bool(cfg.get("case", True))}
+    mix = plan_counts(st)
+    mix["case"] = bool(mix["case"])
     p = pace(st)
     return (mix, paced(round_minutes(mix["mcqs"], mix["focused"], mix["case"], next_case_format(st)), p["factor"]),
             p["rounds"])
@@ -1780,8 +1982,7 @@ def time_hint(st):
     p = pace(st)
     if p["rounds"] < HINT_MIN_ROUNDS:
         return None
-    cfg = st.get("config") or {}
-    budget = int(cfg.get("session_minutes") or DEFAULT_CONFIG["session_minutes"])
+    budget = int(st["config"]["session_minutes"])
     med = p["median_minutes"]
     out = {"median": med, "budget": budget, "rounds": p["rounds"], "drop": None, "saves": None}
     if med <= budget:
@@ -1814,7 +2015,7 @@ def time_hint(st):
 def all_sessions_for_novelty(state):
     """(cases, stems) from current and previous sessions, oldest first."""
     cases, stems = [], []
-    for s in (state.get("previous") or []) + (state.get("sessions") or []):
+    for s in state["previous"] + state["sessions"]:
         if s.get("case"):
             c = dict(s["case"]); c["id"] = s.get("id"); c["date"] = s.get("date")
             cases.append(c)
@@ -1834,9 +2035,10 @@ def plan_round(st, args, today):
     one-off options of plan/start (mcqs, focused, no_case, domain, no_new, allow_repeat, no_drill,
     force_drill, seed). Reads only; writes and prints nothing."""
     cfg = st["config"]
-    n_case = 0 if args.no_case else (1 if cfg.get("case", True) else 0)
-    n_mcqs = args.mcqs if args.mcqs is not None else int(cfg.get("mcqs", 3) or 0)
-    n_focused = args.focused if getattr(args, "focused", None) is not None else int(cfg.get("focused", 0) or 0)
+    mix = plan_counts(st)
+    n_case = 0 if args.no_case else mix["case"]
+    n_mcqs = args.mcqs if args.mcqs is not None else mix["mcqs"]
+    n_focused = args.focused if getattr(args, "focused", None) is not None else mix["focused"]
     for name, v in (("--mcqs", n_mcqs), ("--focused", n_focused)):
         lo, hi = ROUND_LIMITS[name[2:]]
         if not lo <= v <= hi:
@@ -1864,7 +2066,7 @@ def plan_round(st, args, today):
     resting = {tid for tid, t in topics.items()
                if parse_date(t.get("last")) and (today - parse_date(t["last"])).days < MIN_RETURN_DAYS}
     # In each of the last two rounds: left out of this one, due or not (the drill-down limit).
-    history = (st.get("previous") or []) + log
+    history = st["previous"] + log
     last_rounds = [set(s.get("topics") or []) for s in history[-DRILLDOWN_MAX_ROUNDS:]]
     drilled = set.intersection(*last_rounds) if len(last_rounds) == DRILLDOWN_MAX_ROUNDS else set()
     # A theme topic missed when it was seen in two rounds of the block waits for its date (the
@@ -1889,7 +2091,7 @@ def plan_round(st, args, today):
             return False
         return True
 
-    gaps_by_topic = {g["topic"]: g for g in st.get("gaps") or [] if g.get("topic")}
+    gaps_by_topic = {g["topic"]: g for g in st["gaps"] if g.get("topic")}
 
     def gap_rank(g):
         src = g.get("source") or []
@@ -2180,7 +2382,7 @@ def plan_round(st, args, today):
     # the reasoning on a re-tested decision point); the last short slot may be kept for a new topic.
     shorts = ["focused"] * n_focused + ["mcq"] * n_mcqs
     total = n_case + len(shorts)
-    wants_new = int(cfg.get("new_topics_per_round", 1) or 0) > 0 and not args.no_new
+    wants_new = int(cfg["new_topics_per_round"]) > 0 and not args.no_new
     reserve_new = wants_new and len(shorts) >= 1 and total >= 2 and (total >= 4 or not last_session_had_new())
     mix = block_mix(len(shorts), block["round"], backlog) if theme else None
     # Due repeats take the first slots (the focused questions, when the round has them), then the
@@ -2204,7 +2406,7 @@ def plan_round(st, args, today):
     fmt = next_case_format(st)
 
     drill = None
-    active = [d for d in st.get("drills") or [] if not parse_date(d.get("until")) or parse_date(d["until"]) >= today]
+    active = [d for d in st["drills"] if not parse_date(d.get("until")) or parse_date(d["until"]) >= today]
     cases = [c for c in chosen if c["slot"] == "case"]
     target = cases[0] if cases else next((c for c in chosen if c["slot"] == "focused"), None)
     if target is not None and target["slot"] == "focused":
@@ -2290,7 +2492,7 @@ def plan_round(st, args, today):
             c["depth"] = dict(d, how="If this item is answered well its feedback goes to this depth: write "
                                      "the notes for it under 'Deeper' in the item's kit section and put its "
                                      "studies on the verification list (references/standards.md, rule 8).")
-    order = cfg.get("item_order", "mcqs_first")
+    order = cfg["item_order"]
     by_slot = {k: [c for c in chosen if c["slot"] == k] for k in ("case", "mcq", "focused")}
     present = (by_slot["mcq"] + by_slot["focused"] + by_slot["case"] if order != "case_first"
                else by_slot["case"] + by_slot["mcq"] + by_slot["focused"])
@@ -2304,18 +2506,17 @@ def plan_round(st, args, today):
         "presentation_order": ["%s %s" % (c["slot"], c.get("topic") or c.get("domain")) for c in present],
         "counts": {"mcqs": len(by_slot["mcq"]), "focused": len(by_slot["focused"]), "case": len(by_slot["case"])},
         "estimated_minutes": est,
-        "lab_units": cfg.get("lab_units"), "blood_gas_units": cfg.get("blood_gas_units"),
-        "session_minutes": cfg.get("session_minutes"), **guideline_context(st),
-        "feedback_depth": cfg.get("feedback_depth"), "show_coding": cfg.get("show_coding", True),
-        "evidence_ladder": bool(cfg.get("evidence_ladder", True)),
-        "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
-        "testing": bool(cfg.get("testing", False)),
+        "lab_units": cfg["lab_units"], "blood_gas_units": cfg["blood_gas_units"],
+        "session_minutes": cfg["session_minutes"], **guideline_context(st),
+        "feedback_depth": cfg["feedback_depth"], "show_coding": cfg["show_coding"],
+        "evidence_ladder": bool(cfg["evidence_ladder"]),
+        **speed_settings(st),
         # listening (rule 8): whether the kits get a "## Listening" section, and whose shows
         "listening": listening_on(st),
-        "podcast_sources": podcast_sources(st["profile"].get("podcast_sources"), "profile.podcast_sources"),
+        "podcast_sources": podcast_sources(st["profile"]["podcast_sources"], "profile.podcast_sources"),
         # what the author pitches to (standards.md rule 4): the learner's own paragraphs, never
         # the labels derived from them
-        "profile": dict({k: st["profile"].get(k) for k in ("journey", "aim", "subspecialty", "practice_setting")},
+        "profile": dict({k: st["profile"][k] for k in ("journey", "aim", "subspecialty", "practice_setting")},
                         specialty=guideline_context(st)["specialty"]),
         "recent_cases_any_topic": used_cases[-15:],
         # the block: `line` is what the learner is told (theme and position); `mix` is how this
@@ -2323,7 +2524,7 @@ def plan_round(st, args, today):
         "block": dict(block, mix=mix, **({"backlog": {"overdue": overdue, "shares": dict(BACKLOG_SHARES)}}
                                           if backlog else {})) if block else None,
         "items": chosen,
-        "pending_errata": st.get("pending_errata") or [],
+        "pending_errata": st["pending_errata"],
         **({"estimate_rounds": own_pace["rounds"]} if own_pace["rounds"] else {}),   # the estimate is at the learner's pace
         "note": "Blind: do not reveal topics, reasons or the drill before all answers are in. The "
                 "learner is told the block's theme and position (block.line) and nothing more "
@@ -2466,8 +2667,6 @@ def agg_add_session(agg, s, sign=1):
     add(agg, "reading_minutes", int(s.get("reading_minutes") or 0))
     add(agg, "mcqs", int(s.get("mcqs") or 0))
     add(agg, "mcq_correct", int(s.get("mcq_correct") or 0))
-    agg.setdefault("focused", 0); agg.setdefault("focused_mastery_sum", 0.0)
-    agg.setdefault("art_focused", {k: [0.0, 0] for k in ART_MAX})
     if isinstance(s.get("score"), (int, float)):
         add(agg, "score_sum", float(s["score"])); add(agg, "score_n", 1)
     for it in s.get("items") or []:
@@ -2530,7 +2729,7 @@ def apply_round(state, rnd, today, theme=None, gap_ids=None, block=None):
     warnings = validate_round(rnd)
     rdate = parse_date(rnd.get("date")) or today
     cfg = state["config"]
-    intervals = [int(x) for x in cfg.get("intervals_days") or DEFAULT_CONFIG["intervals_days"]]
+    intervals = [int(x) for x in cfg["intervals_days"]]
     refl = rnd.get("reflection") or {}
     comfort_map = refl.get("topic_comfort") or {}
 
@@ -2910,7 +3109,7 @@ def undo_record(state, before, tested, inputs, notes, ratings_before):
             rec["notes"] = kept
         topics[tid] = rec
     out = {"topics": topics}
-    ratings = state["profile"].get("domain_self_ratings") or {}
+    ratings = state["profile"]["domain_self_ratings"]
     changed = {d: ratings_before.get(d) for d in ratings if ratings.get(d) != ratings_before.get(d)}
     if changed:
         out["ratings"] = changed
@@ -2949,10 +3148,12 @@ def closure_topics(state, reqs, tested, gap_ids=None):
 
 def restore(state, snap):
     """Put back the whole tables 5.0 kept for a round still unreflected (`_snapshot`): read once,
-    to close such a round."""
+    to close such a round. The tables are as that engine wrote them: they go through the fill of
+    the load step again."""
     state["topics"], state["gaps"], state["resolved"], state["agg"] = snap["topics"], snap["gaps"], snap["resolved"], snap["agg"]
     state["profile"]["domain_self_ratings"] = snap["ratings"]
     state["errata"], state["pending_errata"], state["next_id"] = snap["errata"], snap["pending_errata"], snap["next_id"]
+    fill_defaults(state)
 
 
 def legacy_undo(st, sess, later):
@@ -3142,7 +3343,7 @@ def apply_round_again(st, sess, rnd, today):
             if g.get("topic") == tid:
                 gap = [i, copy.deepcopy(g)]
         frozen[tid] = (copy.deepcopy(st["topics"].get(tid)), gap)
-    ratings_now = copy.deepcopy(st["profile"].get("domain_self_ratings") or {})
+    ratings_now = copy.deepcopy(st["profile"]["domain_self_ratings"])
     # the gaps it opened keep their ids when it opens them again
     gap_ids = {g["topic"]: g["id"] for g in st["gaps"] if g.get("topic") in owned and g.get("id")}
     for r in st["resolved"]:
@@ -3285,8 +3486,6 @@ def record_round(st, rnd, today, again=None):
                     s["reflection"] = {"skipped": True}
                     agg_add_session(st["agg"], s)
         st["unreflected"] = None
-    for k in ("helpers", "prepare_ahead"):       # speed settings (4.3): on unless the learner turns them off
-        st["config"].setdefault(k, DEFAULT_CONFIG[k])
     if again:
         entry, summary, warnings, errata_ids, changes = apply_round_again(st, again, rnd, today)
     else:
@@ -3358,8 +3557,7 @@ def reflect_round(st, refl, today, session=None, measured=None, base=None):
         dict({"gap": req} if isinstance(req, str) else req, date=rdate) for req in refl.get("learner_closed_gaps") or []]
     entry, summary, warnings, errata_ids, closed = apply_round_again(st, sess, rnd, today)
     # the position notes said with the stops: `close` run again puts this round's in afresh
-    if "positions" in st:
-        st["positions"] = [p for p in st["positions"] if not (p.get("session") == sid and p.get("from") == "reflection")]
+    st["positions"] = [p for p in st["positions"] if not (p.get("session") == sid and p.get("from") == "reflection")]
     changes += stop_changes(st, said, sid, rdate, "reflection") + closed
     lapse_positions(st, today)
     st["unreflected"] = None
@@ -3468,7 +3666,7 @@ def position_input(req):
 
 def set_position(st, tid, point, text, date, sid, source):
     """Keep the learner's position note on topic `tid`; the same note said again is kept once."""
-    pos = st.setdefault("positions", [])
+    pos = st["positions"]
     same = next((p for p in pos if p.get("topic") == tid and p.get("point") == point and p.get("text") == text), None)
     if same:
         return same
@@ -3485,14 +3683,12 @@ def position_lapses(p):
 
 def standing_positions(st, today, tid=None):
     """The position notes in force on `today` (on topic `tid`), oldest first."""
-    return [p for p in st.get("positions") or [] if (tid is None or p.get("topic") == tid)
+    return [p for p in st["positions"] if (tid is None or p.get("topic") == tid)
             and (position_lapses(p) is None or position_lapses(p) >= today)]
 
 
 def lapse_positions(st, today):
     """Take the notes no review has confirmed for POSITION_LAPSE_DAYS out of the ledger."""
-    if "positions" not in st:
-        return []
     keep = standing_positions(st, today)
     gone = [p for p in st["positions"] if p not in keep]
     st["positions"] = keep
@@ -3640,7 +3836,7 @@ def amend_round(st, sid, scores, closes, date, today, stops=()):
             agg_overrides(st["agg"])["gaps"] += 1      # a round of an earlier period: counted all the same
         topics.setdefault(ch["topic"], {})["gap_closed_by_learner"] = True
         gap_changes.append(ch)
-    intervals = [int(x) for x in st["config"].get("intervals_days") or DEFAULT_CONFIG["intervals_days"]]
+    intervals = [int(x) for x in st["config"]["intervals_days"]]
     for stop in outright_stops:     # no round of this period is the latest on the topic: stopped as it stands
         t = ensure_topic(st, stop["topic"])
         t.update({"step": len(intervals) - 1, "stopped": date,
@@ -3834,7 +4030,7 @@ def timing_stats(st):
     hint = time_hint(st)
     med = lambda k: median([float((s["timing"].get(k)) or 0) for s in rounds])
     return {"timed_rounds": len(rounds), "session_ids": [s.get("id") for s in rounds],
-            "median_minutes": p["median_minutes"], "budget_minutes": (st.get("config") or {}).get("session_minutes"),
+            "median_minutes": p["median_minutes"], "budget_minutes": st["config"]["session_minutes"],
             "median_answering": med("answering"), "median_waiting": med("waiting"),
             "median_reading": med("reading"), "idle_cut_total": round(sum(float(s["timing"].get("idle_cut") or 0)
                                                                          for s in rounds), 1),
@@ -3844,9 +4040,9 @@ def timing_stats(st):
 def cmd_stats(args):
     today = today_from(args)
     st, _ = current_ledger(*job(args))
-    cfg, prof, rv = st["config"], st["profile"], st.get("review") or {}
+    cfg, prof, rv = st["config"], st["profile"], st["review"]
     log = st["sessions"]
-    start = parse_date(rv.get("period_start")) or parse_date(st.get("created"))
+    start = parse_date(rv["period_start"])
     days = max(1, (today - start).days + 1) if start else None
     weeks = days / 7.0 if days else None
     minutes = [s.get("minutes") for s in log if isinstance(s.get("minutes"), (int, float))]
@@ -3881,7 +4077,7 @@ def cmd_stats(args):
                 for n in [sum(1 for h in t.get("history") or [] if h[3] == "confident_error")] if n >= 2}
     learning = [{"id": s.get("id"), "n": i + 1, "date": s.get("date"), "point": k}
                 for s in log for i, k in enumerate(s.get("key_learning") or [])]
-    checks = st.get("teaching_point_checks") or {}
+    checks = st["teaching_point_checks"]
     unchecked = [p for p in learning if "%s.%s" % (p["id"], p["n"]) not in checks]
     blind = []
     named = " ".join(((s.get("reflection") or {}).get("gaps") or "") for s in log).lower()
@@ -3893,9 +4089,9 @@ def cmd_stats(args):
     out = {
         "ok": True, "period_start": iso(start), "period_end": iso(today), "sessions": len(log),
         "sessions_per_week": round(len(log) / weeks, 2) if weeks else None,
-        "target_sessions_per_week": cfg.get("target_sessions_per_week"),
+        "target_sessions_per_week": cfg["target_sessions_per_week"],
         "minutes_recorded": sum(minutes), "sessions_without_timing": len(log) - len(minutes),
-        "estimated_total_minutes": sum(minutes) + (len(log) - len(minutes)) * int(cfg.get("session_minutes") or 20),
+        "estimated_total_minutes": sum(minutes) + (len(log) - len(minutes)) * int(cfg["session_minutes"]),
         "reading_minutes_reported": sum(reading),
         "timing": timing_stats(st),
         "items": {"cases": sum(1 for s in log for it in s.get("items") or [] if is_case(it)),
@@ -3914,8 +4110,8 @@ def cmd_stats(args):
         "topics_with_repeated_confident_errors": conf_err,
         "graded_gaps_never_self_reported": blind,
         "key_learning": learning, "teaching_points_unchecked": unchecked,
-        "domain_self_ratings": prof.get("domain_self_ratings"), "domain_emphasis": prof.get("domain_emphasis"),
-        "journey": prof.get("journey"), "aim": prof.get("aim"), "goals": prof.get("goals"),
+        "domain_self_ratings": prof["domain_self_ratings"], "domain_emphasis": prof["domain_emphasis"],
+        "journey": prof["journey"], "aim": prof["aim"], "goals": prof["goals"],
         "analysis": {"period": coding_analytics(log),
                      "previous_period": coding_analytics(st["previous"]) if st["previous"] else None,
                      "all_time": agg_analytics(st["agg"])},
@@ -3945,17 +4141,18 @@ def cmd_review(args):
         deep_merge(prof, rv["profile_changes"])
         set_paragraphs(prof, was, rv["profile_changes"])
         check_paragraphs(prof)
+    fill_defaults(st)               # a null given reads as it does in a stored ledger
     for d, r in (rv.get("domain_self_ratings") or {}).items():
-        prof.setdefault("domain_self_ratings", {})[canon_domain(st, d.upper())] = r
+        prof["domain_self_ratings"][canon_domain(st, d.upper())] = r
     for d, e in (rv.get("domain_emphasis") or {}).items():
-        prof.setdefault("domain_emphasis", {})[canon_domain(st, d.upper())] = e
+        prof["domain_emphasis"][canon_domain(st, d.upper())] = e
     warnings = []
-    iv = int(cfg.get("review_interval_days") or 42)
+    iv = int(cfg["review_interval_days"])
     if not 30 <= iv <= 90:
         warnings.append("review_interval_days %d is outside the recommended 30–90" % iv)
     next_due = today + dt.timedelta(days=iv)
     entry = {"date": iso(today), "doc": rv.get("doc") or rv.get("report_file"),
-             "period_start": st["review"].get("period_start"), "sessions": len(st["sessions"]),
+             "period_start": st["review"]["period_start"], "sessions": len(st["sessions"]),
              "headline": clip(rv.get("headline") or (rv.get("analysis") or {}).get("headline"), 400),
              "summary": clip(rv.get("summary"), 400), "goals": rv.get("goals"),
              "change_plan": rv.get("change_plan"), "deep_analysis": bool(rv.get("deep_analysis")),
@@ -3971,7 +4168,7 @@ def cmd_review(args):
                            "until": d.get("until") or iso(next_due)})
         st["drills"] = drills
         entry["drill_targets"] = drills
-    checks = st.setdefault("teaching_point_checks", {})
+    checks = st["teaching_point_checks"]
     n = max([id_num(e.get("id")) for e in st["errata"] + st["pending_errata"]] + [0]) + 1
     new_errata = []
     for c in rv.get("teaching_point_checks") or []:
@@ -3988,7 +4185,7 @@ def cmd_review(args):
     entry["errata_found"] = new_errata
     pos = rv.get("positions") or {}
     if pos:
-        held = {p.get("id"): p for p in st.get("positions") or []}
+        held = {p.get("id"): p for p in st["positions"]}
         for pid in list(pos.get("keep") or []) + list(pos.get("drop") or []):
             if pid not in held:
                 die("no position note %s (notes: %s)" % (pid, ", ".join(held) or "none"))
@@ -4084,13 +4281,27 @@ def round_estimate(st):
 def settings_in_effect(st, section):
     """The config or the profile of a ledger with listening and the podcast sources in the
     form they take effect in, for comparing two versions of the settings."""
-    out = dict(st.get(section) or {})
+    out = dict(st[section])
     if section == "config":
         out["listening"] = listening_on(st)
-        out["evidence_ladder"] = bool(out.get("evidence_ladder", True))   # a ledger without it has it on
+        out["evidence_ladder"] = bool(out["evidence_ladder"])
     else:
-        out["podcast_sources"] = podcast_sources(out.get("podcast_sources"), "profile.podcast_sources")
+        out["podcast_sources"] = podcast_sources(out["podcast_sources"], "profile.podcast_sources")
     return out
+
+
+def check_setting_changes(changes):
+    """Refuse a settings change the engine would not store as given: an on/off setting that is
+    not true or false (null included), and a session length that is not a positive number of
+    minutes (null leaves the length to the default, 20, as in a stored ledger)."""
+    if not isinstance(changes, dict):
+        die("config changes must be a JSON object")
+    for k in ("listening", "evidence_ladder"):
+        if k in changes and not isinstance(changes[k], bool):
+            die("config.%s must be true or false" % k)
+    v = changes.get("session_minutes")
+    if v is not None and (isinstance(v, bool) or not isinstance(v, (int, float)) or v <= 0):
+        die("config.session_minutes must be a positive number of minutes")
 
 
 def cmd_settings(args):
@@ -4104,21 +4315,20 @@ def cmd_settings(args):
     was = copy.deepcopy({k: st.get(k) for k in ("config", "profile", "blueprint")})
     cfg_changes = load_json_arg(args.config) if args.config else {}
     prof_changes = load_json_arg(args.profile) if args.profile else {}
+    check_setting_changes(cfg_changes or {})
     deep_merge(st["config"], cfg_changes or {})
     deep_merge(st["profile"], prof_changes or {})
+    fill_defaults(st)           # a null given reads as it does in a stored ledger
     set_paragraphs(st["profile"], was["profile"] or {}, prof_changes or {})
     check_paragraphs(st["profile"])
     if "podcast_sources" in (prof_changes or {}):
         st["profile"]["podcast_sources"] = podcast_sources(st["profile"]["podcast_sources"], "profile.podcast_sources")
-    for k in ("listening", "evidence_ladder"):
-        if k in (cfg_changes or {}) and not isinstance(st["config"][k], bool):
-            die("config.%s must be true or false" % k)
     if any(k in (cfg_changes or {}) for k in ("mcqs", "focused", "case")):
         check_round_mix(st["config"])
         if "round_set_at" not in cfg_changes:
             st["config"]["round_set_at"] = now_ts()   # a new value: any earlier page setting is now superseded
     if "review_interval_days" in (cfg_changes or {}):
-        anchor = parse_date(st["review"].get("last")) or parse_date(st["review"].get("period_start")) or today
+        anchor = parse_date(st["review"]["last"]) or parse_date(st["review"]["period_start"]) or today
         st["review"]["next_due"] = iso(anchor + dt.timedelta(days=int(st["config"]["review_interval_days"])))
     if args.blueprint:
         st["blueprint"] = read_blueprint(args.blueprint)
@@ -4139,7 +4349,7 @@ def cmd_settings(args):
            "listening": listening_status(st)}
     out["round"] = round_estimate(st)       # what to confirm a new mix with
     if any(k in (prof_changes or {}) for k in ("journey", "aim", "journey_label", "aim_tags")):
-        out["profile"] = {k: st["profile"].get(k) for k in ("journey", "journey_label", "aim", "aim_tags")}
+        out["profile"] = {k: st["profile"][k] for k in ("journey", "journey_label", "aim", "aim_tags")}
     if labels_needed(st):
         out["labels_needed"] = labels_needed(st)
     out["prepared"] = ({"kept": False, "changed": affects,
@@ -4161,7 +4371,7 @@ def cmd_theme(args):
     st, _ = current_ledger(work, info)
     if not args.set and not args.another:
         p = propose_theme(st) or {"ranking": []}
-        bp = st.get("blueprint") or {}
+        bp = st["blueprint"]
         order = p["ranking"] + [d for d in bp if d not in p["ranking"]]
         print(json.dumps({"ok": True, "changed": False, "block": status_block(st), "next_block": block_end(st),
                           "choices": [{"id": d, "name": domain_name(st, d),
@@ -4299,7 +4509,7 @@ def apply_mapping(st, mapping, today):
         die("round %s is waiting for its reflection: close it (or record it as skipped) before the mapping "
             "is applied" % st["unreflected"])
     digest = hashlib.sha256(mapping["text"].encode("utf-8")).hexdigest()
-    done = next((m for m in st.get("mappings") or [] if m.get("sha256") == digest), None)
+    done = next((m for m in st["mappings"] if m.get("sha256") == digest), None)
     if done:
         die("this mapping was applied on %s already: nothing to do" % done.get("date"))
     if not bp_subtopics(st):
@@ -4307,7 +4517,7 @@ def apply_mapping(st, mapping, today):
             "(`settings --work W --blueprint FILE`, in the same job), then apply the mapping")
     number_gaps(st)         # gaps from older ledgers are named by id from here on
     bpt = bp_topics(st)
-    history = (st.get("previous") or []) + (st.get("sessions") or [])
+    history = st["previous"] + st["sessions"]
     by_id = {s.get("id"): s for s in history}
     # items: each entry names one recorded item, by session, type and the topic it was recorded under
     moves, seen = [], {}
@@ -4464,13 +4674,13 @@ def apply_mapping(st, mapping, today):
         if rec is not None and dst not in st["topics"]:
             rec = dict(rec, domain=bpt[dst]["domain"], label=bpt[dst]["label"])
             st["topics"][dst] = rec
-        for p in st.get("positions") or []:
+        for p in st["positions"]:
             if p.get("topic") == src:
                 p["topic"] = dst
     # a topic that gets items and has no record yet: built from its items, on the schedule (step
     # and due date) of the topic its latest item came from
     new_records = []
-    intervals = [int(x) for x in st["config"].get("intervals_days") or DEFAULT_CONFIG["intervals_days"]]
+    intervals = [int(x) for x in st["config"]["intervals_days"]]
     for tid, srcs in sources.items():
         if tid in st["topics"]:
             continue
@@ -4507,7 +4717,7 @@ def apply_mapping(st, mapping, today):
              "gaps": len(gaps_out), "topics": sorted(retire)}
     if merged:
         entry["merged"] = merged
-    st.setdefault("mappings", []).append(entry)
+    st["mappings"].append(entry)
     out = {"mapping": mapping.get("name"), "items": moved_out, "gaps": gaps_out, "merged": merged,
            "retired": [{"topic": a, "into": b} for a, b in retire.items()], "new_records": new_records,
            "frozen": frozen,
@@ -4565,20 +4775,22 @@ def cmd_init(args):
         refuse_newer(current_ledger(work, info)[0])     # never a way around the refusal
     st = new_state(today)
     deep_merge(st["profile"], load_json_arg(args.profile) or {})
-    deep_merge(st["config"], load_json_arg(args.config) or {})
-    migrate_profile(st)         # a profile given in the old fields (role, goals, notes) is folded too
+    cfg_changes = load_json_arg(args.config) or {}
+    check_setting_changes(cfg_changes)
+    deep_merge(st["config"], cfg_changes)
+    make_current(st)            # a profile given in the old fields (role, goals, notes) is folded too; a null reads as always
     check_paragraphs(st["profile"])
     for key, _, _ in PARAGRAPHS:
-        if (st["profile"].get(key) or "").strip() and not st["profile"].get(key + "_set_at"):
+        if st["profile"][key].strip() and not st["profile"][key + "_set_at"]:
             st["profile"][key + "_set_at"] = now_ts()
-    if st["profile"].get("podcast_sources") is not None:
+    if st["profile"]["podcast_sources"] is not None:
         st["profile"]["podcast_sources"] = podcast_sources(st["profile"]["podcast_sources"], "profile.podcast_sources")
     st["profile"]["onboarded_at"] = iso(today)
     check_round_mix(st["config"])
-    st["config"]["round_set_at"] = st["config"].get("round_set_at") or now_ts()
+    st["config"]["round_set_at"] = st["config"]["round_set_at"] or now_ts()
     st["blueprint"] = read_blueprint(args.blueprint)
     migrate_domains(st)
-    iv = int(st["config"].get("review_interval_days") or 42)
+    iv = int(st["config"]["review_interval_days"])
     st["review"] = {"last": None, "next_due": iso(today + dt.timedelta(days=iv)), "period_start": iso(today)}
     st["gen"] = 1
     st.pop("content_gen", None)
@@ -4609,31 +4821,51 @@ def cmd_blueprint_md(args):
 
 
 def cmd_validate(args):
+    """Check a ledger against its declared shape (LEDGER_SHAPE, the settings and the profile, as
+    the load step leaves it) and its own references. `upgrades` names the upgrade steps the stored
+    ledger still needs (they run on every read; the next write stores them)."""
     if args.work:
-        st, path = current_ledger(*job(args))
+        work, info = job(args)
+        path = current_ledger(work, info)[1]
     elif args.state:
         path = args.state
-        st = load_json(path)
-        check_schema(st)
     else:
         die("validate needs --work WORK_FOLDER (or a ledger file)")
-    problems = []
+    raw = load_json(path)
+    check_schema(raw)
+    upgrades = [] if newer_engine(raw) else upgrades_needed(raw)
+    st = make_current(raw)
+    problems = shape_problems(st)
     seen = set()
     for s in st["sessions"] + st["previous"]:
+        if not isinstance(s, dict):
+            problems.append("a session that is not an object")
+            continue
         if s.get("id") in seen:
             problems.append("duplicate session id %s" % s.get("id"))
         seen.add(s.get("id"))
-    if st.get("next_id") in seen:
-        problems.append("next_id %s already used" % st.get("next_id"))
+    if st["next_id"] in seen:
+        problems.append("next_id %s already used" % st["next_id"])
+    if st["unreflected"] and st["unreflected"] not in seen:
+        problems.append("unreflected names session %s, which is not in the ledger" % st["unreflected"])
     for tid, t in st["topics"].items():
-        if t.get("due") and not parse_date(t["due"]):
+        if isinstance(t, dict) and t.get("due") and not parse_date(t["due"]):
             problems.append("topic %s has a bad due date" % tid)
+    gap_ids = set()
     for g in st["gaps"]:
         if g.get("topic") not in st["topics"]:
             problems.append("gap for unknown topic %s" % g.get("topic"))
+        if g.get("id") and g["id"] in gap_ids:
+            problems.append("duplicate gap id %s" % g["id"])
+        gap_ids.add(g.get("id"))
+    if isinstance(st["block"], dict) and st["block"].get("theme") not in st["blueprint"]:
+        problems.append("the block's theme %s is not an area of the blueprint" % st["block"].get("theme"))
     size = os.path.getsize(path)
-    print(json.dumps({"ok": not problems, "bytes": size, "sessions": len(st["sessions"]),
-                      "previous": len(st["previous"]), "topics": len(st["topics"]), "problems": problems}))
+    out = {"ok": not problems, "bytes": size, "sessions": len(st["sessions"]),
+           "previous": len(st["previous"]), "topics": len(st["topics"]), "upgrades": upgrades, "problems": problems}
+    if newer_engine(raw):
+        out["newer_version"] = {"ledger": newer_engine(raw), "this": SKILL_VERSION, "say": newer_line(newer_engine(raw))}
+    print(json.dumps(out))
     return 0 if not problems else 1
 
 
@@ -4752,11 +4984,10 @@ def page_doc(st, lists=None):
     """The page file for ledger `st`: what the page may show and nothing else. `lists` are the
     session and review entries carried on (page_lists); the ledger adds the sessions and reviews
     they lack and is the authority on scores, minutes and whether a round was reflected on."""
-    cfg = st.get("config") or {}
-    prof = migrate_profile({"profile": copy.deepcopy(st.get("profile") or {})})["profile"]
+    cfg, prof = st["config"], st["profile"]
     lists = lists or {"sessions": [], "reviews": [], "library": []}
     sessions = {e["id"]: dict(e) for e in lists["sessions"]}
-    for s in (st.get("previous") or []) + (st.get("sessions") or []):
+    for s in st["previous"] + st["sessions"]:
         if not s.get("id"):
             continue
         e = sessions.setdefault(s["id"], page_session(s))
@@ -4767,14 +4998,14 @@ def page_doc(st, lists=None):
         e["reflected"] = s["id"] != st.get("unreflected")
     sessions = sorted(sessions.values(), key=lambda x: (x.get("date") or "", id_num(x.get("id"))), reverse=True)
     reviews = {r["date"]: dict(r) for r in lists["reviews"]}
-    for r in st.get("reviews") or []:
+    for r in st["reviews"]:
         if r.get("date") and r.get("doc") and r["date"] not in reviews:
             reviews[r["date"]] = {"date": r["date"], "title": "CME progress review — %s" % r["date"],
                                   "headline": r.get("headline")}
     # topics already tested, most recently tested first: never the due date, never an order by it
     topics = [{"id": tid, "label": t.get("label"), "mastery": t.get("mastery"), "last": t.get("last"),
                "calibration": t.get("calibration")}
-              for tid, t in (st.get("topics") or {}).items() if t.get("last") or t.get("mastery") is not None]
+              for tid, t in st["topics"].items() if t.get("last") or t.get("mastery") is not None]
     # two levels (issue #81): under each disease, its sub-topics already tested, as recorded
     sub_labels = bp_subtopics(st)
     for t in topics:
@@ -4794,7 +5025,7 @@ def page_doc(st, lists=None):
     order = {id(e): n for n, e in enumerate(library)}
     library.sort(key=lambda e: (e.get("date") or "", id_num(e.get("session")), -order[id(e)]), reverse=True)
     mastery = [t["mastery"] for t in topics if isinstance(t["mastery"], (int, float))]
-    period = [s.get("score") for s in st.get("sessions") or []]
+    period = [s.get("score") for s in st["sessions"]]
     scores = [x for x in period if isinstance(x, (int, float))]
     mix, minutes, timed = mix_estimate(st)
     factor, hint = pace(st)["factor"], time_hint(st)
@@ -4807,22 +5038,22 @@ def page_doc(st, lists=None):
     else:
         block = None
     ratings = {}
-    for d, r in (prof.get("domain_self_ratings") or {}).items():
+    for d, r in prof["domain_self_ratings"].items():
         ratings[d] = r.get("rating") if isinstance(r, dict) else r
-    review = st.get("review") or {}
+    review = st["review"]
     context = guideline_context(st)
 
     def paragraph(key):
-        text = prof.get(key).strip() if isinstance(prof.get(key), str) else ""
+        text = prof[key].strip() if isinstance(prof[key], str) else ""
         return text or None
     # where you are / where you're aiming: the learner's own words with the labels derived for
     # display (null until the learner has written the paragraph)
-    level = {"label": prof.get("journey_label"), "text": paragraph("journey")} if paragraph("journey") else None
-    aim = {"tags": list(prof.get("aim_tags") or []), "text": paragraph("aim")} if paragraph("aim") else None
+    level = {"label": prof["journey_label"], "text": paragraph("journey")} if paragraph("journey") else None
+    aim = {"tags": list(prof["aim_tags"] or []), "text": paragraph("aim")} if paragraph("aim") else None
     return {
         "schema": PAGE_SCHEMA, "page_version": PAGE_VERSION, "gen": st.get("gen"), "updated": st.get("updated"),
-        "who": {"name": prof.get("display_name"), "role": prof.get("journey_label") or prof.get("role"), "specialty": context["specialty"],
-                "subspecialty": prof.get("subspecialty"), "practice": list(prof.get("practice_setting") or [])},
+        "who": {"name": prof["display_name"], "role": prof["journey_label"] or prof.get("role"), "specialty": context["specialty"],
+                "subspecialty": prof["subspecialty"], "practice": list(prof["practice_setting"])},
         "totals": {"topics": len(topics),
                    "mean_mastery": round(sum(mastery) / len(mastery), 1) if mastery else None,
                    "since": review.get("period_start"), "sessions": len(period),
@@ -4834,7 +5065,7 @@ def page_doc(st, lists=None):
         # Both are at the learner's own pace once rounds are timed (`timed_rounds` of them: the
         # page then says "based on your last N rounds"); `time_hint` is the sentence on how
         # their rounds compare with their budget, from HINT_MIN_ROUNDS timed rounds
-        "round": {"mix": mix, "set_at": cfg.get("round_set_at"),
+        "round": {"mix": mix, "set_at": cfg["round_set_at"],
                   "minutes": minutes,
                   "minutes_per": {"mcq": per("mcq"), "focused": per("focused"), "case": per(next_case_format(st))},
                   "limits": {k: list(v) for k, v in ROUND_LIMITS.items()},
@@ -4849,16 +5080,16 @@ def page_doc(st, lists=None):
         "positions": [{"id": p.get("id"), "topic": p.get("topic"), "label": labels.get(p.get("topic")),
                        "point": p.get("point"), "text": p.get("text"), "set": p.get("set"),
                        "confirmed": p.get("confirmed")}
-                      for p in st.get("positions") or []
+                      for p in st["positions"]
                       if not position_lapses(p) or position_lapses(p) >= (parse_date(st.get("updated")) or position_lapses(p))],
         "settings": {
-            "session_length": cfg.get("session_minutes"), "per_week": cfg.get("target_sessions_per_week"),
+            "session_length": cfg["session_minutes"], "per_week": cfg["target_sessions_per_week"],
             "region": context["guideline_region"],
-            "units": {"labs": cfg.get("lab_units"), "gases": cfg.get("blood_gas_units")},
-            "case_style": cfg.get("case_format"), "order": cfg.get("item_order"),
-            "feedback": cfg.get("feedback_depth"), "coding_line": bool(cfg.get("show_coding", True)),
-            "review_every_days": cfg.get("review_interval_days"), "reminders": bool(cfg.get("reminders")),
-            "emphasis": dict(prof.get("domain_emphasis") or {}), "self_ratings": ratings,
+            "units": {"labs": cfg["lab_units"], "gases": cfg["blood_gas_units"]},
+            "case_style": cfg["case_format"], "order": cfg["item_order"],
+            "feedback": cfg["feedback_depth"], "coding_line": bool(cfg["show_coding"]),
+            "review_every_days": cfg["review_interval_days"], "reminders": bool(cfg["reminders"]),
+            "emphasis": dict(prof["domain_emphasis"]), "self_ratings": ratings,
             "level": level, "aim": aim,                  # {"label", "text"} and {"tags", "text"}
         },
     }
@@ -4875,38 +5106,37 @@ def status_dict(st, path, today):
     rdue, rdate = review_status(st, today)
     return {
         "ok": True, "date": iso(today), "gen": st.get("gen"), "next_id": st.get("next_id"),
-        "onboarding_needed": not st["profile"].get("onboarded_at"),
+        "onboarding_needed": not st["profile"]["onboarded_at"],
         "last_session": {"id": last.get("id"), "date": last.get("date"),
                          "items": len(last.get("items") or []),
                          "unreflected": last.get("id") == st.get("unreflected")} if last else None,
         "days_since_last_session": (today - parse_date(last["date"])).days if last and parse_date(last.get("date")) else None,
         "sessions_this_week": this_week,
-        "target_sessions_per_week": cfg.get("target_sessions_per_week"),
+        "target_sessions_per_week": cfg["target_sessions_per_week"],
         "due_count": len(due),
         "overdue_7d_count": sum(1 for t in due if (today - parse_date(t["due"])).days >= 7),
-        "open_gaps": len(st.get("gaps") or []),
+        "open_gaps": len(st["gaps"]),
         "review_due": rdue, "review_due_date": rdate,
-        "pending_errata_count": len(st.get("pending_errata") or []),
-        "drills_active": len(st.get("drills") or []),
+        "pending_errata_count": len(st["pending_errata"]),
+        "drills_active": len(st["drills"]),
         # the block the next round belongs to; `line` is what the opening line says about it
         "block": status_block(st),
-        "round": {"mcqs": cfg.get("mcqs", 3), "focused": cfg.get("focused", 0), "case": bool(cfg.get("case", True)),
-                  "minutes": cfg.get("session_minutes"), "item_order": cfg.get("item_order")},
+        "round": {"mcqs": cfg["mcqs"], "focused": cfg["focused"], "case": bool(cfg["case"]),
+                  "minutes": cfg["session_minutes"], "item_order": cfg["item_order"]},
         # display labels the assistant still has to derive from the learner's paragraphs (None: none)
         "labels_needed": labels_needed(st),
-        "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
-        "testing": bool(cfg.get("testing", False)),
+        **speed_settings(st),
         **guideline_context(st),             # what the examiner grades against
         # the learner's own paragraphs: the examiner pitches the feedback to them (standards.md rule 4)
-        "pitch": {k: (st["profile"].get(k) or None) for k, _, _ in PARAGRAPHS},
+        "pitch": {k: (st["profile"][k] or None) for k, _, _ in PARAGRAPHS},
         # one podcast episode per topic in the final feedback: on or off, the shows to prefer and
         # to avoid, and `ask_sources` while the learner has not been asked for them yet
         "listening": listening_status(st),
-        "prepare_task": bool(cfg.get("prepare_task", False)),
-        "reminders": cfg.get("reminders"),
+        "prepare_task": bool(cfg["prepare_task"]),
+        "reminders": cfg["reminders"],
         "bytes": os.path.getsize(path),
         # true until the first save with version 4.3: tell the learner once about the speed settings
-        "speed_settings_new": "helpers" not in cfg or "prepare_ahead" not in cfg,
+        "speed_settings_new": speed_settings_new(path),
     }
 
 
@@ -5062,9 +5292,9 @@ def unpack(text):
 
 
 def plan_counts(st, args=None):
+    """The round mix in force: {"mcqs", "focused", "case": 1 or 0}."""
     cfg = st["config"]
-    return {"mcqs": int(cfg.get("mcqs", 3) or 0), "focused": int(cfg.get("focused", 0) or 0),
-            "case": 1 if cfg.get("case", True) else 0}
+    return {"mcqs": int(cfg["mcqs"]), "focused": int(cfg["focused"]), "case": 1 if cfg["case"] else 0}
 
 
 def cmd_prepare(args):
@@ -5081,7 +5311,7 @@ def cmd_prepare(args):
     rewritten = paragraphs_changed(apply_prefs(st, info.get("prefs")))
     cfg = st["config"]
     why = None
-    if not cfg.get("prepare_ahead", True):
+    if not cfg["prepare_ahead"]:
         why = "prepare_ahead is off"
     elif st.get("unreflected") and not args.allow_unreflected:
         why = "the last session is still waiting for its reflection"
@@ -5430,9 +5660,7 @@ def take_prepared(args, st, today, path, work, plan_path):
             return no("one of its topics was tested today")
     plan["date"] = iso(today)
     # settings that do not change the round may have changed since: the plan carries today's
-    cfg = st["config"]
-    plan.update({"show_coding": cfg.get("show_coding", True), "helpers": bool(cfg.get("helpers", True)),
-                 "prepare_ahead": bool(cfg.get("prepare_ahead", True)), "testing": bool(cfg.get("testing", False))})
+    plan.update(show_coding=st["config"]["show_coding"], **speed_settings(st))
     plan["prepared"] = dict(plan.get("prepared") or {}, used=True)
     save_json(plan, plan_path)
     written = []
@@ -6265,7 +6493,8 @@ MAINTENANCE_COMMANDS = (
     ('`blueprint-md FILE --out BP.json`',
      'Convert a Markdown blueprint.'),
     ('`validate STATE` (or `validate --work W`)',
-     'Structural check.'),
+     'Check the ledger, as the load step reads it, against its declared shape (top-level fields, settings,'
+     ' profile) and its own references; `upgrades` names the upgrade steps the stored ledger still needs.'),
 )
 WORK_FILES = (
     ('`work.json`',
@@ -6942,13 +7171,11 @@ def current_ledger(work, info):
     if not path or not os.path.isfile(path):
         die("no ledger in the work folder %s: run `open --work %s --store DIR` on a fresh read of the store "
             "(for a new learner: `init --work %s …`)" % (work, work, work))
-    st = load_json(path)
-    check_schema(st)
-    return migrate_ledger(st), path
+    return make_current(load_json(path)), path
 
 
 def has_session(st, sid):
-    return any(s.get("id") == sid for s in (st.get("sessions") or []) + (st.get("previous") or []))
+    return any(s.get("id") == sid for s in st["sessions"] + st["previous"])
 
 
 def publish_path(work, rel):
@@ -7087,9 +7314,7 @@ def open_work(work, store, version, prefs, today, reread=False):
     if not ledger:
         die("no ledger (%s, or state.json) in the store copy %s. A new learner has none yet: "
             "set up with `init --work %s …`" % (STATE_PATH, store, work))
-    st = load_json(ledger)
-    check_schema(st)
-    migrate_ledger(st)
+    st = make_current(load_json(ledger))
     os.makedirs(work, exist_ok=True)
     inside = os.path.relpath(store, os.path.abspath(work)).split(os.sep)[0]
     if inside in JOB_FILES + (EARLIER_DIR,):
@@ -7875,7 +8100,7 @@ def reflection_items(work, st):
             out.append(dict(({"item": it["key"]} if it.get("key") else {}), type=it.get("type"),
                             topic=it.get("topic"), label=it.get("label")))
         return out
-    sess = next((s for s in st.get("sessions") or [] if s.get("id") == st.get("unreflected")), None)
+    sess = next((s for s in st["sessions"] if s.get("id") == st.get("unreflected")), None)
     for it in (sess or {}).get("items") or []:
         out.append({"type": it.get("type"), "topic": it.get("topic"),
                     "label": ((labels.get(it.get("topic")) or {}).get("label")
@@ -8049,7 +8274,7 @@ def cmd_save(args):
     # the round mix set on the page is kept in the ledger from now on
     prefs_changes = apply_prefs(st, info.get("prefs"), warnings)
     md = assemble_part_a(sealed, answers, feedback,
-                         rnd.get("item_order") or st["config"].get("item_order"), warnings,
+                         rnd.get("item_order") or st["config"]["item_order"], warnings,
                          feedback_questions, read_text(stage2) if stage2 else None)
     for label, path in (("questions' feedback", feedback_questions), ("final feedback", feedback),
                         ("Stage 2", stage2)):
@@ -8154,7 +8379,7 @@ def cmd_close(args):
     if refl.get("podcast_sources") is not None:
         st["profile"]["podcast_sources"] = podcast_sources(refl["podcast_sources"], "reflection podcast_sources")
         res["podcast_sources"] = st["profile"]["podcast_sources"]
-    elif st["profile"].get("podcast_sources") is None and "listening" in doc:
+    elif st["profile"]["podcast_sources"] is None and "listening" in doc:
         st["profile"]["podcast_sources"] = podcast_sources(None)
     doc["closing"] = md_b
     doc["reflected"] = True
@@ -8225,7 +8450,7 @@ def job_session(work, info, st, session=None):
     for sid in (info.get("session_id"), info.get("closed")):
         if sid and has_session(st, sid):
             return sid
-    log = (st.get("previous") or []) + (st.get("sessions") or [])
+    log = st["previous"] + st["sessions"]
     if not log:
         die("the ledger holds no session yet")
     return log[-1].get("id")
@@ -8282,8 +8507,7 @@ def cmd_rebuild_page(args):
     ledger = os.path.join(root, *STATE_PATH.split("/"))
     if not os.path.exists(ledger):
         die("no ledger at %s: the page file is built from the ledger and the session files" % ledger)
-    st = load_json(ledger)
-    check_schema(st)
+    st = make_current(load_json(ledger))
     lists = page_lists(store_copy_file(root, PAGE_PATH), store_copy_file(root, OLD_INDEX_PATH))
     sdir = os.path.join(root, "data", "sessions")
     for fn in sorted(os.listdir(sdir)) if os.path.isdir(sdir) else []:
@@ -8305,8 +8529,8 @@ def cmd_import(args):
     state = src.get("state") if isinstance(src, dict) else None
     if not state:
         die("the export has no 'state' (a Clinical CME page export is {state, sessions, reviews})")
-    check_schema(state)
-    os.makedirs(args.out_dir, exist_ok=True)
+    read = make_current(copy.deepcopy(state))  # the page is built from the ledger as the engine reads it; the
+    os.makedirs(args.out_dir, exist_ok=True)    # ledger itself is written as it came
     files = []
     lists = {"sessions": [], "reviews": [], "library": []}
     for d in src.get("sessions") or []:
@@ -8321,7 +8545,7 @@ def cmd_import(args):
         r = dict(r, date=date)
         files.append(layout_file(args.out_dir, review_path(date), r))
         page_put_review(lists, r)
-    files.append(layout_file(args.out_dir, PAGE_PATH, page_doc(state, lists)))
+    files.append(layout_file(args.out_dir, PAGE_PATH, page_doc(read, lists)))
     files.append(layout_file(args.out_dir, STATE_PATH, state))
     print(json.dumps({"ok": True, "gen": state.get("gen"), "next_id": state.get("next_id"),
                       "sessions": len(src.get("sessions") or []), "reviews": len(src.get("reviews") or []),

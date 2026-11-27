@@ -1,0 +1,269 @@
+{
+ "schema": 4,
+ "gen": 7,
+ "created": "2026-01-05",
+ "updated": "2026-01-20",
+ "next_id": "S0002",
+ "profile": {
+  "display_name": "Example learner",
+  "specialty": "Internal/hospital medicine",
+  "subspecialty": null,
+  "journey": "",
+  "journey_set_at": null,
+  "aim": "",
+  "aim_set_at": null,
+  "journey_label": null,
+  "aim_tags": null,
+  "practice_setting": [],
+  "goals": [],
+  "strengths": [],
+  "weaknesses": [],
+  "domain_self_ratings": {
+   "CARD": 3,
+   "TOX": 2
+  },
+  "domain_emphasis": {},
+  "notes": "",
+  "onboarded_at": "2026-01-05",
+  "podcast_sources": null
+ },
+ "config": {
+  "session_minutes": 35,
+  "mcqs": 0,
+  "focused": 1,
+  "case": true,
+  "round_set_at": "2026-01-05T08:00:00Z",
+  "case_format": "unfolding",
+  "feedback_depth": "detailed",
+  "target_sessions_per_week": 3,
+  "review_interval_days": 42,
+  "intervals_days": [
+   1,
+   3,
+   7,
+   16,
+   35,
+   90
+  ],
+  "new_topics_per_round": 1,
+  "lab_units": "SI",
+  "blood_gas_units": "mmHg",
+  "guideline_region": "Iceland/Europe",
+  "item_order": "mcqs_first",
+  "helpers": true,
+  "prepare_ahead": true,
+  "prepare_task": false,
+  "testing": false,
+  "show_coding": true,
+  "reminders": false,
+  "listening": true,
+  "resource_preferences": {
+   "free_only": false,
+   "formats": [
+    "guidelines",
+    "review articles"
+   ]
+  },
+  "evidence_ladder": true
+ },
+ "review": {
+  "last": null,
+  "next_due": null,
+  "period_start": "2026-01-05"
+ },
+ "blueprint": {
+  "CARD": {
+   "name": "Cardiology",
+   "weight": 1.0,
+   "topics": {
+    "CARD-01": "Example topic one",
+    "CARD-02": "Example topic two"
+   }
+  },
+  "TOX": {
+   "name": "Emergencies / Toxicology",
+   "weight": 0.8,
+   "topics": {
+    "TOX-01": "Example poisoning",
+    "EMRG-01": "Example emergency"
+   }
+  }
+ },
+ "topics": {
+  "EMRG-01": {
+   "domain": "TOX",
+   "label": "Example emergency",
+   "last": "2026-01-20",
+   "attempts": 1,
+   "mastery": 2,
+   "step": 0,
+   "due": "2026-01-23",
+   "comfort": 3,
+   "calibration": "aligned",
+   "history": [
+    [
+     "2026-01-20",
+     2,
+     3,
+     "aligned"
+    ]
+   ]
+  }
+ },
+ "gaps": [
+  {
+   "topic": "EMRG-01",
+   "gap": "Example: the first step",
+   "self": null,
+   "source": [
+    "graded"
+   ],
+   "date": "2026-01-20",
+   "opened": "2026-01-20"
+  }
+ ],
+ "resolved": [],
+ "sessions": [
+  {
+   "id": "S0001",
+   "date": "2026-01-20",
+   "title": "Example round",
+   "topics": [
+    "EMRG-01"
+   ],
+   "items": [
+    {
+     "type": "mcq",
+     "topic": "EMRG-01",
+     "domain": "TOX",
+     "mastery": 2,
+     "confidence": "unsure",
+     "correct": false
+    }
+   ],
+   "score": 2.0,
+   "minutes": 20
+  }
+ ],
+ "previous": [],
+ "agg": {
+  "sessions": 0,
+  "items": 0,
+  "minutes": 0,
+  "reading_minutes": 0,
+  "mcqs": 0,
+  "mcq_correct": 0,
+  "focused": 0,
+  "focused_mastery_sum": 0.0,
+  "score_sum": 0.0,
+  "score_n": 0,
+  "art": {
+   "DG": [
+    0.0,
+    0
+   ],
+   "PR": [
+    0.0,
+    0
+   ],
+   "DDX": [
+    0.0,
+    0
+   ],
+   "TEST": [
+    0.0,
+    0
+   ],
+   "META": [
+    0.0,
+    0
+   ],
+   "MGMT": [
+    0.0,
+    0
+   ]
+  },
+  "art_focused": {
+   "DG": [
+    0.0,
+    0
+   ],
+   "PR": [
+    0.0,
+    0
+   ],
+   "DDX": [
+    0.0,
+    0
+   ],
+   "TEST": [
+    0.0,
+    0
+   ],
+   "META": [
+    0.0,
+    0
+   ],
+   "MGMT": [
+    0.0,
+    0
+   ]
+  },
+  "idea": [
+   0,
+   0,
+   0
+  ],
+  "errors": {
+   "category": {},
+   "knowledge_type": {},
+   "art_domain": {},
+   "severity": {},
+   "bias": {}
+  },
+  "calibration": {
+   "sure": [
+    0,
+    0.0
+   ],
+   "unsure": [
+    0,
+    0.0
+   ],
+   "guess": [
+    0,
+    0.0
+   ]
+  },
+  "brier": [
+   0.0,
+   0
+  ],
+  "drills": {
+   "avoided": 0,
+   "partial": 0,
+   "fell_for": 0
+  },
+  "disputes": {
+   "learner_right": 0,
+   "both_defensible": 0,
+   "upheld": 0
+  },
+  "overrides": {
+   "scores": 0,
+   "gaps": 0
+  },
+  "reflection_skipped": 0
+ },
+ "reviews": [],
+ "drills": [],
+ "errata": [],
+ "pending_errata": [],
+ "teaching_point_checks": {},
+ "unreflected": null,
+ "block": null,
+ "blocks": [],
+ "skill_version": "6.0.0",
+ "positions": [],
+ "mappings": []
+}

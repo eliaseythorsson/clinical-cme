@@ -82,7 +82,17 @@ _Avoid_: state (in conversation with the learner)
 
 **Engine stamp**:
 The version of the skill whose state engine last wrote the ledger (`skill_version` in it), set on every write. An engine never writes a ledger stamped by a newer one: it says "update the plugin" and only reads. A ledger without a stamp counts as older.
-_Avoid_: schema version (that is `schema`, the ledger's shape)
+_Avoid_: schema version (that is `schema`, which stays 4: the stamp, not the schema, tells engines apart)
+
+**Load step**:
+The one way every command reads the ledger (`make_current`): check it, run the upgrade steps, fill what it lacks from the declared shape, stamp the engine version. Not a write (`gen` stays); what it filled is stored with the next write. A ledger stamped by a newer engine is only filled, for reading.
+_Avoid_: migration (nothing is migrated as an act of its own, ADR 0003)
+
+**Declared shape**:
+The one statement of what a current ledger holds and the defaults an older one gets: `LEDGER_SHAPE` with `DEFAULT_CONFIG` and `DEFAULT_PROFILE`, and how a null or empty setting reads. `validate` checks a ledger against it.
+
+**Upgrade step**:
+One small named change in the load step that brings a ledger written before one change of the engine to what it reads since (`UPGRADES`, oldest first, each a no-op afterwards). History records (sessions, topics, gaps) are not upgraded: they are read as written.
 
 **Log**:
 The verbatim, append-only record of every round, one session document each.

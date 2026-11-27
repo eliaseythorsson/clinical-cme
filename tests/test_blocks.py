@@ -15,7 +15,7 @@ from conftest import SKILL
 from examples import LEDGERS, cme
 
 # the example ledgers written before blocks (`drilled`, issue #18, is in the middle of one)
-ledgers = pytest.mark.parametrize("name", [n for n in LEDGERS if "block" not in examples.load_ledger(n)])
+ledgers = pytest.mark.parametrize("name", [n for n in LEDGERS if "block" not in examples.load_ledger(n, raw=True)])
 SHARES = dict(cme.BLOCK_SHARES)
 
 
@@ -325,7 +325,7 @@ def test_a_ledger_with_tox_and_emrg_is_migrated_on_load():
     raw["block"] = {"theme": "EMRG", "round": 0, "length": 12, "declined": ["TOX", "EMRG", "CARD"]}
     raw["blocks"] = [{"theme": "EMRG", "round": 12, "length": 12}]
     raw["profile"]["domain_emphasis"] = {"EMRG": 1.5}
-    st = cme.migrate_ledger(copy.deepcopy(raw))
+    st = cme.make_current(copy.deepcopy(raw))
     assert "EMRG" not in st["blueprint"] and len(st["blueprint"]["TOX"]["topics"]) == 5
     assert st["topics"]["EMRG-02"]["domain"] == "TOX"
     assert st["profile"]["domain_self_ratings"]["TOX"] == 2 and "EMRG" not in st["profile"]["domain_self_ratings"]
@@ -333,7 +333,7 @@ def test_a_ledger_with_tox_and_emrg_is_migrated_on_load():
     assert st["block"]["theme"] == "TOX" and st["block"]["declined"] == ["TOX", "CARD"]
     assert st["blocks"][0]["theme"] == "TOX"
     again = copy.deepcopy(st)
-    assert cme.migrate_ledger(again) == st                     # a no-op afterwards
+    assert cme.make_current(again) == st                     # a no-op afterwards
     assert cme.canon_domain(st, "EMRG") == "TOX" and cme.find_domain(st, "EMRG") == "TOX"
     assert cme.topic_domain(st, "EMRG-01") == "TOX"
     # a one-off round on the old code is a round on the merged area
@@ -384,8 +384,9 @@ def test_opening_line_names_the_theme_and_position_and_nothing_else(name, work):
 
 @ledgers
 def test_ledger_written_before_blocks_keeps_everything_and_starts_its_first_block(name, capsys, tmp_path):
+    assert "block" not in examples.load_ledger(name, raw=True)
     st = examples.load_ledger(name)
-    assert "block" not in st and "blocks" not in st
+    assert st["block"] is None and st["blocks"] == []        # the load step's defaults: no block yet
     before = copy.deepcopy(st)
     today = examples.today_of(name)
     plan = cme.plan_round(st, examples.plan_options(), today)

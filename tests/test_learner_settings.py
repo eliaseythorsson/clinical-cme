@@ -3,6 +3,7 @@ the author pitches to, with display labels derived by the assistant. Old ledgers
 `goals` and `notes` into them word for word; the page updates them through cme/prefs, which
 sets the prepared round aside and clears the labels; labels alone change nothing in a round.
 Also the default mix of a new learner and the onboarding table of time answers."""
+import copy
 import json
 import os
 import re
@@ -352,15 +353,15 @@ def test_apply_prefs_documents():
 def test_page_file_holds_label_and_text_and_nothing_else_new():
     st = dict(STATE, profile=dict(STATE["profile"], journey=JOURNEY, journey_label="senior attending", aim=AIM,
                                   aim_tags=["teach"], journey_set_at="2026-01-01T00:00:00Z", notes="PRIVATE-NOTE"))
-    doc = cme.page_doc(st)
+    doc = cme.page_doc(cme.make_current(st))
     assert doc["settings"]["level"] == {"label": "senior attending", "text": JOURNEY}
     assert doc["settings"]["aim"] == {"tags": ["teach"], "text": AIM}
     assert doc["who"]["role"] == "senior attending"
     assert "journey_set_at" not in json.dumps(doc) and "PRIVATE-NOTE" not in json.dumps(doc)
-    blank = cme.page_doc(STATE)
+    blank = cme.page_doc(cme.make_current(copy.deepcopy(STATE)))
     assert blank["settings"]["level"] is None and blank["settings"]["aim"] is None
     assert set(doc) == set(blank) and set(doc["settings"]) == set(blank["settings"])
-    waiting = cme.page_doc(dict(STATE, profile={"journey": JOURNEY, "aim": AIM}))["settings"]
+    waiting = cme.page_doc(cme.make_current(dict(copy.deepcopy(STATE), profile={"journey": JOURNEY, "aim": AIM})))["settings"]
     assert waiting["level"] == {"label": None, "text": JOURNEY} and waiting["aim"] == {"tags": [], "text": AIM}
 
 
@@ -461,7 +462,8 @@ def test_a_ledger_from_before_the_mix_was_a_setting_keeps_three_mcqs_and_the_cas
     work.write_ledger(st)
     r = work.start(DAY)
     assert (r["plan"]["mcqs"], r["plan"]["focused"], r["plan"]["case"]) == (3, 0, 1)
-    assert cme.mix_estimate(st)[0] == {"mcqs": 3, "focused": 0, "case": True}
+    assert cme.mix_estimate(cme.make_current(st))[0] == {"mcqs": 3, "focused": 0, "case": True}
+    assert st["config"]["session_minutes"] == 35         # it has a length of its own: kept
 
 
 CELL = re.compile(r"^(?:(\d+) MCQs? ?)?(?:\+ )?(?:(\d+) focused ?)?(?:\+ )?(?:(one-step|unfolding) case ?)?\((\d+)\)$")

@@ -105,6 +105,10 @@
    "mcq_correct": 15,
    "mcqs": 21,
    "minutes": 184,
+   "overrides": {
+    "gaps": 0,
+    "scores": 0
+   },
    "reading_minutes": 0,
    "reflection_skipped": 1,
    "score_n": 7,
@@ -486,6 +490,10 @@
    "mcq_correct": 15,
    "mcqs": 21,
    "minutes": 184,
+   "overrides": {
+    "gaps": 0,
+    "scores": 0
+   },
    "reading_minutes": 0,
    "reflection_skipped": 1,
    "score_n": 7,
@@ -1084,6 +1092,10 @@
     "mcq_correct": 14,
     "mcqs": 18,
     "minutes": 144,
+    "overrides": {
+     "gaps": 0,
+     "scores": 0
+    },
     "reading_minutes": 0,
     "reflection_skipped": 0,
     "score_n": 6,
@@ -1091,7 +1103,7 @@
     "sessions": 6
    },
    "block": null,
-   "blocks": null,
+   "blocks": [],
    "domain_self_ratings": {
     "CARD": 4.0,
     "ENDO": 5.0,

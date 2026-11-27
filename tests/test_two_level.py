@@ -97,7 +97,7 @@ def test_a_json_blueprint_may_nest_sub_topics_under_their_topic():
     # a ledger whose blueprint was stored nested is read in the same shape (migrate on load)
     st = examples.load_ledger("fresh", raw=True)
     st["blueprint"] = copy.deepcopy(nested)
-    assert cme.migrate_ledger(st)["blueprint"] == bp
+    assert cme.make_current(st)["blueprint"] == bp
 
 
 def test_a_sub_topic_id_used_twice_is_refused():
@@ -428,7 +428,7 @@ def test_check_prints_the_same_and_writes_nothing(tmp_path):
     out = json.loads(r.stdout)
     assert out["check"] is True and len(out["items"]) == 17 and "files" not in out
     st = w.read_json("publish", "data", "state.json")           # the blueprint change only
-    assert "mappings" not in st and not any(x.get("subtopic") for s in st["sessions"] for x in s["items"])
+    assert not st["mappings"] and not any(x.get("subtopic") for s in st["sessions"] for x in s["items"])
 
 
 def test_a_mapping_is_refused_whole_with_every_problem_named(tmp_path):
@@ -449,7 +449,7 @@ def test_a_mapping_is_refused_whole_with_every_problem_named(tmp_path):
                  "'type' must be mcq, focused or case", "no open gap RENAL-01", "'to' must be another topic",
                  "Nothing was changed"):
         assert part in err, part
-    assert "mappings" not in w.read_json("publish", "data", "state.json")
+    assert not w.read_json("publish", "data", "state.json")["mappings"]
 
 
 def test_a_mapping_needs_the_two_level_blueprint_a_reflected_ledger_and_is_applied_once(tmp_path):

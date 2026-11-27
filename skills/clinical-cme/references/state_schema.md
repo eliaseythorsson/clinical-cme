@@ -62,6 +62,24 @@ command that would (`start` and `prepare` too) stops with nothing written and sa
 plugin to continue"; `open` reports it as `newer_version`, and read-only requests work as usual
 (`store.md` §6). A ledger without the stamp was written by an older engine.
 
+**The load step** (issue #83). Every command reads the ledger through one step
+(`make_current` in `cme.py`): it checks the ledger (schema 4, the fields no ledger was ever
+without), runs the named **upgrade steps** in order (`UPGRADES`: `settings_of_4_2`,
+`paragraphs`, `blueprint_shape`, `one_code_per_area`; each a no-op afterwards), fills
+everything the ledger lacks from its **declared shape** (`LEDGER_SHAPE`, `DEFAULT_CONFIG`,
+`DEFAULT_PROFILE`), and stamps the engine version. Reading is not a write (`gen` stays); what
+was filled is stored with the next write. A ledger stamped by a newer engine is filled for
+reading only: no upgrade step runs and its stamp stays, so writing it is still refused. How
+an older or odd value reads, once, there: a missing setting reads as its default, except that a
+ledger from before the round mix was a setting gets 3 MCQs and the case, and any ledger without
+a session length 20 minutes (`LEGACY_CONFIG`); a null count reads as 0 and a null switch as
+off, except `listening`, which is on unless false (`CONFIG_NULL`); an empty review interval,
+spacing intervals, region or specialty reads as the default. The records of history (sessions,
+topics, gaps, blocks) are read as they were written. `schema` stays 4: an older engine meeting a
+higher schema would refuse to read the ledger at all, where the stamp lets it read and not
+write. `validate` checks a ledger against the declared shape and names the upgrade steps the
+stored ledger still needs (`upgrades`).
+
 `positions` are the learner's **position notes** (`standards.md` rule 12): each on one decision
 point of a topic, in the learner's words, kept when they stopped the topic (§4, "The learner's
 stop"); `from` is where it was said (`reflection` or `override`). A note is in force until the
@@ -86,7 +104,7 @@ bullet indented under its topic, starting with its id, with `(aspects: managemen
 testing low)` at the end where known; a decision point is a bullet indented under its
 sub-topic, without an id. A JSON blueprint may nest them (`"CARD-03": {"label": "…",
 "subtopics": {"CARD-03a": "…"}}`); the ledger keeps the flat shape above, and a ledger read
-with the nested shape is brought to it (`migrate_ledger`). Nothing is stored per sub-topic:
+with the nested shape is brought to it (the load step, below). Nothing is stored per sub-topic:
 what each has had is counted from the items that name it (§4, "Sub-topics"). An item and a
 gap name theirs as `subtopic`; an item moved by a mapping keeps the topic it was recorded under
 as `recorded_under` (§9); `mappings` lists the mappings applied (`date`, `name`, `sha256`,
@@ -744,7 +762,7 @@ Maintenance tools, outside the protocol; they take their own files and folders:
 | `import EXPORT.json --out-dir D` | A page export into the file layout (`store.md` §6, a damaged ledger). |
 | `rebuild-page ROOT` | Rebuild `ROOT/data/page.json` (§7) from the session and review files and the ledger of a folder in the store's layout; `reindex` is its old name and still works. |
 | `blueprint-md FILE --out BP.json` | Convert a Markdown blueprint. |
-| `validate STATE` (or `validate --work W`) | Structural check. |
+| `validate STATE` (or `validate --work W`) | Check the ledger, as the load step reads it, against its declared shape (top-level fields, settings, profile) and its own references; `upgrades` names the upgrade steps the stored ledger still needs. |
 <!-- /command-table -->
 
 Add `--today YYYY-MM-DD` (before the command) to fix the date. No command writes over a file

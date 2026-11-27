@@ -87,7 +87,7 @@ def test_a_stop_overrides_the_drill_down_and_the_misconception(work, tmp_path_fa
     t = st["topics"]["NEURO-04"]
     assert t["mastery"] == 3 and t["calibration"] != "confident_error"
     assert t["step"] == len(st["config"]["intervals_days"]) - 1
-    assert "NEURO-04" not in {g["topic"] for g in st["gaps"]} and "positions" not in st
+    assert "NEURO-04" not in {g["topic"] for g in st["gaps"]} and not st["positions"]
 
 
 def test_a_stop_after_the_close_equals_the_same_stop_in_the_reflection(work, tmp_path_factory):

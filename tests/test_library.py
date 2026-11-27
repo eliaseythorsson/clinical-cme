@@ -204,7 +204,7 @@ def test_a_carried_entry_is_labelled_only_from_tested_topics():
     st = copy.deepcopy(STATE)
     entry = {"session": "S0001", "date": "2020-03-04", "kind": "reading", "topic": "DDD-04", "label": None,
              "title": "T", "link": "https://example.org/t", "minutes": 5, "section": "s"}
-    page = cme.page_doc(st, {"sessions": [], "reviews": [], "library": [entry, dict(entry, topic="AAA-01")]})
+    page = cme.page_doc(cme.make_current(st), {"sessions": [], "reviews": [], "library": [entry, dict(entry, topic="AAA-01")]})
     assert [e["label"] for e in page["library"]] == [None, "Alpha topic"]
     assert "UNTESTED-GAP-TOPIC" not in json.dumps(page)
 
@@ -223,7 +223,7 @@ KEY = "S0002|reading|https://example.org/read?a=1&b=2"
 
 
 def page_store(tmp_path, lib=LIBRARY):
-    page = cme.page_doc(copy.deepcopy(STATE))
+    page = cme.page_doc(cme.make_current(copy.deepcopy(STATE)))
     if lib is None:
         del page["library"]
     else:

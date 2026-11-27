@@ -160,8 +160,8 @@
   "case GEN-01"
  ],
  "profile": {
-  "aim": null,
-  "journey": null,
+  "aim": "",
+  "journey": "",
   "practice_setting": [],
   "specialty": "Internal/hospital medicine",
   "subspecialty": null

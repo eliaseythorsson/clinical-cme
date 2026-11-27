@@ -105,6 +105,10 @@
    "mcq_correct": 24,
    "mcqs": 33,
    "minutes": 340,
+   "overrides": {
+    "gaps": 0,
+    "scores": 0
+   },
    "reading_minutes": 0,
    "reflection_skipped": 0,
    "score_n": 11,
@@ -542,6 +546,10 @@
    "mcq_correct": 24,
    "mcqs": 33,
    "minutes": 340,
+   "overrides": {
+    "gaps": 0,
+    "scores": 0
+   },
    "reading_minutes": 0,
    "reflection_skipped": 0,
    "score_n": 11,

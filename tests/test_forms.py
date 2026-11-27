@@ -221,7 +221,7 @@ def test_the_reflection_form_as_filled_is_applied_by_close(rnd):
     sess = rnd.read_json("publish", "data", "state.json")["sessions"][-1]
     assert sess["self_comfort"] == {"HEME-01": 4, "GEN-11": 2} and sess["self_performance"] == 3
     assert sess["stops"][0]["topic"] == "NEURO-04"
-    assert "positions" not in rnd.read_json("publish", "data", "state.json")     # an empty note is no note
+    assert not rnd.read_json("publish", "data", "state.json")["positions"]     # an empty note is no note
 
 
 def test_the_reflection_form_is_written_once(rnd):

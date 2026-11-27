@@ -4,6 +4,7 @@ store, so it cannot preview a coming round (issue #13): no open gaps, no due top
 dates; history and progress stay. The page script is rendered against a stub DOM and a store
 folder (tests/page_harness.js). That needs node: without it these tests are skipped on a
 developer's machine and fail in CI."""
+import copy
 import importlib.util
 import json
 import os
@@ -75,7 +76,8 @@ def store_with(root, state=STATE, page=True, extra=None):
     with open(os.path.join(data, "state.json"), "w", encoding="utf-8") as fh:
         json.dump(state, fh)
     if page:
-        doc = load_cme().page_doc(state) if page is True else page
+        cme = load_cme()
+        doc = cme.page_doc(cme.make_current(copy.deepcopy(state))) if page is True else page
         with open(os.path.join(data, "page.json"), "w", encoding="utf-8") as fh:
             json.dump(doc, fh)
     for rel, obj in (extra or {}).items():
@@ -285,7 +287,7 @@ def test_rendered_page_shows_a_block_not_yet_begun_and_a_finished_one(block, sho
 
 def test_rendered_estimate_is_the_one_in_the_page_file(rendered, tmp_path):
     cme = load_cme()
-    doc = cme.page_doc(STATE)
+    doc = cme.page_doc(cme.make_current(copy.deepcopy(STATE)))
     assert doc["round"]["minutes"] == 2 * 5 + 1 * 10 + 25
     assert rendered["ids"]["mix-est"] == "About 45 minutes with feedback · your session length is 30 min."
     # the page has no figure of its own: whatever the file says is what it shows
