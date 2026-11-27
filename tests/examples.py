@@ -58,9 +58,12 @@ def expected_path(name, part):
     return os.path.join(LEDGERS_DIR, name, "expected", part + ".json")
 
 
-def load_ledger(name):
+def load_ledger(name, raw=False):
+    """The example ledger as the engine reads it from a store (cme.migrate_ledger: the old
+    profile fields folded, one code per area), or as it is on disk with `raw`."""
     with open(ledger_path(name), encoding="utf-8") as fh:
-        return json.load(fh)
+        st = json.load(fh)
+    return st if raw else cme.migrate_ledger(st)
 
 
 def today_of(name):

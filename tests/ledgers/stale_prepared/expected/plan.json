@@ -9,16 +9,16 @@
    }
   },
   "length": 12,
-  "line": "Block: Pulmonary & Critical Care, round 1 of 12",
+  "line": "Block: Gastroenterology & Hepatology, round 1 of 12",
   "mix": {
    "repeat": 2,
    "theme": 1,
    "wildcard": 0
   },
-  "name": "Pulmonary & Critical Care",
+  "name": "Gastroenterology & Hepatology",
   "round": 1,
   "starts": true,
-  "theme": "PULM"
+  "theme": "GI"
  },
  "blood_gas_units": "mmHg",
  "case_format": "unfolding",
@@ -36,45 +36,13 @@
  "item_order": "mcqs_first",
  "items": [
   {
-   "already_used": [
-    {
-     "date": "2026-09-03",
-     "diagnosis": "Example diagnosis: Sepsis & septic shock",
-     "id": "S0002",
-     "patient": "Example patient 2",
-     "presentation": "Example presentation 2",
-     "setting": "ward",
-     "topic": "PULM-07"
-    },
-    {
-     "date": "2026-09-01",
-     "id": "S0001",
-     "kind": "mcq",
-     "stem": "Example MCQ stem 1.2",
-     "topic": "PULM-07"
-    },
-    {
-     "aspect": "management",
-     "date": "2026-09-07",
-     "id": "S0003",
-     "kind": "focused",
-     "stem": "Example focused stem 3.1",
-     "topic": "PULM-07"
-    }
-   ],
-   "depth": {
-    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
-    "in_a_row": 1,
-    "level": 2,
-    "name": "studies"
-   },
-   "domain": "PULM",
-   "label": "Sepsis & septic shock",
-   "reason": "spaced review due 2026-09-09; last 5.0/5 on 2026-09-07",
-   "reason_code": "due",
+   "domain": "GI",
+   "label": "Hepatic encephalopathy",
+   "reason": "not yet tested; in the block's theme",
+   "reason_code": "new",
    "share": "theme",
    "slot": "case",
-   "topic": "PULM-07"
+   "topic": "GI-07"
   },
   {
    "already_used": [
@@ -129,14 +97,14 @@
    "topic": "RHEUM-04"
   },
   {
-   "domain": "PULM",
-   "label": "Pulmonary embolism (management)",
+   "domain": "GI",
+   "label": "Acute liver failure, drug-induced liver injury",
    "reason": "not yet tested; in the block's theme",
    "reason_code": "new",
    "separation": "same domain as the case (the block's theme), unrelated topic",
    "share": "theme",
    "slot": "mcq",
-   "topic": "PULM-06"
+   "topic": "GI-04"
   }
  ],
  "lab_units": "SI",
@@ -151,9 +119,9 @@
  "prepare_ahead": true,
  "presentation_order": [
   "mcq RHEUM-04",
-  "mcq PULM-06",
+  "mcq GI-04",
   "focused RENAL-06",
-  "case PULM-07"
+  "case GI-07"
  ],
  "profile": {
   "aim": null,

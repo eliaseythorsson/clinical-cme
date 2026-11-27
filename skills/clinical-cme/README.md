@@ -11,8 +11,8 @@ biases, calibration) and periodically analysed in a candid progress review.
 Built from four real rounds in testing mode and an architecture review (issues #41–#57 on
 GitHub; plan in `docs/plan-v5.md`).
 
-- **Themed blocks.** Rounds run in blocks of 12 on one domain (60% theme, 25% due repeats,
-  15% wildcard; 45/40/15 while six or more topics are overdue; the case on the theme), with a
+- **Themed blocks.** Rounds run in blocks of 12 on one domain (two rounds per topic for a domain
+  of fewer than four; 60% theme, 25% due repeats, 15% wildcard; 45/40/15 while six or more topics are overdue; the case on the theme), with a
   capped drill-down (a theme topic missed on its second round of a block waits a week) and a
   three-day rest after a miss. The theme is shown; topics stay blind.
 - **Your level and aim in your own words.** Setup asks where you are and where you're aiming

@@ -5,11 +5,13 @@ written before blocks keeps everything and starts its first block with the next 
 import copy
 import datetime as dt
 import json
+import os
 import re
 
 import pytest
 
 import examples
+from conftest import SKILL
 from examples import LEDGERS, cme
 
 # the example ledgers written before blocks (`drilled`, issue #18, is in the middle of one)
@@ -233,13 +235,115 @@ def test_proposed_theme_is_the_weakest_and_then_the_longest_unvisited():
     assert cme.propose_theme(st)["theme"] == "RENAL"
 
 
-def test_proposal_gives_a_reason_and_skips_domains_too_small_for_a_block():
+def test_proposal_gives_a_reason_and_any_area_with_topics_can_be_proposed():
+    """Issue #80: no area is too small to be a theme; a small one gets a short block."""
     st, _ = fresh()
-    st["profile"]["domain_self_ratings"] = {"TOX": 1, "EMRG": 1}     # three and two topics
     p = cme.propose_theme(st)
-    assert p["theme"] not in ("TOX", "EMRG") and "TOX" not in p["ranking"]
     assert p["reason"] == "Cardiology: nothing tested yet, not yet a theme"
+    assert set(p["ranking"]) == {d for d, info in st["blueprint"].items() if info["topics"]}
     assert cme.propose_theme(st, exclude=["CARD"])["theme"] == "PULM"
+    st["blueprint"]["OBST"] = {"name": "Obstetric medicine", "weight": 1.0,
+                               "topics": {"OBST-01": "Pre-eclampsia", "OBST-02": "Peripartum cardiomyopathy",
+                                          "OBST-03": "VTE in pregnancy"}}
+    st["profile"]["domain_self_ratings"] = {"OBST": 1}
+    assert cme.propose_theme(st)["theme"] == "OBST"
+    assert cme.block_status(st)["length"] == 6 and cme.block_status(st)["line"].endswith("round 1 of 6")
+
+
+def test_block_length_is_two_rounds_per_topic_below_four_topics():
+    st, _ = fresh()
+    st["blueprint"]["TINY"] = {"name": "Tiny", "weight": 0.6, "topics": {"TINY-01": "a", "TINY-02": "b"}}
+    assert cme.block_length(st, "TINY") == 4
+    assert cme.block_length(st, "RHEUM") == cme.BLOCK_LENGTH          # four topics: a full block
+    assert cme.block_length(st, "TOX") == cme.BLOCK_LENGTH            # five, once EMRG joined it
+    assert cme.start_block(st, "TINY")["length"] == 4
+    assert not hasattr(cme, "MIN_THEME_TOPICS")
+
+
+def test_a_short_block_runs_its_rounds_and_then_proposes_the_next_theme():
+    st, today = fresh()
+    st["blueprint"]["OBST"] = {"name": "Obstetric medicine", "weight": 1.0,
+                               "topics": {"OBST-01": "Pre-eclampsia", "OBST-02": "Peripartum cardiomyopathy",
+                                          "OBST-03": "VTE in pregnancy"}}
+    st["profile"]["domain_self_ratings"] = {"OBST": 1}
+    plans = play_rounds(st, today, 6)
+    assert [p["block"]["round"] for p in plans] == [1, 2, 3, 4, 5, 6]
+    assert all(p["block"]["length"] == 6 for p in plans)
+    assert all(c["domain"] == "OBST" for p in plans for c in p["items"] if c["slot"] == "case")
+    end = cme.block_end(st)
+    assert end is not None and end["theme"] != "OBST"
+    assert st["block"] == dict(st["block"], theme="OBST", round=6, length=6)
+
+
+# ---- measured weakness (issue #80)
+
+def test_mastery_factor_rises_as_the_mean_falls():
+    f = cme.mastery_factor
+    assert f(None) == 1.0 and f(3.5) == 1.0
+    assert f(2.5) == pytest.approx(1.5) and f(4.5) == pytest.approx(0.7)
+    assert f(1.0) == pytest.approx(1.5) and f(5.0) == pytest.approx(0.7)       # clamped
+    assert f(3.0) == pytest.approx(1.25) and f(4.0) == pytest.approx(0.85)     # linear between
+    assert all(f(a / 10.0) >= f(b / 10.0) for a, b in zip(range(10, 50), range(11, 51)))
+
+
+def set_mastery(st, tid, mastery):
+    cme.ensure_topic(st, tid)["mastery"] = mastery
+
+
+def test_a_clearly_weaker_lighter_area_overtakes_a_stronger_heavier_one():
+    st, _ = fresh()
+    for d in ("CARD", "ID", "RENAL", "GEN"):           # the other heavy areas: strong
+        set_mastery(st, d + "-01", 4.5)
+    set_mastery(st, "PULM-01", 4.5); set_mastery(st, "PULM-02", 4.5)
+    set_mastery(st, "ENDO-01", 2.5); set_mastery(st, "ENDO-02", 2.5)
+    p = cme.propose_theme(st)
+    ranking = p["ranking"]
+    assert ranking.index("ENDO") < ranking.index("PULM")       # 0.6 x 1.5 = 0.9 > 1.0 x 0.7
+    assert p["reason"].startswith("Endocrinology: mean 2.5 of 5 over 2 topics tested")
+    # at the issue's example (Pulmonary 3.5, Endocrinology 2.5) weight still leads
+    set_mastery(st, "PULM-01", 3.5); set_mastery(st, "PULM-02", 3.5)
+    ranking = cme.propose_theme(st)["ranking"]
+    assert ranking.index("PULM") < ranking.index("ENDO")       # 1.0 x 1.0 > 0.6 x 1.5
+
+
+# ---- one code per area: the duplicate TOX/EMRG merged (issue #80)
+
+def test_the_default_blueprint_has_each_area_once_and_md_and_json_agree():
+    with open(os.path.join(SKILL, "templates", "blueprint.json"), encoding="utf-8") as fh:
+        js = json.load(fh)
+    with open(os.path.join(SKILL, "templates", "blueprint.md"), encoding="utf-8") as fh:
+        md = cme.blueprint_from_md(fh.read())
+    assert md == js and "EMRG" not in js
+    names = [info["name"] for info in js.values()]
+    assert len(names) == len(set(names))
+    assert list(js["TOX"]["topics"]) == ["TOX-01", "TOX-02", "TOX-03", "EMRG-01", "EMRG-02"]
+
+
+def test_a_ledger_with_tox_and_emrg_is_migrated_on_load():
+    raw = examples.load_ledger("overdue", raw=True)
+    assert "EMRG" in raw["blueprint"] and raw["topics"]["EMRG-02"]["domain"] == "EMRG"
+    raw["block"] = {"theme": "EMRG", "round": 0, "length": 12, "declined": ["TOX", "EMRG", "CARD"]}
+    raw["blocks"] = [{"theme": "EMRG", "round": 12, "length": 12}]
+    raw["profile"]["domain_emphasis"] = {"EMRG": 1.5}
+    st = cme.migrate_ledger(copy.deepcopy(raw))
+    assert "EMRG" not in st["blueprint"] and len(st["blueprint"]["TOX"]["topics"]) == 5
+    assert st["topics"]["EMRG-02"]["domain"] == "TOX"
+    assert st["profile"]["domain_self_ratings"]["TOX"] == 2 and "EMRG" not in st["profile"]["domain_self_ratings"]
+    assert st["profile"]["domain_emphasis"] == {"TOX": 1.5}
+    assert st["block"]["theme"] == "TOX" and st["block"]["declined"] == ["TOX", "CARD"]
+    assert st["blocks"][0]["theme"] == "TOX"
+    again = copy.deepcopy(st)
+    assert cme.migrate_ledger(again) == st                     # a no-op afterwards
+    assert cme.canon_domain(st, "EMRG") == "TOX" and cme.find_domain(st, "EMRG") == "TOX"
+    assert cme.topic_domain(st, "EMRG-01") == "TOX"
+    # a one-off round on the old code is a round on the merged area
+    plan = cme.plan_round(st, examples.plan_options(domain="EMRG"), examples.today_of("overdue"))
+    assert {c["domain"] for c in plan["items"]} == {"TOX"}
+
+
+def test_a_new_emrg_topic_is_filed_under_its_area_whatever_the_item_says():
+    st, _ = fresh()
+    assert cme.ensure_topic(st, "EMRG-01", "EMRG")["domain"] == "TOX"
 
 
 def test_a_block_can_be_started_on_a_chosen_theme():

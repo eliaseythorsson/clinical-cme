@@ -173,17 +173,23 @@ _Avoid_: output folder, files list
 The list of domains and topics the curriculum covers.
 
 **Domain**:
-A blueprint grouping such as cardiology or gastroenterology.
+A blueprint grouping such as cardiology or gastroenterology, one `##` heading of the markdown blueprint, with one code (`TOX`); a topic id may carry another prefix (`EMRG-01` is in `TOX`).
 
 **Topic**:
 One blueprint entry within a domain; the unit that is scheduled.
 
 **Block**:
 A run of rounds (default 12) with one domain as its theme; most new material and the case come from the theme.
+
+**Short block**:
+The block of a domain with fewer than four blueprint topics: two rounds per topic (three topics, six rounds). Any domain with topics can be a theme.
 _Avoid_: module, month
 
 **Theme**:
 The domain of the current block. It is visible to the learner; topics stay blind. It is proposed with a one-line reason and the learner can change it, at the end of a block or in the middle of one.
+
+**Measured weakness**:
+In the theme proposal, the factor read off the mean current mastery of a domain's tested topics: about 1.5 at a mean of 2.5, 1.0 at 3.5, about 0.7 at 4.5 (1.0 with nothing tested). It multiplies the domain's weight, so weight still leads but a clearly weaker lighter domain can overtake.
 
 **Share**:
 The part of a round's short questions given to the theme (60%), to due repeats (25%) or to the wildcard (15%), met over the block rather than in every round. While the backlog is large the theme gives up 15 points to the repeats (45/40/15).

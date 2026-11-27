@@ -1,10 +1,10 @@
 {
  "after_record": {
-  "PULM-06": {
+  "GI-04": {
    "attempts": 1,
    "calibration": "not_rated",
    "comfort": null,
-   "domain": "PULM",
+   "domain": "GI",
    "due": "2026-11-23",
    "history": [
     [
@@ -14,36 +14,18 @@
      "not_rated"
     ]
    ],
-   "label": "Pulmonary embolism (management)",
+   "label": "Acute liver failure, drug-induced liver injury",
    "last": "2026-11-20",
    "mastery": 3.0,
    "step": 0
   },
-  "PULM-07": {
-   "attempts": 4,
+  "GI-07": {
+   "attempts": 1,
    "calibration": "not_rated",
    "comfort": null,
-   "domain": "PULM",
-   "due": "2026-11-27",
+   "domain": "GI",
+   "due": "2026-11-23",
    "history": [
-    [
-     "2026-09-01",
-     5.0,
-     2,
-     "underconfident"
-    ],
-    [
-     "2026-09-03",
-     2.0,
-     2,
-     "aligned"
-    ],
-    [
-     "2026-09-07",
-     5.0,
-     2,
-     "underconfident"
-    ],
     [
      "2026-11-20",
      5.0,
@@ -51,10 +33,10 @@
      "not_rated"
     ]
    ],
-   "label": "Sepsis & septic shock",
+   "label": "Hepatic encephalopathy",
    "last": "2026-11-20",
    "mastery": 5.0,
-   "step": 2
+   "step": 1
   },
   "RENAL-06": {
    "attempts": 2,
@@ -108,11 +90,11 @@
   }
  },
  "after_reflect": {
-  "PULM-06": {
+  "GI-04": {
    "attempts": 1,
    "calibration": "overconfident",
    "comfort": 5,
-   "domain": "PULM",
+   "domain": "GI",
    "due": "2026-11-23",
    "history": [
     [
@@ -122,36 +104,18 @@
      "overconfident"
     ]
    ],
-   "label": "Pulmonary embolism (management)",
+   "label": "Acute liver failure, drug-induced liver injury",
    "last": "2026-11-20",
    "mastery": 3.0,
    "step": 0
   },
-  "PULM-07": {
-   "attempts": 4,
+  "GI-07": {
+   "attempts": 1,
    "calibration": "underconfident",
    "comfort": 2,
-   "domain": "PULM",
-   "due": "2026-11-24",
+   "domain": "GI",
+   "due": "2026-11-23",
    "history": [
-    [
-     "2026-09-01",
-     5.0,
-     2,
-     "underconfident"
-    ],
-    [
-     "2026-09-03",
-     2.0,
-     2,
-     "aligned"
-    ],
-    [
-     "2026-09-07",
-     5.0,
-     2,
-     "underconfident"
-    ],
     [
      "2026-11-20",
      5.0,
@@ -159,10 +123,10 @@
      "underconfident"
     ]
    ],
-   "label": "Sepsis & septic shock",
+   "label": "Hepatic encephalopathy",
    "last": "2026-11-20",
    "mastery": 5.0,
-   "step": 2
+   "step": 1
   },
   "RENAL-06": {
    "attempts": 2,

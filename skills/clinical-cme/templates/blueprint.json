@@ -141,13 +141,7 @@
   "topics": {
    "TOX-01": "Common poisonings & antidotes (acetaminophen, salicylate, TCA, etc.)",
    "TOX-02": "Serotonin syndrome / NMS / malignant hyperthermia",
-   "TOX-03": "Environmental (hypothermia, hyperthermia)"
-  }
- },
- "EMRG": {
-  "name": "Emergencies / Toxicology",
-  "weight": 0.6,
-  "topics": {
+   "TOX-03": "Environmental (hypothermia, hyperthermia)",
    "EMRG-01": "Anaphylaxis (see RHEUM-04)",
    "EMRG-02": "Acute agitation, behavioral emergency"
   }

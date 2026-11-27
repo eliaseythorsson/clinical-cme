@@ -28,7 +28,7 @@ are in, or attach your `state.json`."
 >   the sources are checked while you answer; and your answers are graded by a different
 >   assistant than the one that wrote the questions.
 > - **Blind topics, in themed blocks.** Rounds come in blocks of 12 on one area (say,
->   cardiology): the case and most short questions are from it, the rest are repeats that have
+>   cardiology; fewer for a small area): the case and most short questions are from it, the rest are repeats that have
 >   come due and something from elsewhere. You are told the area and where you are in the
 >   block, and you can change the area at any time; which topic is being tested, and why, you
 >   learn after you have answered.

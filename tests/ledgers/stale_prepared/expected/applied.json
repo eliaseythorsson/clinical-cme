@@ -115,10 +115,10 @@
    "chosen": "auto",
    "last": "2026-11-20",
    "length": 12,
-   "reason": "Pulmonary & Critical Care: mean 5.0 of 5 over 1 topic tested, not yet a theme",
+   "reason": "Gastroenterology & Hepatology: mean 1.0 of 5 over 1 topic tested, 1 open gap, not yet a theme",
    "round": 1,
    "started": "2026-11-20",
-   "theme": "PULM"
+   "theme": "GI"
   },
   "blocks": [],
   "domain_self_ratings": {
@@ -178,14 +178,14 @@
    "block": {
     "length": 12,
     "round": 1,
-    "theme": "PULM"
+    "theme": "GI"
    },
    "case": {
-    "diagnosis": "Example diagnosis: Sepsis & septic shock",
+    "diagnosis": "Example diagnosis: Hepatic encephalopathy",
     "patient": "Example patient 5",
     "presentation": "Example presentation 5",
     "setting": "ward",
-    "topic": "PULM-07"
+    "topic": "GI-07"
    },
    "date": "2026-11-20",
    "drill": null,
@@ -215,7 +215,7 @@
      },
      "confidence": "unsure",
      "mastery": 5,
-     "topic": "PULM-07",
+     "topic": "GI-07",
      "type": "case"
     },
     {
@@ -258,7 +258,7 @@
      "correct": true,
      "mastery": 4,
      "stem": "Example MCQ stem 5.3",
-     "topic": "PULM-06",
+     "topic": "GI-04",
      "type": "mcq"
     }
    ],
@@ -278,26 +278,18 @@
    ],
    "title": "Example round S0005",
    "topics": [
-    "PULM-07",
+    "GI-07",
     "RENAL-06",
     "RHEUM-04",
-    "PULM-06"
+    "GI-04"
    ],
    "undo": {
     "topics": {
-     "PULM-06": {
+     "GI-04": {
       "new": true
      },
-     "PULM-07": {
-      "row": true,
-      "was": {
-       "attempts": 3,
-       "calibration": "underconfident",
-       "comfort": 2,
-       "due": "2026-09-09",
-       "last": "2026-09-07",
-       "step": 1
-      }
+     "GI-07": {
+      "new": true
      },
      "RENAL-06": {
       "row": true,
@@ -332,8 +324,8 @@
     }
    },
    "why": {
-    "PULM-06": "new",
-    "PULM-07": "due",
+    "GI-04": "new",
+    "GI-07": "new",
     "RENAL-06": "due",
     "RHEUM-04": "due"
    }
@@ -464,19 +456,19 @@
    "chosen": "auto",
    "last": "2026-11-20",
    "length": 12,
-   "reason": "Pulmonary & Critical Care: mean 5.0 of 5 over 1 topic tested, not yet a theme",
+   "reason": "Gastroenterology & Hepatology: mean 1.0 of 5 over 1 topic tested, 1 open gap, not yet a theme",
    "round": 1,
    "started": "2026-11-20",
-   "theme": "PULM"
+   "theme": "GI"
   },
   "blocks": [],
   "domain_self_ratings": {
    "GEN": 4.3,
-   "GI": 2.7,
+   "GI": 3.3,
    "HEME": 4.0,
    "ID": 4.3,
    "NEURO": 4,
-   "PULM": 3.0,
+   "PULM": 2.0,
    "RENAL": 5.0,
    "RHEUM": 3.3
   },
@@ -527,14 +519,14 @@
    "block": {
     "length": 12,
     "round": 1,
-    "theme": "PULM"
+    "theme": "GI"
    },
    "case": {
-    "diagnosis": "Example diagnosis: Sepsis & septic shock",
+    "diagnosis": "Example diagnosis: Hepatic encephalopathy",
     "patient": "Example patient 5",
     "presentation": "Example presentation 5",
     "setting": "ward",
-    "topic": "PULM-07"
+    "topic": "GI-07"
    },
    "date": "2026-11-20",
    "drill": null,
@@ -564,7 +556,7 @@
      },
      "confidence": "unsure",
      "mastery": 5,
-     "topic": "PULM-07",
+     "topic": "GI-07",
      "type": "case"
     },
     {
@@ -607,7 +599,7 @@
      "correct": true,
      "mastery": 4,
      "stem": "Example MCQ stem 5.3",
-     "topic": "PULM-06",
+     "topic": "GI-04",
      "type": "mcq"
     }
    ],
@@ -623,8 +615,8 @@
    },
    "score": 3.75,
    "self_comfort": {
-    "PULM-06": 5,
-    "PULM-07": 2,
+    "GI-04": 5,
+    "GI-07": 2,
     "RENAL-06": 5,
     "RHEUM-04": 2
    },
@@ -636,28 +628,22 @@
    ],
    "title": "Example round S0005",
    "topics": [
-    "PULM-07",
+    "GI-07",
     "RENAL-06",
     "RHEUM-04",
-    "PULM-06"
+    "GI-04"
    ],
    "undo": {
     "ratings": {
-     "PULM": 2.0,
+     "GI": 2.7,
      "RHEUM": 4
     },
     "topics": {
-     "PULM-06": {
+     "GI-04": {
       "new": true
      },
-     "PULM-07": {
-      "row": true,
-      "was": {
-       "attempts": 3,
-       "due": "2026-09-09",
-       "last": "2026-09-07",
-       "step": 1
-      }
+     "GI-07": {
+      "new": true
      },
      "RENAL-06": {
       "row": true,
@@ -689,8 +675,8 @@
     }
    },
    "why": {
-    "PULM-06": "new",
-    "PULM-07": "due",
+    "GI-04": "new",
+    "GI-07": "new",
     "RENAL-06": "due",
     "RHEUM-04": "due"
    }
@@ -715,7 +701,7 @@
   "score": 3.75,
   "session_id": "S0005",
   "topics": {
-   "PULM-06": {
+   "GI-04": {
     "calibration": "not_rated",
     "comfort": null,
     "due": "2026-11-23",
@@ -724,14 +710,14 @@
     "misconception": false,
     "step": 0
    },
-   "PULM-07": {
+   "GI-07": {
     "calibration": "not_rated",
     "comfort": null,
-    "due": "2026-11-27",
-    "interval_days": 7,
+    "due": "2026-11-23",
+    "interval_days": 3,
     "mastery": 5.0,
     "misconception": false,
-    "step": 2
+    "step": 1
    },
    "RENAL-06": {
     "calibration": "not_rated",
@@ -761,7 +747,7 @@
   "open_gaps": 2,
   "session_id": "S0005",
   "topics": {
-   "PULM-06": {
+   "GI-04": {
     "calibration": "overconfident",
     "comfort": 5,
     "due": "2026-11-23",
@@ -770,14 +756,14 @@
     "misconception": false,
     "step": 0
    },
-   "PULM-07": {
+   "GI-07": {
     "calibration": "underconfident",
     "comfort": 2,
-    "due": "2026-11-24",
-    "interval_days": 4,
+    "due": "2026-11-23",
+    "interval_days": 3,
     "mastery": 5.0,
     "misconception": false,
-    "step": 2
+    "step": 1
    },
    "RENAL-06": {
     "calibration": "aligned",
@@ -805,15 +791,15 @@
   "performance": 3,
   "solid": "Example: what felt solid in round 5",
   "topic_comfort": {
-   "PULM-06": 5,
-   "PULM-07": 2,
+   "GI-04": 5,
+   "GI-07": 2,
    "RENAL-06": 5,
    "RHEUM-04": 2
   }
  },
  "round": {
   "case": {
-   "diagnosis": "Example diagnosis: Sepsis & septic shock",
+   "diagnosis": "Example diagnosis: Hepatic encephalopathy",
    "patient": "Example patient 5",
    "presentation": "Example presentation 5",
    "setting": "ward"
@@ -847,7 +833,7 @@
     },
     "confidence": "unsure",
     "mastery": 5,
-    "topic": "PULM-07",
+    "topic": "GI-07",
     "type": "case"
    },
    {
@@ -889,15 +875,15 @@
     "correct": true,
     "mastery": 4,
     "stem_summary": "Example MCQ stem 5.3",
-    "topic": "PULM-06",
+    "topic": "GI-04",
     "type": "mcq"
    }
   ],
   "log_id": "S0005",
   "minutes": 45,
   "selection_reasons": {
-   "PULM-06": "new",
-   "PULM-07": "due",
+   "GI-04": "new",
+   "GI-07": "new",
    "RENAL-06": "due",
    "RHEUM-04": "due"
   },

@@ -490,16 +490,31 @@ learner's own, so the progress review can still compare it with performance. Rea
 self-assessment agrees poorly with measured performance, and worst where performance is weakest,
 so an unchecked "comfortable" would steer questions away from exactly the domains that need them.
 
-**Blocks.** Rounds run in blocks of 12 on one domain, the theme (`docs/adr/0003`). `block` is
+**Blocks.** Rounds run in blocks of 12 on one domain, the theme (`docs/adr/0003`); a domain with
+fewer than four blueprint topics gets a short block of two rounds per topic (three topics, six
+rounds; `length` says which). `block` is
 the current block: `round` counts the rounds recorded in it (`save` adds one; a
 reflection does not), `chosen` is `auto` or `learner` (§4.1). `blocks` keeps the finished ones. A
 ledger with no `block` (new, or written before blocks) or with a finished one gets its next
 block when the next round is recorded: nothing else in the ledger changes, so history, gaps and
-due dates carry over. The theme is proposed without chance: each domain with at least four
-blueprint topics is scored as its weight for new material (above) raised by 10% per open gap (to
-50%), times how long it has been without a block (a quarter straight after its own, full again
-after four others; never a theme counts in full); the highest score wins, ties by blueprint
-order, and never the theme just finished. Each session entry keeps its `block` (`theme`,
+due dates carry over. The theme is proposed without chance: each domain with at least one
+blueprint topic is scored as its weight for new material (above), times its measured weakness,
+raised by 10% per open gap (to 50%), times how long it has been without a block (a quarter
+straight after its own, full again after four others; never a theme counts in full); the highest
+score wins, ties by blueprint order, and never the theme just finished. The measured weakness is
+read off the mean current mastery of the domain's tested topics: 1.5 at a mean of 2.5 or below,
+1.0 at 3.5, 0.7 at 4.5 or above, linear between; a domain with nothing tested counts 1.0. Weight
+still leads (Pulmonary at 1.0 and a mean of 3.5 stays ahead of Endocrinology at 0.6 and 2.5), but
+a clearly weaker lighter domain overtakes (Endocrinology at 2.5 over Pulmonary at 4.5).
+
+**One code per area.** A ledger whose blueprint lists one area under two codes with the same
+name (the default blueprint used to list "Emergencies / Toxicology" as `TOX` and as `EMRG`) is
+brought to one when it is read (`migrate_domains`): the topics keep their ids and join the first
+code, the higher weight stands, and the ratings, emphasis, block, blocks and session entries name
+the first code. A self-rating or emphasis given for both keeps the one asking for more practice
+(the lower rating, the higher emphasis). Every topic record then takes its domain from the
+blueprint. The old code still names the area (`theme --set EMRG`, `--domain EMRG`). In the
+markdown blueprint an area is a `##` heading; its code is that of its first topic. Each session entry keeps its `block` (`theme`,
 `round`, `length`).
 
 In a block the case is always on the theme, and the short questions are shared 60% theme, 25%
@@ -553,12 +568,13 @@ The theme is proposed; the learner decides. Three places carry it:
   ("cardiology next", "switch to GI") → `theme --work W --set "<what they said>"`
   (`--set` takes a domain id, a name, or a part of one that fits one domain only; otherwise it
   stops and lists the domains). Publish the `files` like a settings change and send `say` ("New
-  block: Gastroenterology & Hepatology: your choice. Round 1 of 12."). `theme --work W` alone
+  block: Gastroenterology & Hepatology: your choice. Round 1 of 12."; a short block says its own
+  length). `theme --work W` alone
   writes nothing and prints the block, the proposal if a block has just ended, and `choices`
   (every domain, the proposal's ranking first) for "which areas are there?".
 
 What the change does: the block the next round would have belonged to is replaced by a new block
-of 12 on the new theme, at round 0, `chosen: "learner"`. At the end of a block that is simply
+of 12 (or a short block) on the new theme, at round 0, `chosen: "learner"`. At the end of a block that is simply
 another theme for the block about to start. In the middle of one, the current block ends where
 it is and is kept in `blocks` with the rounds it had (a block changed before its first round is
 not kept); the new block starts with the next round. Nothing else in the ledger moves: history,
@@ -566,9 +582,8 @@ gaps and due dates stay, and topics of the theme left behind come back as due re
 left mid-block counts as having had its block when the next themes are proposed. `--another`
 takes the next domain of the ranking and keeps the ones turned down in `block.declined` until
 the block's first round is recorded, so asking again moves on and does not come back; after the
-last one it starts from the top. The learner may name a domain too small to be proposed (fewer
-than four topics): it is accepted with a warning, and its rounds revisit the same topics on
-other decision points. The prepared round is emptied (§8).
+last one it starts from the top. Any domain with topics can be named; one with fewer than four
+gets a short block, as when it is proposed. The prepared round is emptied (§8).
 
 When to run it: between rounds. At the opening line, before any answer: run `theme`, then
 `start` again on the changed ledger (the first plan is discarded; nothing was recorded). Once

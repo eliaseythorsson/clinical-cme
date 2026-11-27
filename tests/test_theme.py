@@ -139,13 +139,21 @@ def test_naming_the_current_theme_changes_nothing_and_confirming_a_proposal_star
     assert st["block"]["theme"] == proposed and st["block"]["chosen"] == "learner" and st["block"]["round"] == 0
 
 
-def test_a_small_domain_can_be_chosen_with_a_warning_and_an_empty_one_cannot():
+def test_a_small_domain_can_be_chosen_for_a_short_block_and_an_empty_one_cannot():
     st, _ = fresh()
-    res = cme.change_theme(st, theme="EMRG")                 # two topics: never proposed, but the learner may
-    assert st["block"]["theme"] == "EMRG" and "only 2 topics" in res["warnings"][0]
+    st["blueprint"]["TINY"] = {"name": "Tiny area", "weight": 0.6, "topics": {"TINY-01": "a", "TINY-02": "b"}}
+    res = cme.change_theme(st, theme="TINY")                 # two topics: a block of four rounds
+    assert res["changed"] and "warnings" not in res
+    assert st["block"]["theme"] == "TINY" and st["block"]["length"] == 4
     st["blueprint"]["EMPTY"] = {"name": "Nothing here", "weight": 1.0, "topics": {}}
     with pytest.raises(cme.CmeError):
         cme.change_theme(st, theme="EMPTY")
+
+
+def test_naming_the_old_code_of_a_merged_area_chooses_the_area():
+    st, _ = fresh()
+    cme.change_theme(st, theme="EMRG")                       # merged into TOX (issue #80)
+    assert st["block"]["theme"] == "TOX" and st["block"]["length"] == cme.BLOCK_LENGTH
 
 
 # ---- the command
@@ -215,3 +223,22 @@ def test_theme_output_names_no_topic(store):
     for args in ((), ("--another",), ("--set", "GI")):
         text = store.run("theme", "--work", store.path, *args).stdout
         assert not any(label in text for label in labels)
+
+
+def test_a_store_ledger_with_emrg_is_migrated_and_the_old_code_still_works(tmp_path):
+    """Issue #80: a ledger written with the duplicate TOX/EMRG areas keeps working, and the
+    ledger the command writes has one area."""
+    w = Work(tmp_path)
+    raw = examples.load_ledger("overdue", raw=True)
+    raw["block"] = {"theme": "EMRG", "round": 3, "length": 12, "started": "2026-08-01", "last": "2026-08-20",
+                    "chosen": "learner", "reason": "Emergencies / Toxicology: your choice"}
+    w.write_ledger(raw)
+    w.open(today="2026-11-20")
+    listing = theme(w, today="2026-11-20")
+    assert listing["block"]["theme"] == "TOX" and "EMRG" not in [c["id"] for c in listing["choices"]]
+    out = theme(w, "--set", "renal", today="2026-11-20")
+    assert out["was"]["theme"] == "TOX" and out["was"]["round"] == 3
+    placed = w.read_json("publish", "data", "state.json")
+    assert "EMRG" not in placed["blueprint"] and placed["blocks"][-1]["theme"] == "TOX"
+    assert placed["topics"]["EMRG-02"]["domain"] == "TOX"
+    assert "EMRG" not in placed["profile"]["domain_self_ratings"]

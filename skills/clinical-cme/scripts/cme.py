@@ -132,7 +132,13 @@ BLOCK_SHARES = (("theme", 60), ("repeat", 25), ("wildcard", 15))
 # from the theme's share; the wildcard keeps its 15%. Same order of shares as BLOCK_SHARES.
 BACKLOG_OVERDUE = 6
 BACKLOG_SHARES = (("theme", 45), ("repeat", 40), ("wildcard", 15))
-MIN_THEME_TOPICS = 4     # a domain with fewer blueprint topics is not proposed as a theme
+# Any area can be a theme (issue #80): one with fewer than SHORT_BLOCK_TOPICS blueprint topics gets
+# a short block of SHORT_BLOCK_ROUNDS rounds per topic (three topics, six rounds).
+SHORT_BLOCK_TOPICS = 4
+SHORT_BLOCK_ROUNDS = 2
+# The measured weakness of an area in the theme proposal (issue #80): (mean current mastery of its
+# tested topics, factor), linear between the points and clamped outside them. Nothing tested: 1.0.
+THEME_MASTERY_FACTOR = ((2.5, 1.5), (3.5, 1.0), (4.5, 0.7))
 THEME_REST_BLOCKS = 4    # a domain's pull as the next theme recovers over this many blocks after its own
 # Evidence depth (feedback_guide.md §4.1): how far behind the recommendation the feedback on an
 # item goes when it is answered well. Earned per topic, and per aspect for a focused question:
@@ -484,6 +490,98 @@ def migrate_profile(st):
     return st
 
 
+def canon_domain(st, d):
+    """The blueprint area code `d` stands for: `d` itself, or the area that holds topics whose
+    id starts with it (EMRG, merged into TOX by issue #80), else `d` unchanged."""
+    bp = st.get("blueprint") or {}
+    if not d or d in bp:
+        return d
+    return next((a for a, info in bp.items() if any(domain_of(t) == d for t in (info or {}).get("topics") or {})), d)
+
+
+def topic_domain(st, tid, bpt=None):
+    """The area topic `tid` belongs to: its record's, else the blueprint's, else its id prefix."""
+    t = (st.get("topics") or {}).get(tid) or {}
+    if t.get("domain"):
+        return t["domain"]
+    return ((bpt if bpt is not None else bp_topics(st)).get(tid) or {}).get("domain") or domain_of(tid)
+
+
+def migrate_domains(st):
+    """One area, one code (issue #80). Areas the blueprint lists twice under one name (the
+    default blueprint had "Emergencies / Toxicology" as TOX and as EMRG) become the first of
+    them: its topics join it with their ids, the higher weight stands, and every place the
+    ledger names the other code (ratings and emphasis, the block and the blocks, the sessions'
+    blocks and items) names the first. A self-rating or emphasis given for both keeps the one
+    asking for more practice (the lower rating, the higher emphasis). Then every topic record
+    takes its area from the blueprint. Changes `st` in place; a no-op afterwards."""
+    bp = st.get("blueprint")
+    if not isinstance(bp, dict):
+        return st
+    first, into = {}, {}
+    for d, info in bp.items():
+        name = str((info if isinstance(info, dict) else {}).get("name") or d).strip().lower()
+        if name in first:
+            into[d] = first[name]
+        else:
+            first[name] = d
+    for d, keep in into.items():
+        info, tgt = bp.pop(d), bp[keep]
+        tgt.setdefault("topics", {})
+        for tid, label in (info.get("topics") or {}).items():
+            tgt["topics"].setdefault(tid, label)
+        try:
+            tgt["weight"] = max(float(tgt.get("weight", 0.6)), float(info.get("weight", 0.6)))
+        except (TypeError, ValueError):
+            pass
+    prof = st.get("profile") if isinstance(st.get("profile"), dict) else {}
+
+    def num(v):
+        v = v.get("rating") if isinstance(v, dict) else v
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return None
+
+    for key, pick in (("domain_self_ratings", min), ("domain_emphasis", max)):
+        vals = prof.get(key)
+        if not isinstance(vals, dict):
+            continue
+        for d, keep in into.items():
+            if d not in vals:
+                continue
+            v = vals.pop(d)
+            if keep not in vals or num(vals[keep]) is None:
+                vals[keep] = v
+            elif num(v) is not None and pick(num(v), num(vals[keep])) == num(v) != num(vals[keep]):
+                vals[keep] = v
+    if into:
+        blocks = [st.get("block")] + list(st.get("blocks") or [])
+        for s in (st.get("sessions") or []) + (st.get("previous") or []):
+            blocks.append(s.get("block") if isinstance(s, dict) else None)
+            for it in (s.get("items") or []) if isinstance(s, dict) else []:
+                if isinstance(it, dict) and it.get("domain") in into:
+                    it["domain"] = into[it["domain"]]
+        for b in blocks:
+            if isinstance(b, dict):
+                if b.get("theme") in into:
+                    b["theme"] = into[b["theme"]]
+                if isinstance(b.get("declined"), list):
+                    b["declined"] = list(dict.fromkeys(into.get(x, x) for x in b["declined"]))
+    bpt = bp_topics(st)
+    for tid, t in (st.get("topics") or {}).items():
+        d = (bpt.get(tid) or {}).get("domain")
+        if isinstance(t, dict) and d and t.get("domain") != d:
+            t["domain"] = d
+    return st
+
+
+def migrate_ledger(st):
+    """Everything a ledger read from the store is brought up to: the profile's paragraphs and
+    one code per area. Changes `st` in place; a no-op afterwards."""
+    return migrate_domains(migrate_profile(st))
+
+
 def check_paragraphs(prof):
     """Validate the paragraphs and their labels in a profile (after a change). Dies with a plain
     message."""
@@ -672,14 +770,14 @@ def blueprint_from_md(text):
     for line in text.splitlines():
         m = re.match(r"^##\s+(?:[A-Z]\.\s*)?(.+?)\s*\(weight:\s*([^)]+)\)\s*$", line.strip())
         if m:
-            cur = {"name": m.group(1).strip(), "weight": weight_from_text(m.group(2)),
-                   "topics": {}}
-            cur["_pending"] = True
+            cur = {"name": m.group(1).strip(), "weight": weight_from_text(m.group(2)), "code": None}
             continue
         m = re.match(r"^-\s+([A-Z]{2,8}[-.][A-Za-z0-9_\-]+)\s+(.+?)\s*$", line.strip())
         if m and cur is not None:
             tid, label = m.group(1), m.group(2)
-            d = domain_of(tid)
+            # One heading, one area (issue #80): its code is that of its first topic's id; a later
+            # topic with another prefix (EMRG-01 under TOX) joins it with its own id.
+            d = cur["code"] = cur["code"] or domain_of(tid)
             if d not in bp:
                 bp[d] = {"name": cur["name"], "weight": cur["weight"], "topics": {}}
             bp[d]["topics"][tid] = label
@@ -886,7 +984,7 @@ def ensure_topic(state, tid, domain=None, label=None):
     t = state["topics"].get(tid)
     if not t:
         bpt = bp_topics(state).get(tid) or {}
-        t = {"domain": (domain or bpt.get("domain") or domain_of(tid)).upper(),
+        t = {"domain": (bpt.get("domain") or domain or domain_of(tid)).upper(),
              "label": label or bpt.get("label") or tid,
              "last": None, "attempts": 0, "mastery": None, "step": 0, "due": None,
              "comfort": None, "calibration": None, "history": []}
@@ -981,20 +1079,43 @@ def block_open(st):
     return b if int(b.get("round") or 0) < int(b.get("length") or BLOCK_LENGTH) else None
 
 
+def block_length(st, theme):
+    """The rounds in a block on `theme`: BLOCK_LENGTH, or for an area with fewer than
+    SHORT_BLOCK_TOPICS blueprint topics a short block of SHORT_BLOCK_ROUNDS per topic."""
+    n = len((((st.get("blueprint") or {}).get(theme) or {}).get("topics")) or {})
+    return SHORT_BLOCK_ROUNDS * n if 0 < n < SHORT_BLOCK_TOPICS else BLOCK_LENGTH
+
+
+def mastery_factor(mean):
+    """How much an area's measured weakness raises its pull as the next theme (issue #80): the
+    mean current mastery of its tested topics read off THEME_MASTERY_FACTOR; None (nothing
+    tested) counts 1.0."""
+    if mean is None:
+        return 1.0
+    pts = THEME_MASTERY_FACTOR
+    if mean <= pts[0][0]:
+        return pts[0][1]
+    for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+        if mean <= x1:
+            return y0 + (y1 - y0) * (mean - x0) / (x1 - x0)
+    return pts[-1][1]
+
+
 def propose_theme(st, exclude=()):
     """The domain proposed as the next theme, with a one-line reason: the weakest domain, or the
     one longest without a block. Returns {"theme", "reason", "ranking"} or None (no blueprint).
 
-    Each domain is scored as its weight for new material (blueprint weight, self-rating corrected
-    for overconfidence, emphasis: see domain_weights), raised by 10% per open gap (to 50%), times
-    how long it has gone without a block: a quarter right after its own block, back to full after
-    four other blocks; a domain never yet a theme counts in full. No chance involved; ties go to
-    blueprint order. The theme of the block just finished is not proposed again straight away."""
+    Each domain with at least one blueprint topic is scored as its weight for new material
+    (blueprint weight, self-rating corrected for overconfidence, emphasis: see domain_weights),
+    times its measured weakness (mastery_factor of the mean mastery of its tested topics), raised
+    by 10% per open gap (to 50%), times how long it has gone without a block: a quarter right
+    after its own block, back to full after four other blocks; a domain never yet a theme counts
+    in full. No chance involved; ties go to blueprint order. The theme of the block just finished
+    is not proposed again straight away. A small domain gets a short block (block_length)."""
     bp = st.get("blueprint") or {}
     eff = domain_weights(st)
     sizes = {d: len((info or {}).get("topics") or {}) for d, info in bp.items()}
-    pool = [d for d in bp if eff.get(d, 0) > 0 and sizes[d] >= MIN_THEME_TOPICS] \
-        or [d for d in bp if eff.get(d, 0) > 0 and sizes[d]] or [d for d in bp if sizes[d]]
+    pool = [d for d in bp if eff.get(d, 0) > 0 and sizes[d]] or [d for d in bp if sizes[d]]
     last = (st.get("block") or {}).get("theme") if isinstance(st.get("block"), dict) else None
     skip = set(exclude) | ({last} if last else set())
     if last and not int(st["block"].get("round") or 0) and st.get("blocks"):
@@ -1008,7 +1129,7 @@ def propose_theme(st, exclude=()):
         if isinstance(t.get("mastery"), (int, float)):
             tested.setdefault(t.get("domain"), []).append(float(t["mastery"]))
     for g in st.get("gaps") or []:
-        d = (st["topics"].get(g.get("topic")) or {}).get("domain") or domain_of(g.get("topic") or "")
+        d = topic_domain(st, g.get("topic") or "")
         open_gaps[d] = open_gaps.get(d, 0) + 1
 
     def since(d):       # blocks begun since d's own; None if d was never a theme
@@ -1016,7 +1137,8 @@ def propose_theme(st, exclude=()):
 
     def score(d):
         rest = min(since(d) or THEME_REST_BLOCKS, THEME_REST_BLOCKS) / float(THEME_REST_BLOCKS)
-        return eff.get(d, 0) * (1 + 0.1 * min(open_gaps.get(d, 0), 5)) * rest
+        mean = sum(tested[d]) / len(tested[d]) if tested.get(d) else None
+        return eff.get(d, 0) * mastery_factor(mean) * (1 + 0.1 * min(open_gaps.get(d, 0), 5)) * rest
 
     order = list(bp)
     ranking = sorted(pool, key=lambda d: (-round(score(d), 6), order.index(d)))
@@ -1046,13 +1168,14 @@ def next_block(st):
     p = propose_theme(st)
     if not p:
         return None, False
-    return {"theme": p["theme"], "round": 0, "length": BLOCK_LENGTH, "started": None,
+    return {"theme": p["theme"], "round": 0, "length": block_length(st, p["theme"]), "started": None,
             "chosen": "auto", "reason": p["reason"]}, True
 
 
-def start_block(st, theme, chosen="auto", reason=None, length=BLOCK_LENGTH):
+def start_block(st, theme, chosen="auto", reason=None, length=None):
     """Make `theme` the ledger's block, at round 0, filing the block it replaces under `blocks`
-    if any round was recorded in it. `chosen` says who picked the theme: "auto" or "learner"."""
+    if any round was recorded in it. `chosen` says who picked the theme: "auto" or "learner".
+    `length` defaults to the theme's block_length."""
     if theme not in (st.get("blueprint") or {}):
         die("unknown domain %r: the theme must be one of %s" % (theme, ", ".join(st.get("blueprint") or {})))
     old = st.get("block")
@@ -1060,6 +1183,7 @@ def start_block(st, theme, chosen="auto", reason=None, length=BLOCK_LENGTH):
         st.setdefault("blocks", []).append({k: old.get(k) for k in ("theme", "started", "last", "round", "length", "chosen")})
         st["blocks"] = st["blocks"][-CAP_BLOCKS:]
     st.setdefault("blocks", [])
+    length = block_length(st, theme) if length is None else length
     st["block"] = {"theme": theme, "round": 0, "length": int(length), "started": None, "last": None,
                    "chosen": chosen, "reason": reason}
     return st["block"]
@@ -1072,7 +1196,7 @@ def advance_block(st, rdate):
     b, starts = next_block(st)
     if b is None:
         return None
-    b = start_block(st, b["theme"], b.get("chosen") or "auto", b.get("reason")) if starts else st["block"]
+    b = start_block(st, b["theme"], b.get("chosen") or "auto", b.get("reason"), b["length"]) if starts else st["block"]
     b["round"] = int(b.get("round") or 0) + 1
     b["length"] = int(b.get("length") or BLOCK_LENGTH)
     b["started"] = b.get("started") or iso(rdate)
@@ -1114,7 +1238,8 @@ def find_domain(st, text):
     bp = st.get("blueprint") or {}
     want = (text or "").strip().lower()
     names = {d: str((info or {}).get("name") or d).lower() for d, info in bp.items()}
-    hits = [d for d in bp if want and (d.lower() == want or names[d] == want)] \
+    alias = canon_domain(st, want.upper())       # a merged area's old code (EMRG) names its area
+    hits = [d for d in bp if want and (d.lower() == want or names[d] == want or d == alias)] \
         or [d for d in bp if want and (want in names[d] or d.lower().startswith(want))]
     if len(hits) != 1:
         die("%s domain for %r: the theme must be one of %s"
@@ -1129,7 +1254,8 @@ def change_theme(st, theme=None, another=False):
     round would have belonged to is replaced by a new one at round 0 (start_block files it if
     any round was recorded in it). Themes turned down with "pick another" are remembered until
     the new block's first round, so asking again moves on down the ranking.
-    Returns {"changed", "was", "reason", "warnings"}."""
+    Returns {"changed", "was", "reason"}. Any area with topics can be named; a small one gets a
+    short block (block_length)."""
     cur, _ = next_block(st)
     if cur is None:
         die("the ledger has no blueprint: there is no theme to change")
@@ -1138,7 +1264,6 @@ def change_theme(st, theme=None, another=False):
     pending = is_open and int(old.get("round") or 0) == 0
     was = {"theme": cur["theme"], "name": domain_name(st, cur["theme"]),
            "round": int(cur.get("round") or 0), "length": cur["length"], "begun": is_open and not pending}
-    warnings = []
     declined = [d for d in (old.get("declined") or []) if d != cur["theme"]] if pending else []
     if another:
         declined.append(cur["theme"])
@@ -1153,15 +1278,12 @@ def change_theme(st, theme=None, another=False):
         if not n:
             die("%s has no topics in the blueprint, so it cannot be a theme" % domain_name(st, theme))
         if theme == cur["theme"] and is_open:
-            return {"changed": False, "was": was, "reason": old.get("reason"), "warnings": warnings}
-        if n < MIN_THEME_TOPICS:
-            warnings.append("%s has only %d topic%s: its rounds will revisit them on other decision points"
-                            % (domain_name(st, theme), n, "" if n == 1 else "s"))
+            return {"changed": False, "was": was, "reason": old.get("reason")}
         reason = "%s: your choice" % domain_name(st, theme)
     b = start_block(st, theme, "learner", reason)
     if declined:
         b["declined"] = declined
-    return {"changed": theme != cur["theme"] or not is_open, "was": was, "reason": reason, "warnings": warnings}
+    return {"changed": theme != cur["theme"] or not is_open, "was": was, "reason": reason}
 
 
 def block_mix(shorts, n, backlog=False):
@@ -1420,7 +1542,7 @@ def plan_round(st, args, today):
     eff = domain_weights(st)
     log = st["sessions"]
     rng = random.Random(args.seed if args.seed is not None else int(today.strftime("%Y%m%d")) * 100 + len(log))
-    restrict = args.domain.upper() if args.domain else None
+    restrict = canon_domain(st, args.domain.upper()) if args.domain else None
     # The block this round belongs to. Its theme steers the round unless the learner asked for a
     # one-off domain round (--domain), which still counts as a round of the block.
     block = block_status(st)
@@ -1441,19 +1563,19 @@ def plan_round(st, args, today):
     # pause, issue #79): no gap retest or revisit brings it back sooner, as with the learner's
     # stop (issue #75); in a one-off --domain round of the block too.
     paused = {tid for tid, t in topics.items()
-              if block and (t.get("domain") or domain_of(tid)) == block["theme"]
+              if block and topic_domain(st, tid, bpt) == block["theme"]
               and (parse_date(t.get("due")) or today) > today and t.get("history")
               and not answered_well(t["history"][-1][1], t["history"][-1][3])
               and block_rounds_on(st, tid, block) >= DRILLDOWN_BLOCK_ROUNDS}
     recent = set()
     for s in log[-3:]:
         recent.update(s.get("topics") or [])
-    recent_domains = [domain_of(t) for s in log[-10:] for t in (s.get("topics") or [])]
+    recent_domains = [topic_domain(st, t, bpt) for s in log[-10:] for t in (s.get("topics") or [])]
 
     def allowed(tid):
         if (tid in resting or tid in drilled or tid in paused) and not args.allow_repeat:
             return False
-        if restrict and (topics.get(tid, {}).get("domain") or domain_of(tid)) != restrict:
+        if restrict and topic_domain(st, tid, bpt) != restrict:
             return False
         return True
 
@@ -1568,7 +1690,7 @@ def plan_round(st, args, today):
             return True
         ra_t, ra_d = refs.get(a, (set(), set()))
         rb_t, rb_d = refs.get(b, (set(), set()))
-        da, db = domain_of(a), domain_of(b)
+        da, db = topic_domain(st, a, bpt), topic_domain(st, b, bpt)
         if b in ra_t or a in rb_t or (ra_t & rb_t) or db in ra_d or da in rb_d:
             return True
         return bool(significant_tokens(labels[a]["label"]) & significant_tokens(labels[b]["label"]))
@@ -1595,7 +1717,7 @@ def plan_round(st, args, today):
             for tid in source:
                 if tid in used_topics:
                     continue
-                d = (topics.get(tid) or {}).get("domain") or domain_of(tid)
+                d = topic_domain(st, tid, bpt)
                 if slot != "case" and not mcq_ok(tid, d, level):
                     continue
                 return {"slot": slot, "topic": tid, "label": label_of(tid), "domain": d,
@@ -1638,7 +1760,7 @@ def plan_round(st, args, today):
     # ---- a round of a themed block: each slot draws on one share (theme, repeat, wildcard)
 
     def dom(tid):
-        return (topics.get(tid) or {}).get("domain") or (bpt.get(tid) or {}).get("domain") or domain_of(tid)
+        return topic_domain(st, tid, bpt)
 
     def fits(slot, tid, d, level):
         return tid not in used_topics and (slot == "case" or mcq_ok(tid, d, level))
@@ -3457,9 +3579,9 @@ def cmd_review(args):
         set_paragraphs(prof, was, rv["profile_changes"])
         check_paragraphs(prof)
     for d, r in (rv.get("domain_self_ratings") or {}).items():
-        prof.setdefault("domain_self_ratings", {})[d.upper()] = r
+        prof.setdefault("domain_self_ratings", {})[canon_domain(st, d.upper())] = r
     for d, e in (rv.get("domain_emphasis") or {}).items():
-        prof.setdefault("domain_emphasis", {})[d.upper()] = e
+        prof.setdefault("domain_emphasis", {})[canon_domain(st, d.upper())] = e
     warnings = []
     iv = int(cfg.get("review_interval_days") or 42)
     if not 30 <= iv <= 90:
@@ -3633,6 +3755,7 @@ def cmd_settings(args):
         st["review"]["next_due"] = iso(anchor + dt.timedelta(days=int(st["config"]["review_interval_days"])))
     if args.blueprint:
         st["blueprint"] = read_blueprint(args.blueprint)
+        migrate_domains(st)
     # what changed decides whether the round prepared ahead still stands: the values, not the
     # keys that were sent (setting a value it already has changes nothing). Listening and the
     # podcast sources are compared as they take effect: a ledger without them has listening on
@@ -3685,8 +3808,6 @@ def cmd_theme(args):
     out = {"ok": True, "changed": res["changed"], "block": block, "was": res["was"],
            "say": ("New block: %s. Round 1 of %d." % (res["reason"], block["length"])) if res["changed"]
                   else "%s is already the theme. %s." % (block["name"], block["line"])}
-    if res["warnings"]:
-        out["warnings"] = list(res["warnings"])
     if res["changed"]:
         bump_gen(st)
         st["updated"] = iso(today)
@@ -3736,6 +3857,7 @@ def cmd_init(args):
     check_round_mix(st["config"])
     st["config"]["round_set_at"] = st["config"].get("round_set_at") or now_ts()
     st["blueprint"] = read_blueprint(args.blueprint)
+    migrate_domains(st)
     iv = int(st["config"].get("review_interval_days") or 42)
     st["review"] = {"last": None, "next_due": iso(today + dt.timedelta(days=iv)), "period_start": iso(today)}
     st["gen"] = 1
@@ -4958,6 +5080,8 @@ def fill_round_from_keys(rnd, sealed, plan=None):
     if not any(isinstance(it, dict) and it.get("key") for it in items):
         return None
     headers, header_problems, by_file = key_headers(sealed)
+    planned = {c.get("topic"): c.get("domain") for c in (plan or {}).get("items") or []
+               if isinstance(c, dict) and c.get("topic") and c.get("domain")}
     problems, filled, overridden, graded = [], [], [], set()
     for n, it in enumerate(items, 1):
         if not it.get("key"):
@@ -4988,7 +5112,7 @@ def fill_round_from_keys(rnd, sealed, plan=None):
                 it[f] = h[f]
         if it.get("retests") is None:
             it.pop("retests", None)
-        it.setdefault("domain", domain_of(it["topic"]))
+        it.setdefault("domain", planned.get(it["topic"]) or domain_of(it["topic"]))
         reasons = rnd.get("selection_reasons")
         if not isinstance(reasons, dict):
             reasons = rnd["selection_reasons"] = {}
@@ -6062,7 +6186,7 @@ def current_ledger(work, info):
             "(for a new learner: `init --work %s …`)" % (work, work, work))
     st = load_json(path)
     check_schema(st)
-    return migrate_profile(st), path
+    return migrate_ledger(st), path
 
 
 def has_session(st, sid):
@@ -6203,7 +6327,7 @@ def open_work(work, store, version, prefs, today, reread=False):
             "set up with `init --work %s …`" % (STATE_PATH, store, work))
     st = load_json(ledger)
     check_schema(st)
-    migrate_profile(st)
+    migrate_ledger(st)
     os.makedirs(work, exist_ok=True)
     inside = os.path.relpath(store, os.path.abspath(work)).split(os.sep)[0]
     if inside in JOB_FILES + (EARLIER_DIR,):

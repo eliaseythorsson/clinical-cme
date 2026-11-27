@@ -115,15 +115,14 @@
    "chosen": "auto",
    "last": "2026-10-28",
    "length": 12,
-   "reason": "Pulmonary & Critical Care: mean 5.0 of 5 over 1 topic tested, not yet a theme",
+   "reason": "Endocrinology: mean 2.0 of 5 over 1 topic tested, 1 open gap, not yet a theme",
    "round": 1,
    "started": "2026-10-28",
-   "theme": "PULM"
+   "theme": "ENDO"
   },
   "blocks": [],
   "domain_self_ratings": {
    "CARD": 3.9,
-   "EMRG": 4,
    "ENDO": 2.9,
    "GEN": 3.3,
    "GI": 3.1,
@@ -133,7 +132,7 @@
    "PULM": 3.3,
    "RENAL": 4.3,
    "RHEUM": 4.7,
-   "TOX": 4.3
+   "TOX": 4
   },
   "gaps": [
    {
@@ -234,14 +233,14 @@
    "block": {
     "length": 12,
     "round": 1,
-    "theme": "PULM"
+    "theme": "ENDO"
    },
    "case": {
-    "diagnosis": "Example diagnosis: Shock differentiation & resuscitation",
+    "diagnosis": "Example diagnosis: Pheochromocytoma, hypercalcemia of malignancy",
     "patient": "Example patient 11",
     "presentation": "Example presentation 11",
     "setting": "ward",
-    "topic": "PULM-08"
+    "topic": "ENDO-06"
    },
    "date": "2026-10-28",
    "drill": null,
@@ -271,7 +270,8 @@
      },
      "confidence": "guess",
      "mastery": 4,
-     "topic": "PULM-08",
+     "retests": "ENDO-06",
+     "topic": "ENDO-06",
      "type": "case"
     },
     {
@@ -302,9 +302,8 @@
      "confidence": "unsure",
      "correct": true,
      "mastery": 4,
-     "retests": "ENDO-06",
      "stem": "Example MCQ stem 11.2",
-     "topic": "ENDO-06",
+     "topic": "RENAL-03",
      "type": "mcq"
     },
     {
@@ -315,7 +314,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 11.3",
-     "topic": "PULM-06",
+     "topic": "ENDO-05",
      "type": "mcq"
     },
     {
@@ -326,7 +325,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 11.4",
-     "topic": "GEN-04",
+     "topic": "GEN-11",
      "type": "mcq"
     }
    ],
@@ -346,14 +345,17 @@
    ],
    "title": "Example round S0011",
    "topics": [
-    "PULM-08",
-    "TOX-03",
     "ENDO-06",
-    "PULM-06",
-    "GEN-04"
+    "TOX-03",
+    "RENAL-03",
+    "ENDO-05",
+    "GEN-11"
    ],
    "undo": {
     "topics": {
+     "ENDO-05": {
+      "new": true
+     },
      "ENDO-06": {
       "gap": [
        0,
@@ -381,14 +383,20 @@
        "step": 0
       }
      },
-     "GEN-04": {
+     "GEN-11": {
       "new": true
      },
-     "PULM-06": {
-      "new": true
-     },
-     "PULM-08": {
-      "new": true
+     "RENAL-03": {
+      "row": true,
+      "was": {
+       "attempts": 2,
+       "calibration": "aligned",
+       "comfort": 5,
+       "due": "2026-10-21",
+       "last": "2026-10-14",
+       "mastery": 5.0,
+       "step": 2
+      }
      },
      "TOX-03": {
       "gap": null,
@@ -405,10 +413,10 @@
     }
    },
    "why": {
+    "ENDO-05": "new",
     "ENDO-06": "due",
-    "GEN-04": "new",
-    "PULM-06": "new",
-    "PULM-08": "new",
+    "GEN-11": "new",
+    "RENAL-03": "due",
     "TOX-03": "due"
    }
   },
@@ -544,25 +552,24 @@
    "chosen": "auto",
    "last": "2026-10-28",
    "length": 12,
-   "reason": "Pulmonary & Critical Care: mean 5.0 of 5 over 1 topic tested, not yet a theme",
+   "reason": "Endocrinology: mean 2.0 of 5 over 1 topic tested, 1 open gap, not yet a theme",
    "round": 1,
    "started": "2026-10-28",
-   "theme": "PULM"
+   "theme": "ENDO"
   },
   "blocks": [],
   "domain_self_ratings": {
    "CARD": 3.9,
-   "EMRG": 4,
-   "ENDO": 3.3,
+   "ENDO": 3.7,
    "GEN": 2.9,
    "GI": 3.1,
    "HEME": 3.9,
    "ID": 4.1,
    "NEURO": 4.0,
-   "PULM": 3.9,
-   "RENAL": 4.3,
+   "PULM": 3.3,
+   "RENAL": 4.2,
    "RHEUM": 4.7,
-   "TOX": 4.2
+   "TOX": 4.0
   },
   "gaps": [
    {
@@ -663,14 +670,14 @@
    "block": {
     "length": 12,
     "round": 1,
-    "theme": "PULM"
+    "theme": "ENDO"
    },
    "case": {
-    "diagnosis": "Example diagnosis: Shock differentiation & resuscitation",
+    "diagnosis": "Example diagnosis: Pheochromocytoma, hypercalcemia of malignancy",
     "patient": "Example patient 11",
     "presentation": "Example presentation 11",
     "setting": "ward",
-    "topic": "PULM-08"
+    "topic": "ENDO-06"
    },
    "date": "2026-10-28",
    "drill": null,
@@ -700,7 +707,8 @@
      },
      "confidence": "guess",
      "mastery": 4,
-     "topic": "PULM-08",
+     "retests": "ENDO-06",
+     "topic": "ENDO-06",
      "type": "case"
     },
     {
@@ -731,9 +739,8 @@
      "confidence": "unsure",
      "correct": true,
      "mastery": 4,
-     "retests": "ENDO-06",
      "stem": "Example MCQ stem 11.2",
-     "topic": "ENDO-06",
+     "topic": "RENAL-03",
      "type": "mcq"
     },
     {
@@ -744,7 +751,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 11.3",
-     "topic": "PULM-06",
+     "topic": "ENDO-05",
      "type": "mcq"
     },
     {
@@ -755,7 +762,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 11.4",
-     "topic": "GEN-04",
+     "topic": "GEN-11",
      "type": "mcq"
     }
    ],
@@ -771,10 +778,10 @@
    },
    "score": 3.8,
    "self_comfort": {
-    "ENDO-06": 4,
-    "GEN-04": 2,
-    "PULM-06": 4,
-    "PULM-08": 5,
+    "ENDO-05": 4,
+    "ENDO-06": 5,
+    "GEN-11": 2,
+    "RENAL-03": 4,
     "TOX-03": 4
    },
    "self_performance": 3,
@@ -785,20 +792,22 @@
    ],
    "title": "Example round S0011",
    "topics": [
-    "PULM-08",
-    "TOX-03",
     "ENDO-06",
-    "PULM-06",
-    "GEN-04"
+    "TOX-03",
+    "RENAL-03",
+    "ENDO-05",
+    "GEN-11"
    ],
    "undo": {
     "ratings": {
      "ENDO": 2.9,
      "GEN": 3.3,
-     "PULM": 3.3,
-     "TOX": 4.3
+     "RENAL": 4.3
     },
     "topics": {
+     "ENDO-05": {
+      "new": true
+     },
      "ENDO-06": {
       "gap": [
        0,
@@ -825,14 +834,19 @@
        "step": 0
       }
      },
-     "GEN-04": {
+     "GEN-11": {
       "new": true
      },
-     "PULM-06": {
-      "new": true
-     },
-     "PULM-08": {
-      "new": true
+     "RENAL-03": {
+      "row": true,
+      "was": {
+       "attempts": 2,
+       "comfort": 5,
+       "due": "2026-10-21",
+       "last": "2026-10-14",
+       "mastery": 5.0,
+       "step": 2
+      }
      },
      "TOX-03": {
       "gap": null,
@@ -849,10 +863,10 @@
     }
    },
    "why": {
+    "ENDO-05": "new",
     "ENDO-06": "due",
-    "GEN-04": "new",
-    "PULM-06": "new",
-    "PULM-08": "new",
+    "GEN-11": "new",
+    "RENAL-03": "due",
     "TOX-03": "due"
    }
   },
@@ -882,6 +896,15 @@
   "score": 3.8,
   "session_id": "S0011",
   "topics": {
+   "ENDO-05": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-10-31",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
    "ENDO-06": {
     "calibration": "not_rated",
     "comfort": null,
@@ -893,7 +916,7 @@
     "misconception": false,
     "step": 1
    },
-   "GEN-04": {
+   "GEN-11": {
     "calibration": "not_rated",
     "comfort": null,
     "due": "2026-10-31",
@@ -902,23 +925,14 @@
     "misconception": false,
     "step": 1
    },
-   "PULM-06": {
+   "RENAL-03": {
     "calibration": "not_rated",
     "comfort": null,
-    "due": "2026-10-31",
-    "interval_days": 3,
-    "mastery": 5.0,
-    "misconception": false,
-    "step": 1
-   },
-   "PULM-08": {
-    "calibration": "not_rated",
-    "comfort": null,
-    "due": "2026-10-31",
-    "interval_days": 3,
+    "due": "2026-11-13",
+    "interval_days": 16,
     "mastery": 4.0,
     "misconception": false,
-    "step": 1
+    "step": 3
    },
    "TOX-03": {
     "calibration": "confident_error",
@@ -940,9 +954,18 @@
   "open_gaps": 1,
   "session_id": "S0011",
   "topics": {
-   "ENDO-06": {
+   "ENDO-05": {
     "calibration": "aligned",
     "comfort": 4,
+    "due": "2026-10-31",
+    "interval_days": 3,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 1
+   },
+   "ENDO-06": {
+    "calibration": "aligned",
+    "comfort": 5,
     "due": "2026-10-31",
     "gap_resolved": true,
     "gap_retested": true,
@@ -951,7 +974,7 @@
     "misconception": false,
     "step": 1
    },
-   "GEN-04": {
+   "GEN-11": {
     "calibration": "underconfident",
     "comfort": 2,
     "due": "2026-10-31",
@@ -960,23 +983,14 @@
     "misconception": false,
     "step": 1
    },
-   "PULM-06": {
+   "RENAL-03": {
     "calibration": "aligned",
     "comfort": 4,
-    "due": "2026-10-31",
-    "interval_days": 3,
-    "mastery": 5.0,
-    "misconception": false,
-    "step": 1
-   },
-   "PULM-08": {
-    "calibration": "aligned",
-    "comfort": 5,
-    "due": "2026-10-31",
-    "interval_days": 3,
+    "due": "2026-11-13",
+    "interval_days": 16,
     "mastery": 4.0,
     "misconception": false,
-    "step": 1
+    "step": 3
    },
    "TOX-03": {
     "calibration": "confident_error",
@@ -996,16 +1010,16 @@
   "performance": 3,
   "solid": "Example: what felt solid in round 11",
   "topic_comfort": {
-   "ENDO-06": 4,
-   "GEN-04": 2,
-   "PULM-06": 4,
-   "PULM-08": 5,
+   "ENDO-05": 4,
+   "ENDO-06": 5,
+   "GEN-11": 2,
+   "RENAL-03": 4,
    "TOX-03": 4
   }
  },
  "round": {
   "case": {
-   "diagnosis": "Example diagnosis: Shock differentiation & resuscitation",
+   "diagnosis": "Example diagnosis: Pheochromocytoma, hypercalcemia of malignancy",
    "patient": "Example patient 11",
    "presentation": "Example presentation 11",
    "setting": "ward"
@@ -1033,7 +1047,8 @@
     },
     "confidence": "guess",
     "mastery": 4,
-    "topic": "PULM-08",
+    "retests": "ENDO-06",
+    "topic": "ENDO-06",
     "type": "case"
    },
    {
@@ -1063,9 +1078,8 @@
     "confidence": "unsure",
     "correct": true,
     "mastery": 4,
-    "retests": "ENDO-06",
     "stem_summary": "Example MCQ stem 11.2",
-    "topic": "ENDO-06",
+    "topic": "RENAL-03",
     "type": "mcq"
    },
    {
@@ -1076,7 +1090,7 @@
     "correct": true,
     "mastery": 5,
     "stem_summary": "Example MCQ stem 11.3",
-    "topic": "PULM-06",
+    "topic": "ENDO-05",
     "type": "mcq"
    },
    {
@@ -1087,17 +1101,17 @@
     "correct": true,
     "mastery": 5,
     "stem_summary": "Example MCQ stem 11.4",
-    "topic": "GEN-04",
+    "topic": "GEN-11",
     "type": "mcq"
    }
   ],
   "log_id": "S0011",
   "minutes": 50,
   "selection_reasons": {
+   "ENDO-05": "new",
    "ENDO-06": "due",
-   "GEN-04": "new",
-   "PULM-06": "new",
-   "PULM-08": "new",
+   "GEN-11": "new",
+   "RENAL-03": "due",
    "TOX-03": "due"
   },
   "summary": "Synthetic round 11 of an example ledger.",

@@ -123,7 +123,6 @@
   "blocks": [],
   "domain_self_ratings": {
    "CARD": 4.3,
-   "EMRG": 2,
    "GEN": 4.0,
    "GI": 4.0,
    "HEME": 3.9,
@@ -131,7 +130,7 @@
    "NEURO": 4.7,
    "RENAL": 4,
    "RHEUM": 2.5,
-   "TOX": 4.0
+   "TOX": 2
   },
   "gaps": [
    {
@@ -498,7 +497,6 @@
   "blocks": [],
   "domain_self_ratings": {
    "CARD": 4.3,
-   "EMRG": 2,
    "GEN": 4.0,
    "GI": 4.0,
    "HEME": 3.9,
@@ -506,7 +504,7 @@
    "NEURO": 4.5,
    "RENAL": 4,
    "RHEUM": 2.5,
-   "TOX": 3.3
+   "TOX": 2.0
   },
   "gaps": [
    {
@@ -701,8 +699,7 @@
    "undo": {
     "ratings": {
      "ID": 3.0,
-     "NEURO": 4.7,
-     "TOX": 4.0
+     "NEURO": 4.7
     },
     "topics": {
      "ID-10": {

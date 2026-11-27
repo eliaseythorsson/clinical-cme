@@ -115,10 +115,10 @@
    "chosen": "auto",
    "last": "2026-10-19",
    "length": 12,
-   "reason": "Pulmonary & Critical Care: mean 5.0 of 5 over 1 topic tested, not yet a theme",
+   "reason": "General & Perioperative Hospital Medicine: mean 3.0 of 5 over 2 topics tested, 1 open gap, not yet a theme",
    "round": 1,
    "started": "2026-10-19",
-   "theme": "PULM"
+   "theme": "GEN"
   },
   "blocks": [],
   "domain_self_ratings": {
@@ -164,7 +164,7 @@
     "source": [
      "misconception"
     ],
-    "topic": "PULM-08"
+    "topic": "GEN-12"
    }
   ],
   "gen": 13,
@@ -203,14 +203,14 @@
    "block": {
     "length": 12,
     "round": 1,
-    "theme": "PULM"
+    "theme": "GEN"
    },
    "case": {
-    "diagnosis": "Example diagnosis: COPD exacerbation",
+    "diagnosis": "Example diagnosis: Perioperative risk assessment & medical consultation",
     "patient": "Example patient 7",
     "presentation": "Example presentation 7",
     "setting": "ward",
-    "topic": "PULM-02"
+    "topic": "GEN-01"
    },
    "date": "2026-10-19",
    "drill": null,
@@ -240,7 +240,7 @@
      },
      "confidence": "sure",
      "mastery": 5,
-     "topic": "PULM-02",
+     "topic": "GEN-01",
      "type": "case"
     },
     {
@@ -269,7 +269,7 @@
      "correct": true,
      "mastery": 4,
      "stem": "Example MCQ stem 7.2",
-     "topic": "GEN-01",
+     "topic": "ID-02",
      "type": "mcq"
     },
     {
@@ -287,7 +287,7 @@
      "correct": false,
      "mastery": 1,
      "stem": "Example MCQ stem 7.3",
-     "topic": "PULM-08",
+     "topic": "GEN-12",
      "type": "mcq"
     }
    ],
@@ -307,10 +307,10 @@
    ],
    "title": "Example round S0007",
    "topics": [
-    "PULM-02",
-    "HEME-02",
     "GEN-01",
-    "PULM-08"
+    "HEME-02",
+    "ID-02",
+    "GEN-12"
    ],
    "undo": {
     "topics": {
@@ -322,8 +322,12 @@
        "comfort": 5,
        "due": "2026-10-12",
        "last": "2026-10-09",
-       "mastery": 5.0
+       "step": 1
       }
+     },
+     "GEN-12": {
+      "gap": null,
+      "new": true
      },
      "HEME-02": {
       "gap": null,
@@ -344,28 +348,24 @@
        "step": 1
       }
      },
-     "PULM-02": {
+     "ID-02": {
       "row": true,
       "was": {
-       "attempts": 3,
-       "calibration": "underconfident",
-       "comfort": 2,
-       "due": "2026-10-16",
-       "last": "2026-10-14",
-       "step": 1
+       "attempts": 1,
+       "calibration": "aligned",
+       "comfort": 4,
+       "due": "2026-10-15",
+       "last": "2026-10-12",
+       "mastery": 5.0
       }
-     },
-     "PULM-08": {
-      "gap": null,
-      "new": true
      }
     }
    },
    "why": {
     "GEN-01": "due",
+    "GEN-12": "new",
     "HEME-02": "due",
-    "PULM-02": "due",
-    "PULM-08": "new"
+    "ID-02": "due"
    }
   },
   "session_ids": [
@@ -496,10 +496,10 @@
    "chosen": "auto",
    "last": "2026-10-19",
    "length": 12,
-   "reason": "Pulmonary & Critical Care: mean 5.0 of 5 over 1 topic tested, not yet a theme",
+   "reason": "General & Perioperative Hospital Medicine: mean 3.0 of 5 over 2 topics tested, 1 open gap, not yet a theme",
    "round": 1,
    "started": "2026-10-19",
-   "theme": "PULM"
+   "theme": "GEN"
   },
   "blocks": [],
   "domain_self_ratings": {
@@ -508,9 +508,9 @@
    "GEN": 4.1,
    "GI": 4,
    "HEME": 3.3,
-   "ID": 4,
+   "ID": 4.3,
    "NEURO": 3.3,
-   "PULM": 3.5,
+   "PULM": 2.5,
    "RENAL": 4.3
   },
   "gaps": [
@@ -545,7 +545,7 @@
     "source": [
      "misconception"
     ],
-    "topic": "PULM-08"
+    "topic": "GEN-12"
    }
   ],
   "gen": 14,
@@ -584,14 +584,14 @@
    "block": {
     "length": 12,
     "round": 1,
-    "theme": "PULM"
+    "theme": "GEN"
    },
    "case": {
-    "diagnosis": "Example diagnosis: COPD exacerbation",
+    "diagnosis": "Example diagnosis: Perioperative risk assessment & medical consultation",
     "patient": "Example patient 7",
     "presentation": "Example presentation 7",
     "setting": "ward",
-    "topic": "PULM-02"
+    "topic": "GEN-01"
    },
    "date": "2026-10-19",
    "drill": null,
@@ -621,7 +621,7 @@
      },
      "confidence": "sure",
      "mastery": 5,
-     "topic": "PULM-02",
+     "topic": "GEN-01",
      "type": "case"
     },
     {
@@ -650,7 +650,7 @@
      "correct": true,
      "mastery": 4,
      "stem": "Example MCQ stem 7.2",
-     "topic": "GEN-01",
+     "topic": "ID-02",
      "type": "mcq"
     },
     {
@@ -668,7 +668,7 @@
      "correct": false,
      "mastery": 1,
      "stem": "Example MCQ stem 7.3",
-     "topic": "PULM-08",
+     "topic": "GEN-12",
      "type": "mcq"
     }
    ],
@@ -685,9 +685,9 @@
    "score": 2.75,
    "self_comfort": {
     "GEN-01": 5,
+    "GEN-12": 4,
     "HEME-02": 2,
-    "PULM-02": 5,
-    "PULM-08": 4
+    "ID-02": 5
    },
    "self_performance": 3,
    "started_at": null,
@@ -697,27 +697,30 @@
    ],
    "title": "Example round S0007",
    "topics": [
-    "PULM-02",
-    "HEME-02",
     "GEN-01",
-    "PULM-08"
+    "HEME-02",
+    "ID-02",
+    "GEN-12"
    ],
    "undo": {
     "ratings": {
      "GEN": 3.7,
      "HEME": 4.0,
-     "PULM": 2.5
+     "ID": 4
     },
     "topics": {
      "GEN-01": {
       "row": true,
       "was": {
        "attempts": 3,
-       "calibration": "aligned",
        "due": "2026-10-12",
        "last": "2026-10-09",
-       "mastery": 5.0
+       "step": 1
       }
+     },
+     "GEN-12": {
+      "gap": null,
+      "new": true
      },
      "HEME-02": {
       "gap": null,
@@ -737,28 +740,24 @@
        "step": 1
       }
      },
-     "PULM-02": {
+     "ID-02": {
       "row": true,
       "was": {
-       "attempts": 3,
-       "calibration": "underconfident",
-       "comfort": 2,
-       "due": "2026-10-16",
-       "last": "2026-10-14",
-       "step": 1
+       "attempts": 1,
+       "calibration": "aligned",
+       "comfort": 4,
+       "due": "2026-10-15",
+       "last": "2026-10-12",
+       "mastery": 5.0
       }
-     },
-     "PULM-08": {
-      "gap": null,
-      "new": true
      }
     }
    },
    "why": {
     "GEN-01": "due",
+    "GEN-12": "new",
     "HEME-02": "due",
-    "PULM-02": "due",
-    "PULM-08": "new"
+    "ID-02": "due"
    }
   },
   "session_ids": [
@@ -786,11 +785,20 @@
    "GEN-01": {
     "calibration": "not_rated",
     "comfort": null,
+    "due": "2026-10-26",
+    "interval_days": 7,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 2
+   },
+   "GEN-12": {
+    "calibration": "confident_error",
+    "comfort": null,
     "due": "2026-10-22",
     "interval_days": 3,
-    "mastery": 3.0,
-    "misconception": false,
-    "step": 1
+    "mastery": 1.0,
+    "misconception": true,
+    "step": 0
    },
    "HEME-02": {
     "calibration": "not_rated",
@@ -801,23 +809,14 @@
     "misconception": false,
     "step": 0
    },
-   "PULM-02": {
+   "ID-02": {
     "calibration": "not_rated",
-    "comfort": null,
-    "due": "2026-10-26",
-    "interval_days": 7,
-    "mastery": 5.0,
-    "misconception": false,
-    "step": 2
-   },
-   "PULM-08": {
-    "calibration": "confident_error",
     "comfort": null,
     "due": "2026-10-22",
     "interval_days": 3,
-    "mastery": 1.0,
-    "misconception": true,
-    "step": 0
+    "mastery": 3.0,
+    "misconception": false,
+    "step": 1
    }
   },
   "warnings": []
@@ -830,13 +829,22 @@
   "session_id": "S0007",
   "topics": {
    "GEN-01": {
-    "calibration": "overconfident",
+    "calibration": "aligned",
     "comfort": 5,
+    "due": "2026-10-26",
+    "interval_days": 7,
+    "mastery": 5.0,
+    "misconception": false,
+    "step": 2
+   },
+   "GEN-12": {
+    "calibration": "confident_error",
+    "comfort": 4,
     "due": "2026-10-22",
     "interval_days": 3,
-    "mastery": 3.0,
-    "misconception": false,
-    "step": 1
+    "mastery": 1.0,
+    "misconception": true,
+    "step": 0
    },
    "HEME-02": {
     "calibration": "aligned",
@@ -847,23 +855,14 @@
     "misconception": false,
     "step": 0
    },
-   "PULM-02": {
-    "calibration": "aligned",
+   "ID-02": {
+    "calibration": "overconfident",
     "comfort": 5,
-    "due": "2026-10-26",
-    "interval_days": 7,
-    "mastery": 5.0,
-    "misconception": false,
-    "step": 2
-   },
-   "PULM-08": {
-    "calibration": "confident_error",
-    "comfort": 4,
     "due": "2026-10-22",
     "interval_days": 3,
-    "mastery": 1.0,
-    "misconception": true,
-    "step": 0
+    "mastery": 3.0,
+    "misconception": false,
+    "step": 1
    }
   },
   "warnings": []
@@ -874,14 +873,14 @@
   "solid": "Example: what felt solid in round 7",
   "topic_comfort": {
    "GEN-01": 5,
+   "GEN-12": 4,
    "HEME-02": 2,
-   "PULM-02": 5,
-   "PULM-08": 4
+   "ID-02": 5
   }
  },
  "round": {
   "case": {
-   "diagnosis": "Example diagnosis: COPD exacerbation",
+   "diagnosis": "Example diagnosis: Perioperative risk assessment & medical consultation",
    "patient": "Example patient 7",
    "presentation": "Example presentation 7",
    "setting": "ward"
@@ -915,7 +914,7 @@
     },
     "confidence": "sure",
     "mastery": 5,
-    "topic": "PULM-02",
+    "topic": "GEN-01",
     "type": "case"
    },
    {
@@ -943,7 +942,7 @@
     "correct": true,
     "mastery": 4,
     "stem_summary": "Example MCQ stem 7.2",
-    "topic": "GEN-01",
+    "topic": "ID-02",
     "type": "mcq"
    },
    {
@@ -960,7 +959,7 @@
     "correct": false,
     "mastery": 1,
     "stem_summary": "Example MCQ stem 7.3",
-    "topic": "PULM-08",
+    "topic": "GEN-12",
     "type": "mcq"
    }
   ],
@@ -968,9 +967,9 @@
   "minutes": 40,
   "selection_reasons": {
    "GEN-01": "due",
+   "GEN-12": "new",
    "HEME-02": "due",
-   "PULM-02": "due",
-   "PULM-08": "new"
+   "ID-02": "due"
   },
   "summary": "Synthetic round 7 of an example ledger.",
   "tags": [

@@ -5,7 +5,7 @@
    "calibration": "not_rated",
    "comfort": null,
    "domain": "GEN",
-   "due": "2026-10-22",
+   "due": "2026-10-26",
    "history": [
     [
      "2026-10-05",
@@ -27,15 +27,34 @@
     ],
     [
      "2026-10-19",
-     3.0,
+     5.0,
      null,
      "not_rated"
     ]
    ],
    "label": "Perioperative risk assessment & medical consultation",
    "last": "2026-10-19",
-   "mastery": 3.0,
-   "step": 1
+   "mastery": 5.0,
+   "step": 2
+  },
+  "GEN-12": {
+   "attempts": 1,
+   "calibration": "confident_error",
+   "comfort": null,
+   "domain": "GEN",
+   "due": "2026-10-22",
+   "history": [
+    [
+     "2026-10-19",
+     1.0,
+     null,
+     "confident_error"
+    ]
+   ],
+   "label": "Fluid & electrolyte therapy, maintenance fluids",
+   "last": "2026-10-19",
+   "mastery": 1.0,
+   "step": 0
   },
   "HEME-02": {
    "attempts": 3,
@@ -68,70 +87,39 @@
    "mastery": 2.0,
    "step": 0
   },
-  "PULM-02": {
-   "attempts": 4,
+  "ID-02": {
+   "attempts": 2,
    "calibration": "not_rated",
    "comfort": null,
-   "domain": "PULM",
-   "due": "2026-10-26",
+   "domain": "ID",
+   "due": "2026-10-22",
    "history": [
     [
-     "2026-10-09",
-     2.0,
-     2,
+     "2026-10-12",
+     5.0,
+     4,
      "aligned"
     ],
     [
-     "2026-10-12",
-     1.0,
-     4,
-     "confident_error"
-    ],
-    [
-     "2026-10-14",
-     5.0,
-     2,
-     "underconfident"
-    ],
-    [
      "2026-10-19",
-     5.0,
+     3.0,
      null,
      "not_rated"
     ]
    ],
-   "label": "COPD exacerbation",
+   "label": "Skin & soft tissue infections, necrotizing fasciitis",
    "last": "2026-10-19",
-   "mastery": 5.0,
-   "step": 2
-  },
-  "PULM-08": {
-   "attempts": 1,
-   "calibration": "confident_error",
-   "comfort": null,
-   "domain": "PULM",
-   "due": "2026-10-22",
-   "history": [
-    [
-     "2026-10-19",
-     1.0,
-     null,
-     "confident_error"
-    ]
-   ],
-   "label": "Shock differentiation & resuscitation",
-   "last": "2026-10-19",
-   "mastery": 1.0,
-   "step": 0
+   "mastery": 3.0,
+   "step": 1
   }
  },
  "after_reflect": {
   "GEN-01": {
    "attempts": 4,
-   "calibration": "overconfident",
+   "calibration": "aligned",
    "comfort": 5,
    "domain": "GEN",
-   "due": "2026-10-22",
+   "due": "2026-10-26",
    "history": [
     [
      "2026-10-05",
@@ -153,15 +141,34 @@
     ],
     [
      "2026-10-19",
-     3.0,
+     5.0,
      5,
-     "overconfident"
+     "aligned"
     ]
    ],
    "label": "Perioperative risk assessment & medical consultation",
    "last": "2026-10-19",
-   "mastery": 3.0,
-   "step": 1
+   "mastery": 5.0,
+   "step": 2
+  },
+  "GEN-12": {
+   "attempts": 1,
+   "calibration": "confident_error",
+   "comfort": 4,
+   "domain": "GEN",
+   "due": "2026-10-22",
+   "history": [
+    [
+     "2026-10-19",
+     1.0,
+     4,
+     "confident_error"
+    ]
+   ],
+   "label": "Fluid & electrolyte therapy, maintenance fluids",
+   "last": "2026-10-19",
+   "mastery": 1.0,
+   "step": 0
   },
   "HEME-02": {
    "attempts": 3,
@@ -194,61 +201,30 @@
    "mastery": 2.0,
    "step": 0
   },
-  "PULM-02": {
-   "attempts": 4,
-   "calibration": "aligned",
+  "ID-02": {
+   "attempts": 2,
+   "calibration": "overconfident",
    "comfort": 5,
-   "domain": "PULM",
-   "due": "2026-10-26",
-   "history": [
-    [
-     "2026-10-09",
-     2.0,
-     2,
-     "aligned"
-    ],
-    [
-     "2026-10-12",
-     1.0,
-     4,
-     "confident_error"
-    ],
-    [
-     "2026-10-14",
-     5.0,
-     2,
-     "underconfident"
-    ],
-    [
-     "2026-10-19",
-     5.0,
-     5,
-     "aligned"
-    ]
-   ],
-   "label": "COPD exacerbation",
-   "last": "2026-10-19",
-   "mastery": 5.0,
-   "step": 2
-  },
-  "PULM-08": {
-   "attempts": 1,
-   "calibration": "confident_error",
-   "comfort": 4,
-   "domain": "PULM",
+   "domain": "ID",
    "due": "2026-10-22",
    "history": [
     [
-     "2026-10-19",
-     1.0,
+     "2026-10-12",
+     5.0,
      4,
-     "confident_error"
+     "aligned"
+    ],
+    [
+     "2026-10-19",
+     3.0,
+     5,
+     "overconfident"
     ]
    ],
-   "label": "Shock differentiation & resuscitation",
+   "label": "Skin & soft tissue infections, necrotizing fasciitis",
    "last": "2026-10-19",
-   "mastery": 1.0,
-   "step": 0
+   "mastery": 3.0,
+   "step": 1
   }
  },
  "after_reflecting_waiting_round": {

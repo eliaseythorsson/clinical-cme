@@ -1,5 +1,24 @@
 {
  "after_record": {
+  "ENDO-05": {
+   "attempts": 1,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "ENDO",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     5.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Pituitary emergencies, SIADH (see RENAL-02)",
+   "last": "2026-10-28",
+   "mastery": 5.0,
+   "step": 1
+  },
   "ENDO-06": {
    "attempts": 6,
    "calibration": "not_rated",
@@ -49,7 +68,7 @@
    "mastery": 4.0,
    "step": 1
   },
-  "GEN-04": {
+  "GEN-11": {
    "attempts": 1,
    "calibration": "not_rated",
    "comfort": null,
@@ -63,37 +82,30 @@
      "not_rated"
     ]
    ],
-   "label": "Pain management & opioid stewardship",
+   "label": "Patient safety, quality improvement, high-value care",
    "last": "2026-10-28",
    "mastery": 5.0,
    "step": 1
   },
-  "PULM-06": {
-   "attempts": 1,
+  "RENAL-03": {
+   "attempts": 3,
    "calibration": "not_rated",
    "comfort": null,
-   "domain": "PULM",
-   "due": "2026-10-31",
+   "domain": "RENAL",
+   "due": "2026-11-13",
    "history": [
     [
-     "2026-10-28",
+     "2026-10-07",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-14",
      5.0,
-     null,
-     "not_rated"
-    ]
-   ],
-   "label": "Pulmonary embolism (management)",
-   "last": "2026-10-28",
-   "mastery": 5.0,
-   "step": 1
-  },
-  "PULM-08": {
-   "attempts": 1,
-   "calibration": "not_rated",
-   "comfort": null,
-   "domain": "PULM",
-   "due": "2026-10-31",
-   "history": [
+     5,
+     "aligned"
+    ],
     [
      "2026-10-28",
      4.0,
@@ -101,10 +113,10 @@
      "not_rated"
     ]
    ],
-   "label": "Shock differentiation & resuscitation",
+   "label": "Potassium disorders",
    "last": "2026-10-28",
    "mastery": 4.0,
-   "step": 1
+   "step": 3
   },
   "TOX-03": {
    "attempts": 2,
@@ -133,10 +145,29 @@
   }
  },
  "after_reflect": {
+  "ENDO-05": {
+   "attempts": 1,
+   "calibration": "aligned",
+   "comfort": 4,
+   "domain": "ENDO",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-28",
+     5.0,
+     4,
+     "aligned"
+    ]
+   ],
+   "label": "Pituitary emergencies, SIADH (see RENAL-02)",
+   "last": "2026-10-28",
+   "mastery": 5.0,
+   "step": 1
+  },
   "ENDO-06": {
    "attempts": 6,
    "calibration": "aligned",
-   "comfort": 4,
+   "comfort": 5,
    "domain": "ENDO",
    "due": "2026-10-31",
    "history": [
@@ -173,7 +204,7 @@
     [
      "2026-10-28",
      4.0,
-     4,
+     5,
      "aligned"
     ]
    ],
@@ -182,7 +213,7 @@
    "mastery": 4.0,
    "step": 1
   },
-  "GEN-04": {
+  "GEN-11": {
    "attempts": 1,
    "calibration": "underconfident",
    "comfort": 2,
@@ -196,48 +227,41 @@
      "underconfident"
     ]
    ],
-   "label": "Pain management & opioid stewardship",
+   "label": "Patient safety, quality improvement, high-value care",
    "last": "2026-10-28",
    "mastery": 5.0,
    "step": 1
   },
-  "PULM-06": {
-   "attempts": 1,
+  "RENAL-03": {
+   "attempts": 3,
    "calibration": "aligned",
    "comfort": 4,
-   "domain": "PULM",
-   "due": "2026-10-31",
+   "domain": "RENAL",
+   "due": "2026-11-13",
    "history": [
     [
-     "2026-10-28",
+     "2026-10-07",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-14",
      5.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-10-28",
+     4.0,
      4,
      "aligned"
     ]
    ],
-   "label": "Pulmonary embolism (management)",
-   "last": "2026-10-28",
-   "mastery": 5.0,
-   "step": 1
-  },
-  "PULM-08": {
-   "attempts": 1,
-   "calibration": "aligned",
-   "comfort": 5,
-   "domain": "PULM",
-   "due": "2026-10-31",
-   "history": [
-    [
-     "2026-10-28",
-     4.0,
-     5,
-     "aligned"
-    ]
-   ],
-   "label": "Shock differentiation & resuscitation",
+   "label": "Potassium disorders",
    "last": "2026-10-28",
    "mastery": 4.0,
-   "step": 1
+   "step": 3
   },
   "TOX-03": {
    "attempts": 2,

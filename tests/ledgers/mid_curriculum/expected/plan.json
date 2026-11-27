@@ -9,16 +9,16 @@
    }
   },
   "length": 12,
-  "line": "Block: Pulmonary & Critical Care, round 1 of 12",
+  "line": "Block: Endocrinology, round 1 of 12",
   "mix": {
    "repeat": 2,
    "theme": 1,
    "wildcard": 1
   },
-  "name": "Pulmonary & Critical Care",
+  "name": "Endocrinology",
   "round": 1,
   "starts": true,
-  "theme": "PULM"
+  "theme": "ENDO"
  },
  "blood_gas_units": "mmHg",
  "case_format": "unfolding",
@@ -35,36 +35,6 @@
  "helpers": true,
  "item_order": "mcqs_first",
  "items": [
-  {
-   "domain": "PULM",
-   "label": "Shock differentiation & resuscitation",
-   "reason": "not yet tested; in the block's theme",
-   "reason_code": "new",
-   "share": "theme",
-   "slot": "case",
-   "topic": "PULM-08"
-  },
-  {
-   "already_used": [
-    {
-     "date": "2026-10-23",
-     "id": "S0010",
-     "kind": "mcq",
-     "stem": "Example MCQ stem 10.4",
-     "topic": "TOX-03"
-    }
-   ],
-   "aspect_hint": "interpretation",
-   "aspect_note": "Suggested aspect (least recently tested). If this item re-tests an open gap, ask about the gap's decision point instead, whatever its aspect.",
-   "domain": "TOX",
-   "label": "Environmental (hypothermia, hyperthermia)",
-   "reason": "spaced review due 2026-10-24; last 3.0/5 on 2026-10-23; flagged overconfident last time",
-   "reason_code": "due",
-   "separation": "other domain",
-   "share": "repeat",
-   "slot": "focused",
-   "topic": "TOX-03"
-  },
   {
    "already_used": [
     {
@@ -112,30 +82,83 @@
     "how": "Write this item on the gap's decision point, in a new clinical context, and write the line 'retests: ENDO-06' in the item's key header (references/standards.md, rule 9). Only an item that says so, answered well, closes the gap.",
     "id": "ENDO-06"
    },
-   "separation": "other domain",
-   "share": "repeat",
-   "slot": "mcq",
+   "share": "theme",
+   "slot": "case",
    "topic": "ENDO-06"
   },
   {
-   "domain": "PULM",
-   "label": "Pulmonary embolism (management)",
+   "already_used": [
+    {
+     "date": "2026-10-23",
+     "id": "S0010",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 10.4",
+     "topic": "TOX-03"
+    }
+   ],
+   "aspect_hint": "interpretation",
+   "aspect_note": "Suggested aspect (least recently tested). If this item re-tests an open gap, ask about the gap's decision point instead, whatever its aspect.",
+   "domain": "TOX",
+   "label": "Environmental (hypothermia, hyperthermia)",
+   "reason": "spaced review due 2026-10-24; last 3.0/5 on 2026-10-23; flagged overconfident last time",
+   "reason_code": "due",
+   "separation": "other domain",
+   "share": "repeat",
+   "slot": "focused",
+   "topic": "TOX-03"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-10-07",
+     "id": "S0002",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 2.3",
+     "topic": "RENAL-03"
+    },
+    {
+     "aspect": "disposition",
+     "date": "2026-10-14",
+     "id": "S0005",
+     "kind": "focused",
+     "stem": "Example focused stem 5.1",
+     "topic": "RENAL-03"
+    }
+   ],
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 2,
+    "level": 3,
+    "name": "design"
+   },
+   "domain": "RENAL",
+   "label": "Potassium disorders",
+   "reason": "spaced review due 2026-10-21; last 5.0/5 on 2026-10-14",
+   "reason_code": "due",
+   "separation": "other domain",
+   "share": "repeat",
+   "slot": "mcq",
+   "topic": "RENAL-03"
+  },
+  {
+   "domain": "ENDO",
+   "label": "Pituitary emergencies, SIADH (see RENAL-02)",
    "reason": "not yet tested; in the block's theme",
    "reason_code": "new",
    "separation": "same domain as the case (the block's theme), unrelated topic",
    "share": "theme",
    "slot": "mcq",
-   "topic": "PULM-06"
+   "topic": "ENDO-05"
   },
   {
    "domain": "GEN",
-   "label": "Pain management & opioid stewardship",
+   "label": "Patient safety, quality improvement, high-value care",
    "reason": "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)",
    "reason_code": "new",
    "separation": "other domain",
    "share": "wildcard",
    "slot": "mcq",
-   "topic": "GEN-04"
+   "topic": "GEN-11"
   }
  ],
  "lab_units": "SI",
@@ -149,11 +172,11 @@
  },
  "prepare_ahead": true,
  "presentation_order": [
-  "mcq ENDO-06",
-  "mcq PULM-06",
-  "mcq GEN-04",
+  "mcq RENAL-03",
+  "mcq ENDO-05",
+  "mcq GEN-11",
   "focused TOX-03",
-  "case PULM-08"
+  "case ENDO-06"
  ],
  "profile": {
   "aim": null,

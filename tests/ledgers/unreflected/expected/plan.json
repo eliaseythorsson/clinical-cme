@@ -9,16 +9,16 @@
    }
   },
   "length": 12,
-  "line": "Block: Pulmonary & Critical Care, round 1 of 12",
+  "line": "Block: General & Perioperative Hospital Medicine, round 1 of 12",
   "mix": {
    "repeat": 2,
    "theme": 1,
    "wildcard": 0
   },
-  "name": "Pulmonary & Critical Care",
+  "name": "General & Perioperative Hospital Medicine",
   "round": 1,
   "starts": true,
-  "theme": "PULM"
+  "theme": "GEN"
  },
  "blood_gas_units": "mmHg",
  "case_format": "unfolding",
@@ -35,78 +35,6 @@
  "helpers": true,
  "item_order": "mcqs_first",
  "items": [
-  {
-   "already_used": [
-    {
-     "date": "2026-10-14",
-     "diagnosis": "Example diagnosis: COPD exacerbation",
-     "id": "S0005",
-     "patient": "Example patient 5",
-     "presentation": "Example presentation 5",
-     "setting": "ward",
-     "topic": "PULM-02"
-    },
-    {
-     "date": "2026-10-09",
-     "id": "S0003",
-     "kind": "mcq",
-     "stem": "Example MCQ stem 3.3",
-     "topic": "PULM-02"
-    },
-    {
-     "date": "2026-10-12",
-     "id": "S0004",
-     "kind": "mcq",
-     "stem": "Example MCQ stem 4.1",
-     "topic": "PULM-02"
-    }
-   ],
-   "depth": {
-    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
-    "in_a_row": 1,
-    "level": 2,
-    "name": "studies"
-   },
-   "domain": "PULM",
-   "label": "COPD exacerbation",
-   "reason": "spaced review due 2026-10-16; last 5.0/5 on 2026-10-14",
-   "reason_code": "due",
-   "share": "theme",
-   "slot": "case",
-   "topic": "PULM-02"
-  },
-  {
-   "already_used": [
-    {
-     "date": "2026-10-07",
-     "id": "S0002",
-     "kind": "mcq",
-     "stem": "Example MCQ stem 2.1",
-     "topic": "HEME-02"
-    },
-    {
-     "date": "2026-10-09",
-     "id": "S0003",
-     "kind": "mcq",
-     "stem": "Example MCQ stem 3.1",
-     "topic": "HEME-02"
-    }
-   ],
-   "depth": {
-    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
-    "in_a_row": 1,
-    "level": 2,
-    "name": "studies"
-   },
-   "domain": "HEME",
-   "label": "Thrombocytopenia, HIT, TTP/HUS",
-   "reason": "spaced review due 2026-10-11; last 5.0/5 on 2026-10-09",
-   "reason_code": "due",
-   "separation": "other domain",
-   "share": "repeat",
-   "slot": "mcq",
-   "topic": "HEME-02"
-  },
   {
    "already_used": [
     {
@@ -143,20 +71,76 @@
    "label": "Perioperative risk assessment & medical consultation",
    "reason": "spaced review due 2026-10-12; last 5.0/5 on 2026-10-09",
    "reason_code": "due",
-   "separation": "other domain",
-   "share": "repeat",
-   "slot": "mcq",
+   "share": "theme",
+   "slot": "case",
    "topic": "GEN-01"
   },
   {
-   "domain": "PULM",
-   "label": "Shock differentiation & resuscitation",
+   "already_used": [
+    {
+     "date": "2026-10-07",
+     "id": "S0002",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 2.1",
+     "topic": "HEME-02"
+    },
+    {
+     "date": "2026-10-09",
+     "id": "S0003",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 3.1",
+     "topic": "HEME-02"
+    }
+   ],
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 1,
+    "level": 2,
+    "name": "studies"
+   },
+   "domain": "HEME",
+   "label": "Thrombocytopenia, HIT, TTP/HUS",
+   "reason": "spaced review due 2026-10-11; last 5.0/5 on 2026-10-09",
+   "reason_code": "due",
+   "separation": "other domain",
+   "share": "repeat",
+   "slot": "mcq",
+   "topic": "HEME-02"
+  },
+  {
+   "already_used": [
+    {
+     "date": "2026-10-12",
+     "id": "S0004",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 4.3",
+     "topic": "ID-02"
+    }
+   ],
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 1,
+    "level": 2,
+    "name": "studies"
+   },
+   "domain": "ID",
+   "label": "Skin & soft tissue infections, necrotizing fasciitis",
+   "reason": "spaced review due 2026-10-15; last 5.0/5 on 2026-10-12",
+   "reason_code": "due",
+   "separation": "other domain",
+   "share": "repeat",
+   "slot": "mcq",
+   "topic": "ID-02"
+  },
+  {
+   "domain": "GEN",
+   "label": "Fluid & electrolyte therapy, maintenance fluids",
    "reason": "not yet tested; in the block's theme",
    "reason_code": "new",
    "separation": "same domain as the case (the block's theme), unrelated topic",
    "share": "theme",
    "slot": "mcq",
-   "topic": "PULM-08"
+   "topic": "GEN-12"
   }
  ],
  "lab_units": "SI",
@@ -171,9 +155,9 @@
  "prepare_ahead": true,
  "presentation_order": [
   "mcq HEME-02",
-  "mcq GEN-01",
-  "mcq PULM-08",
-  "case PULM-02"
+  "mcq ID-02",
+  "mcq GEN-12",
+  "case GEN-01"
  ],
  "profile": {
   "aim": null,
