@@ -115,11 +115,17 @@ def test_start_prints_one_line_and_writes_the_plan_plan_round_makes(work):
     assert out["plan"] == cme.plan_summary(plan, work.p("plan.json"))
 
 
+def steps_aside(st):
+    """The ledger without the step tokens a command adds (issue #57: a random job id each)."""
+    st.pop("applied_steps", None)
+    return st
+
+
 def test_save_and_close_match_record_and_reflect(work):
     st = ledger(work)
     saved = work.save_round("2026-11-01")
     rec = cme.record_round(st, copy.deepcopy(ROUND), TODAY)
-    assert work.read_json("publish", "data", "state.json") == json.loads(json.dumps(st))
+    assert steps_aside(work.read_json("publish", "data", "state.json")) == steps_aside(json.loads(json.dumps(st)))
     assert saved["out"] == work.pub("data", "state.json") and saved["bytes"] == os.path.getsize(saved["out"])
     assert list(saved)[:3] == ["ok", "out", "bytes"]
     for k in ("gen", "session_id", "next_id", "score", "topics", "open_gaps", "reflection_pending"):
@@ -127,7 +133,7 @@ def test_save_and_close_match_record_and_reflect(work):
 
     closed = work.close_round("2026-11-03")
     ref = cme.reflect_round(st, dict(REFLECTION), dt.date(2026, 11, 3))
-    assert work.read_json("publish", "data", "state.json") == json.loads(json.dumps(st))
+    assert steps_aside(work.read_json("publish", "data", "state.json")) == steps_aside(json.loads(json.dumps(st)))
     assert closed["bytes"] == os.path.getsize(closed["out"])
     for k in ("gen", "session_id", "topics", "open_gaps"):
         assert closed[k] == ref[k]

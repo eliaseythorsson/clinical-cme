@@ -117,11 +117,15 @@ def test_the_round_files_carried_to_a_new_work_folder_are_saved(work, tmp_path_f
     session they go into a new work folder opened on the store, and `save` records the round."""
     work.init()
     play(work, "2026-11-02")
-    stamp(work, NEWER)
-    error(work.run("--today", "2026-11-02", "save", "--work", work.path, ok=False))
+    stamp(work, NEWER)              # another device, with a newer plugin, saved to the folder meanwhile
+    before = work.read_ledger()
+    assert work.run_json("--today", "2026-11-02", "save", "--work", work.path)["ok"]   # on the ledger as read
+    msg = error(work.run("publish", "--work", work.path, ok=False))     # the folder moved: applied again, refused
+    assert "update the plugin" in msg and "Nothing was written" in msg
+    assert work.read_ledger() == before
     kept = tmp_path_factory.mktemp("kept")       # downloads: outside the work folder
-    for n in os.listdir(work.path):     # every file but work.json and publish.json (store.md §6)
-        if os.path.isfile(work.p(n)) and n not in ("work.json", "publish.json"):
+    for n in os.listdir(work.path):     # every file but work.json, publish.json, ledger_read.json (store.md §6)
+        if os.path.isfile(work.p(n)) and n not in ("work.json", "publish.json", "ledger_read.json"):
             shutil.copy(work.p(n), kept / n)
     stamp(work, SKILL_VERSION)      # updated
     work.forget_job()

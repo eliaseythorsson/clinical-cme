@@ -213,10 +213,11 @@ def test_an_overconfident_5_of_5_does_not_reduce_the_domains_share(work):
 
 def test_a_5_of_5_borne_out_by_the_answers_still_reduces_the_share(work):
     st = ledger(work)
+    fresh = copy.deepcopy(st)
     before = share(st, "CARD")
     play(st, DAY, [mcq("CARD-01", 5, confidence="sure")], comfort={"CARD-01": 5})
     assert share(st, "CARD") < before
-    assert cme.domain_weights(st)["CARD"] == pytest.approx(cme.domain_weights(ledger(work))["CARD"] * 0.6)
+    assert cme.domain_weights(st)["CARD"] == pytest.approx(cme.domain_weights(fresh)["CARD"] * 0.6)
 
 
 def test_a_confident_rating_over_poor_answers_raises_the_share(work):

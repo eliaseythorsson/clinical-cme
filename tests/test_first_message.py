@@ -135,7 +135,8 @@ def test_time_stays_flat_with_session_history(stores, command):
 
 def test_start_reads_no_session_document_review_or_page_file(stores, monkeypatch, capsys):
     """`start` in this process, every file it opens noted: of the store it opens the ledger and
-    the prepared round, nothing else, and it never lists the sessions folder."""
+    the prepared round, nothing else, and it never lists the sessions folder (the store copy's
+    own folders are listed, to find its documents whatever their names: issue #57)."""
     w, day = stores[300]
     w.forget_job()
     opened, listed = [], []
@@ -155,7 +156,8 @@ def test_start_reads_no_session_document_review_or_page_file(stores, monkeypatch
     store = w.store() + os.sep
     assert {os.path.relpath(p, w.store()).replace(os.sep, "/") for p in opened if p.startswith(store)} == {
         "data/state.json", "data/prepared.json"}
-    assert not [p for p in listed if (p + os.sep).startswith(store)]
+    assert not [p for p in listed if (p + os.sep).startswith(w.store("data", "sessions") + os.sep)]
+    assert {p for p in listed if (p + os.sep).startswith(store)} <= {w.store(), w.store("data")}
 
 
 def test_start_does_not_need_the_session_documents_to_be_readable(stores, tmp_path):

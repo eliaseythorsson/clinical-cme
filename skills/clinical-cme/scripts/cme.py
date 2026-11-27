@@ -26,9 +26,11 @@ work.json; every later command of the job reads it there (a `--today` given to i
 """
 import argparse
 import base64
+import contextlib
 import copy
 import hashlib
 import datetime as dt
+import io
 import json
 import math
 import os
@@ -1459,7 +1461,7 @@ LEDGER_SHAPE = (
     ("mappings", list, []),                  # the blueprint mappings applied (issue #81)
 )
 # Kept only while it means something: absent is a value of its own (see content_gen).
-LEDGER_OPTIONAL = {"content_gen": int}
+LEDGER_OPTIONAL = {"content_gen": int, "applied_steps": list}
 # The types of the settings and the profile, read off their defaults; a null default declares
 # the type the value has once set.
 CONFIG_NULLABLE = {"round_set_at": str}
@@ -3655,7 +3657,8 @@ def reflect_round(st, refl, today, session=None, measured=None, base=None):
     st["positions"] = [p for p in st["positions"] if not (p.get("session") == sid and p.get("from") == "reflection")]
     changes += stop_changes(st, said, sid, rdate, "reflection") + closed
     lapse_positions(st, today)
-    st["unreflected"] = None
+    if st.get("unreflected") == sid:    # a later round still waiting for its own reflection keeps waiting
+        st["unreflected"] = None
     compact(st)
     bump_gen(st)
     out = {"gen": st["gen"], "session_id": entry["id"],
@@ -5261,10 +5264,17 @@ def plan_options_given(args):
 def cmd_open(args):
     """Set up the work folder for one job from the local copy of the learner's store. Prints
     neutral status and counts only (never topics)."""
-    info, st, extra = open_work(args.work, args.store, args.version, load_json_arg(args.prefs), given_today(args),
-                                reread=args.reread, offset=given_offset(args))
+    if args.reread:                 # a publish was refused: the job, applied again on the fresh read
+        info, st, extra = rebase_job(args.work, args.store, args.version, load_json_arg(args.prefs),
+                                     given_today(args), given_offset(args))
+    else:
+        info, st, extra = open_work(args.work, args.store, args.version, load_json_arg(args.prefs),
+                                    given_today(args), offset=given_offset(args))
     status = status_dict(st, info["state"], parse_date(info["started"]))
     status.update(extra)
+    if args.reread:
+        status["files"] = publish_set(args.work, info)
+        status["publish"] = os.path.abspath(os.path.join(args.work, PUBLISH_FILE))
     print(json.dumps(status, ensure_ascii=False))
 
 
@@ -5293,6 +5303,8 @@ def cmd_start(args):
         set_aside = set_aside_round(work)       # a round after another job here: its files must not mix
         if set_aside:
             extra["earlier_set_aside"] = set_aside
+            for step in info.get("steps") or []:     # a rebase runs them with their round's files
+                step.setdefault("aside", set_aside)
     st, path = current_ledger(work, info)
     today = today or learner_today(st["profile"], at, offset) or job_date(work) or dt.date.today()
     refuse_newer(st)                # a round this engine could not save is not begun
@@ -6379,8 +6391,13 @@ COMMANDS = (
     ('`open --work W --store DIR [--version V] [--prefs J] [--utc-offset H] [--reread]`',
      'Set up the work folder for any job from `DIR`, the local copy of the store as just read: '
      "the store's layout (`DIR/data/state.json`, `DIR/data/page.json`, `DIR/data/prepared.json`, "
-     '`DIR/index.html`, `DIR/data/sessions/<id>.json`) or the files side by side '
-     "(`DIR/state.json`, …). Writes `W/work.json`, with the job's date (`--today`, else the date "
+     '`DIR/index.html`, `DIR/data/sessions/<id>.json`), the files side by side '
+     "(`DIR/state.json`, …), or the files under whatever names the read tool gave them: each "
+     'document is recognised by its content (`recognised` lists those; where two files hold the '
+     'same document, the one at its store path counts, then the one under its bare name, then the '
+     'higher `gen`; never the newer file). `V` is what makes it a page store (the assistant carries '
+     'the publish set); without it, a folder store (`publish` writes it); `store_kind` says which. Writes '
+     "`W/work.json`, with the job's date (`--today`, else the date "
      "at `--utc-offset H` or the learner's `utc_offset`, else UTC; every later command of the job "
      "reads it), and an empty manifest carrying `V`, the store version read. A `--utc-offset` "
      "that differs from the profile's is recorded in the ledger, into the publish set, without "
@@ -6391,8 +6408,14 @@ COMMANDS = (
      'With `newer_version` the ledger was last written by a newer version of the skill (`say`: '
      'the line for the learner): read-only requests go on, and every command that would write the '
      'ledger (`start` and `prepare` too) stops with nothing written (§1, `store.md` §6). '
-     '`--reread`: the same job on a fresh read after a refused publish (`store.md` §4.1): the '
-     "job's own files stay, the publish set is dropped, and the job's commands are run again."),
+     '`--reread`: the same job on a fresh read after a refused publish (`store.md` §4): the '
+     "job's own files stay and the engine applies the job's steps (every command that wrote) the "
+     "fresh ledger does not hold yet (each step's token goes into the ledger it publishes, "
+     '`applied_steps`) again on it, printing the new publish set as `files` and `rebased` (`steps`, '
+     '`renumbered`, `say`: one line for the learner, null when the rebase changed nothing of '
+     "theirs). This job's round already in the store is not recorded twice; a round another "
+     'device recorded from the same ledger is kept, and this one is renumbered and applied after '
+     'it; a round prepared ahead on the ledger as it was is dropped.'),
     ('`start --work W [--store DIR [--version V]] [--prefs J] [--utc-offset H] [plan options] [--no-prepared]`',
      'Start a round. With `--store` it does what `open` does first; without, it continues the job'
      ' that is open (a settings change or a late reflection earlier in the same conversation), '
@@ -6544,6 +6567,14 @@ COMMANDS = (
     ('`command-table`, `file-table`',
      "Print this table and the work-folder table of §6.1 from the engine's own rows; a test fails "
      'when the copy here differs, or when a command is missing from the table.'),
+    ('`publish --work W [--to DIR]`',
+     "Publish the job's publish set through its store's adapter. A folder store (or `--to DIR`, "
+     "for a new learner's first files): the engine writes every file into the folder at its store "
+     "path, in write order (the ledger last), after checking that the folder's ledger is the one "
+     "the job read there or its last write left; if another device saved first it applies the job "
+     "again on the folder as it is now (as `open --reread` does) and writes then (`rebased`, with "
+     "its `say`); refused a second time, it stops with nothing more written. Prints `written` and "
+     "`gen`. A page store: prints the publish set to carry (`files`, `version`) and writes nothing."),
     ('`verify --work W --store CHECK`',
      'Testing mode: compare the publish set with the store read again into `CHECK`; the result is'
      ' also written to `W/verify.json`.'),
@@ -6619,11 +6650,18 @@ MAINTENANCE_COMMANDS = (
 )
 WORK_FILES = (
     ('`work.json`',
-     "`open`, `start`: the store copy, the ledger as read, the store version, the session ID, the"
-     " page settings, the job's date (`started`: the learner's date, fixed for the job); `save`, "
-     '`close`: the round each recorded (`saved`, `closed`), so that either can be run again in '
-     'this job',
+     "`open`, `start`: the store copy and the documents found in it (`found`), the store's kind, "
+     "the ledger as read (`read`: its `gen`, `sha`, settings), the store version, the session ID, "
+     "the page settings, the job's date (`started`: the learner's date, fixed for the job); "
+     '`save`, `close`: the round each recorded (`saved`, `closed`), so that either can be run '
+     "again in this job; every command that writes: itself, as one of the job's `steps` (a rebase"
+     " runs them again), with the job's id (`job`) that makes its token; `publish` to a folder: "
+     "the ledger it wrote (`wrote`)",
      'every command'),
+    ('`ledger_read.json`',
+     '`open`, `start` on a folder store: the ledger as read, so that another device writing to the '
+     'folder meanwhile changes nothing of the job until `publish` checks the folder',
+     'the commands that follow, while the publish set holds no ledger'),
     ('`plan.json`',
      '`start`',
      'whoever writes the items'),
@@ -6674,6 +6712,15 @@ WORK_FILES = (
      '`close`: the round as it stood before its reflection, and its entry as `close` left it, so '
      'that `close` can be run again (§3.1)',
      '`close`'),
+    ('`kept/`',
+     "a rebase: the job's log documents (`data/sessions/…`) as the store holds them: as first read, "
+     "then as the last of the job's steps the fresh ledger lists left them",
+     'the commands of the rebase, which reads only the top-level files of the store again'),
+    ('`steps/`',
+     'every command that writes: a file named in its options, as it was given (`<n>-<name>`), and '
+     'the log documents of the publish set as the step left it (`<n>/`); a log document read from '
+     'the store, as first read (`0/`)',
+     'a rebase'),
     ('`earlier/<n>/`',
      '`open`, `start`: the files of an earlier job in the same folder, set aside',
      'nobody'),
@@ -7224,15 +7271,18 @@ PART_B_FILE = "B.md"
 CLOSE_FROM_FILE = "close_from.json"     # written by close: the round as it stood before its reflection (close can run again)
 OLD_WORK_FILES = ("before_save.json", "before_close.json")      # what 5.0 kept to run save and close again
 VERIFY_FILE = "verify.json"
+LEDGER_READ_FILE = "ledger_read.json"   # written by open/start on a folder store: the ledger as read
 TIMES_FILE = "times.json"               # written by every step of a round: when it happened (issue #47)
 PUBLISH_DIR = "publish"
 PUBLISH_FILE = "publish.json"
+KEPT_DIR = "kept"                       # the log documents this job published, for a rebase (issue #57)
+STEPS_DIR = "steps"                     # the files a step was given, as it was given them
 EARLIER_DIR = "earlier"
 # what one round leaves in the work folder, and what a whole job leaves
 ROUND_FILES = PREPARED_FILES + (ANSWERS_FILE, STAGE2_FILE, FEEDBACK_QUESTIONS_FILE, FEEDBACK_FILE, ROUND_FILE,
                                 RECORD_FILE, REFLECTION_FILE, PART_A_FILE, PART_B_FILE, CLOSE_FROM_FILE,
                                 VERIFY_FILE, PLAN_FILE, TIMES_FILE, NEXT_DIR) + OLD_WORK_FILES
-JOB_FILES = ROUND_FILES + (WORK_FILE, PUBLISH_FILE, PUBLISH_DIR)
+JOB_FILES = ROUND_FILES + (WORK_FILE, PUBLISH_FILE, PUBLISH_DIR, KEPT_DIR, STEPS_DIR, LEDGER_READ_FILE)
 REFLECTION_HEADING_RE = re.compile(r"^###\s+Reflection\b", re.M)
 ANSWER_MARK_RE = re.compile(r"<!--\s*/?\s*answers\b")
 # The write order of the publish set: log entries before the page file that lists them, the
@@ -7282,9 +7332,21 @@ def store_copy_file(store, rel):
 
 
 def store_file(work, info, rel):
-    """The newest version this job has of a store file: the publish set's, else the store
-    copy's, else None."""
-    return in_work(work, os.path.join(PUBLISH_DIR, *rel.split("/"))) or store_copy_file(info.get("store"), rel)
+    """The newest version this job has of a store file: the publish set's, else what a rebase put
+    back in <work>/kept/, else the store copy's, else None."""
+    mine = in_work(work, os.path.join(PUBLISH_DIR, *rel.split("/"))) or in_work(work, os.path.join(KEPT_DIR, *rel.split("/")))
+    if mine:
+        return mine
+    found = (info.get("found") or {}).get(rel)
+    path = (found if found and os.path.isfile(found) else None) or store_copy_file(info.get("store"), rel)
+    if path and rel.startswith(STORE_DIRS) and work:
+        # a log document as this job first read it (<work>/steps/0/): a rebase starts from it, not from
+        # the store's copy, which a write of this job that stopped half-way may already have changed
+        first = os.path.join(work, STEPS_DIR, "0", *rel.split("/"))
+        if not os.path.isfile(first):
+            os.makedirs(os.path.dirname(first), exist_ok=True)
+            shutil.copyfile(path, first)
+    return path
 
 
 def current_ledger(work, info):
@@ -7344,6 +7406,7 @@ def publish_set(work, info):
 def published(work, info, out):
     """Add the whole publish set to what a writing command prints: `files` in write order and
     `publish`, the manifest's path. Whoever carries files to the store publishes all of it."""
+    note_step(work, info)
     out["files"] = publish_set(work, info)
     out["publish"] = os.path.abspath(os.path.join(work, PUBLISH_FILE))
     return out
@@ -7373,6 +7436,7 @@ def publish_ledger(work, info, st, out, session=None, review=None, empty_prepare
     the ledger's local path."""
     refuse_newer(st, work)          # before any file goes into the publish set
     st[STAMP_KEY] = SKILL_VERSION
+    add_token(st, info)
     path = publish_json(work, STATE_PATH, st)
     publish_page(work, info, st, session=session, review=review, fresh=fresh_page)
     if empty_prepared:
@@ -7422,6 +7486,519 @@ def set_aside_round(work):
     return set_aside(work, ROUND_FILES)
 
 
+# ---------------------------------------------------------------- the store: recognise, publish, rebase (issue #57)
+#
+# The engine handles the store; the assistant only carries files.
+#
+# - Recognise. `open` (and `start --store`) finds every store document in the store copy by its
+#   place, its bare name or, whatever name the read tool saved it under, its content
+#   (store_documents). Where two files hold the same document, the one written last counts.
+# - Publish. One seam, two adapters (publish_job). The page: the publish set is emitted
+#   (`files`, publish.json) and the assistant carries it to the artifact in one publish call,
+#   which the artifact refuses when another device saved first. A folder: `publish` writes the
+#   publish set into the folder itself, in write order, after checking that the folder's ledger
+#   is still the one this job read or last wrote there (write_folder).
+# - Rebase. Every command that writes notes itself in work.json as a step of the job
+#   (note_step). When a publish is refused because the store moved on, the job is opened again
+#   on a fresh read and its steps are applied again on top of it (rebase_job): a round is applied
+#   again to the fresh ledger as recorded; a round another device recorded from the same ledger
+#   is kept, and this job's round is renumbered and applied after it. A clean rebase says
+#   nothing; when something of the learner's changed meanwhile, one line says what (`say`).
+
+STORE_DOCS = (STATE_PATH, PAGE_PATH, OLD_INDEX_PATH, PREPARED_PATH, "index.html")
+STORE_DIRS = ("data/sessions/", "data/reviews/", "data/testing/")
+SESSION_ID_RE = re.compile(r"^S\d{3,}$")
+RECOGNISE_MAX_BYTES = 8 * 1024 * 1024       # larger files are not store documents
+# the commands that write the publish set, as steps of a job: a rebase applies them again in order
+# (`prepare` writes only what the next `start` or `save` writes again: it is not a step)
+STEP_COMMANDS = ("init", "settings", "theme", "review", "review-doc", "position", "snooze", "override",
+                 "apply-mapping", "save", "close", "addendum", "testing-note", "finish-prepare")
+_RUN = {"argv": None, "cmd": None, "replaying": False}
+
+
+def store_name(rel):
+    """The store path a file of a store copy stands for by its place or bare name, or None."""
+    if rel in STORE_DOCS or (rel.startswith(STORE_DIRS) and rel.endswith(".json") and rel.count("/") == 2):
+        return rel
+    if ("data/" + rel) in STORE_DOCS or (("data/" + rel).startswith(STORE_DIRS) and rel.count("/") == 1
+                                          and rel.endswith(".json")):
+        return "data/" + rel
+    base = rel.rsplit("/", 1)[-1]
+    if base == "index.html":
+        return base
+    if "data/" + base in STORE_DOCS:
+        return "data/" + base
+    if base.endswith(".json") and SESSION_ID_RE.match(base[:-5]):
+        return session_path(base[:-5])
+    return None
+
+
+def store_role(path):
+    """The store path of the document a file holds, read from its content, or None: the ledger,
+    the page file, the old index, the prepared round, the page, a session, review or testing
+    document."""
+    try:
+        if os.path.getsize(path) > RECOGNISE_MAX_BYTES:
+            return None
+        with open(path, "rb") as fh:
+            text = fh.read().decode("utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
+    head = text.lstrip()[:1]
+    if head not in ("{", "["):
+        return "index.html" if PAGE_VERSION_RE.search(text) else None
+    try:
+        doc = json.loads(text)
+    except ValueError:
+        return None
+    if not isinstance(doc, dict):
+        return None
+    if "next_id" in doc and isinstance(doc.get("topics"), dict) and ("gen" in doc or "schema" in doc):
+        return STATE_PATH
+    if "page_version" in doc and isinstance(doc.get("sessions"), list):
+        return PAGE_PATH
+    if "v" in doc and ("payload" in doc or doc.get("empty") is True):
+        return PREPARED_PATH
+    sid = doc.get("id")
+    if isinstance(sid, str) and SESSION_ID_RE.match(sid) and "transcript" in doc:
+        return session_path(sid)
+    if isinstance(doc.get("date"), str) and "report" in doc:
+        return review_path(doc["date"])
+    if isinstance(doc.get("session"), str) and "store_check" in doc:
+        return "data/testing/%s.json" % doc["session"]
+    if isinstance(doc.get("sessions"), list) and "topics" not in doc and "state" not in doc:
+        return OLD_INDEX_PATH
+    return None
+
+
+def store_documents(store):
+    """{store path: local file} for every store document in the store copy `store`: a file at its
+    store path or under its bare name, else, whatever its name, by its content (store_role). Where
+    two files hold the same document (a fresh read copied in beside an earlier one under other
+    names, a sync tool's "conflicted copy"), the file at its store path wins, then one under its bare
+    name, then one found by content; between files of the same kind, the higher `gen` (never the
+    time a file was written). The log's
+    folders (sessions/, reviews/, testing/) are not walked: their documents are found by path. Returns
+    (documents, {store path: file name} of those found by content alone)."""
+    found, by_content = {}, {}
+    if not store or not os.path.isdir(store):
+        return found, by_content
+    best = {}
+    for folder, dirs, names in os.walk(store):
+        # the log's folders hold documents at their store paths, found there by path when asked
+        # for (store_file): never walked, so a job opens as fast whatever the history
+        here = os.path.relpath(folder, store).replace(os.sep, "/")
+        dirs[:] = sorted(d for d in dirs if not d.startswith(".")
+                         and not (here in (".", "data") and d in ("sessions", "reviews", "testing")))
+        for n in sorted(names):
+            if n.startswith(".") or n.endswith(".cme-tmp"):
+                continue
+            path = os.path.join(folder, n)
+            rel = os.path.relpath(path, store).replace(os.sep, "/")
+            role = store_name(rel)
+            how = 2 if role == rel else 1
+            if role is None:
+                role, how = store_role(path), 0
+            if role is None:
+                continue
+            key = (how, doc_gen(path) if how < 2 else 0, rel)
+            if role not in best or key[:2] > best[role][0][:2]:
+                best[role] = (key, os.path.abspath(path))
+    for role, (key, path) in best.items():
+        found[role] = path
+        if key[0] == 0:
+            by_content[role] = os.path.relpath(path, store).replace(os.sep, "/")
+    return found, by_content
+
+
+def doc_gen(path):
+    """The `gen` a store document carries (the ledger, the page file, the prepared round), else -1."""
+    try:
+        doc = load_json(path)
+        return int(doc.get("gen")) if isinstance(doc, dict) and doc.get("gen") is not None else -1
+    except (CmeError, OSError, TypeError, ValueError, AttributeError):
+        return -1
+
+
+def file_sha(path):
+    if not path or not os.path.isfile(path):
+        return None
+    with open(path, "rb") as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+
+def read_summary(st, path):
+    """What a job keeps of the ledger it read: enough to tell the folder's ledger moved (`sha`) and
+    what of the learner's another device changed meanwhile (the settings and the profile)."""
+    return {"gen": st.get("gen"), "next_id": st.get("next_id"), "sha": file_sha(path),
+            "config": copy.deepcopy(st.get("config")), "profile": copy.deepcopy(st.get("profile"))}
+
+
+STEP_FILE_ARGS = ("--md", "--mapping", "--feedback", "--review", "--reflection", "--scores", "--close-gaps",
+                  "--stops", "--config", "--profile", "--blueprint")
+
+
+APPLIED_STEPS_MAX = 64          # the step tokens a ledger keeps: the latest jobs' writes
+
+
+def note_step(work, info):
+    """The command now running is a step of the job: noted in work.json (`steps`, each its own
+    entry) so a rebase can apply it again, and its **token** (the job's id and the step's number)
+    added to the ledger it publishes (`applied_steps`, the latest APPLIED_STEPS_MAX), so that a
+    rebase can tell from the fresh ledger alone which steps the store already holds: no step is
+    applied twice, whether or not anyone said the publish landed. A step that wrote no ledger
+    (an addendum, a review document) publishes the ledger with only its token added. A file
+    named in its options is kept as it was given (<work>/steps/<n>-<name>), and the log
+    documents of the publish set as the step left it (<work>/steps/<n>/), which is what the store
+    holds once a publish of that set landed. While a rebase applies a step again, the step keeps
+    its token and its entry."""
+    step = step_now(info)
+    if step is None:
+        return
+    steps = info.setdefault("steps", [])
+    if step.get("new"):
+        step.pop("new")
+        n = step["n"]
+        argv = list(_RUN["argv"] or [])
+        for i, a in enumerate(argv[:-1]):
+            if a in STEP_FILE_ARGS and os.path.isfile(argv[i + 1]):
+                keep = os.path.join(os.path.abspath(work), STEPS_DIR, "%d-%s" % (n, os.path.basename(argv[i + 1])))
+                os.makedirs(os.path.dirname(keep), exist_ok=True)
+                shutil.copyfile(argv[i + 1], keep)
+                argv[i + 1] = keep
+        step.update(argv=argv, cwd=os.getcwd())
+        steps.append(step)
+    stamp_token(work, info, step["token"])
+    snap = os.path.join(work, STEPS_DIR, str(step["n"]))
+    if os.path.isdir(snap):
+        shutil.rmtree(snap)
+    for d in ("sessions", "reviews", "testing"):
+        src = os.path.join(work, PUBLISH_DIR, "data", d)
+        if os.path.isdir(src):
+            shutil.copytree(src, os.path.join(snap, "data", d))
+    save_json(info, os.path.join(work, WORK_FILE))
+
+
+def step_now(info):
+    """The step the command now running is, or None when it is no step: while a rebase runs a step
+    again, that step; a `save` or `close` run again as it stands, the step it repeats (it is applied
+    again in place); else a new step ({"new": True}, noted by note_step)."""
+    if _RUN["cmd"] not in STEP_COMMANDS:
+        return None
+    if _RUN["replaying"]:
+        return _RUN.get("step")
+    steps = info.setdefault("steps", [])
+    last = steps[-1] if steps else None
+    if (last and last["cmd"] in ("save", "close") and last["cmd"] == _RUN["cmd"] and not last.get("aside")
+            and last.get("given") == _RUN["argv"]):
+        return last
+    if not info.get("job"):
+        info["job"] = new_job_id()
+    n = len(steps) + 1
+    return {"n": n, "token": "%s.%d" % (info["job"], n), "cmd": _RUN["cmd"], "given": list(_RUN["argv"] or []),
+            "new": True}
+
+
+def add_token(st, info):
+    """The running step's token added to the ledger `st` it writes (see note_step)."""
+    step = step_now(info)
+    if step is None:
+        return
+    tokens = [t for t in st.get("applied_steps") or [] if t != step["token"]] + [step["token"]]
+    st["applied_steps"] = tokens[-APPLIED_STEPS_MAX:]
+
+
+def new_job_id():
+    return base64.b32encode(os.urandom(5)).decode("ascii").lower()
+
+
+def stamp_token(work, info, token):
+    """Add a step's token to the ledger of the publish set (the current ledger, when the step wrote
+    none). Not to a ledger stamped by a newer engine, which this one never writes."""
+    path = in_work(work, os.path.join(PUBLISH_DIR, *STATE_PATH.split("/"))) or info.get("state")
+    if not path or not os.path.isfile(path):
+        return
+    st = make_current(load_json(path))
+    if newer_engine(st) or (st.get("applied_steps") or [])[-1:] == [token]:
+        return
+    tokens = [t for t in st.get("applied_steps") or [] if t != token] + [token]
+    st["applied_steps"] = tokens[-APPLIED_STEPS_MAX:]
+    st[STAMP_KEY] = SKILL_VERSION
+    publish_json(work, STATE_PATH, st)
+
+
+def run_step(step):
+    """Run one noted step again, in this process; returns (exit status, what it printed, parsed)."""
+    buf = io.StringIO()
+    saved, cwd = dict(_RUN), os.getcwd()
+    try:
+        if step.get("cwd") and os.path.isdir(step["cwd"]):
+            os.chdir(step["cwd"])
+        _RUN["replaying"], _RUN["step"] = True, step
+        with contextlib.redirect_stdout(buf):
+            try:
+                code = main(list(step["argv"]))
+            except SystemExit as e:         # argparse
+                code = e.code if isinstance(e.code, int) else 2
+    finally:
+        os.chdir(cwd)
+        _RUN.clear()
+        _RUN.update(saved)
+    text = buf.getvalue()
+    try:
+        out = json.loads(text)
+    except ValueError:
+        out = {"ok": code == 0, "printed": text.strip()[-400:]}
+    return code, out
+
+
+def files_back(work, aside):
+    """For a step of an earlier round of this job (set aside when the next round began): the earlier
+    round's files back into the work folder and the current round's out of the way; returns what
+    puts everything back."""
+    current = set_aside(work, ROUND_FILES)
+    for n in os.listdir(aside):
+        os.replace(os.path.join(aside, n), os.path.join(work, n))
+
+    def put_back():
+        for n in ROUND_FILES:
+            src = os.path.join(work, n)
+            if os.path.exists(src):
+                dst = os.path.join(aside, n)
+                if os.path.isdir(dst):
+                    shutil.rmtree(dst)
+                os.replace(src, dst)
+        if current:
+            for n in os.listdir(current):
+                os.replace(os.path.join(current, n), os.path.join(work, n))
+            os.rmdir(current)
+    return put_back
+
+
+def renumber_round(work, old, new):
+    """This job's round gets the id `new` in place of `old` (another device recorded `old`)."""
+    for name, key in ((ROUND_FILE, "log_id"), (TIMES_FILE, "session")):
+        path = in_work(work, name)
+        if path:
+            doc = load_json(path)
+            if isinstance(doc, dict) and doc.get(key) == old:
+                doc[key] = new
+                save_json(doc, path)
+
+
+SETTING_NAMES = (("the round mix", ("mcqs", "focused", "case")), ("the session length", ("session_minutes",)))
+PROFILE_IGNORED = ("utc_offset", "domain_self_ratings", "journey_set_at", "aim_set_at", "journey_label", "aim_tags",
+                   "onboarded_at", "podcast_sources")
+
+
+def settings_diff(a, b):
+    """The learner's own settings that differ between two ledgers (or what read_summary keeps of
+    one): config keys, and profile keys as "profile.<key>"."""
+    if not a or not b:
+        return set()
+    ca, cb, pa, pb = a.get("config") or {}, b.get("config") or {}, a.get("profile") or {}, b.get("profile") or {}
+    return ({k for k in set(ca) | set(cb) if k != "round_set_at" and ca.get(k) != cb.get(k)}
+            | {"profile." + k for k in set(pa) | set(pb) if k not in PROFILE_IGNORED and pa.get(k) != pb.get(k)})
+
+
+def settings_words(keys):
+    """Changed settings in words: "the round mix", "the session length", "your settings", "your profile"."""
+    keys, out = set(keys), []
+    for name, ks in SETTING_NAMES:
+        if keys & set(ks):
+            out.append(name)
+            keys -= set(ks)
+    if any(not k.startswith("profile.") for k in keys):
+        out.append("your settings")
+    if any(k.startswith("profile.") for k in keys):
+        out.append("your profile")
+    return " and ".join(out)
+
+
+def rebase_line(base, fresh, result, renumbered, cmds):
+    """The one line a rebase says, or None for a clean one: when this job's round was renumbered
+    after another device's; when another device changed the round mix of a round played here (the
+    round keeps the mix it was played with); when this job changed a setting another device had
+    changed meanwhile (this job's change replaces it). Anything else the other device did stays as
+    it did it, and is not mentioned."""
+    theirs = settings_diff(base, fresh)
+    parts = []
+    if renumbered:
+        parts.append("Another device saved a round (%s) while this one was open; both are kept, this one after it "
+                     "as %s." % (renumbered["from"], renumbered["to"]))
+    if ("save" in cmds or "close" in cmds) and theirs & {"mcqs", "focused", "case"}:
+        parts.append("Your other device changed the round mix meanwhile; this round kept the mix it was played with.")
+    both = theirs & settings_diff(fresh, result)
+    if both:
+        parts.append("Your other device changed %s meanwhile; the change made here replaces it." % settings_words(both))
+    return " ".join(parts) or None
+
+
+def rebase_job(work, store, version, prefs=None, today=None, offset=None):
+    """The job of the work folder, applied again on a fresh read of the store (`store`), after a
+    publish was refused because another device saved first. The work folder is opened again on
+    it (open_work with `reread`: the publish set goes, the job's own files stay). Which of the
+    job's steps the store holds already is read off the fresh ledger: every step up to the last
+    whose token it lists (a publish carries all the steps before it). The log documents as that
+    publish carried them go to <work>/kept/ (the page's rebase reads only the top-level files
+    again); the steps after it are run again in order. This job's round: in the store already →
+    not recorded twice; its id taken by a round another device recorded from the same ledger →
+    both are kept, this one renumbered to the next id and applied after it. A round prepared
+    ahead for the ledger as it was is dropped (the next round is written then). Returns (work.json,
+    the ledger, what to print: `rebased` with `say`)."""
+    old = work_info(work)
+    if not old:
+        die("--reread continues a job after a refused publish, and no job is open in %s" % work)
+    steps = [s for s in old.get("steps") or [] if isinstance(s, dict) and s.get("argv")]
+    base, saved = old.get("read"), old.get("saved") or {}
+    info, st, extra = open_work(work, store, version, prefs, today, reread=True,
+                                offset=offset if offset is not None else old.get("offset"))
+    result = {"steps": [], "say": None}
+    extra["rebased"] = result
+    tokens = set(st.get("applied_steps") or [])
+    landed = max([k for k, s in enumerate(steps) if s.get("token") in tokens], default=-1)
+    # the job's own log documents as the store holds them: as the job first read them, then as the
+    # last publish that landed carried them; never a copy a write that stopped half-way left
+    kept = os.path.join(work, KEPT_DIR)
+    if os.path.isdir(kept):
+        shutil.rmtree(kept)
+    for snap in [os.path.join(work, STEPS_DIR, "0")] + (
+            [os.path.join(work, STEPS_DIR, str(steps[landed]["n"]))] if landed >= 0 else []):
+        for folder, _, names in os.walk(snap):
+            for n in names:
+                src = os.path.join(folder, n)
+                dst = os.path.join(kept, os.path.relpath(src, snap))
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                shutil.copyfile(src, dst)
+    pending = steps[landed + 1:]
+    if extra.get("newer_version") or not pending:
+        for s in steps:
+            result["steps"].append({"cmd": s.get("cmd"), "applied": "already in the store"})
+        return info, st, extra
+    skip, renumbered = set(), None
+    sid = saved.get("session")
+    entry = next((s for s in st["sessions"] if s.get("id") == sid), None) if sid else None
+    in_store = {s.get("cmd") for s in steps[:landed + 1] if not s.get("aside")}
+    if entry is not None and "save" in in_store:
+        skip.add("save")                # this job's round is in the store: never recorded twice
+        info["saved"] = dict(saved, gen=None)
+        if "close" in in_store:
+            skip.add("close")
+            info["closed"] = sid
+    elif entry is not None and (base or {}).get("next_id") == sid:
+        new = st.get("next_id")
+        renumber_round(work, sid, new)
+        info["session_id"] = new
+        renumbered = {"from": sid, "to": new}
+    save_json(info, os.path.join(work, WORK_FILE))
+    replayed = []
+    for k, step in enumerate(steps):
+        cmd = step.get("cmd")
+        if k <= landed:
+            result["steps"].append({"cmd": cmd, "applied": "already in the store"})
+            continue
+        put_back = files_back(work, step["aside"]) if step.get("aside") and os.path.isdir(step["aside"]) else None
+        try:
+            code, out = run_step(step)
+        finally:
+            if put_back:
+                put_back()
+        if code != 0 or out.get("ok") is False:
+            why = out.get("error") or out.get("printed") or "exit status %s" % code
+            if cmd == "finish-prepare":         # planned on the ledger as it was: the next round is written then
+                result["steps"].append({"cmd": cmd, "applied": "dropped: the round prepared ahead was planned "
+                                                              "on the ledger as it was"})
+                continue
+            die("this job could not be applied again on the store as read now: `%s` stopped: %s. Nothing of the "
+                "job is lost: its files are in %s (store.md section 6)" % (cmd, why, os.path.abspath(work)))
+        result["steps"].append({"cmd": cmd, "applied": True})
+        replayed.append(cmd)
+    info = work_info(work)
+    info["steps"] = steps
+    save_json(info, os.path.join(work, WORK_FILE))
+    if renumbered:
+        result["renumbered"] = renumbered
+    done = current_ledger(work, info)[0]
+    result["say"] = rebase_line(base, st, done, renumbered, replayed)
+    return info, done, extra
+
+
+def write_folder(work, info, folder):
+    """The folder adapter: write the publish set into `folder`, in write order (the ledger last),
+    each file whole (written beside, then moved into place). Only while the folder's ledger is
+    the one this job read there, or the one its last write left: otherwise nothing is written and
+    None is returned (another device saved first)."""
+    files = publish_set(work, info)
+    # a folder kept with its files side by side (state.json, page.json, sessions/…) stays so: one
+    # place for each document, never a second ledger under data/
+    flat = (os.path.isfile(os.path.join(folder, "state.json"))
+            and not os.path.isfile(os.path.join(folder, *STATE_PATH.split("/"))))
+    place = lambda rel: os.path.join(folder, *(rel[5:] if flat and rel.startswith("data/") else rel).split("/"))
+    ledger = place(STATE_PATH)
+    expected = info.get("wrote") or (info.get("read") or {}).get("sha")
+    if file_sha(ledger) != expected:
+        return None
+    for f in files:
+        dst = place(f["as"])
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        tmp = dst + ".cme-tmp"
+        shutil.copyfile(f["path"], tmp)
+        os.replace(tmp, dst)
+    if os.path.isfile(ledger):
+        info["wrote"] = file_sha(ledger)
+    save_json(info, os.path.join(work, WORK_FILE))
+    return [f["as"] for f in files]
+
+
+def store_kind(info):
+    """The job's store: "page" (read with a version: the assistant carries the publish set) or
+    "folder" (the engine writes it)."""
+    return info.get("kind") or ("page" if info.get("version") else "folder")
+
+
+def publish_job(work, info, folder=None):
+    """The one seam to the store. The page: the publish set as it is to be carried, the version
+    it is pinned to (nothing is written). A folder: the publish set written into it (write_folder);
+    when another device saved first, the job is applied again on the folder as it is now
+    (rebase_job) and written then; refused a second time, it stops with nothing more written."""
+    if folder:
+        info["store"], info["kind"] = os.path.abspath(folder), "folder"
+        os.makedirs(info["store"], exist_ok=True)
+        save_json(info, os.path.join(work, WORK_FILE))
+    if store_kind(info) == "page":
+        return {"ok": True, "store": "page", "version": info.get("version"), "files": publish_set(work, info),
+                "publish": os.path.abspath(os.path.join(work, PUBLISH_FILE))}
+    folder = info.get("store")
+    if not folder:
+        die("publish: this job has no store folder (a new learner: `publish --work %s --to <folder>`)" % work)
+    out = {"ok": True, "store": "folder", "folder": folder}
+    written = write_folder(work, info, folder)
+    if written is None:
+        if not info.get("read"):
+            die("the folder %s already holds a ledger, and this job did not read it: open the job on it "
+                "(`open --work %s --store %s`), or set up elsewhere" % (folder, work, folder))
+        info, _, extra = rebase_job(work, folder, None)
+        if extra.get("newer_version"):
+            die("the ledger in %s was saved by a newer version of the skill: %s Nothing was written; the "
+                "job's files are in %s (store.md section 6)" % (folder, extra["newer_version"]["say"], work))
+        out["rebased"] = extra["rebased"]
+        written = write_folder(work, info, folder)
+        if written is None:
+            die("the folder %s changed again while this job was applied to it: nothing more was written; "
+                "run `publish --work %s` again (store.md section 6)" % (folder, work))
+    led = os.path.join(folder, *STATE_PATH.split("/"))
+    out.update({"written": written, "gen": (load_json(led) or {}).get("gen") if os.path.isfile(led) else None})
+    return out
+
+
+def cmd_publish(args):
+    """Publish the job's publish set through the store's adapter: a folder is written by the
+    engine (with the check, and the rebase when another device saved first); for the page it
+    prints what to carry."""
+    work, info = job(args)
+    print(json.dumps(publish_job(work, info, args.to), indent=1, ensure_ascii=False))
+
+
 def open_work(work, store, version, prefs, today=None, reread=False, at=None, offset=None):
     """Set up the work folder for one job from `store`, the local copy of the learner's store
     as it was just read (the store's layout, or its files side by side). Returns (what was
@@ -7437,7 +8014,8 @@ def open_work(work, store, version, prefs, today=None, reread=False, at=None, of
     store = os.path.abspath(store)
     if not os.path.isdir(store):
         die("the store copy %s is not a folder: read the store's files into a folder first" % store)
-    ledger = store_copy_file(store, STATE_PATH)
+    found, by_content = store_documents(store)
+    ledger = found.get(STATE_PATH)
     if not ledger:
         die("no ledger (%s, or state.json) in the store copy %s. A new learner has none yet: "
             "set up with `init --work %s …`" % (STATE_PATH, store, work))
@@ -7449,8 +8027,10 @@ def open_work(work, store, version, prefs, today=None, reread=False, at=None, of
             "Read the store into another folder, for example <work>/store" % inside)
     extra = {"work": os.path.abspath(work), "store": store, "store_version": version,
              "store_layout": "data" if ledger.endswith(os.path.join("data", "state.json")) else "flat",
-             "store_files": [rel for rel in (STATE_PATH, PAGE_PATH, OLD_INDEX_PATH, PREPARED_PATH, "index.html")
-                             if store_copy_file(store, rel)]}
+             "store_files": [rel for rel in STORE_DOCS if rel in found],
+             "store_kind": "page" if version else "folder"}
+    if by_content:                  # saved by the read tool under other names: found by what they hold
+        extra["recognised"] = by_content
     if newer_engine(st):            # read-only requests go on; a command that writes is refused
         extra["newer_version"] = {"ledger": newer_engine(st), "this": SKILL_VERSION,
                                   "say": newer_line(newer_engine(st))}
@@ -7461,8 +8041,9 @@ def open_work(work, store, version, prefs, today=None, reread=False, at=None, of
             earlier_gen = int(load_json(earlier).get("gen") or 0)
         except (CmeError, AttributeError, TypeError, ValueError):
             earlier_gen = None
+    old = work_info(work) if reread else {}
     if reread:
-        if not work_info(work):
+        if not old:
             die("--reread continues a job after a refused publish, and no job is open in %s" % work)
         for name in (PUBLISH_DIR, CLOSE_FROM_FILE, VERIFY_FILE) + OLD_WORK_FILES:
             path = os.path.join(work, name)
@@ -7475,6 +8056,10 @@ def open_work(work, store, version, prefs, today=None, reread=False, at=None, of
         extra["reread"] = True
     today = today or learner_today(st["profile"], at, offset) or dt.date.today()
     aside = None if reread else set_aside_earlier_job(work)
+    if not reread:                  # what a job that wrote nothing left of its reads is not this job's
+        for name in (STEPS_DIR, KEPT_DIR):
+            if os.path.isdir(os.path.join(work, name)):
+                shutil.rmtree(os.path.join(work, name))
     if aside:
         extra["earlier_set_aside"] = aside
         if earlier_gen is not None and earlier_gen > int(st.get("gen") or 0):
@@ -7482,8 +8067,15 @@ def open_work(work, store, version, prefs, today=None, reread=False, at=None, of
                                  "folder wrote (gen %s): read the store again if that job was published; if its "
                                  "publish failed, its files are in %s"
                                  % (st.get("gen"), earlier_gen, os.path.join(aside, PUBLISH_DIR))]
+    if not version:
+        # a folder store is its own store copy, which another device may write to while this job
+        # runs: the job works on the ledger as read until it publishes (write_folder checks the folder)
+        shutil.copyfile(ledger, os.path.join(work, LEDGER_READ_FILE))
+        ledger = os.path.join(work, LEDGER_READ_FILE)
     info = {"store": store, "state": os.path.abspath(ledger), "session_id": st.get("next_id"),
-            "version": version, "prefs": prefs, "started": iso(today)}
+            "version": version, "prefs": prefs, "started": iso(today),
+            "kind": "page" if version else "folder", "found": found, "read": read_summary(st, found[STATE_PATH]),
+            "offset": offset, "steps": old.get("steps") or [], "job": old.get("job") or new_job_id()}
     save_json(info, os.path.join(work, WORK_FILE))
     if note_utc_offset(st, offset):
         st["updated"] = iso(today)
@@ -8483,10 +9075,20 @@ def cmd_close(args):
         repeat_write(st, again["gen"])
     else:
         sid = args.session or st.get("unreflected")
+        own = (info.get("saved") or {}).get("session")
+        mine = next((s for s in st["sessions"] if s.get("id") == own), None) if own and not args.session else None
+        if mine is not None and own != sid and (mine.get("reflection") or {}).get("skipped"):
+            # this job's round, finalised without its reflection by a round another device saved
+            # meanwhile (a rebase): its reflection is applied to it all the same, never dropped
+            sid = own
         sess = next((s for s in st["sessions"] if s.get("id") == sid), None)
-        if not sess or sid != st.get("unreflected"):
+        if sess is not None and sess is mine and sid != st.get("unreflected"):
+            base = round_from_entry(st, sess)
+            base.pop("reflection", None)
+        elif not sess or sid != st.get("unreflected"):
             die("no unreflected session to update (last: %s)" % (st["sessions"][-1].get("id") if st["sessions"] else None))
-        base = round_from_entry(st, sess)
+        else:
+            base = round_from_entry(st, sess)
     gen_before = st.get("gen")
     times = stamped(work, "close", args.at, once=True)      # the reflection arrived: the round's clock stops
     measured = measured_time(times, sid)
@@ -8563,8 +9165,9 @@ def cmd_verify(args):
     if not wanted:
         die("verify: the publish set of %s is empty, nothing was written in this job" % work)
     missing, mismatched = [], []
+    found = store_documents(args.store)[0]
     for f in wanted:
-        got = store_copy_file(args.store, f["as"])
+        got = found.get(f["as"]) or store_copy_file(args.store, f["as"])
         if not got:
             missing.append(f["as"])
         elif not same_content(f["path"], got):
@@ -8750,6 +9353,7 @@ def build_parser():
     s = command("command-table", cmd_command_table, work=False)
     s = command("file-table", cmd_file_table, work=False)
     s = command("verify", cmd_verify); s.add_argument("--store", required=True)
+    s = command("publish", cmd_publish); s.add_argument("--to")
     s = command("testing-note", cmd_testing_note); s.add_argument("--feedback", required=True); s.add_argument("--session")
     s = command("stats", cmd_stats); s.add_argument("--all", action="store_true")
     s = command("review", cmd_review); s.add_argument("--review", required=True)
@@ -8778,7 +9382,9 @@ def build_parser():
 
 
 def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
     args = build_parser().parse_args(argv)
+    _RUN.update(argv=argv, cmd=args.cmd)
     if getattr(args, "today_sub", None):
         args.today = args.today_sub
     try:

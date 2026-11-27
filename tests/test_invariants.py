@@ -309,7 +309,7 @@ def test_packing_and_taking_a_prepared_round_prints_only_its_present_block(work)
         work.write(os.path.join("next", fname), text)
     r = work.run("finish-prepare", "--work", work.path, "--no-evidence")
     assert_blind(r.stdout.replace(work.path, ""), st, plan)
-    assert [f["as"] for f in json.loads(r.stdout)["files"]] == ["data/prepared.json"]
+    assert [f["as"] for f in json.loads(r.stdout)["files"]] == ["data/prepared.json", "data/state.json"]
     stored = read_bytes(work.pub("data", "prepared.json")).decode("utf-8")
     assert_blind(stored, st, plan)      # packed: not readable at a glance in the store either
     work.publish()

@@ -408,6 +408,7 @@ def test_the_markdown_table_and_the_json_file_are_the_same_mapping(tmp_path):
     s1, s2 = (w.read_json("publish", "data", "state.json") for w in (w1, w2))
     for s in (s1, s2):
         s.pop("mappings")
+        s.pop("applied_steps")          # each job's own step tokens (issue #57)
     assert s1 == s2
 
 

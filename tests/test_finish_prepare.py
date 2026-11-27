@@ -71,7 +71,8 @@ def test_a_clean_round_is_stashed_in_the_same_command(nxt):
     _, out = nxt.check().finish()
     assert out["ok"] and out["stashed"] is True and out["revise"] is False and out["contradicted"] == 0
     assert out["evidence"] == {"evidence_questions.md": 0, "evidence_case.md": 0}
-    assert [f["as"] for f in out["files"]] == ["data/prepared.json"]
+    # the ledger goes with it, carrying only the step's token (issue #57)
+    assert [f["as"] for f in out["files"]] == ["data/prepared.json", "data/state.json"]
     assert set(out["has"]) == {"questions", "case", "kit_questions", "kit_case", "evidence_questions", "evidence_case"}
     files = nxt.payload()["files"]
     assert set(files) == set(cme.PREPARED_FILES)

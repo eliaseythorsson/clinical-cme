@@ -105,8 +105,14 @@ def test_open_notes_the_store_copy_in_either_layout_and_prints_neutral_status(tm
     assert out["store_files"] == [STATE, PAGE_FILE, PREPARED, "index.html"] and out["store_version"] == "41"
     assert out["due_count"] == 0 and out["open_gaps"] == 0 and out["last_session"] is None
     info = rnd.read_json("work.json")
+    found = {STATE: ledger, PAGE_FILE: rnd.store(*(("data", "page.json") if layout == "data" else ("page.json",))),
+             PREPARED: rnd.store(*(("data", "prepared.json") if layout == "data" else ("prepared.json",))),
+             "index.html": rnd.store("index.html")}
+    read = info.pop("read")
+    assert len(info.pop("job")) == 8                # the job's id: its steps' tokens (issue #57)
     assert info == {"store": rnd.store(), "state": ledger, "session_id": "S0001", "version": "41",
-                    "prefs": None, "started": DAY}
+                    "prefs": None, "started": DAY, "kind": "page", "found": found, "offset": None, "steps": []}
+    assert read["gen"] == 1 and read["next_id"] == "S0001" and len(read["sha"]) == 64 and "config" in read
     assert rnd.manifest() == {"version": "41", "files": []}             # nothing to publish yet
     # the ledger is found the same way by whatever comes next
     changed = rnd.run_json("settings", "--work", rnd.path, "--config", '{"testing": true}')
@@ -494,7 +500,7 @@ def test_start_again_before_any_answer_sets_nothing_aside(rnd):
     assert "earlier_set_aside" not in out and os.path.isfile(rnd.p("sealed_questions.md"))
 
 
-def test_reread_after_a_refused_publish_replays_the_job_on_the_fresh_store(rnd, tmp_path_factory):
+def test_reread_after_a_refused_publish_applies_the_job_again_on_the_fresh_store(rnd, tmp_path_factory):
     rnd.play_to_feedback().save()
     rnd.write("B.md", PART_B)
     rnd.close()
@@ -507,14 +513,15 @@ def test_reread_after_a_refused_publish_replays_the_job_on_the_fresh_store(rnd, 
     shutil.rmtree(rnd.store())
     shutil.copytree(other.store(), rnd.store())
     out = rnd.run_json("--today", DAY, "open", "--work", rnd.path, "--store", rnd.store(), "--version", "9", "--reread")
-    assert out["reread"] is True and "earlier_set_aside" not in out and out["gen"] == 2
-    assert os.path.isfile(rnd.p("answers.md")) and not os.path.exists(rnd.pub()) and rnd.manifest()["files"] == []
-    rnd.save()
-    closed = rnd.close()
+    # the engine runs the job's steps again itself, and prints the new publish set
+    assert out["reread"] is True and "earlier_set_aside" not in out
+    assert out["rebased"]["steps"] == [{"cmd": "save", "applied": True}, {"cmd": "close", "applied": True}]
+    assert out["rebased"]["say"] is None                    # clean: nothing of the learner's changed
+    assert os.path.isfile(rnd.p("answers.md")) and names(out) == [SESSION, PAGE_FILE, PREPARED, STATE]
     st = rnd.read_json("publish", "data", "state.json")
     assert st["config"]["session_minutes"] == 45 and [s["id"] for s in st["sessions"]] == ["S0001"]
-    assert st["unreflected"] is None and closed["gen"] == 4 and rnd.manifest()["version"] == "9"
-    assert names(closed) == [SESSION, PAGE_FILE, PREPARED, STATE]
+    assert st["unreflected"] is None and st["gen"] == 4 and out["gen"] == 4 and rnd.manifest()["version"] == "9"
+    assert st["sessions"][0]["reflection"]["solid"] == REFLECTION["solid"]
     r = Work(str(tmp_path_factory.mktemp("none")))
     r = r.run("open", "--work", r.path, "--store", rnd.store(), "--reread", ok=False)
     assert "no job is open" in json.loads(r.stdout)["error"]
@@ -558,7 +565,7 @@ def test_addendum_goes_to_the_last_session_by_default(rnd):
     rnd.forget_job()
     rnd.open()                                                          # a later session
     out = rnd.run_json("addendum", "--work", rnd.path, "--md", rnd.write("add.md", "More discussion."))
-    assert out["session"] == "S0001" and names(out) == [SESSION]
+    assert out["session"] == "S0001" and names(out) == [SESSION, STATE]      # the ledger: the step's token
     doc = rnd.read_json("publish", "data", "sessions", "S0001.json")
     assert doc["addendum"] == "More discussion.\n" and doc["closing"]
     out = rnd.run_json("addendum", "--work", rnd.path, "--md", rnd.write("add.md", "And more."), "--session", "S0001")
@@ -578,7 +585,7 @@ def test_review_and_its_report_go_into_one_publish_set(rnd):
     assert stats["sessions"] == 1 and not os.path.exists(rnd.pub())     # read-only
     doc = rnd.run_json("--today", "2026-11-20", "review-doc", "--work", rnd.path, "--md",
                        rnd.write("report.md", "# Review"), "--headline", "Steady")
-    assert doc["doc"] == "reviews/2026-11-20" and names(doc) == ["data/reviews/2026-11-20.json", PAGE_FILE]
+    assert doc["doc"] == "reviews/2026-11-20" and names(doc) == ["data/reviews/2026-11-20.json", PAGE_FILE, STATE]
     review = {"doc": doc["doc"], "headline": "Steady", "summary": "s", "config_changes": {"session_minutes": 30}}
     out = rnd.run_json("--today", "2026-11-20", "review", "--work", rnd.path, "--review", json.dumps(review))
     assert names(out) == ["data/reviews/2026-11-20.json", PAGE_FILE, PREPARED, STATE]

@@ -16,8 +16,8 @@ What is particular to this session:
   {store}`; every later command takes only `--work {work}`. Keep every file of the round there,
   under the names the protocol uses (`sealed_questions.md`, `answers.md`, `round.json`, …), and
   delete none of them when you finish, the publish set (`publish/`, `publish.json`) included.
-  To save, copy every file a command lists in `files` into `{store}` at its `as` path, in the
-  order listed (the ledger last).
+  To save, run `python3 {skill}/scripts/cme.py publish --work {work}` after each command that
+  writes: the engine writes its `files` into `{store}` itself.
 - **Sending a message to the learner**: write the message to a file under `{work}/outbox/`
   (a new file per message) and run
   `python3 {simulate} send --run {run} --role examiner --file <that file>`.

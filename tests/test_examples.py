@@ -134,7 +134,7 @@ def test_stale_prepared_round_is_not_used_and_a_new_round_is_planned(tmp_path):
     out, plan = start_with_prepared(tmp_path, LEDGERS["stale_prepared"])
     assert out["prepared"] == {"used": False, "why": "too old"}
     assert "present" not in out                             # no drafted files
-    assert sorted(os.listdir(str(tmp_path / "work"))) == ["plan.json", "publish.json", "times.json", "work.json"]
+    assert sorted(os.listdir(str(tmp_path / "work"))) == ["ledger_read.json", "plan.json", "publish.json", "times.json", "work.json"]
     assert "prepared" not in plan
     assert plan == read(examples.expected_path("stale_prepared", "plan"))
 
@@ -166,7 +166,8 @@ def test_a_newly_prepared_round_is_used_while_it_is_fresh(tmp_path):
     assert out["prepared"]["used"] is True and out["prepared"]["made"] == PREPARED_MADE
     assert out["plan"]["prepared"] is True and plan["prepared"]["used"] is True and plan["date"] == soon
     assert plan["block"]["line"] == out["block"]["line"]
-    assert sorted(os.listdir(str(work))) == ["earlier", "kit_case.md", "kit_questions.md", "plan.json", "publish.json",
+    assert sorted(os.listdir(str(work))) == ["earlier", "kit_case.md", "kit_questions.md", "ledger_read.json", "plan.json",
+                                             "publish.json",
                                              "sealed_case.md", "sealed_questions.md", "times.json", "work.json"]
     # and it is left alone when the round is asked for without it
     out = json.loads(run_cme(["--today", soon, "start", *w, "--store", store, "--no-prepared"]))
@@ -205,8 +206,9 @@ def test_plan_and_due_dates_do_not_depend_on_the_process(name, tmp_path):
         cme.save_json(rnd, str(folder / "work" / "round.json"))
         (folder / "work" / "feedback.md").write_text("Example feedback", encoding="utf-8")
         saved = json.loads(run_cme(["--today", today, "save", "--work", str(folder / "work")], seed))
-        with open(saved["files"][-1]["path"], "rb") as fh:
-            ledgers_after.append(fh.read())
+        led = json.loads(open(saved["files"][-1]["path"], encoding="utf-8").read())
+        assert len(led.pop("applied_steps")) == 1           # this job's save (a random job id: issue #57)
+        ledgers_after.append(json.dumps(led, sort_keys=True).encode("utf-8"))
     assert ledgers_after[0] == ledgers_after[1] == ledgers_after[2]
     after = json.loads(ledgers_after[0].decode("utf-8"))
     schedule = read(examples.expected_path(name, "schedule"))["after_record"]

@@ -29,11 +29,12 @@ One more document lives outside the files: the round mix the learner sets on the
 either of their two paragraphs when they rewrite it there (`state_schema.md` §7.1), is kept by the page as its own settings document, `cme/prefs`. The page
 writes it; the skill only reads it.
 
-`cme.py` never touches the store. You read the store's files into a local folder, the **store
-copy**; `cme.py open` (or `start --store`) sets up a **work folder** on it; every command that
-writes puts its files into the work folder's **publish set** and prints the whole set as
-`files`. Each entry has `path` (the local file) and `as` (where it goes in the store). Publish
-exactly those files (§4). Never write a document by retyping it.
+The engine handles the store; you only carry files. You read the store's files into a local
+folder, the **store copy** (any names: `cme.py` recognises each document by its content);
+`cme.py open` (or `start --store`) sets up a **work folder** on it; every command that writes
+puts its files into the work folder's **publish set** and prints the whole set as `files`
+(`path`: the local file, `as`: where it goes). A page: publish exactly those files. A folder:
+`cme.py publish` writes them itself. Never write a document by retyping it.
 
 ## 2. The tools
 
@@ -89,67 +90,51 @@ store next time (§4.3, "Carry-over"). Never write a second copy somewhere else 
 
 ## 4. Reading and writing
 
-Every job has the same three steps, whatever it is (a round, a settings change, preparing a
-round, a review):
+Every job, whatever it is (a round, a settings change, preparing a round, a review):
 
-1. **Read** the store's files into the store copy, `<work>/store/`, and note the store's
-   version (the artifact version the read reports; a folder has none).
-2. **Open** the work folder on it: `python3 cme.py --today <date> start --work <work> --store
-   <work>/store --version <version> --utc-offset <H>` for a round, `python3 cme.py --today
-   <date> open --work <work> --store <work>/store --version <version> --utc-offset <H>` for
-   anything else, `<date>` and `<H>` being the learner's local date and UTC offset in hours
-   from the app's message timestamp (each left out when there is none; the learner is never
-   asked). This fixes the job's date and keeps the offset for unattended jobs
-   (`state_schema.md` §1, the learner's date). Every later command takes only `--work <work>`.
-3. **Publish** after each command that writes: every entry of the `files` it printed, in the
-   order listed. The same list, with the version the store was read at, is in the file the
-   command names as `publish` (`<work>/publish.json`: `{"version": …, "files": [{"as", "path"}, …]}`).
-   The list is the whole publish set, not only what the last command changed: session, review
-   and testing files first, then `data/page.json`, `index.html`, `data/prepared.json`, and
-   `data/state.json` last. Publishing it again is harmless, and a publish that failed is
-   covered by the next one.
+1. **Read** the store's files into `<work>/store/` (a folder: nothing to read, the folder is its
+   own store copy) and note the version the read reports.
+2. **Open**: `python3 cme.py --today <date> start --work <work> --store <work>/store --version
+   <version> --utc-offset <H>` for a round, `open` with the same options for anything else
+   (`<date>`, `<H>`: the learner's local date and UTC offset in hours from the app's message
+   timestamp, each left out when there is none; never asked). Every later command takes only
+   `--work <work>`.
+3. **Publish** after each command that writes (§4.1, §4.2). Publishing again is harmless; a
+   publish that failed is covered by the next one.
 
-A second job later in the same conversation starts again at step 1 with a fresh read (`open`
-and `start --store` set the earlier job's files aside in `<work>/earlier/`). The exception is
-a round that follows another job in the same conversation without the learner leaving (a
-settings change first, or a late reflection closed first): run `--today <date> start --work <work>
---utc-offset <H>` without
-`--store`; the round continues from the ledger that job wrote.
+A second job later in the same conversation starts again at step 1 with a fresh read. The
+exception is a round that follows another job without the learner leaving (a settings change, a
+late reflection closed first): `--today <date> start --work <work> --utc-offset <H>` without
+`--store` continues from the ledger that job wrote.
 
 ### 4.1 The page
 
-- **Read** (one call): the read-files tool with the paths `data/state.json`,
-  `data/page.json`, `data/prepared.json` and `index.html`, asking for them as saved local
-  files. Copy the saved files into `<work>/store/`: at their store paths
-  (`<work>/store/data/state.json`, …) or side by side under their own names
-  (`<work>/store/state.json`, `page.json`, `prepared.json`, `index.html`); `cme.py` finds
-  either. An older store lacks `data/page.json` (before 5.1; read `data/index.json` in its
-  place, once: §6) or `data/prepared.json` (before 4.3): if the read is refused because of a
-  missing path, repeat it without that path (no page file: `cme.py` writes one at the next
-  save; no prepared round: none is used). In the same parallel batch, read the page's settings document `cme/prefs`
-  (a few bytes of settings, safe to see) and pass it as `--prefs`. Missing, or no tool that
-  reads it → no page settings this session. The saved names are chosen by the client: match
-  each to its artifact path by the line that reports it, or by the sha256 or size the result
-  lists for each path (`sha256sum` confirms). Note the artifact version the result reports and
-  pass it as `--version`. If the read returns content into the conversation instead of saving
-  files, stop using that tool for the ledger.
+- **Read** (one call): the read-files tool with the paths `data/state.json`, `data/page.json`,
+  `data/prepared.json` and `index.html`, as saved local files; copy them into an empty
+  `<work>/store/` under any names, and always pass `--version`. A path the store lacks (an older store) → repeat the read without it. In
+  the same batch read the page's settings document `cme/prefs` and pass it as `--prefs`
+  (missing → no page settings). If the read returns content into the conversation instead of
+  saving files, stop using that tool for the ledger.
 - **Write**: one publish call with every entry of `files` (`as` → served path, `path` → local
   file), keeping the other files (patch mode), pinned to the version: the one in
-  `publish.json` for the first publish of a job, the one the last publish returned after
-  that. The new version in the result is the proof; keep it for the next write.
-- **Conflict** (the version moved: another device saved): read the store again into the store
-  copy, run `python3 cme.py open --work <work> --store <work>/store --version <new version>
-  --reread` (it keeps the job's own files and drops what was computed from the old read), run
-  the job's writing commands again in the same order (`save`, then `close`, …), publish
-  again. Once. If it fails again, follow §6.
+  `publish.json` for the first publish of a job, the one the last publish returned after that.
+- **Refused because another device saved first**: read the same four files again into a new,
+  empty folder (nothing more: the engine kept what else it needs, and tells from the ledger
+  which of the job's writes the store already holds), run `python3
+  cme.py open --work <work> --store <fresh> --version <new version> --reread`, and publish the
+  `files` it prints. The engine applies the job again on the fresh store (a round recorded on
+  another device meanwhile is kept, and this one renumbered after it). Its `rebased.say`, when
+  not null, is one line for the learner: add it to your next message, never stop to ask. Refused
+  again → §6.
 
 ### 4.2 A folder
 
-The folder is its own store copy: `--store <the folder>`, no `--version`. To publish, copy
-each file of `files` into the folder at its `as` path, in the order listed (the ledger last,
-so an interrupted save never leaves a ledger that points to a missing log entry). Before
-overwriting `state.json`, check its `gen` is still the one `open` or `start` printed, or the
-one your last write left; if it moved, re-read and re-run as for the page.
+`--store <the folder>`, never `--version`: the version is what makes a store a page (`open`
+prints `store_kind`). **Publish**: `python3 cme.py publish --work <work>`. The
+engine writes the publish set into the folder in order and checks that no other device wrote
+the ledger meanwhile; if one did, it applies the job again on the folder and writes then
+(`rebased.say`: as for the page). An error → §6. A new learner's first files: `publish --work
+<work> --to <folder>`.
 
 ### 4.3 Files carried by the learner, and carry-over
 
@@ -194,7 +179,7 @@ set (`page_upgraded` in its output). Before the first publish that carries it:
    and its time estimates are now realistic (about 5 minutes per MCQ, 10 per focused question,
    25 for a case)."
 
-A folder: copy `index.html` into it like the other files. Carried files: no page; skip.
+A folder: `publish` writes `index.html` with the rest. Carried files: no page; skip.
 
 ## 5. Setup (new learner, the page where possible)
 
@@ -210,7 +195,7 @@ After the onboarding questions (`onboarding.md` §2):
    CME ledger and session log." Then declare what the page uses: `downloads` (its Export
    button), `db` and `user` (the round-mix switches in Settings): `{"db": {}, "user": {},
    "downloads": {}}`. Pin the page if the app can.
-   **A folder**: copy the `files` into the folder the learner names, at their `as` paths.
+   **A folder**: `python3 cme.py publish --work <work> --to <the folder the learner names>`.
    **Carried files**: hand back the files.
 3. Tell the learner in two lines where their data is. For the page: it is theirs and private;
    the skill finds it by its title, so keep the title. Then offer the first round: `start
@@ -223,7 +208,7 @@ its store and continue, or start a fresh ledger in it only if the learner asks t
 
 ## 6. Recovery
 
-- **A save was refused twice, or the store tool failed**: say so plainly, do not report the
+- **A save was refused twice, a rebase stopped, or the store tool failed**: say so plainly, do not report the
   round as saved, and hand the learner the files of the publish set (`files`: state, page file,
   session file) as downloads. At the next session, save them as a carry-over
   (§4.3) after checking their `gen` is higher than the store's.
@@ -235,7 +220,8 @@ its store and continue, or start a fresh ledger in it only if the learner asks t
   Once the plugin is updated, read the store again, run `open --work <work> --store <work>/store
   --reread` and the stopped command again, then publish. If the conversation ends before that,
   hand the learner the round's files as downloads: every file of the work folder but
-  `work.json` and `publish.json` (not the folders `store/`, `publish/`, `earlier/`). At the
+  `work.json`, `publish.json` and `ledger_read.json` (not the folders `store/`, `publish/`,
+  `earlier/`). At the
   next session, with the plugin updated, `open` a work folder on a fresh read, copy them into
   it and run `save` (then `close`).
 - **Session saved without a reflection** (the learner left after the feedback): nothing to do.

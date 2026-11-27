@@ -186,8 +186,22 @@ The learner's date fixed once, when a job is opened (`open`, `start`, `init`), a
 _Avoid_: today (in code that runs inside a job), run date
 
 **Publish set**:
-The one list in the work folder of what the store must hold now: the newest version of every store file that changed, the store version it was read at, and the write order (the ledger last). Every command updates it; whoever carries files to the store publishes all of it.
+The one list in the work folder of what the store must hold now: the newest version of every store file that changed, the store version it was read at, and the write order (the ledger last). Every command updates it; the store's adapter publishes all of it.
 _Avoid_: output folder, files list
+
+**Store copy**:
+The local folder a job reads the store into (a folder store is its own). The engine finds each store document in it by its place, its bare name or its content, whatever name the read tool gave the file.
+_Avoid_: download folder
+
+**Store adapter**:
+One of the two ways the publish set reaches the store, behind one seam (`publish_job`): the **page adapter** emits it for the assistant to carry to the artifact in one publish call; the **folder adapter** (`publish`) writes it into the folder itself, in write order, after checking the folder's ledger is still the one the job read or last wrote there (ADR 0010).
+
+**Step** (of a job):
+A command of the job that wrote the publish set (`save`, `close`, `settings`, …), noted in `work.json` as it ran, so that the job can be applied again.
+
+**Rebase**:
+A job applied again on a fresh read of the store after a publish was refused because another device saved first: its steps run again on the fresh ledger. A round the store already holds from this job is not recorded twice; a round another device recorded from the same ledger is kept, and this job's round is renumbered and applied after it. Silent when nothing of the learner's changed; otherwise one line (`say`).
+_Avoid_: merge, retry
 
 ## Curriculum
 

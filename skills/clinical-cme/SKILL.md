@@ -53,8 +53,8 @@ answers", "Update today's round", "Save the round"). Run `python3 <skill>/script
 <command> …` with one **work folder** `<work>` per job: `start --store` (a round) or `open`
 (else), with `--today`/`--utc-offset` as in turn 1 (on every `start`), sets it up and dates the
 job; later commands take only `--work <work>` (`state_schema.md` §6). A writing command prints
-the **publish set** as `files`: all the store must hold now; publish all of it (`store.md` §4).
-Never write learner data into the skill's folder. The rest is in references:
+the **publish set** as `files`, all the store must hold now: publish all of it (a folder: `cme.py
+publish --work <work>`; refused: `store.md` §4). No learner data in the skill's folder. References:
 
 | Reference | Read when |
 |---|---|
@@ -144,7 +144,7 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
    `data/page.json`, `data/prepared.json` and `index.html` as saved local files, never into
    the conversation, noting the version read; and the page's settings document `cme/prefs`.
    All but the ledger may be missing. No store → ask once (`store.md` §3) or `onboarding.md`.
-2. **One shell call**: copy the saved files into `<work>/store/` and run `python3 cme.py --today D
+2. **One shell call**: copy the saved files (any names) into `<work>/store/` and run `python3 cme.py --today D
    start --work <work> --store <work>/store --version <version read> --utc-offset H` (D, H: the
    learner's local date and UTC offset in hours from the app's message timestamp, never asked,
    each left out without it; plus `--prefs '<cme/prefs JSON>'` if any, `requests.md` §3's options).

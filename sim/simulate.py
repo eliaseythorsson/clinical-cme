@@ -260,12 +260,12 @@ def cmd_init(args):
         config = (read_json(rp(run, "store", "data", "state.json")) or {}).get("config") or config
     else:
         today = ["--today", args.today] if args.today else []
-        # set the learner up as the skill does (init into a work folder), then publish to the folder store
+        # set the learner up as the skill does (init into a work folder), then publish to the folder
+        # store through the engine's folder adapter
         seed = rp(run, ".seed")
-        out = json.loads(run_cme(skill, *today, "init", "--work", seed,
-                                 "--blueprint", os.path.join(skill, "templates", "blueprint.json"),
-                                 "--profile", json.dumps(profile), "--config", json.dumps(config)))
-        publish_to_folder(out["files"], rp(run, "store"))
+        run_cme(skill, *today, "init", "--work", seed, "--blueprint", os.path.join(skill, "templates", "blueprint.json"),
+                "--profile", json.dumps(profile), "--config", json.dumps(config))
+        run_cme(skill, "publish", "--work", seed, "--to", rp(run, "store"))
         shutil.rmtree(seed)
     # the ledger as the round found it: the stopped check compares the case topic's schedule with it
     shutil.copyfile(rp(run, "store", "data", "state.json"), rp(run, "ledger_at_start.json"))
@@ -585,14 +585,6 @@ def check_blinding(rnd):
 
 
 # ---------------------------------------------------------------- check 2: every file saved
-
-def publish_to_folder(files, store):
-    """Carry a publish set (the `files` a cme.py command printed) to a folder store, in its order."""
-    for f in files:
-        dest = os.path.join(store, *f["as"].split("/"))
-        os.makedirs(os.path.dirname(dest), exist_ok=True)
-        shutil.copyfile(f["path"], dest)
-
 
 def publish_set(work):
     """The store paths in the work folder's publish set (publish.json), in write order."""

@@ -222,14 +222,10 @@ class Work:
         return json.loads(self.run(*args).stdout)
 
     def publish(self):
-        """What the assistant does with the publish set: every file to its store path, in the
-        manifest's order. Returns the store paths written."""
-        manifest = self.read_json("publish.json")
-        for f in manifest["files"]:
-            dst = self.store(*f["as"].split("/"))
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            shutil.copy(f["path"], dst)
-        return [f["as"] for f in manifest["files"]]
+        """The publish set written into the folder store (store/) by the engine's folder adapter
+        (`publish`): every file at its store path, in write order, after the check that the folder's
+        ledger is the one this job read or last wrote. Returns the store paths written."""
+        return self.run_json("publish", "--work", self.path, "--to", self.store())["written"]
 
     def forget_job(self):
         """A new session: nothing of the job is left in the work folder but the store copy."""

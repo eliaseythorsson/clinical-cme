@@ -44,7 +44,7 @@ def test_old_output_folders_are_gone_from_the_engine_and_from_a_round(work):
     work.close_round("2026-11-01")
     work.run("--today", "2026-11-01", "prepare", "--work", work.path)
     assert not any(os.path.exists(work.p(name)) for name in OLD_FOLDERS)
-    assert sorted(n for n in os.listdir(work.path) if os.path.isdir(work.p(n))) == ["next", "publish", "store"]
+    assert sorted(n for n in os.listdir(work.path) if os.path.isdir(work.p(n))) == ["next", "publish", "steps", "store"]
 
 
 def test_written_files_carry_only_store_paths(work):
