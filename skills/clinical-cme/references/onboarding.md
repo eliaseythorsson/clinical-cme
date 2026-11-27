@@ -166,6 +166,7 @@ pick other numbers, here or on the page.
 | Specialty | `profile.specialty` (default "Internal/hospital medicine") |
 | Time per session | `session_minutes` 15 / 25 / 35 / 45, and the mix from the table above |
 | Feedback depth | `feedback_depth` detailed (default) / standard |
+| No deeper evidence on topics answered well | `evidence_ladder` false (default true: `feedback_guide.md` §4.1) |
 | Frequency | `target_sessions_per_week` 5 / 3 / 2 / 1 |
 | Self-ratings | `profile.domain_self_ratings` {CODE: n} |
 | Podcasts trusted / avoided | `profile.podcast_sources` {"trusted": […], "avoid": […]} |

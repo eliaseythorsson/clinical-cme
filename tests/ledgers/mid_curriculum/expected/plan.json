@@ -21,6 +21,7 @@
  },
  "date": "2026-10-28",
  "estimated_minutes": 50,
+ "evidence_ladder": true,
  "feedback_depth": "detailed",
  "guideline_region": "Iceland/Europe",
  "helpers": true,

@@ -37,6 +37,9 @@ gives the learner's guideline region and specialty: check against them as rule 2
 `standards.md` says. Check those claims, and any other specific number, dose or
 recommendation in the keys that could have changed or that you are not certain of, and that
 the section each reading pointer names exists (rule 8, when the kit is beside the list file).
+A list line that names a study for a kit's `Deeper` notes (rule 8) is checked like any other
+claim, from the paper's own abstract or full text: its population, comparison, primary result
+and the design feature the note relies on.
 Nothing else, apart from the listening candidates of §6.
 
 ## 2. How

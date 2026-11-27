@@ -27,7 +27,9 @@ A job (one work folder):
                                                   the store that still fits, also the questions to present
                                                   plan options: --mcqs N --focused N --no-case --domain D --no-new
   answer  --work W --part questions|case|final|notes|reflection [--file F | --text T]
-                                                  append the learner's answer to W/answers.md (default: stdin)
+                                                  append the learner's answer to W/answers.md (default: stdin);
+                                                  with a part's last answer, prints `depth`: how far behind
+                                                  the recommendation each item's feedback goes (EVIDENCE_DEPTHS)
   present --work W --block questions|case|bank    print only the text to show the learner
   save    --work W                                record the graded round + session doc (part A) + page file,
                                                   from the files in W by their fixed names. round.json names
@@ -108,6 +110,8 @@ DEFAULT_CONFIG = {
     "round_set_at": None,                # when the round mix (mcqs/focused/case) was last set; see apply_prefs
     "case_format": "unfolding",          # unfolding | discriminate | alternate
     "feedback_depth": "detailed",        # standard | detailed
+    "evidence_ladder": True,             # feedback goes further behind the recommendation the more often a
+                                         # topic is answered well (EVIDENCE_DEPTHS)
     "target_sessions_per_week": 3,
     "review_interval_days": 42,
     "intervals_days": [1, 3, 7, 16, 35, 90],
@@ -183,6 +187,11 @@ BLOCK_LENGTH = 12
 BLOCK_SHARES = (("theme", 60), ("repeat", 25), ("wildcard", 15))
 MIN_THEME_TOPICS = 4     # a domain with fewer blueprint topics is not proposed as a theme
 THEME_REST_BLOCKS = 4    # a domain's pull as the next theme recovers over this many blocks after its own
+# Evidence depth (feedback_guide.md §4.1): how far behind the recommendation the feedback on an
+# item goes when it is answered well. Earned per topic, and per aspect for a focused question:
+# (name, answered well this many times in a row before this round). An item that is missed, or
+# written on an open gap, is taught at the first depth whatever the topic had reached.
+EVIDENCE_DEPTHS = (("guidance", 0), ("studies", 1), ("design", 2), ("frontier", 4))
 CONFIDENCE_LEVELS = ("sure", "unsure", "guess")
 CONF_PROB = {"sure": 0.9, "unsure": 0.6, "guess": 0.3}
 MIN_SESSIONS_FOR_REVIEW = 3
@@ -836,6 +845,49 @@ def gap_awaits_retest(g):
 def answered_well(mastery, calibration):
     """The bar a retest must clear to close a gap; below it the topic counts as missed."""
     return mastery is not None and mastery >= 4 and calibration not in ("overconfident", "confident_error")
+
+
+def item_answered_well(it):
+    """One recorded item cleared the bar: scored 4 or more as the schedule counts it (a guessed
+    MCQ does not), with no misconception."""
+    if it.get("mastery") is None:
+        return False
+    m, misconception = adjusted_item_mastery(it)
+    return m >= 4 and not misconception
+
+
+def answered_in_a_row(st, tid, aspect=None):
+    """How many times in a row, counting back from the last round, the items on topic `tid`
+    were answered well; with `aspect`, only its focused questions on that aspect."""
+    n = 0
+    for s in reversed((st.get("previous") or []) + (st.get("sessions") or [])):
+        for it in reversed(s.get("items") or []):
+            if it.get("topic") != tid or (aspect and it.get("aspect") != aspect):
+                continue
+            if not item_answered_well(it):
+                return n
+            n += 1
+    return n
+
+
+def depth_level(in_a_row):
+    return max(i for i, (_, need) in enumerate(EVIDENCE_DEPTHS, 1) if in_a_row >= need)
+
+
+def evidence_depth(st, tid, aspect=None, retests=False):
+    """The evidence depth an item on topic `tid` earns if it is answered well in the round to
+    come: {"level": 1–4, "name", "in_a_row"}. None with the ladder turned off. A focused
+    question goes at most one depth beyond what its own aspect of the topic has earned; an item
+    on an open gap (`retests`, or any gap open on the topic) stays at the first depth."""
+    if not st["config"].get("evidence_ladder", True):
+        return None
+    run = answered_in_a_row(st, tid) if tid else 0
+    level = depth_level(run)
+    if aspect and level > 1:
+        level = min(level, depth_level(answered_in_a_row(st, tid, aspect)) + 1)
+    if retests or any(g.get("topic") == tid for g in st.get("gaps") or []):
+        level = 1
+    return {"level": level, "name": EVIDENCE_DEPTHS[level - 1][0], "in_a_row": run}
 
 
 def drilldown_over(state, tid, theme):
@@ -1756,6 +1808,14 @@ def plan_round(st, args, today):
         c["aspect_hint"] = aspect
         c["aspect_note"] = ("Suggested aspect (least recently tested). If this item re-tests an open "
                             "gap, ask about the gap's decision point instead, whatever its aspect.")
+    for c in chosen:
+        # the evidence depth the item earns if it is answered well (the first depth is not
+        # written): the author prepares the notes for it; `answer` gives the examiner the figure
+        d = evidence_depth(st, c.get("topic"), c.get("aspect_hint"), bool(c.get("retest_gap")))
+        if d and d["level"] > 1:
+            c["depth"] = dict(d, how="If this item is answered well its feedback goes to this depth: write "
+                                     "the notes for it under 'Deeper' in the item's kit section and put its "
+                                     "studies on the verification list (references/standards.md, rule 8).")
     order = cfg.get("item_order", "mcqs_first")
     by_slot = {k: [c for c in chosen if c["slot"] == k] for k in ("case", "mcq", "focused")}
     present = (by_slot["mcq"] + by_slot["focused"] + by_slot["case"] if order != "case_first"
@@ -1773,6 +1833,7 @@ def plan_round(st, args, today):
         "lab_units": cfg.get("lab_units"), "blood_gas_units": cfg.get("blood_gas_units"),
         "session_minutes": cfg.get("session_minutes"), **guideline_context(st),
         "feedback_depth": cfg.get("feedback_depth"), "show_coding": cfg.get("show_coding", True),
+        "evidence_ladder": bool(cfg.get("evidence_ladder", True)),
         "helpers": bool(cfg.get("helpers", True)), "prepare_ahead": bool(cfg.get("prepare_ahead", True)),
         "testing": bool(cfg.get("testing", False)),
         # listening (rule 8): whether the kits get a "## Listening" section, and whose shows
@@ -2861,6 +2922,7 @@ def settings_in_effect(st, section):
     out = dict(st.get(section) or {})
     if section == "config":
         out["listening"] = listening_on(st)
+        out["evidence_ladder"] = bool(out.get("evidence_ladder", True))   # a ledger without it has it on
     else:
         out["podcast_sources"] = podcast_sources(out.get("podcast_sources"), "profile.podcast_sources")
     return out
@@ -2883,8 +2945,9 @@ def cmd_settings(args):
     check_paragraphs(st["profile"])
     if "podcast_sources" in (prof_changes or {}):
         st["profile"]["podcast_sources"] = podcast_sources(st["profile"]["podcast_sources"], "profile.podcast_sources")
-    if "listening" in (cfg_changes or {}) and not isinstance(st["config"]["listening"], bool):
-        die("config.listening must be true or false")
+    for k in ("listening", "evidence_ladder"):
+        if k in (cfg_changes or {}) and not isinstance(st["config"][k], bool):
+            die("config.%s must be true or false" % k)
     if any(k in (cfg_changes or {}) for k in ("mcqs", "focused", "case")):
         check_round_mix(st["config"])
         if "round_set_at" not in cfg_changes:
@@ -4364,6 +4427,12 @@ KIT_FOR = {"sealed_questions.md": "kit_questions.md", "sealed_case.md": "kit_cas
 KIT_CASE_SECTIONS = ("Reveal", "Model answer", "Rubric", "Differential", "Briefing", "Pearls", "Reading")
 KIT_READING = "Reading"
 KIT_LISTENING = "Listening"
+# An item the plan gives an evidence depth beyond the first has its notes for that depth under
+# "Deeper": a line or heading that starts with the word, in the question's section of
+# kit_questions.md, or anywhere in kit_case.md.
+KIT_DEEPER = "Deeper"
+KIT_DEEPER_RE = re.compile(r"^[ \t>#*_`+-]*deeper\b", re.I | re.M)
+KIT_QUESTION_HEADING_RE = re.compile(r"^[ \t]{0,3}#{1,6}[ \t]*[*_`]*(Q[1-9][0-9]?)\b", re.I | re.M)
 LISTEN_BULLET_RE = re.compile(r"^[ \t>]*(?:[-*+]|\d+[.)])?[ \t]*")
 LISTEN_TOPIC_RE = re.compile(r"^[*_`]*(Q[1-9][0-9]?|case)[*_`]*[ \t]*(?:\||$)", re.I)
 LISTEN_LENGTH_RE = re.compile(r"^(?:about[ \t]+|~[ \t]*)?(\d{1,3})[ \t]*min", re.I)
@@ -4506,6 +4575,28 @@ def listening_findings(files, plan=None):
     return found
 
 
+def question_sections(text):
+    """{key id: the kit's text for that question}, from its heading to the next question's."""
+    heads = list(KIT_QUESTION_HEADING_RE.finditer(text or ""))
+    return {m.group(1).upper(): text[m.end():heads[i + 1].start() if i + 1 < len(heads) else len(text)]
+            for i, m in enumerate(heads)}
+
+
+def deeper_missing(sealed_text, kit, kit_text, plan):
+    """Key ids whose item the plan gives a depth beyond the first and whose kit has no 'Deeper'
+    notes. Items are matched by topic: a topic the author chose has the first depth."""
+    deep = {c.get("topic") for c in (plan or {}).get("items") or [] if (c.get("depth") or {}).get("level", 1) > 1}
+    deep.discard(None)
+    if not deep:
+        return []
+    headers = parse_key_headers(sealed_text, kit)[0]
+    ids = [k for k, h in headers.items() if h.get("topic") in deep and (k == "case") == (kit == "kit_case.md")]
+    if kit == "kit_case.md":
+        return ids if ids and not KIT_DEEPER_RE.search(kit_text) else []
+    sections = question_sections(kit_text)
+    return [k for k in ids if k in sections and not KIT_DEEPER_RE.search(sections[k])]
+
+
 def kit_problems(files, plan=None, kits_required=True):
     """Rule 8, the mechanical part: every kit is there and has its sections. Names files, key ids
     and section names only."""
@@ -4536,6 +4627,11 @@ def kit_problems(files, plan=None, kits_required=True):
             problems.append("%s: section%s %s missing (a heading for each: %s)"
                             % (kit, "" if len(missing) == 1 else "s", ", ".join("'%s'" % m for m in missing),
                                ", ".join("'## %s'" % m for m in missing)))
+        missing = deeper_missing(files[sealed], kit, files[kit], plan)
+        if missing:
+            problems.append("%s: no '%s' notes for %s (the plan gives the item an evidence depth beyond the "
+                            "first: a line that starts 'Deeper:' with the studies behind the recommendation, "
+                            "references/standards.md rule 8)" % (kit, KIT_DEEPER, ", ".join(missing)))
         topics = listening_topics(files[kit]) if listening else None
         if topics is not None:
             ids = ["case"] if kit == "kit_case.md" else [
@@ -5134,6 +5230,37 @@ def answer_blocks(path):
     return [(name, body.strip()) for name, body in ANSWER_RE.findall(read_text(path))]
 
 
+def answer_depth(work, part):
+    """The evidence depth of each item whose answers this part completes, by key id
+    ({"Q1": {"level", "name", "in_a_row"}}), for the feedback about to be written
+    (feedback_guide.md §4.1). Read from the key headers and the ledger as it stands before the
+    round is recorded. Only for a part whose sealed file may now be opened: the questions, and
+    the case once its last answer is in. None where there is nothing to say (no job open here,
+    no key headers, the ladder turned off): filing an answer never fails over it."""
+    name = {"questions": SEALED_FILES[0], "final": SEALED_FILES[1], "case": SEALED_FILES[1]}.get(part)
+    sealed, info = in_work(work, name) if name else None, work_info(work)
+    if not sealed or not info:
+        return None
+    if part == "case":
+        plan_path = in_work(work, PLAN_FILE)
+        fmt = (load_json(plan_path) if plan_path else {}).get("case_format")
+        if fmt != "discriminate":       # an unfolding case stays sealed until its final answers
+            return None
+    try:
+        st, _ = current_ledger(work, info)
+        headers = parse_key_headers(read_text(sealed), name)[0]
+    except (CmeError, OSError):
+        return None
+    out = {}
+    for kid, h in headers.items():
+        if h.get("_bad") or (kid == "case") != (name == SEALED_FILES[1]):
+            continue
+        d = evidence_depth(st, h.get("topic"), h.get("aspect"), bool(h.get("retests")))
+        if d:
+            out[kid] = d
+    return out or None
+
+
 def cmd_answer(args):
     """Append what the learner answered for one part to the work folder's answers.md, as it was
     written. Earlier parts are never rewritten; the same text for the same part is added once."""
@@ -5167,6 +5294,9 @@ def cmd_answer(args):
         have.append((args.part, text.strip()))
         out["at"] = stamp(args.work, "answer:" + args.part, args.at)      # when the learner's message arrived
     out["parts"] = [name for name, _ in have]
+    depth = answer_depth(args.work, args.part)
+    if depth:
+        out["depth"] = depth
     print(json.dumps(out, ensure_ascii=False))
 
 

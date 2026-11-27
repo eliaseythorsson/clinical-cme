@@ -83,6 +83,13 @@ _Avoid_: override (fine for the command), dispute
 **Retest**:
 An item written on an open gap's decision point, in a new clinical context; it names the gap, and only a retest answered well closes it.
 
+**Evidence depth**:
+How far behind the recommendation the feedback on an item goes when it is answered well: guidance, then the studies it rests on, then their design, then where the evidence is disputed. Earned per topic (and per aspect of a focused question) by answering it well several times in a row; a miss or an open gap brings it back to guidance, taught in full.
+_Avoid_: level (that is the learner's stage), difficulty, feedback depth (the word-count setting `feedback_depth`)
+
+**Deeper notes**:
+The part of a kit, under the word "Deeper", that holds the checked studies and design features for an item the plan gave an evidence depth beyond guidance.
+
 **Listening pick**:
 The one podcast episode a topic of the round gets in the final feedback: 15 to 90 minutes, chosen for the gap the learner showed, given as a Spotify link with a one-line reason.
 _Avoid_: recommendation, podcast link

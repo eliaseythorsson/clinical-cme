@@ -21,6 +21,7 @@
  },
  "date": "2026-11-20",
  "estimated_minutes": 40,
+ "evidence_ladder": true,
  "feedback_depth": "detailed",
  "guideline_region": "Iceland/Europe",
  "helpers": true,
@@ -52,6 +53,12 @@
      "topic": "TOX-02"
     }
    ],
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 1,
+    "level": 2,
+    "name": "studies"
+   },
    "domain": "TOX",
    "label": "Serotonin syndrome / NMS / malignant hyperthermia",
    "reason": "spaced review due 2026-08-09; last 5.0/5 on 2026-08-07",

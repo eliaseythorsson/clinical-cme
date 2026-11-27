@@ -96,7 +96,9 @@ with the `specialty`, before writing or grading.
 2. **How the feedback is written.** Early stages get more background: the mechanism, the
    reasoning step by step, the terms explained. Senior learners get the evidence instead:
    the trials behind a recommendation, its strength, where the evidence is thin or disputed
-   and where guidance stops; no textbook background they have not asked for.
+   and where guidance stops; no textbook background they have not asked for. How far behind
+   the recommendation an item's feedback goes is earned topic by topic (the evidence depth,
+   `feedback_guide.md` §4.1): the pitch sets the language, the depth sets how far.
 3. **Which sources.** An aim that names an exam is graded against that exam's standard
    sources (its syllabus, the textbooks and guidelines it examines from), and the feedback
    says which; where they differ from the guideline of rule 2, both are given and the exam's
@@ -195,7 +197,8 @@ headings.
   right when …); focused question: the decisive point and the tempting wrong turn;
 - the briefing in outline: the rule, the why in a sentence, the evidence to cite, how it
   applies to this patient;
-- the two-line version for a correct, sure answer (`feedback_guide.md` §4).
+- the two-line version for a correct, sure answer (`feedback_guide.md` §4);
+- **`Deeper:`** for an item the plan gives a `depth` (below).
 
 `kit_case.md`:
 
@@ -208,6 +211,19 @@ headings.
 | `## Briefing` | a briefing outline for each rubric element a learner could plausibly miss |
 | `## Pearls` | one to three pearls or pitfalls |
 | `## Reading` | the reading pointers for the round |
+
+**Deeper notes** (a line or sub-heading that starts with `Deeper`, in the question's section
+of `kit_questions.md`; a `## Deeper` section in `kit_case.md`): only for an item that has
+`depth` in the plan, which means the learner has answered the topic well before and, if they
+do again, the feedback goes behind the recommendation (`feedback_guide.md` §4.1). Write the
+notes for the plan's `depth.level` and every level below it: 2 `studies`, the one or two
+studies the recommendation rests on (name, year, population, comparison, primary result in
+absolute figures, the class and level the guideline gives); 3 `design`, the design features
+that decide how far the result can be trusted and for whom; 4 `frontier`, where the evidence
+stops or is disputed and how the panel got from evidence to recommendation. Terse, each
+study and figure marked `(verify)` and **put on the verification list** as its own line, so
+the checker confirms it. An item without `depth` in the plan gets no such notes: if it is
+missed, nothing of this is used. The lint looks for the word.
 
 **Reading pointers** (`## Reading`; in `kit_questions.md` when the round has no case): up to
 two for the round, in the form of `feedback_guide.md` §2 E (the exact section, why it fits,

@@ -32,6 +32,7 @@ the conversation, and the keys must be good enough for another clinician to grad
    must hold.
 4. The plan (JSON). It gives, per item: slot (`mcq`, `focused`, `case`), topic and blueprint
    ID, the reason it was chosen, any open gap to re-test, `aspect_hint` for focused items, a
+   `depth` where the learner has answered the topic well before (rule 8, "Deeper notes"), a
    `drill` if one applies, `separation` notes, and `already_used` stems and cases; and for the
    round: `case_format`, units, `guideline_region`, `specialty`, `feedback_depth`, the learner's profile (their own two paragraphs: rule 4),
    `recent_cases_any_topic`, `listening` and `podcast_sources`.
@@ -51,6 +52,9 @@ Planning notes:
 - An item with `retest_gap` in the plan re-tests that gap: the same decision point in a new
   clinical context (transfer). Write `retests: <retest_gap.id>` in that item's key header
   (rule 9), as the plan's `how` line says; without it a good answer cannot close the gap.
+- An item with `depth` in the plan gets `Deeper` notes in its kit section, for that level and
+  those below it, and a line on the verification list for each study they name (rule 8). The
+  item itself is written no differently: the depth is about its feedback, not its difficulty.
 - A `drill` is built into its item (`case_design.md` §9, §11.5).
 - Unless the plan's `listening` is false, each kit ends with `## Listening` (rule 8): the
   `Sources` line from the plan's `podcast_sources`, and one line per topic with the point

@@ -92,3 +92,26 @@ def test_listening_is_described_where_each_reader_looks_for_it():
     skill = read(SKILL_MD)
     assert "`listening.on`" in skill and "`podcast_sources`" in skill
     assert "`reading` and `listening` only" in skill
+
+
+def test_evidence_depth_is_described_where_each_reader_looks_for_it():
+    """The examiner's rule in the feedback guide, the kit's notes in the rulebook, the author's
+    and the checker's briefs, the setting, the figures in the schema; the names are the engine's."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("cme", os.path.join(SKILL, "scripts", "cme.py"))
+    cme = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cme)
+    doc = lambda name: read(os.path.join(REFERENCES, name))
+    guide = doc("feedback_guide.md")
+    assert "### 4.1 Evidence depth" in guide and "Missed today → the first depth, in full" in guide
+    schema = doc("state_schema.md")
+    assert "### 4.2 Evidence depth" in schema
+    for n, (name, need) in enumerate(cme.EVIDENCE_DEPTHS, 1):
+        assert "| %d `%s` | %d" % (n, name, need) in guide, name      # the table's levels and thresholds
+        assert "%d `%s` (%d" % (n, name, need) in schema, name
+    rule8 = doc("standards.md").split("## Rule 8.")[1].split("## Rule 9.")[0]
+    assert "**Deeper notes**" in rule8 and "put on the verification list" in rule8
+    assert "feedback_guide.md` §4.1" in doc("standards.md").split("## Rule 4.")[1].split("## Rule 5.")[0]
+    assert "`depth`" in doc("author.md") and "`Deeper` notes" in doc("evidence_check.md")
+    assert '"evidence_ladder": false' in doc("requests.md") and "`evidence_ladder` false" in doc("onboarding.md")
+    assert "`depth`" in read(SKILL_MD) and "**Evidence depth**" in read(os.path.join(SKILL, "..", "..", "CONTEXT.md"))
