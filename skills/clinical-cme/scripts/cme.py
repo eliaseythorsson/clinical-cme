@@ -9734,7 +9734,9 @@ def cmd_save(args):
         doc["prepared_feedback"] = adapted      # the log only: never in the feedback, never in the ledger
 
     def then(rec, path):
+        page_warnings = list(rec.get("warnings") or [])
         rec = report(path, os.path.getsize(path), dict(res, **rec))
+        rec["warnings"] = list(res.get("warnings") or []) + page_warnings    # the round's own and the page's
         with open(os.path.join(work, PART_A_FILE), "w", encoding="utf-8") as fh:
             fh.write(md)
         if prefs_changes:
