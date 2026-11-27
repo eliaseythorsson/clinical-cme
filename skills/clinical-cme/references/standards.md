@@ -7,7 +7,7 @@ settings, and reaches the author through the plan. Each rule is written here onc
 SKILL.md) cite it by number ("rule 5") and do not restate it.
 
 Who reads what: the **author** all of it; the **checker** rules 2 and 8; the **examiner**
-rules 1–5, 10 and 11 before grading (they bind the feedback too), and all of it when it
+rules 1–5 and 10–12 before grading (they bind the feedback too), and all of it when it
 writes items itself. This file holds no content of any round, so anyone may read it at any time.
 
 | Rule | Title | Checked by `cme.py` |
@@ -23,6 +23,7 @@ writes items itself. This file holds no content of any round, so anyone may read
 | 9 | Key headers | lint, blocking |
 | 10 | Results the learner did not see | – (the simulation's quality scorer) |
 | 11 | Text for the learner speaks plainly | `save` warns; the simulation's standards check fails the run |
+| 12 | The learner's position notes | – (nothing a lint can check) |
 
 Numbers are never reused or renumbered: a new rule gets the next number, a withdrawn one
 keeps its number with the word "withdrawn". How the lint works: last section.
@@ -366,6 +367,35 @@ file or command names, the key, its headers or the kit, the sealed files, the re
 the lint, the author or the checker, the work folder or the publish set. Cite the guideline or
 paper, not this rulebook. `save` warns when the feedback as sent does, and the simulation
 fails a run for it.
+
+## Rule 12. The learner's position notes
+
+A **position note** is what the learner holds on one decision point of a topic, in their own
+words, kept when they stopped the topic ("I know this, stop bringing it back";
+`feedback_guide.md` §7.2). It covers that one point, not the topic. The plan gives an item
+`positions` (`notes`: `id`, `point`, `text`, `set`, and `reopened` once it has been raised
+again) when the learner holds one on its topic; `answer` gives the examiner the same notes by
+key id.
+
+1. **No item is keyed on the disputed point.** The author writes the item on another decision
+   point of the topic, and no distractor, rubric element or model answer turns on the premise
+   the learner rejects. Where the point cannot be avoided in a case, the key accepts the
+   learner's position as a defensible answer.
+2. **The learner is never marked down on it.** An answer that follows the note is not a miss:
+   no score taken off, no gap written, no error coded on that point. The feedback does not
+   argue the point again.
+3. **The evidence is said once.** When the note is set, the examiner may say what the
+   evidence says in one line, with its source; never again on that point, unless guidance on
+   that exact point has changed since the note's `set` date (4).
+4. **A changed guideline is raised once.** For an item with a note that has no `reopened`, the
+   author puts one line on the verification list: has guidance on the note's point changed
+   since its `set` date? If the checker finds it has, the examiner may raise it once more, in
+   one line with the source, and records that it did (`cme.py position --reopened <id>`).
+
+The note ends when the learner takes it back (any time), when the progress review drops it
+(each review lists the notes in force, one line each: keep or drop), or on its own after about
+six months without being kept at a review. Nothing here names the note's machinery to the
+learner (rule 11): it is "the position you hold on …".
 
 ## The lint
 

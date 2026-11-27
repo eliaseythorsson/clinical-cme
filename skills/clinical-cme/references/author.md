@@ -31,7 +31,8 @@ the conversation, and the keys must be good enough for another clinician to grad
 3. `feedback_guide.md` §2–4: what the feedback will contain, and so what the kits (rule 8)
    must hold.
 4. The plan (JSON). It gives, per item: slot (`mcq`, `focused`, `case`), topic and blueprint
-   ID, the reason it was chosen, any open gap to re-test, `aspect_hint` for focused items, a
+   ID, the reason it was chosen, any open gap to re-test, the learner's `positions` on its topic
+   (rule 12), `aspect_hint` for focused items, a
    `depth` where the learner has answered the topic well before (rule 8, "Deeper notes"), a
    `drill` if one applies, `separation` notes, and `already_used` stems and cases; and for the
    round: `case_format`, units, `guideline_region`, `specialty`, `feedback_depth`, the learner's profile (their own two paragraphs: rule 4),
@@ -52,6 +53,9 @@ Planning notes:
 - An item with `retest_gap` in the plan re-tests that gap: the same decision point in a new
   clinical context (transfer). Write `retests: <retest_gap.id>` in that item's key header
   (rule 9), as the plan's `how` line says; without it a good answer cannot close the gap.
+- An item with `positions` in the plan is on a topic where the learner holds a position on
+  one decision point, in their own words: key nothing on that point, and put the line
+  rule 12 asks for on the verification list (rule 12).
 - An item with `depth` in the plan gets `Deeper` notes in its kit section, for that level and
   those below it, and a line on the verification list for each study they name (rule 8). The
   item itself is written no differently: the depth is about its feedback, not its difficulty.

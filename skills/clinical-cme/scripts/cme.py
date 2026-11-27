@@ -213,6 +213,12 @@ DISPUTE_OUTCOMES = ("learner_right", "both_defensible", "upheld")
 # change its grading. `learner_override` is what rounds recorded by hand before 5.0 used.
 LEARNER_SET = "learner_set"
 LEARNER_SET_OUTCOMES = (LEARNER_SET, "learner_override")
+# The learner's stop (issue #75): "I know this, stop bringing it back". It sets the learner's
+# score (this one when they name none), closes the topic's gaps and schedules the topic at the
+# longest interval. A position note kept with it lapses when no progress review has confirmed
+# it for this many days.
+STOP_SCORE = 5
+POSITION_LAPSE_DAYS = 182
 ITEM_TYPES = ("case", "essay", "mcq", "focused")      # "essay" = the name older ledgers use for a case
 FOCUSED_ASPECTS = ("diagnosis", "interpretation", "testing", "management", "disposition",
                    "prevention", "prognosis")
@@ -1685,8 +1691,10 @@ def plan_round(st, args, today):
             item = take_waiting(slot, level, "theme", True)
         if item:
             return item
+        # a topic the learner stopped is not revisited before its date comes (issue #75)
         seen = sorted((t.get("last") or "", t.get("mastery") if t.get("mastery") is not None else 0, tid)
-                      for tid, t in topics.items() if dom(tid) == theme and allowed(tid))
+                      for tid, t in topics.items() if dom(tid) == theme and allowed(tid)
+                      and not (t.get("stopped") and (parse_date(t.get("due")) or today) > today))
         for _, _, tid in seen:
             if slot == "case" and level == 0 and tid == last_case:
                 continue
@@ -1795,6 +1803,14 @@ def plan_round(st, args, today):
                 "how": "Write this item on the gap's decision point, in a new clinical context, and "
                        "write the line 'retests: %s' in the item's key header (references/standards.md, "
                        "rule 9). Only an item that says so, answered well, closes the gap." % gap_ref(g)}
+    for c in chosen:
+        notes = standing_positions(st, today, c.get("topic")) if c.get("topic") else []
+        if notes:
+            c["positions"] = {
+                "notes": [position_for_round(p) for p in notes],
+                "how": "The learner holds this position on that decision point (their words). Key no item "
+                       "on the disputed point, and write the kit so the learner is not marked down for it "
+                       "(references/standards.md, rule 12). Any other decision point of the topic is open."}
     used_cases, used_stems = all_sessions_for_novelty(st)
     for c in chosen:
         same = [x for x in used_cases if x.get("topic") == c.get("topic")]
@@ -2039,6 +2055,10 @@ def agg_add_session(agg, s, sign=1):
             add(agg_overrides(agg), "scores", 1)
     if s.get("learner_closed_gaps"):
         add(agg_overrides(agg), "gaps", len(s["learner_closed_gaps"]))
+    if s.get("stops"):
+        add(agg_overrides(agg), "stops", len(s["stops"]))
+        if agg_overrides(agg)["stops"] == 0:
+            del agg_overrides(agg)["stops"]       # taken out again: no trace of it
     if (s.get("reflection") or {}).get("skipped"):
         add(agg, "reflection_skipped", 1)
 
@@ -2084,13 +2104,20 @@ def apply_round(state, rnd, today, theme=None, gap_ids=None):
         if isinstance(r, str):
             r = {"topic": r, "note": None}
         resolved_by_topic.setdefault(r.get("topic"), []).append(r.get("note"))
+    # the learner's stops (issue #75): the topic goes to the longest interval and its gaps close
+    stops = {}
+    for s in rnd.get("stops") or []:
+        s = {"topic": s} if isinstance(s, str) else dict(s or {})
+        if not s.get("topic"):
+            die("each stop needs 'topic'")
+        stops.setdefault(s["topic"], s)
 
     summary = {}
     number_gaps(state)
     gap_index = {g.get("topic"): g for g in state["gaps"]}
     closures = closure_topics(state, rnd.get("learner_closed_gaps") or [], set(by_topic) | set(new_gaps_by_topic), gap_ids)
     touched = list(dict.fromkeys(list(by_topic) + list(new_gaps_by_topic) + [t for t in resolved_by_topic if t]
-                                 + [t for _, t in closures if t]))
+                                 + [t for _, t in closures if t] + list(stops)))
     before = touched_before(state, touched)
     inputs = {tid: [{k: (clip(g[k], CLIP_GAP) if k == "gap" else g[k]) for k in ("gap", "source", "auto", "domain", "label")
                      if g.get(k) is not None} for g in gs] for tid, gs in new_gaps_by_topic.items()}
@@ -2115,8 +2142,15 @@ def apply_round(state, rnd, today, theme=None, gap_ids=None):
                    and drilldown_over(state, tid, theme))
         if limited:      # the drill-down on this topic is used up: it comes back later, not next round
             interval, due = DRILLDOWN_PAUSE_DAYS, rdate + dt.timedelta(days=DRILLDOWN_PAUSE_DAYS)
+        if tid in stops:  # the learner's stop: the longest interval, whatever the rules above said
+            limited, step, interval = False, len(intervals) - 1, intervals[-1]
+            due = rdate + dt.timedelta(days=interval)
         t.update({"last": iso(rdate), "attempts": int(t.get("attempts") or 0) + 1, "mastery": mastery,
                   "step": step, "due": iso(due), "comfort": comfort, "calibration": calibration})
+        if tid in stops:
+            t["stopped"] = iso(rdate)
+        else:
+            t.pop("stopped", None)      # tested again: the stop has done its work
         t["history"].append([iso(rdate), mastery, comfort, calibration])
         t["history"] = t["history"][-CAP_HISTORY:]
         if misconception and not any(g.get("source") == "misconception" for g in new_gaps_by_topic.get(tid, [])):
@@ -2127,6 +2161,8 @@ def apply_round(state, rnd, today, theme=None, gap_ids=None):
                         "calibration": calibration, "comfort": comfort, "misconception": misconception}
         if limited:
             summary[tid]["drilldown_limit"] = True
+        if tid in stops:
+            summary[tid]["stopped"] = True
 
     for tid in [t for t in new_gaps_by_topic if t not in self_gap_topics and t not in by_topic]:
         g0 = new_gaps_by_topic[tid][0]   # e.g. a transfer gap on a topic not tested this round
@@ -2139,6 +2175,13 @@ def apply_round(state, rnd, today, theme=None, gap_ids=None):
         if cur is None or cur > target:
             t["due"] = iso(target)
         summary[tid] = {"self_reported_only": True, "due": t["due"]}
+    for tid in [t for t in stops if t not in by_topic]:
+        # a stop on a topic this round wrote a gap on without testing it (the stop was said on an
+        # earlier round's item): the topic goes to the longest interval all the same
+        t = ensure_topic(state, tid)
+        t.update({"step": len(intervals) - 1, "due": iso(rdate + dt.timedelta(days=intervals[-1])),
+                  "stopped": iso(rdate)})
+        summary.setdefault(tid, {}).update({"due": t["due"], "stopped": True})
 
     gaps = state["gaps"]
     for tid in list(by_topic) + [t for t in new_gaps_by_topic if t not in by_topic]:
@@ -2204,15 +2247,24 @@ def apply_round(state, rnd, today, theme=None, gap_ids=None):
     changes, closed = [], []
     for req, tid in closures:
         if tid is None:         # closed elsewhere since this round first closed it: kept as it was
-            closed.append({"id": req["gap"], "topic": req.get("topic")})
+            closed.append(dict({"id": req["gap"], "topic": req.get("topic")}, **({"stop": True} if req.get("stop") else {})))
             continue
         if req.get("again") and not any(req["gap"] in (g.get("id"), g.get("topic")) for g in state["gaps"]):
             continue            # its retest, answered well this time, closed it
         ch = learner_close_gap(state, req, req.get("date") or iso(rdate), sid=rnd.get("log_id") or rnd.get("id") or state["next_id"])
-        closed.append({"id": ch["gap"], "topic": ch["topic"]})
+        closed.append(dict({"id": ch["gap"], "topic": ch["topic"]}, **({"stop": True} if ch.get("stop") else {})))
         if not req.get("again"):
             summary.setdefault(ch["topic"], {})["gap_closed_by_learner"] = True
             changes.append(ch)
+    # a stop closes every gap still open on its topic, the ones this round opened included
+    for tid, s in stops.items():
+        for g in [g for g in state["gaps"] if g.get("topic") == tid]:
+            ch = learner_close_gap(state, {"gap": g["id"], "stop": True}, s.get("date") or iso(rdate),
+                                   sid=rnd.get("log_id") or rnd.get("id") or state["next_id"])
+            closed.append({"id": ch["gap"], "topic": tid, "stop": True})
+            summary.setdefault(tid, {})["gap_closed_by_learner"] = True
+            if not s.get("again"):
+                changes.append(ch)
 
     ratings = state["profile"].setdefault("domain_self_ratings", {})
     ratings_before = copy.deepcopy(ratings)
@@ -2307,6 +2359,8 @@ def apply_round(state, rnd, today, theme=None, gap_ids=None):
         entry["errata"] = errata_ids
     if closed:
         entry["learner_closed_gaps"] = closed
+    if stops:
+        entry["stops"] = [{k: s[k] for k in ("topic", "date", "item") if s.get(k) is not None} for s in stops.values()]
     entry["undo"] = undo_record(state, before, by_topic, inputs, resolved_by_topic, ratings_before)
 
     state["sessions"].append(entry)
@@ -2360,6 +2414,9 @@ def undo_record(state, before, tested, inputs, notes, ratings_before):
             was = {k: v for k, v in b["topic"].items() if t.get(k) != v}
             if was:
                 rec["was"] = was
+            added = [k for k in t if k != "history" and k not in b["topic"]]
+            if added:           # a key the round put on the topic (`stopped`): taken off again
+                rec["added"] = added
             if tid in tested:
                 rec["row"] = True
                 cut = b["history"][:max(0, len(b["history"]) + 1 - len(t.get("history") or []))]
@@ -2518,6 +2575,8 @@ def undo_round(st, pos, u=None):
             del st["topics"][tid]
             continue
         t.update(copy.deepcopy(rec.get("was") or {}))
+        for k in rec.get("added") or []:
+            t.pop(k, None)
         if rec.get("row"):
             t["history"] = list(rec.get("cut") or []) + (t.get("history") or [])[:-1]
     ratings = st["profile"].setdefault("domain_self_ratings", {})
@@ -2563,11 +2622,18 @@ def round_from_entry(st, sess):
     if sess.get("undo") is None:        # recorded by 5.0 or earlier: its self-reported gaps are known only from the gaps
         rnd["self_gap_topics"] = sorted(g["topic"] for g in st["gaps"] if g.get("topic") in (sess.get("topics") or [])
                                         and "self" in (g.get("source") or []) and g.get("date") == sess.get("date"))
+    # the learner's stops are applied again, and close their gaps again with them; a stop made
+    # outright (no round of the period was the latest on its topic) stays as it was
+    stops = [dict(s, again=True) for s in sess.get("stops") or [] if not s.get("outright")]
+    if stops:
+        rnd["stops"] = stops
     closed = []
     for c in sess.get("learner_closed_gaps") or []:
+        if c.get("stop") and c.get("topic") in {s["topic"] for s in stops}:
+            continue
         r = next((x for x in reversed(st["resolved"]) if x.get("closed_by") == "learner" and x.get("id") == c.get("id")), {})
-        closed.append({"gap": c.get("id"), "topic": c.get("topic"), "note": r.get("learner_note"),
-                       "date": r.get("resolved"), "again": True})
+        closed.append(dict({"gap": c.get("id"), "topic": c.get("topic"), "note": r.get("learner_note"),
+                            "date": r.get("resolved"), "again": True}, **({"stop": True} if c.get("stop") else {})))
     if closed:
         rnd["learner_closed_gaps"] = closed
     return rnd
@@ -2616,6 +2682,9 @@ def apply_round_again(st, sess, rnd, today):
     for k in ("block", "url"):
         if old.get(k):
             entry[k] = old[k]
+    outright = [s for s in old.get("stops") or [] if s.get("outright")]
+    if outright:
+        entry["stops"] = list(entry.get("stops") or []) + outright
     errata = list(dict.fromkeys(list(old.get("errata") or []) + list(entry.get("errata") or [])))
     if errata:
         entry["errata"] = errata
@@ -2715,6 +2784,8 @@ def to_previous(sess):
         out["block"] = sess["block"]
     if sess.get("learner_closed_gaps"):
         out["learner_closed_gaps"] = sess["learner_closed_gaps"]
+    if sess.get("stops"):
+        out["stops"] = sess["stops"]
     return out
 
 
@@ -2797,10 +2868,20 @@ def reflect_round(st, refl, today, session=None, measured=None, base=None):
         ch = learner_score(find_item(rnd["items"], req, sid), req, rdate)
         rnd["grade_changes"] = list(rnd.get("grade_changes") or []) + [ch.pop("grade_change")]
         changes.append(ch)
+    said = []
+    for req in refl.get("learner_stops") or []:
+        stop, gc, ch = learner_stop(rnd["items"], req, sid, rdate)
+        rnd["grade_changes"] = list(rnd.get("grade_changes") or []) + [gc]
+        rnd["stops"] = list(rnd.get("stops") or []) + [stop]
+        said.append((req, ch))
     rnd["learner_closed_gaps"] = list(rnd.get("learner_closed_gaps") or []) + [
         dict({"gap": req} if isinstance(req, str) else req, date=rdate) for req in refl.get("learner_closed_gaps") or []]
     entry, summary, warnings, errata_ids, closed = apply_round_again(st, sess, rnd, today)
-    changes += closed
+    # the position notes said with the stops: `close` run again puts this round's in afresh
+    if "positions" in st:
+        st["positions"] = [p for p in st["positions"] if not (p.get("session") == sid and p.get("from") == "reflection")]
+    changes += stop_changes(st, said, sid, rdate, "reflection") + closed
+    lapse_positions(st, today)
     st["unreflected"] = None
     compact(st)
     bump_gen(st)
@@ -2854,6 +2935,98 @@ def learner_score(it, req, date):
             "set_by": "learner", "date": date, "note": note, "grade_change": gc}
 
 
+def learner_stop(items, req, sid, date):
+    """"I know this, stop bringing it back", said of one item of round `sid` (issue #75): the
+    learner's score on it (STOP_SCORE when they name none), a learner-set score marked `stop`.
+    Returns (stop, grade_change, change): the stop for the round's input (`stops`: apply_round
+    closes the topic's gaps and schedules it at the longest interval), the `grade_changes` entry
+    and the change for the log."""
+    if not isinstance(req, dict) or not req.get("topic"):
+        die("a stop needs 'topic' (and 'type' when the round has two items on it); 'score' and "
+            "'position' are optional")
+    req = dict(req, score=STOP_SCORE if req.get("score") is None else req["score"])
+    position_input(req)         # a malformed note stops here, before anything is applied
+    ch = learner_score(find_item(items, req, sid), req, date)
+    gc = dict(ch.pop("grade_change"), stop=True)
+    ch["kind"] = "stop"
+    return {"topic": req["topic"], "date": date, "item": ch["item"]}, gc, ch
+
+
+def stop_changes(st, said, sid, date, source):
+    """The changes for the log of the stops `said` ([(request, change)]) once they are applied,
+    with the position note each may carry, which goes into the ledger here."""
+    out = []
+    for req, ch in said:
+        note = position_input(req)
+        if note:
+            p = set_position(st, ch["topic"], note[0], note[1], date, sid, source)
+            ch["position"] = {k: p[k] for k in ("id", "point", "text")}
+        out.append(ch)
+    return out
+
+
+# ---------------------------------------------------------------- position notes (issue #75)
+#
+# What the learner holds on one decision point of a topic, in their own words, said with a stop.
+# Every later round on the topic carries it to the author (no item is keyed on that point) and to
+# the examiner (the learner is not marked down on it). It ends when the learner drops it, when a
+# progress review drops it, or when no review has confirmed it for POSITION_LAPSE_DAYS.
+
+def position_input(req):
+    """(point, text) of the position note a stop request carries, or None."""
+    p = (req or {}).get("position")
+    if not p:
+        return None
+    p = {"text": p} if isinstance(p, str) else p
+    point = clip((p.get("point") or "").strip(), 160) if isinstance(p, dict) else ""
+    text = (p.get("text") or "").strip() if isinstance(p, dict) else ""
+    if not point or not text:
+        die("a position note needs 'point' (the one decision point, in a few words) and 'text' "
+            "(what the learner holds, in their own words)")
+    return point, clip(text, 600)
+
+
+def set_position(st, tid, point, text, date, sid, source):
+    """Keep the learner's position note on topic `tid`; the same note said again is kept once."""
+    pos = st.setdefault("positions", [])
+    same = next((p for p in pos if p.get("topic") == tid and p.get("point") == point and p.get("text") == text), None)
+    if same:
+        return same
+    p = {"id": "P%04d" % (max([id_num(x.get("id")) for x in pos] + [0]) + 1), "topic": tid, "point": point,
+         "text": text, "set": date, "confirmed": date, "session": sid, "from": source}
+    pos.append(p)
+    return p
+
+
+def position_lapses(p):
+    d = parse_date(p.get("confirmed") or p.get("set"))
+    return d + dt.timedelta(days=POSITION_LAPSE_DAYS) if d else None
+
+
+def standing_positions(st, today, tid=None):
+    """The position notes in force on `today` (on topic `tid`), oldest first."""
+    return [p for p in st.get("positions") or [] if (tid is None or p.get("topic") == tid)
+            and (position_lapses(p) is None or position_lapses(p) >= today)]
+
+
+def lapse_positions(st, today):
+    """Take the notes no review has confirmed for POSITION_LAPSE_DAYS out of the ledger."""
+    if "positions" not in st:
+        return []
+    keep = standing_positions(st, today)
+    gone = [p for p in st["positions"] if p not in keep]
+    st["positions"] = keep
+    return gone
+
+
+def position_for_round(p):
+    """A note as the author and the examiner get it."""
+    out = {k: p[k] for k in ("id", "point", "text", "set") if p.get(k)}
+    if p.get("reopened"):
+        out["reopened"] = p["reopened"]
+    return out
+
+
 def learner_close_gap(st, req, date, sess=None, sid=None):
     """Close an open gap because the learner asked: it moves to `resolved` marked
     `closed_by: learner`, and no retest follows (the topic keeps the due date its score gave
@@ -2872,10 +3045,17 @@ def learner_close_gap(st, req, date, sess=None, sid=None):
     st["resolved"].append({"id": g.get("id"), "topic": g.get("topic"), "note": clip(g.get("gap"), 200),
                            "opened": g.get("opened") or g.get("date"), "resolved": date, "partial": False,
                            "closed_by": "learner", "learner_note": note, "session": sid})
+    stop = bool(req.get("stop"))
+    if stop:                # closed by the learner's stop on the topic, not by a request of its own
+        st["resolved"][-1]["stop"] = True
     if sess is not None:
-        sess.setdefault("learner_closed_gaps", []).append({"id": g.get("id"), "topic": g.get("topic")})
-    return {"kind": "gap", "gap": g.get("id"), "topic": g.get("topic"), "text": clip(g.get("gap"), 200),
-            "closed_by": "learner", "date": date, "note": note}
+        sess.setdefault("learner_closed_gaps", []).append(dict({"id": g.get("id"), "topic": g.get("topic")},
+                                                               **({"stop": True} if stop else {})))
+    ch = {"kind": "gap", "gap": g.get("id"), "topic": g.get("topic"), "text": clip(g.get("gap"), 200),
+          "closed_by": "learner", "date": date, "note": note}
+    if stop:
+        ch["stop"] = True
+    return ch
 
 
 def learner_changes_md(changes, heading):
@@ -2886,6 +3066,16 @@ def learner_changes_md(changes, heading):
             line = ("- %s (%s): the examiner's score %s, the learner's score %s. Recorded and scheduled with "
                     "the learner's score, at the learner's request."
                     % (c["item"], c["topic"], c["examiner"], c["learner"]))
+        elif c["kind"] == "stop":
+            line = ("- %s (%s): stopped by the learner (\"I know this, stop bringing it back\"). The examiner's "
+                    "score %s, the learner's score %s; the topic's open gaps closed and the topic scheduled at "
+                    "the longest interval." % (c["item"], c["topic"], c["examiner"], c["learner"]))
+            if c.get("position"):
+                line += " Position note on %s, in the learner's words: \"%s\"" % (
+                    c["position"]["point"], c["position"]["text"])
+        elif c.get("stop"):
+            line = ("- Gap %s (%s) closed with the learner's stop, not by a retest: %s"
+                    % (c["gap"], c["topic"], c.get("text") or ""))
         else:
             line = ("- Gap %s (%s) closed by the learner, not by a retest: %s"
                     % (c["gap"], c["topic"], c.get("text") or ""))
@@ -2893,24 +3083,37 @@ def learner_changes_md(changes, heading):
     return "%s\n\n%s\n" % (heading, "\n".join(lines))
 
 
-def amend_round(st, sid, scores, closes, date, today):
+def amend_round(st, sid, scores, closes, date, today, stops=()):
     """After the close: the learner sets scores of round `sid` themselves (`scores`, entries of
-    `learner_scores`) and closes gaps (`closes`, entries of `learner_closed_gaps`), dated `date`.
-    Each is an amended input of a round, applied again (apply_round_again), so a score set now is
-    scheduled exactly as the same score set in the reflection. A gap closed is an amendment of
-    the round that is the latest on its topic; a gap no round of this period owns is closed
-    outright and listed in round `sid`. Returns (changes, topics, warnings)."""
+    `learner_scores`), closes gaps (`closes`, entries of `learner_closed_gaps`) and stops topics
+    (`stops`, entries of `learner_stops`), dated `date`. Each is an amended input of a round,
+    applied again (apply_round_again), so a score set or a stop said now is scheduled exactly as
+    the same said in the reflection. A gap closed, or a stop's schedule and gaps, is an amendment
+    of the round that is the latest on its topic; where no round of this period is, the gap is
+    closed (the topic stopped) outright and listed in round `sid`. Returns (changes, topics,
+    warnings)."""
     sess = next((x for x in st["sessions"] if x.get("id") == sid), None)
-    if not sess and scores:
+    if not sess and (scores or stops):
         die("round %s is %s: its scores can no longer be changed (a note can still be added with addendum)"
             % (sid, "from before the last progress review" if has_session(st, sid) else "not in the ledger"))
     changes, topics, warnings, again = [], {}, [], {}
-    if scores:
+    if scores or stops:
         rnd = again[sid] = round_from_entry(st, sess)
         for req in scores:
             ch = learner_score(find_item(rnd["items"], req, sid), req, date)
             rnd["grade_changes"] = list(rnd.get("grade_changes") or []) + [ch.pop("grade_change")]
             changes.append(ch)
+    said, outright_stops = [], []
+    for req in stops:
+        stop, gc, ch = learner_stop(again[sid]["items"], req, sid, date)
+        again[sid]["grade_changes"] = list(again[sid].get("grade_changes") or []) + [gc]
+        owner = owner_of(st, stop["topic"])
+        if owner is None:
+            outright_stops.append(stop)
+        else:
+            o = again.get(owner["id"]) or again.setdefault(owner["id"], round_from_entry(st, owner))
+            o["stops"] = [x for x in o.get("stops") or [] if x.get("topic") != stop["topic"]] + [stop]
+        said.append((req, ch))
     outright = []
     for req in closes:
         req = {"gap": req} if isinstance(req, str) else dict(req or {})
@@ -2925,10 +3128,11 @@ def amend_round(st, sid, scores, closes, date, today):
             continue
         rnd = again.get(owner["id"]) or again.setdefault(owner["id"], round_from_entry(st, owner))
         rnd["learner_closed_gaps"] = list(rnd.get("learner_closed_gaps") or []) + [dict(req, gap=g["id"], date=date)]
+    gap_changes = []
     for oid in [s["id"] for s in st["sessions"] if s["id"] in again]:
         entry, summary, _, _, closed = apply_round_again(st, next(s for s in st["sessions"] if s["id"] == oid),
                                                          again[oid], today)
-        changes += closed
+        gap_changes += closed
         for ch in closed:
             topics.setdefault(ch["topic"], {})["gap_closed_by_learner"] = True
         if oid != sid:
@@ -2942,38 +3146,55 @@ def amend_round(st, sid, scores, closes, date, today):
                 warnings.append("%s has been tested again since %s: the score is recorded, its schedule is "
                                 "left as the later round set it" % (tid, sid))
     sess = next((x for x in st["sessions"] if x.get("id") == sid), None)
+    if (outright or outright_stops) and sess is not None:
+        agg_add_session(st["agg"], sess, -1)        # counted again below, with what it now lists
     for req in outright:
-        if sess is not None:
-            agg_add_session(st["agg"], sess, -1)
         ch = learner_close_gap(st, req, date, sess, sid)
-        if sess is not None:
-            agg_add_session(st["agg"], sess)
-        else:
+        if sess is None:
             agg_overrides(st["agg"])["gaps"] += 1      # a round of an earlier period: counted all the same
         topics.setdefault(ch["topic"], {})["gap_closed_by_learner"] = True
-        changes.append(ch)
+        gap_changes.append(ch)
+    intervals = [int(x) for x in st["config"].get("intervals_days") or DEFAULT_CONFIG["intervals_days"]]
+    for stop in outright_stops:     # no round of this period is the latest on the topic: stopped as it stands
+        t = ensure_topic(st, stop["topic"])
+        t.update({"step": len(intervals) - 1, "stopped": date,
+                  "due": iso(parse_date(date) + dt.timedelta(days=intervals[-1]))})
+        for g in [g for g in st["gaps"] if g.get("topic") == stop["topic"]]:
+            gap_changes.append(learner_close_gap(st, {"gap": g["id"], "stop": True}, date, sess, sid))
+        sess.setdefault("stops", []).append(dict(stop, outright=True))
+    if (outright or outright_stops) and sess is not None:
+        agg_add_session(st["agg"], sess)
+    for req, ch in said:
+        t = st["topics"].get(ch["topic"]) or {}
+        topics.setdefault(ch["topic"], {}).update({"stopped": True, "step": t.get("step"), "due": t.get("due")})
+    changes += stop_changes(st, said, sid, date, "override") + gap_changes
+    lapse_positions(st, today)
     return changes, topics, warnings
 
 
 def cmd_override(args):
-    """After the close: the learner sets a score of a closed round themselves (--scores) or
-    closes a gap by request (--close-gaps). The ledger, the session document (its
+    """After the close: the learner sets a score of a closed round themselves (--scores), closes
+    a gap by request (--close-gaps) or stops a topic, "I know this, stop bringing it back"
+    (--stops, with an optional position note). The ledger, the session document (its
     `learner_changes` and a line in the addendum) and the page file go into the publish set.
-    Before the close both belong in the reflection JSON (`learner_scores`,
-    `learner_closed_gaps`), which `close` handles the same way."""
+    Before the close they belong in the reflection JSON (`learner_scores`,
+    `learner_closed_gaps`, `learner_stops`), which `close` handles the same way."""
     today = today_from(args)
     work, info = job(args)
     st, _ = current_ledger(work, info)
     scores = (load_json_arg(args.scores) if args.scores else None) or []
     closes = (load_json_arg(args.close_gaps) if args.close_gaps else None) or []
-    scores, closes = ([x] if isinstance(x, (dict, str)) else list(x) for x in (scores, closes))
-    if not scores and not closes:
-        die("override needs --scores '[{\"topic\": …, \"score\": N}]' or --close-gaps '[{\"gap\": \"G0007\"}]'")
+    stops = (load_json_arg(args.stops) if args.stops else None) or []
+    scores, closes, stops = ([x] if isinstance(x, (dict, str)) else list(x) for x in (scores, closes, stops))
+    if not scores and not closes and not stops:
+        die("override needs --scores '[{\"topic\": …, \"score\": N}]', --close-gaps '[{\"gap\": \"G0007\"}]' "
+            "or --stops '[{\"topic\": …}]'")
     if st.get("unreflected"):
-        die("round %s is not closed yet: put `learner_scores` and `learner_closed_gaps` in its reflection "
-            "JSON and run close (`{\"skipped\": true}` with them when there is no reflection)" % st["unreflected"])
+        die("round %s is not closed yet: put `learner_scores`, `learner_closed_gaps` and `learner_stops` in its "
+            "reflection JSON and run close (`{\"skipped\": true}` with them when there is no reflection)"
+            % st["unreflected"])
     sid = job_session(work, info, st, args.session)
-    if scores and not any(x.get("id") == sid for x in st["sessions"]):
+    if (scores or stops) and not any(x.get("id") == sid for x in st["sessions"]):
         die("round %s is %s: its scores can no longer be changed (a note can still be added with addendum)"
             % (sid, "from before the last progress review" if has_session(st, sid) else "not in the ledger"))
     doc_path = store_file(work, info, session_path(sid))
@@ -2981,9 +3202,9 @@ def cmd_override(args):
         die("the session file of %s was not found: read %s from the store into the store copy "
             "(%s) first" % (sid, session_path(sid), info.get("store")))
     doc = load_json(doc_path)
-    changes, topics, warnings = amend_round(st, sid, scores, closes, iso(today), today)
+    changes, topics, warnings = amend_round(st, sid, scores, closes, iso(today), today, stops)
     sess = next((x for x in st["sessions"] if x.get("id") == sid), None)
-    if scores:
+    if scores or stops:
         doc["score"] = sess["score"]
     doc["learner_changes"] = list(doc.get("learner_changes") or []) + changes
     doc["addendum"] = ((doc.get("addendum") or "").rstrip() + "\n\n"
@@ -2995,7 +3216,7 @@ def cmd_override(args):
     st["updated"] = iso(today)
     out = {"ok": True, "gen": st["gen"], "session": sid, "learner_changes": changes, "topics": topics,
            "open_gaps": len(st["gaps"]), "warnings": warnings}
-    if scores:
+    if scores or stops:
         out["score"] = sess["score"]
     # the prepared round was planned with the gap open and the old due date
     publish_ledger(work, info, st, out, session=doc, empty_prepared=True)
@@ -3087,7 +3308,9 @@ def coding_analytics(log):
         "learner_overrides": {
             "scores": len(own),
             "mean_change": round(sum(g["to"] - g["from"] for g in shifts) / len(shifts), 2) if shifts else None,
-            "gaps_closed": sum(len(s.get("learner_closed_gaps") or []) for s in log)},
+            "gaps_closed": sum(len(s.get("learner_closed_gaps") or []) for s in log),
+            # "I know this, stop bringing it back": counted apart (its score is among `scores`)
+            "stops": sum(len(s.get("stops") or []) for s in log)},
     }
 
 
@@ -3111,7 +3334,8 @@ def agg_analytics(agg):
         "confidence_calibration": {"table": cal, "brier_score": round(agg["brier"][0] / agg["brier"][1], 3) if agg["brier"][1] else None,
                                    "items_with_confidence": agg["brier"][1]},
         "drills": agg["drills"], "grade_disputes": agg["disputes"],
-        "learner_overrides": {"scores": agg_overrides(agg)["scores"], "gaps_closed": agg_overrides(agg)["gaps"]},
+        "learner_overrides": {"scores": agg_overrides(agg)["scores"], "gaps_closed": agg_overrides(agg)["gaps"],
+                              "stops": agg_overrides(agg).get("stops", 0)},
         "reflection_skipped": agg["reflection_skipped"],
     }
 
@@ -3213,6 +3437,9 @@ def cmd_stats(args):
         "previous_reviews": [{"date": r.get("date"), "doc": r.get("doc"), "headline": r.get("headline"),
                               "change_plan": r.get("change_plan")} for r in st["reviews"]],
         "active_drills": st["drills"], "pending_errata": st["pending_errata"], "errata": st["errata"],
+        # the learner's position notes in force, each listed at the review to keep or drop
+        "positions": [dict(p, label=(st["topics"].get(p.get("topic")) or {}).get("label"),
+                           lapses=iso(position_lapses(p))) for p in standing_positions(st, today)],
     }
     print(json.dumps(out, indent=1, ensure_ascii=False))
 
@@ -3273,6 +3500,19 @@ def cmd_review(args):
             n += 1
             st["pending_errata"].append(e); checks[c["id"]]["erratum"] = e["id"]; new_errata.append(e["id"])
     entry["errata_found"] = new_errata
+    pos = rv.get("positions") or {}
+    if pos:
+        held = {p.get("id"): p for p in st.get("positions") or []}
+        for pid in list(pos.get("keep") or []) + list(pos.get("drop") or []):
+            if pid not in held:
+                die("no position note %s (notes: %s)" % (pid, ", ".join(held) or "none"))
+        for pid in pos.get("keep") or []:
+            held[pid]["confirmed"] = iso(today)
+        st["positions"] = [p for p in st["positions"] if p.get("id") not in set(pos.get("drop") or [])]
+        entry["positions"] = {"kept": list(pos.get("keep") or []), "dropped": list(pos.get("drop") or [])}
+    lapsed = lapse_positions(st, today)
+    if lapsed:
+        entry.setdefault("positions", {})["lapsed"] = [p["id"] for p in lapsed]
     st["reviews"].append(entry)
     # close the period: current sessions become the previous period
     st["previous"] = [to_previous(s) for s in st["sessions"]]
@@ -3283,10 +3523,46 @@ def cmd_review(args):
     bump_gen(st)
     st["updated"] = iso(today)
     out = {"ok": True, "gen": st["gen"], "reviews": len(st["reviews"]),
-           "next_review_due": iso(next_due), "drills": st["drills"],
+           "next_review_due": iso(next_due), "drills": st["drills"], "positions": entry.get("positions"),
            "pending_errata": [e["id"] for e in st["pending_errata"]], "warnings": warnings}
     path = publish_ledger(work, info, st, out, empty_prepared=True)
     out.update({"out": path, "bytes": os.path.getsize(path)})
+    print(json.dumps(published(work, info, out), indent=1, ensure_ascii=False))
+
+
+def cmd_position(args):
+    """The learner's position notes (issue #75). Alone: the notes in force, writing nothing.
+    `--drop ID`: the learner takes a note back (at any time). `--reopened ID`: the checker found
+    that guidance on that point changed since the note was written and the examiner raised it
+    once more; it is not raised again. The ledger and the page file go into the publish set."""
+    today = today_from(args)
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
+    held = {p.get("id"): p for p in standing_positions(st, today)}
+
+    def listed():
+        return [dict(position_for_round(p), topic=p.get("topic"), lapses=iso(position_lapses(p)))
+                for p in standing_positions(st, today)]
+    if not args.drop and not args.reopened:
+        print(json.dumps({"ok": True, "positions": listed()}, indent=1, ensure_ascii=False))
+        return
+    for pid in [x for x in (args.drop, args.reopened) if x]:
+        if pid not in held:
+            die("no position note %s in force (notes: %s)" % (pid, ", ".join(held) or "none"))
+    if args.reopened:
+        if held[args.reopened].get("reopened"):
+            die("position note %s was raised once more already, on %s: it is not raised again"
+                % (args.reopened, held[args.reopened]["reopened"]))
+        held[args.reopened]["reopened"] = iso(today)
+    if args.drop:
+        st["positions"] = [p for p in st["positions"] if p.get("id") != args.drop]
+    lapse_positions(st, today)
+    # a round prepared ahead stays usable: it was written to respect the note, and the examiner
+    # reads the notes from the ledger when grading
+    bump_gen(st, content=False)
+    st["updated"] = iso(today)
+    out = {"ok": True, "gen": st["gen"], "dropped": args.drop, "reopened": args.reopened, "positions": listed()}
+    publish_ledger(work, info, st, out)
     print(json.dumps(published(work, info, out), indent=1, ensure_ascii=False))
 
 
@@ -3719,6 +3995,13 @@ def page_doc(st, lists=None):
         "reviews": sorted(reviews.values(), key=lambda r: r.get("date") or "", reverse=True),
         "next_review": review.get("next_due"),
         "library": library[:PAGE_LIBRARY_MAX],
+        # the learner's own position notes, in their words (issue #75): what they hold, never what
+        # a coming round tests; listed without the dates on which they lapse
+        "positions": [{"id": p.get("id"), "topic": p.get("topic"), "label": labels.get(p.get("topic")),
+                       "point": p.get("point"), "text": p.get("text"), "set": p.get("set"),
+                       "confirmed": p.get("confirmed")}
+                      for p in st.get("positions") or []
+                      if not position_lapses(p) or position_lapses(p) >= (parse_date(st.get("updated")) or position_lapses(p))],
         "settings": {
             "session_length": cfg.get("session_minutes"), "per_week": cfg.get("target_sessions_per_week"),
             "region": context["guideline_region"],
@@ -5633,35 +5916,40 @@ def answer_blocks(path):
     return [(name, body.strip()) for name, body in ANSWER_RE.findall(read_text(path))]
 
 
-def answer_depth(work, part):
-    """The evidence depth of each item whose answers this part completes, by key id
-    ({"Q1": {"level", "name", "in_a_row"}}), for the feedback about to be written
-    (feedback_guide.md §4.1). Read from the key headers and the ledger as it stands before the
+def answer_depth(work, part, today=None):
+    """What the examiner grades with for each item whose answers this part completes, by key id:
+    its evidence depth ({"Q1": {"level", "name", "in_a_row"}}, feedback_guide.md §4.1) and the
+    learner's position notes on its topic ({"Q1": [{"id", "point", "text", "set"}]},
+    standards.md rule 12). Read from the key headers and the ledger as it stands before the
     round is recorded. Only for a part whose sealed file may now be opened: the questions, and
-    the case once its last answer is in. None where there is nothing to say (no job open here,
-    no key headers, the ladder turned off): filing an answer never fails over it."""
+    the case once its last answer is in. Returns (depth, positions), each None where there is
+    nothing to say (no job open here, no key headers, the ladder turned off, no note): filing an
+    answer never fails over it."""
     name = {"questions": SEALED_FILES[0], "final": SEALED_FILES[1], "case": SEALED_FILES[1]}.get(part)
     sealed, info = in_work(work, name) if name else None, work_info(work)
     if not sealed or not info:
-        return None
+        return None, None
     if part == "case":
         plan_path = in_work(work, PLAN_FILE)
         fmt = (load_json(plan_path) if plan_path else {}).get("case_format")
         if fmt != "discriminate":       # an unfolding case stays sealed until its final answers
-            return None
+            return None, None
     try:
         st, _ = current_ledger(work, info)
         headers = parse_key_headers(read_text(sealed), name)[0]
     except (CmeError, OSError):
-        return None
-    out = {}
+        return None, None
+    out, notes = {}, {}
     for kid, h in headers.items():
         if h.get("_bad") or (kid == "case") != (name == SEALED_FILES[1]):
             continue
         d = evidence_depth(st, h.get("topic"), h.get("aspect"), bool(h.get("retests")))
         if d:
             out[kid] = d
-    return out or None
+        held = standing_positions(st, today or dt.date.today(), h.get("topic")) if h.get("topic") else []
+        if held:
+            notes[kid] = [position_for_round(p) for p in held]
+    return out or None, notes or None
 
 
 def cmd_answer(args):
@@ -5697,9 +5985,11 @@ def cmd_answer(args):
         have.append((args.part, text.strip()))
         out["at"] = stamp(args.work, "answer:" + args.part, args.at)      # when the learner's message arrived
     out["parts"] = [name for name, _ in have]
-    depth = answer_depth(args.work, args.part)
+    depth, positions = answer_depth(args.work, args.part, today_from(args))
     if depth:
         out["depth"] = depth
+    if positions:
+        out["positions"] = positions
     print(json.dumps(out, ensure_ascii=False))
 
 
@@ -6075,6 +6365,7 @@ def main(argv=None):
     s = command("close", cmd_close); s.add_argument("--reflection"); s.add_argument("--session")
     s = command("addendum", cmd_addendum); s.add_argument("--md", required=True); s.add_argument("--session")
     s = command("override", cmd_override); s.add_argument("--scores"); s.add_argument("--close-gaps")
+    s.add_argument("--stops")
     s.add_argument("--session")
     s = command("prepare", cmd_prepare); s.add_argument("--if-needed", action="store_true")
     s.add_argument("--allow-unreflected", action="store_true")
@@ -6088,6 +6379,7 @@ def main(argv=None):
     s = command("review", cmd_review); s.add_argument("--review", required=True)
     s = command("review-doc", cmd_review_doc); s.add_argument("--md", required=True); s.add_argument("--date")
     s.add_argument("--title"); s.add_argument("--headline")
+    s = command("position", cmd_position); s.add_argument("--drop"); s.add_argument("--reopened")
     s = command("snooze", cmd_snooze); s.add_argument("--days", type=int, default=7)
     s = command("settings", cmd_settings); s.add_argument("--config"); s.add_argument("--profile"); s.add_argument("--blueprint")
     s = command("theme", cmd_theme); s.add_argument("--set"); s.add_argument("--another", action="store_true")

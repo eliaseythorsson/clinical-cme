@@ -353,7 +353,8 @@ right is telling you something about the grading.
 
 ### 7.1 A score the learner sets, a gap the learner closes
 
-"Record it as 4" or "close that gap" is not a dispute: the learner is not arguing the
+"Record it as 4" or "close that gap" is not a dispute (and "I know this, stop bringing it
+back" is one step that does both and more: §7.2): the learner is not arguing the
 evidence, they are deciding what their record says. It is their record, so do it, without
 arguing and without changing your grading. Never write it as a dispute outcome (your
 grading did not change), and never edit the ledger by hand.
@@ -380,6 +381,44 @@ review counts these apart from disputes.
 If the learner gives a reason that is about the evidence ("the guideline says otherwise"),
 it is a dispute: re-check first, and use this path only if they still want their own score
 after your grading stands.
+
+### 7.2 The learner's stop: "I know this, stop bringing it back"
+
+Said in any words (also "stop this loop", "I disagree with the premise, drop it"), it is one
+action with one entry, the same before or after the close: the learner's score for the item
+(5 unless they name one), every open gap on that topic closed by the learner, and the topic
+scheduled at the longest interval (90 days by default), whatever drill-down or gaps would have
+said. The learner's judgement decides: do it at once, without arguing, and do not ask them to
+choose between a score and a gap. No topic is retired for good: after the interval it comes
+back like any other.
+
+- **Before the close**, in the reflection JSON: `"learner_stops": [{"item": "Q2", "type":
+  "mcq", "topic": "CARD-03", "score": 5, "position": {"point": "…", "text": "…"}}]` (`score`
+  and `position` optional).
+- **After the close**: `python3 cme.py override --work <work> --stops '[…]'` with the same
+  entries, then publish its `files`.
+
+**The position note.** If the learner says what they disagree with, keep it as `position`:
+`point` names the one decision point in a few words, `text` is what they hold, in their own
+words, unedited. It is not a note on the whole topic. From then on, every round on the topic
+respects it (`standards.md` rule 12): no item turns on that point, and you never mark the
+learner down on it. When `answer` prints `positions` for an item, grade with them: an answer
+that follows the note is not a miss, gets no gap and no error code on that point, and the
+feedback does not reopen it.
+
+- You may say what the evidence says **once**, at the moment the note is set: one line, with
+  the source ("Noted. For the record, ESC 2023 recommends X; your position is kept."). Then
+  never again on that point.
+- Only if the evidence file for a later item says that guidance on that exact point has
+  changed since the note's date (and the note has no `reopened`) may you raise it once more,
+  in one line with the source; then run `cme.py position --work <work> --reopened <id>`.
+- The learner can take a note back at any time ("drop my position on …"): `cme.py position
+  --work <work> --drop <id>` (alone, `position` lists the notes in force). Each progress review
+  lists the notes to keep or drop (`progress_review.md`); a note not kept at a review lapses
+  after about six months.
+
+The session document gets the stop and the note word for word in its "Set by the learner"
+section. The review counts stops apart from disputes and from other learner-set scores.
 
 ## 8. The log needs the feedback verbatim
 

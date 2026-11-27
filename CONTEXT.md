@@ -70,7 +70,7 @@ What a round's session entry keeps of only what the round changed in the ledger 
 _Avoid_: snapshot (the whole tables 5.0 kept instead)
 
 **Apply again**:
-Undo a round and apply it once more with amended input, through the same step that recorded it. `save` run again, the reflection, a dispute, a learner-set score and a gap the learner closes are all this one step, so each gives the same result whenever it is said.
+Undo a round and apply it once more with amended input, through the same step that recorded it. `save` run again, the reflection, a dispute, a learner-set score, a gap the learner closes and a stop are all this one step, so each gives the same result whenever it is said.
 _Avoid_: reschedule, re-record, replay
 
 **Latest round on a topic**:
@@ -90,6 +90,14 @@ A specific point the learner got wrong or flagged as shaky, linked to a blueprin
 **Learner-set score**:
 A score the learner asks to have recorded in place of the examiner's ("record it as 4"). The record keeps both; scheduling uses the learner's. Not a dispute: the grading did not change.
 _Avoid_: override (fine for the command), dispute
+
+**Stop**:
+The learner's instruction that a topic is known and should not keep returning ("I know this, stop bringing it back"); sets their score, closes the topic's gaps and schedules it at the longest interval. One more amendment of a round, the same before or after the close. No topic is retired for good.
+_Avoid_: retire, suspend, mute
+
+**Position note**:
+The learner's own statement of what they hold on one decision point of a topic, kept word for word with a stop, so later items and grading respect it: no item is keyed on it and the learner is not marked down on it. Listed at each progress review to keep or drop; lapses after about six months unconfirmed.
+_Avoid_: dispute (the grading did not change), topic note, override
 
 **Retest**:
 An item written on an open gap's decision point, in a new clinical context; it names the gap, and only a retest answered well closes it.

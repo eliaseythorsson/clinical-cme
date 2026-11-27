@@ -19,7 +19,8 @@ STANDARDS = os.path.join(REFERENCES, "standards.md")
 BRIEFS = ["author.md", "case_design.md", "evidence_check.md", "feedback_guide.md", "preparing.md"]
 RULES = ["Blinding", "Guideline region", "Units and drug names", "Pitch", "Abbreviations",
          "One time anchor per case", "Crux tests are requested, not given", "What a kit contains",
-         "Key headers", "Results the learner did not see", "Text for the learner speaks plainly"]
+         "Key headers", "Results the learner did not see", "Text for the learner speaks plainly",
+         "The learner's position notes"]
 
 
 def read(path):

@@ -59,7 +59,7 @@ needs judgement; the rest is in the references:
 | Reference | Read when |
 |---|---|
 | `references/store.md` | After the first message (§4, before publishing); before it only when turn 1 says so; setup, a failed save, recovery, export |
-| `references/standards.md` | Before grading: the numbered rules for items and feedback (rules 1–5, 10, 11 bind your feedback); all of it when you write items |
+| `references/standards.md` | Before grading: the numbered rules for items and feedback (rules 1–5, 10–12 bind your feedback); all of it when you write items |
 | `references/feedback_guide.md` | Before grading; contains the reflection prompt |
 | `references/analysis_framework.md` | Before grading (§1 coding); for the deep review (§2) |
 | `references/state_schema.md` | Writing `round.json` (§2) and `reflection.json` (§3); commands (§6); spacing and blocks (§4) |
@@ -181,7 +181,7 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    case` (the case file stays unopened). No evidence file → run the questions' verification
    list now (`evidence_check.md` §5); with one, search only for what the answers raise.
 2. **Grade and code** the short questions against the evidence, the key and kit being the author's
-   view (`feedback_guide.md` §2 part 1; §4.1 for `depth` as `answer` printed it; `analysis_framework.md` §1).
+   view (`feedback_guide.md` §2 part 1; §4.1 for `depth`, rule 12 for `positions`, as `answer` printed them; `analysis_framework.md` §1).
 3. **Send the questions' feedback** (glossary line, rule 5.3 → reveal of these items → MCQs →
    focused questions; no gap summary or reflection prompt yet; nothing that touches the case;
    it ends "The case follows."), and **straight after it the case**, exactly as printed.
@@ -235,7 +235,7 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    areas, reading minutes, podcasts to trust or avoid (`podcast_sources`). Turn each shaky area
    into a precise gap linked to a blueprint ID (`self_gaps`). A disputed grade is resolved first
    (`feedback_guide.md` §7; never defend a grade by repeating it), outcome in `grade_changes`.
-   "skip" → `{"skipped": true}`. "Record it as 4", "close that gap": no dispute, §7.1 there.
+   "skip" → `{"skipped": true}`. "Record it as 4", "close that gap": §7.1; "I know this, stop it": §7.2.
 2. **In one batch**: `cme.py answer --work <work> --part reflection`; write
    `<work>/reflection.json` (`state_schema.md` §3) and `<work>/B.md` (discussion verbatim,
    grade changes, coded analysis, errata from `errata_to_log`; `session_log.md` §3). Then

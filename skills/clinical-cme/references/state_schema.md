@@ -45,9 +45,20 @@ memory: one JSON document, read to a file and written from a file (`store.md` §
   "agg": { "…all-time counters: sessions, items, errors by category/type/step/severity/bias, ART, IDEA, calibration, Brier, drills, disputes, overrides (scores and gaps the learner set)…" },
   "reviews": [{"date": "…", "doc": "reviews/2026-11-20", "headline": "…", "change_plan": ["…"]}],
   "drills": [{"code": "bias:premature_closure", "description": "…", "rate": 0.33, "set": "…", "until": "…"}],
-  "errata": [], "pending_errata": [], "teaching_point_checks": {}, "unreflected": null
+  "errata": [], "pending_errata": [], "teaching_point_checks": {}, "unreflected": null,
+  "positions": [{"id": "P0001", "topic": "CARD-03", "point": "the one decision point, in a few words",
+                 "text": "what the learner holds, in their own words", "set": "2026-10-26", "confirmed": "2026-10-26",
+                 "session": "S0021", "from": "reflection", "reopened": null}]
 }
 ```
+
+`positions` are the learner's **position notes** (`standards.md` rule 12): each on one decision
+point of a topic, in the learner's words, kept when they stopped the topic (§4, "The learner's
+stop"); `from` is where it was said (`reflection` or `override`). A note is in force until the
+learner drops it (`position --drop`), a review drops it, or `POSITION_LAPSE_DAYS` (182) pass
+after `confirmed` (the day it was set or last kept at a review); a lapsed note leaves the
+ledger at the next write that touches notes. `reopened` is the day the examiner raised a
+changed guideline on it once more; it is not raised again. A ledger without `positions` has none.
 
 Order: `item_order` `mcqs_first` (the default) runs short questions → their feedback → case →
 its feedback; `case_first` puts the case first and all feedback at the end. Speed settings:
@@ -148,7 +159,13 @@ whose score the learner set carries `"mastery": 4, "graded": 2, "set_by": "learn
 is the learner's score, `graded` the examiner's; its `grade_changes` entry is
 `{"item": "Q2", "topic": "CARD-03", "from": 2, "to": 4, "outcome": "learner_set", "examiner": 2,
 "learner": 4, "date": "…", "note": "…"}`. A session in which the learner closed a gap lists it
-in `learner_closed_gaps` (`[{"id": "G0006", "topic": "HEME-04"}]`). A `resolved` entry without
+in `learner_closed_gaps` (`[{"id": "G0006", "topic": "HEME-04"}]`; `"stop": true` when the
+learner's stop closed it). A round on which the learner stopped a topic lists it in `stops`
+(`[{"topic": "CARD-03", "date": "…", "item": "Q2"}]`; `"outright": true` when no round of the
+period was the latest on the topic, §4) and the stop's score is a learner-set score whose
+`grade_changes` entry has `"stop": true`; the topic carries `"stopped": "<date>"` until it is
+tested again (the undo record's `added` lists keys the round put on a topic, taken off again
+when it is undone). A `resolved` entry without
 `closed_by` was closed by a retest.
 
 A session saved by 5.0 whose reflection is pending also carries `_snapshot` and `_round` (the
@@ -312,6 +329,8 @@ The round record, as `save` writes it to `record.json`. A
  "items": [{"type": "case", "topic": "RENAL-02", "mastery": 3.5}],
  "learner_scores": [{"item": "Q2", "type": "mcq", "topic": "CARD-03", "score": 4, "note": "the learner's words"}],
  "learner_closed_gaps": [{"gap": "G0007", "note": "the learner's words"}],
+ "learner_stops": [{"item": "Q3", "type": "focused", "topic": "HEME-04", "score": 5,
+                    "position": {"point": "the one decision point", "text": "the learner's words"}}],
  "podcast_sources": {"trusted": ["The Curbsiders"], "avoid": []},
  "errata": [], "key_learning": [], "resolved": []}
 ```
@@ -327,6 +346,11 @@ The round record, as `save` writes it to `record.json`. A
 - `learner_closed_gaps`: gaps the learner asks to close, by id (`{"gap": "G0007"}`) or by topic
   (`{"topic": "RENAL-02"}`, also for a gap this round opened). `close` stops with an error,
   writing nothing, when a named item or gap does not exist.
+- `learner_stops`: "I know this, stop bringing it back" (`feedback_guide.md` §7.2), matched
+  like `learner_scores`. `score` is optional (5 when the learner names none); `position`
+  optional (`point` and `text`, both needed). `close` records the score as a learner-set score
+  marked `stop`, closes every open gap on the topic and schedules it at the longest interval
+  (§4), and keeps the note in `positions`.
 - `podcast_sources`: only when the learner named shows to trust or to avoid in reply to the
   one-time question of the Listening section (`feedback_guide.md` §2 E2); `close` writes it to
   the profile. Leave the key out otherwise: `close` then notes that the question was asked.
@@ -341,10 +365,10 @@ again with the amended input, by the same code that recorded it. That step is `s
 (from the new `round.json`), `close` (the round with its reflection, disputes, learner-set
 scores and closed gaps), `close` run again after a correction (from the round as it stood
 before the reflection, `close_from.json`), and `override` after the close (the round as its
-session entry holds it, with the learner's score or closed gap). So:
+session entry holds it, with the learner's score, closed gap or stop). So:
 
-- **The same result whenever it is said.** A score the learner sets, or a gap the learner
-  closes, gives exactly the same schedule in the reflection and after the close.
+- **The same result whenever it is said.** A score the learner sets, a gap the learner
+  closes, or a stop, gives exactly the same schedule in the reflection and after the close.
 - **Only the latest round on a topic is applied again.** If the topic has been tested since
   (it is in a later round's undo record), the round's record changes and the topic keeps the
   schedule the later round gave it; so do comfort ratings a later round changed.
@@ -422,6 +446,19 @@ prepared round aside (it is never content-neutral: a score moves the topic's ste
 a closed gap takes its retest out of the plan). A gap closed after the close is an amendment
 of the round that is the latest on its topic; a gap no round of the period owns is closed
 outright and listed in the session named.
+
+**The learner's stop** ("I know this, stop bringing it back"; issue #75) is one more amended
+input of a round. The item gets the learner's score (5 unless named), every open gap on the
+topic is closed by the learner (`closed_by: learner`, `stop: true`; also one the same round
+opened), and the topic goes to the last step of `intervals_days` with that interval (90 days by
+default), whatever the score, the drill-down limit, a self-reported gap or the calibration
+would have said. The topic is marked `stopped` and is not revisited in its theme before that
+date; tested again after it, the mark goes. No topic is retired for good. Said after the close
+(`override --stops`), the stop is an amendment of the round that is the latest on the topic
+(the score stays on the round it was said on); where no round of the period is, the topic is
+stopped outright from the day it was said, and the stop is listed in that round. The review
+counts stops apart (`learner_overrides.stops`). A position note said with it goes into
+`positions` (§1).
 
 A self-reported gap caps the interval at 7 days. Comfort ratings feed `domain_self_ratings`
 (rolling, weighted 2:1 toward history), which weight how often new topics from each domain are
@@ -518,7 +555,8 @@ then lowest mastery), then open gaps that no item has tested since they were wri
 at least three days old (misconception > self > transfer > graded), then new topics by domain
 weight. A topic tested in the last two days is never chosen. Every chosen item whose topic has an
 open gap carries `retest_gap` (`id`, `gap`, `how`): the author writes the item on that decision
-point and names the gap in the item's key header (`retests`), from where it reaches the round record. Slots are filled case first, then focused questions,
+point and names the gap in the item's key header (`retests`), from where it reaches the round record. Every chosen item whose topic has a
+position note in force carries `positions` (`notes`: `id`, `point`, `text`, `set`, `reopened`; `how`): no item is keyed on that point (`standards.md` rule 12). Slots are filled case first, then focused questions,
 then MCQs, so due topics and open gaps go to the formats that show reasoning. MCQs and focused
 questions come from other domains than the case and are unrelated to it and to each other
 (cross-references, shared significant words). In rounds of four or more items the last short
@@ -580,11 +618,11 @@ order with the ledger last) and `publish`, the path of the manifest `W/publish.j
 | `open --work W --store DIR [--version V] [--prefs J] [--reread]` | Set up the work folder for any job from `DIR`, the local copy of the store as just read: the store's layout (`DIR/data/state.json`, `DIR/data/page.json`, `DIR/data/prepared.json`, `DIR/index.html`, `DIR/data/sessions/<id>.json`) or the files side by side (`DIR/state.json`, …). Writes `W/work.json` and an empty manifest carrying `V`, the store version read. If `W` holds an earlier job (answers, a publish set, drafts of a next round), its files are first moved to `W/earlier/<n>/` (`earlier_set_aside`). Prints neutral status: `gen`, `next_id`, counts, `review_due`, `testing`, the block; never a topic. `--reread`: the same job on a fresh read after a refused publish (`store.md` §4.1): the job's own files stay, the publish set is dropped, and the job's commands are run again. |
 | `start --work W [--store DIR [--version V]] [--prefs J] [plan options] [--no-prepared]` | Start a round. With `--store` it does what `open` does first; without, it continues the job that is open (a settings change or a late reflection earlier in the same conversation), from the ledger that job wrote. The plan is written to `W/plan.json`. Prints the neutral status with the plan's counts (MCQs, focused, case, `estimated_minutes`, and `estimate_rounds` when the estimate is at the learner's own pace, §6.2) under `plan`, plus `helpers`, `prepare_ahead` and `speed_settings_new`. No topic names. With a plan it also prints what the first message needs, so that nothing else is run or read before it: `opening` (the opening line, word for word: the mix, the minutes, "(based on your last N rounds)" once rounds are timed, the block's line, with its reason when a block starts, and the last saved session) and `started_at` (when the round's clock started, §6.2; nothing to copy). `--prefs` is the page's `cme/prefs` document (§7.1); `page_settings_applied` says when it changed the mix or brought a new paragraph (which `start` writes to the ledger at once, into the publish set; §7.1), `pitch` holds the learner's two paragraphs for the examiner and `labels_needed` the display labels still to derive (§1), and `round_mix` says when a prepared round was written for another mix than the one in force (§8). The prepared round is read from the store copy (§8): when it still fits, `prepared.used` is true, `present` holds the first part's text to send (`prepared.present_block` says which) and the drafted files (`prepared.ready`: `sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) are written into the work folder, with `prepared.unchecked` naming the sealed files that came without an evidence file (start a checker for each); otherwise `prepared.why` says why not and the round is planned as usual. Plan options, for this round only: `--mcqs N`, `--focused N`, `--no-case`, `--domain CODE`, `--no-new`, `--allow-repeat`, `--no-drill`. |
 | `present --work W --block questions\|case\|bank` | Print only the text the learner is to see from the sealed files in `W` (one `present` block, or the case's results bank), so it can be sent without opening the keys. For the first part of a round written now it also notes that the part went out (§6.2). |
-| `answer --work W --part questions\|case\|final\|notes\|reflection [--file F \| --text T]` | Append what the learner answered for one part to `W/answers.md`, exactly as given (default: standard input). Earlier parts are never rewritten; the same text for the same part is added once; a second message for a part is added after the first. Prints the part names filed so far, never the text. With a part that completes its answers (`questions`; `final`; `case` for a one-step case) it also prints `depth`: the evidence depth of each of that part's items by key id (`level` 1–4, `name`, `in_a_row`; §4.2), read from the key headers and the ledger, for the feedback about to be written. No `depth` with `evidence_ladder` false. It also notes when it ran, as the time the learner's message arrived (§6.2): run it first when a message arrives. |
+| `answer --work W --part questions\|case\|final\|notes\|reflection [--file F \| --text T]` | Append what the learner answered for one part to `W/answers.md`, exactly as given (default: standard input). Earlier parts are never rewritten; the same text for the same part is added once; a second message for a part is added after the first. Prints the part names filed so far, never the text. With a part that completes its answers (`questions`; `final`; `case` for a one-step case) it also prints `depth`: the evidence depth of each of that part's items by key id (`level` 1–4, `name`, `in_a_row`; §4.2), read from the key headers and the ledger, for the feedback about to be written. No `depth` with `evidence_ladder` false. It also prints `positions`: the learner's position notes in force on each item's topic, by key id (`standards.md` rule 12), for the grading. It also notes when it ran, as the time the learner's message arrived (§6.2): run it first when a message arrives. |
 | `sent --work W --part questions\|questions_feedback\|case\|stage2\|feedback\|close [--at T]` | Not part of a normal round. Notes when a message went out, where the engine cannot tell (§6.2): no file was written as sent, or it was written late. |
 | `save --work W` | First save after the final feedback: the round is recorded in the ledger, the session document is written (part A assembled in the order of the round from the sealed `present` blocks, Stage 2 as sent, the answers, the questions' feedback and the final feedback), with the page file (§7) and an emptied `data/prepared.json`. Everything is found by its fixed name (§6.1); the page settings given at the start are applied so the mix is kept in the ledger. Prints per-topic next due, warnings, `errata_to_log`, and `files`. If the learner's `index.html` is older than the skill's template, the new one joins the publish set (`page_upgraded`). Run again in the same job, it undoes the round and records it again (§3.1), so it gives the same result (a settings change made earlier in the same job is kept). Records the time measured so far (`minutes`, `timing`; §6.2). |
 | `close --work W [--reflection J] [--session ID]` | Second save: the reflection is applied and part B goes into the session document, with the page file. It continues from the current ledger: the one `save` wrote in this job, or, for a reflection given at a later session, the ledger as read; the session document then comes from the store copy (`data/sessions/<id>.json`), and the command stops if it was not read. The reflection JSON is `W/reflection.json` unless given inline. Can be run again after a correction to `B.md` or to the reflection (§3.1), until `override` changes the round. Completes the round's measured time (the reading of the final feedback, up to the reflection) and prints `time_hint` once five rounds are timed (§6.2): one line of the closing message. |
-| `override --work W [--scores J] [--close-gaps J] [--session ID]` | After the close: a score the learner sets themselves and a gap closed at the learner's request (the entries of `learner_scores` and `learner_closed_gaps`, §3). Writes the ledger, the session document (`learner_changes`, a "Set by the learner" addendum) and the page file into the publish set. Refused while the round is unreflected (use the reflection JSON) and, for scores, for a round from before the last review |
+| `override --work W [--scores J] [--close-gaps J] [--stops J] [--session ID]` | After the close: a score the learner sets themselves, a gap closed at the learner's request and a stop with its position note (the entries of `learner_scores`, `learner_closed_gaps` and `learner_stops`, §3). Writes the ledger, the session document (`learner_changes`, a "Set by the learner" addendum) and the page file into the publish set. Refused while the round is unreflected (use the reflection JSON) and, for scores, for a round from before the last review |
 | `addendum --work W --md ADD.md [--session ID]` | Append later discussion to a session document (default: the last session; the document comes from the publish set or the store copy). |
 | `prepare --work W [--if-needed] [--allow-unreflected]` | Plan the next round (as of tomorrow) from the current ledger, into `W/next/plan.json`. Prints counts only, or `"prepare": false` with the reason (setting off, reflection pending, or — with `--if-needed` — a usable round is already prepared in the store). `--allow-unreflected` plans although the last session has no reflection yet (the scheduled task uses it). A paragraph the learner wrote on the page (in the `--prefs` given to `open`) is written to the ledger first, into the publish set, and reported as `page_settings_applied` with the `files` (§7.1); a round prepared for the old words does not count as usable. |
 | `finish-prepare --work W [--revised] [--no-evidence]` | After the checkers: finish preparing the round planned in `W/next/plan.json` and drafted in `W/next`. First lints it against the rulebook (`standards.md`, "The lint"). **Blocking**: the key headers of the sealed files against the plan, as `keys --plan` checks them, and the kits and their sections (rule 8); a problem is an error (exit 2, nothing stashed) that lists every one by file, key, field or section, whatever the evidence says and also with `--no-evidence` or `--revised`. **Judgement calls** (an abbreviation that looks undefined, rule 5; time anchors that look mixed, rule 6): counted in `lint` (`abbreviations`, `time_anchors`, `where` by file, `details`: the path of `W/next/lint.md`, where the findings are written for the author and never printed). Then reads the last two lines of each evidence file (`Checked: <date>, <n> claims, <n> not verified` and `Keys contradicted: <n>`, `evidence_check.md` §4) for every sealed part the round has, and prints counts and file names only: `evidence` (keys contradicted per file), `contradicted` (the total), `not_verified` (per file: `claims`, `not_verified`, and `untried`, the "not verified" blocks without a `Tried:` line; `not_verified` is the larger of the line's number and the blocks so marked), `not_verified_total`, `claims_total`, `recheck` (the evidence files that go back to their checker: more than a third of the file's claims not verified, or any `untried`), `revise` and `stashed`. Nothing contradicted, no judgement call and no file to recheck → the round is packed and joins the publish set as `data/prepared.json` (§8) in the same command. Otherwise → `"stashed": false` and a `next` line: the checker retries the files in `recheck` once, then the author revises once (`"revise": true` when a key is contradicted or the lint made a judgement call; after a retry it also carries what was confirmed into the kits), and the command is run again with `--revised`, which stashes; what is still found is then listed under `warnings` ("accepted after one revision: …", "accepted after one retry: … n of m claims not verified"). An evidence file that is missing, empty or without either count line in that form (also one that counts no claims, or more not verified than claims) is an error (exit 2, nothing stashed), never a count of zero. `--no-evidence` is for a session that runs no checker: the round is stashed without evidence files, so the sources are checked at the session; the lint runs all the same. The first part's sealed file must be there; a missing case is a warning (it is then written at the next session). |
@@ -592,9 +630,10 @@ order with the ledger last) and `publish`, the path of the manifest `W/publish.j
 | `key-table` | Prints the key-header table of `standards.md` rule 9 from the engine's `KEY_*` definitions; a test fails when the rulebook's copy differs. |
 | `verify --work W --store CHECK` | Testing mode: compare the publish set with the store read again into `CHECK`; the result is also written to `W/verify.json`. |
 | `testing-note --work W --feedback J` | Testing mode: the learner's quick feedback and `W/verify.json`, as `data/testing/<id>.json` for this job's round. |
-| `stats --work W` | Review figures: period, previous period, all time; gaps, calibration, teaching points unchecked, blind spots; `timing` (medians of the last timed rounds: minutes, answering, waiting, reading; the pace; the hint). Writes nothing. |
-| `review --work W --review REVIEW.json` | Record a review; closes the period. |
+| `stats --work W` | Review figures: period, previous period, all time; gaps, calibration, teaching points unchecked, blind spots; `timing` (medians of the last timed rounds: minutes, answering, waiting, reading; the pace; the hint); `positions`, the notes in force with their topic's `label` and the day each `lapses`. Writes nothing. |
+| `review --work W --review REVIEW.json` | Record a review; closes the period. Its `positions` (`{"keep": [ids], "drop": [ids]}`) confirm or end position notes; lapsed notes leave the ledger. |
 | `review-doc --work W --md REPORT.md [--headline H] [--date D] [--title T]` | A review report as `data/reviews/<date>.json`, listed in the page file. |
+| `position --work W [--drop ID \| --reopened ID]` | The learner's position notes (§1). Alone: the notes in force (`id`, `point`, `text`, `set`, `topic`, `lapses`), writing nothing. `--drop`: the learner takes one back. `--reopened`: the examiner raised a changed guideline on it once more (`standards.md` rule 12); refused the second time. The ledger and the page file go into the publish set; the prepared round is kept. |
 | `snooze --work W [--days 7]` | Postpone a due review. Keeps the prepared round. |
 | `settings --work W [--config J] [--profile J] [--blueprint FILE]` | Change settings: the changed ledger, the page file and the page if it is out of date go into the publish set, with an emptied `data/prepared.json` when the change can alter a round; `prepared` says whether the prepared round was kept and why (§8). A change to `mcqs`, `focused` or `case` is checked (at least one item) and supersedes any older page setting; a refused change writes nothing. Prints `round`: the mix in force in words, its `estimated_minutes`, and once rounds are timed `basis` ("based on your last N rounds") and `time_hint` (§6.2). `--profile '{"journey": "…"}'` or `'{"aim": "…"}'` stores a new paragraph in the learner's words, dates it and clears its label unless the same change gives one; `'{"journey_label": "…", "aim_tags": […]}'` sets the display labels (from their fixed lists, §1) and keeps the prepared round. With a paragraph or a label in the change it prints `profile` (the two paragraphs and their labels), and `labels_needed` while a label is still to derive. |
 | `theme --work W [--set DOMAIN \| --another]` | The learner changes the theme of the block (§4.1): `--set` a domain by id or name, `--another` the next proposal. Prints `block`, `was`, `say` and, like `settings`, the `files` to publish. Alone: the block, the proposal and the domains to choose from; writes nothing. |
@@ -690,7 +729,7 @@ Within budget the hint says so and names nothing.
 ## 7. The page: its file (`data/page.json`) and its settings (`cme/prefs`)
 
 The page renders one file, the **page file**, which `cme.py` writes from the ledger with every
-command that writes the ledger (`save`, `close`, `override`, `settings`, `theme`, `review`,
+command that writes the ledger (`save`, `close`, `override`, `position`, `settings`, `theme`, `review`,
 `snooze`, `init`) and with `review-doc`. It holds exactly what the page may show, so the
 blinding of the page is decided in `cme.py` (`page_doc`) and tested there: never an open gap,
 a topic's due date, a topic not yet tested, an active drill, the reason for a theme or
@@ -713,6 +752,8 @@ and review documents the learner opens, and the ledger when the learner exports.
               "title": "…", "link": "https://…", "minutes": 8, "section": "section 9 and its table"},
              {"session": "S0004", "date": "2026-11-20", "kind": "listening", "topic": "GI-06", "label": "…",
               "title": "…", "link": "https://open.spotify.com/episode/…", "minutes": 52, "show": "…"}],
+ "positions": [{"id": "P0001", "topic": "GI-06", "label": "…", "point": "…", "text": "the learner's words",
+                "set": "2026-11-20", "confirmed": "2026-11-20"}],
  "settings": {"session_length": 35, "per_week": 3, "region": "Iceland/Europe", "units": {"labs": "SI", "gases": "mmHg"},
               "case_style": "unfolding", "order": "mcqs_first", "feedback": "detailed", "coding_line": true,
               "review_every_days": 42, "reminders": false, "emphasis": {}, "self_ratings": {},
@@ -754,6 +795,10 @@ and review documents the learner opens, and the ledger when the learner exports.
   in it comes from the plan, a prepared round or the gaps: only from sessions already saved.
   A page file from before 5.4 has no `library`, and the view says so in one line. Whether an
   entry is done is kept by the page in the viewer's own browser, never in the store.
+
+- `positions`: the learner's position notes in force, in their own words, with the topic and
+  its label (shown under the topics tested). They say what the learner holds, never what a
+  round will test; the day a note lapses is not in the file.
 
 The names in the page file are the page's own, not the ledger's: the page knows no ledger
 field. `schema` changes when a page would misread the file; `page_version` is the

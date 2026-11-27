@@ -56,12 +56,18 @@ If some of the period's older sessions have no transcript (only scores, gaps and
 - Still open: persisting gaps, grouped by domain, shortest description each.
 - Calibration: how often comfort matched performance; confident-but-low and good-but-unsure topics.
 - Trend: topics that clearly improved or declined.
-- Set by you: scores the learner set themselves and gaps they closed by request
-  (`analysis.period.learner_overrides`: `scores`, `mean_change`, `gaps_closed`), one neutral
-  line, only when there are any ("You set 2 scores yourself, on average 1.5 above my grading,
-  and closed 1 gap without a retest"). Counted apart from disputes (`grade_disputes`): a
-  dispute changed the grading, these did not. The mean score includes the learner's scores;
+- Set by you: scores the learner set themselves, gaps they closed by request and topics they
+  stopped (`analysis.period.learner_overrides`: `scores`, `mean_change`, `gaps_closed`,
+  `stops`), one neutral line, only when there are any ("You set 2 scores yourself, on average
+  1.5 above my grading, closed 1 gap without a retest, and stopped 1 topic"). A stop's score is
+  among `scores`; its stops are counted apart. Counted apart from disputes (`grade_disputes`):
+  a dispute changed the grading, these did not. The mean score includes the learner's scores;
   calibration uses the grading.
+- Your positions: each position note in force (`stats` `positions`), one line each, in the
+  learner's own words with its topic and date: **keep** or **drop** ("<topic label>, <the
+  point>: '<the learner's words>' (since <date>): keep or drop?").
+  Only when there are any. Do not argue them again (`standards.md` rule 12); a note not kept
+  lapses on its own about six months after it was set or last kept (`lapses`).
 - With the deep analysis: its three-line headline, the reasoning-step profile in one line, the
   number of critical errors.
 
@@ -109,9 +115,13 @@ context changes a finding.
   "change_plan": ["Before closing a differential, name one diagnosis that would explain the unexplained finding"],
   "drill_targets": [{"code": "bias:premature_closure", "description": "Closing on the first explanation", "rate": 0.33}],
   "teaching_point_checks": [{"id": "S0012.2", "status": "superseded", "point": "…", "note": "What changed", "source": "…"},
-                            {"id": "S0015.1", "status": "current"}]
+                            {"id": "S0015.1", "status": "current"}],
+  "positions": {"keep": ["P0001"], "drop": ["P0002"]}
 }
 ```
+
+- `positions`: the learner's answer on each position note: `keep` confirms it for another six
+  months, `drop` ends it; a note not named stays as it was and lapses on its own.
 
 - `domain_emphasis` multiplies the sampling weight for new topics (1.5 more, 0.5–0.7 less, 1.0 reset).
 - `drill_targets` replaces the previous set; `[]` stops drills. Drills run until the next review.

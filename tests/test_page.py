@@ -253,6 +253,19 @@ def test_rendered_settings_come_from_the_page_file(rendered):
     assert "generation" not in settings and "S0004" not in settings       # no ledger internals
 
 
+def test_rendered_page_lists_the_learners_positions_in_their_words(rendered, tmp_path):
+    """Issue #75: the position notes in force, under the topics tested; none, no section."""
+    assert rendered["hidden"]["pos-wrap"] is True and rendered["ids"]["positions"] == ""
+    st = dict(STATE, positions=[{"id": "P0001", "topic": "BBB-02", "point": "THE-POINT", "text": "MY-OWN-WORDS",
+                                 "set": "2020-03-04", "confirmed": "2020-03-04", "session": "S0001"}])
+    out = render(store_with(tmp_path, st))
+    assert out["hidden"]["pos-wrap"] is False
+    table = out["ids"]["positions"]
+    for shown in ("BBB-02", "Beta topic", "THE-POINT", "MY-OWN-WORDS"):
+        assert shown in table, shown
+    assert "S0001" not in table
+
+
 def test_rendered_page_shows_the_theme_of_the_block_and_no_coming_topic(rendered):
     assert rendered["ids"]["block"] == "Block: Alphology · 4 of 12 rounds done"
     assert "UNTESTED-TOPIC" not in rendered["text"] and "SECRET-REASON" not in rendered["text"]

@@ -210,9 +210,9 @@ def test_review_counts_the_learners_changes_apart_from_disputes(work):
     s = stats(work)
     period, all_time = s["analysis"]["period"], s["analysis"]["all_time"]
     assert period["grade_disputes"] == {"n": 1, "outcomes": {"learner_right": 0, "both_defensible": 1, "upheld": 0}}
-    assert period["learner_overrides"] == {"scores": 1, "mean_change": 2.0, "gaps_closed": 1}
+    assert period["learner_overrides"] == {"scores": 1, "mean_change": 2.0, "gaps_closed": 1, "stops": 0}
     assert all_time["grade_disputes"] == {"learner_right": 0, "both_defensible": 1, "upheld": 0}
-    assert all_time["learner_overrides"] == {"scores": 1, "gaps_closed": 1}
+    assert all_time["learner_overrides"] == {"scores": 1, "gaps_closed": 1, "stops": 0}
     assert [g["topic"] for g in s["gaps_closed_by_learner"]] == ["GEN-11"]
     assert all(g.get("closed_by") != "learner" for g in s["gaps_resolved"])
     # calibration still compares the confidence with what the examiner graded (2/5, marked sure)
@@ -230,7 +230,7 @@ def test_a_ledger_without_the_counters_and_a_hand_made_learner_override_are_coun
     s = stats(work)
     assert s["analysis"]["period"]["learner_overrides"]["scores"] == 1
     assert s["analysis"]["period"]["grade_disputes"]["n"] == 0
-    assert s["analysis"]["all_time"]["learner_overrides"] == {"scores": 0, "gaps_closed": 0}
+    assert s["analysis"]["all_time"]["learner_overrides"] == {"scores": 0, "gaps_closed": 0, "stops": 0}
     out = override(work, "--close-gaps", '["GEN-11"]', today="2026-11-03")
     assert out["ok"] and work.read_json("publish", "data", "state.json")["agg"]["overrides"] == {"scores": 0, "gaps": 1}
 
@@ -241,7 +241,7 @@ def test_the_count_survives_the_end_of_the_review_period(work):
     work.open(today="2026-12-20")
     work.run("--today", "2026-12-20", "review", "--work", work.path, "--review", "{}")
     s = stats(work, "2026-12-21")
-    assert s["analysis"]["previous_period"]["learner_overrides"] == {"scores": 1, "mean_change": 2.0, "gaps_closed": 1}
+    assert s["analysis"]["previous_period"]["learner_overrides"] == {"scores": 1, "mean_change": 2.0, "gaps_closed": 1, "stops": 0}
     out = override(work, "--scores", json.dumps(SCORE), "--session", "S0001", today="2026-12-21", ok=False)
     assert "before the last progress review" in out["error"]
 

@@ -143,10 +143,10 @@ def test_page_file_has_the_documented_shape_and_empty_slots_for_what_is_to_come(
     work.init(config={"mcqs": 2, "focused": 1, "session_minutes": 30}, profile={"specialty": "Geriatrics"})
     page = work.read_json("store", "data", "page.json")
     assert list(page) == ["schema", "page_version", "gen", "updated", "who", "totals", "sessions", "topics", "round",
-                          "block", "reviews", "next_review", "library", "settings"]
+                          "block", "reviews", "next_review", "library", "positions", "settings"]
     assert page["schema"] == cme.PAGE_SCHEMA and page["page_version"] == cme.PAGE_VERSION and page["gen"] == 1
     assert page["sessions"] == [] and page["topics"] == [] and page["reviews"] == [] and page["block"] is None
-    assert page["library"] == []
+    assert page["library"] == [] and page["positions"] == []
     assert page["totals"] == {"topics": 0, "mean_mastery": None, "since": "2026-11-01", "sessions": 0, "mean_score": None}
     st = work.read_ledger()
     assert page["round"] == {"mix": {"mcqs": 2, "focused": 1, "case": True}, "set_at": st["config"]["round_set_at"],

@@ -285,6 +285,11 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     <div class="section-h"><h2>Topics tested so far</h2><span class="aside">Most recently tested first</span></div>
     <p class="note">What comes next stays hidden, so each round tests what you know rather than what you just looked up. Points you missed are in the feedback of past sessions and come back unannounced.</p>
     <div class="tbl-wrap"><table class="plain" id="topics"></table></div>
+    <div id="pos-wrap" hidden>
+      <div class="section-h"><h2>Your positions</h2><span class="aside">In your words</span></div>
+      <p class="note">What you hold on a decision point where you disagreed with the grading. Rounds on that topic respect it: no question turns on it and you are not marked down for it. Each is listed at your progress review to keep or drop, and lapses after about six months unless you keep it. To take one back, say so in a session.</p>
+      <div class="tbl-wrap"><table class="plain" id="positions"></table></div>
+    </div>
   </section>
 
   <section class="panel" id="v-library" role="tabpanel" aria-labelledby="tab-library" hidden>
@@ -533,6 +538,16 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
         <td class="num">${t.last ? shortDate(t.last) : "–"}</td>
         <td><span class="cal ${/over/.test(cal) ? "over" : ""}">${esc(cal)}</span></td></tr>`;
     }).join("") + `</tbody>`;
+  }
+
+  // The learner's position notes, as the file lists them: their own words on one decision point.
+  function renderPositions(){
+    const rows = (page && page.positions) || [];
+    $("pos-wrap").hidden = !rows.length;
+    if (!rows.length) { $("positions").innerHTML = ""; return; }
+    $("positions").innerHTML = `<thead><tr><th>Topic</th><th>Point</th><th>Your position</th><th>Since</th></tr></thead><tbody>` + rows.map((p) =>
+      `<tr><td><span class="code">${esc(p.topic || "")}</span>${esc(p.label || "")}</td><td>${esc(p.point || "")}</td>
+        <td>${esc(p.text || "")}</td><td class="num">${p.set ? shortDate(p.set) : "–"}</td></tr>`).join("") + `</tbody>`;
   }
 
   // ---- reading & listening ------------------------------------------------------------------
@@ -809,7 +824,7 @@ dl.kv dt:first-of-type,dl.kv dt:first-of-type + dd{border-top:0}
     let ok = false;
     try { ok = await loadFiles(); } catch (e) { ok = false; }
     if (!ok) { page = null; $("s-list").innerHTML = `<div class="empty">No ledger yet. Say “set up clinical CME” in a chat with your assistant to create it.</div>`; }
-    renderTiles(); renderProgress(); renderSettings(); renderAbout();
+    renderTiles(); renderProgress(); renderPositions(); renderSettings(); renderAbout();
     if (ok) renderList();
     renderReviews(); renderLibrary();
     loadPrefs();

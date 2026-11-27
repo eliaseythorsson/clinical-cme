@@ -40,6 +40,9 @@ the section each reading pointer names exists (rule 8, when the kit is beside th
 A list line that names a study for a kit's `Deeper` notes (rule 8) is checked like any other
 claim, from the paper's own abstract or full text: its population, comparison, primary result
 and the design feature the note relies on.
+A list line that asks whether guidance on a point has changed since a date (a learner's
+position note, `standards.md` rule 12) gets **changed** only for a change on that exact point
+published after that date, with the source and its date; otherwise **confirmed** (unchanged).
 Nothing else, apart from the listening candidates of §6.
 
 ## 2. How
