@@ -1,0 +1,293 @@
+{
+ "schema": 2,
+ "ok": false,
+ "date": "2026-11-27",
+ "persona": "stops-halfway",
+ "skill_version": "5.0.0",
+ "commit": "b1b1f35",
+ "examiner_model": "claude-opus-5-5",
+ "learner_model": "claude-sonnet-5-5",
+ "config": {
+  "session_minutes": 35,
+  "mcqs": 0,
+  "focused": 1,
+  "case": true,
+  "round_set_at": "2026-11-27T03:21:26Z",
+  "case_format": "unfolding",
+  "feedback_depth": "detailed",
+  "evidence_ladder": true,
+  "target_sessions_per_week": 3,
+  "review_interval_days": 42,
+  "intervals_days": [
+   1,
+   3,
+   7,
+   16,
+   35,
+   90
+  ],
+  "new_topics_per_round": 1,
+  "lab_units": "SI",
+  "blood_gas_units": "mmHg",
+  "guideline_region": "Iceland/Europe",
+  "item_order": "mcqs_first",
+  "helpers": false,
+  "prepare_ahead": false,
+  "prepare_task": false,
+  "testing": false,
+  "show_coding": true,
+  "reminders": false,
+  "listening": true,
+  "resource_preferences": {
+   "free_only": false,
+   "formats": [
+    "guidelines",
+    "review articles"
+   ]
+  }
+ },
+ "round": {
+  "session": "S0001",
+  "shape": "1 focused",
+  "score": 3.5,
+  "confident_misses": 0,
+  "continued_from_earlier_run": false
+ },
+ "messages": {
+  "examiner": 6,
+  "learner": 4
+ },
+ "checks": {
+  "blinding": {
+   "ok": false,
+   "leaks": 1,
+   "to_review": 0,
+   "seal_lifted_at": {
+    "questions": 3
+   },
+   "never_lifted": [
+    "case"
+   ],
+   "terms_checked": 466,
+   "block_line": "Block: Cardiology, round 1 of 12",
+   "findings": [
+    {
+     "part": "case",
+     "kind": "feedback-notes line",
+     "level": "fail",
+     "term": "talking sensibly within a minute or two",
+     "message": 5,
+     "excerpt": "…ute\". He was pale, and he had wet himself. He was talking sensibly within a minute or two and remembers sitting at the table and then lying…"
+    }
+   ],
+   "problems": []
+  },
+  "saved": {
+   "ok": true,
+   "session": "S0001",
+   "publish_set": [
+    "data/sessions/S0001.json",
+    "data/page.json",
+    "data/prepared.json",
+    "data/state.json"
+   ],
+   "files_compared": 4,
+   "problems": []
+  },
+  "log": {
+   "ok": true,
+   "sections": [
+    "a_case",
+    "a_questions",
+    "case",
+    "coded",
+    "discussion",
+    "fb_questions",
+    "feedback",
+    "grade_changes",
+    "notes",
+    "questions",
+    "reflection"
+   ],
+   "problems": [],
+   "examiner_text_not_logged": [
+    {
+     "message": 2,
+     "starts": "Today's round: 1 focused question + the case, about 35 minutes. Block: Cardiology, round 1"
+    },
+    {
+     "message": 10,
+     "starts": "Saved: session S0001 — one focused question on lipids and cardiovascular prevention, score"
+    },
+    {
+     "message": 10,
+     "starts": "Your reflection matched the grading (comfort 3 against 3.5), so the shaky point you named "
+    },
+    {
+     "message": 10,
+     "starts": "Your target is three sessions a week, so the next round fits any time from tomorrow."
+    }
+   ]
+  },
+  "standards": {
+   "ok": true,
+   "abbreviations": 0,
+   "time_anchors": 0,
+   "to_review": 2,
+   "feedback": [
+    {
+     "id": "questions",
+     "glossary": true,
+     "abbreviations": 8,
+     "not_in_glossary": [
+      "FLJ",
+      "IT"
+     ]
+    },
+    {
+     "id": "final",
+     "glossary": true,
+     "abbreviations": 4,
+     "not_in_glossary": []
+    }
+   ],
+   "findings": [
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "FLJ"
+    },
+    {
+     "rule": "5.3",
+     "where": "the questions feedback",
+     "detail": "IT"
+    }
+   ],
+   "problems": []
+  },
+  "listening": {
+   "ok": true,
+   "on": true,
+   "picks": 0,
+   "topics": 1,
+   "from_kit": 0,
+   "from_search": 0,
+   "problems": []
+  },
+  "prepared": {
+   "ok": true,
+   "unmarked": 0,
+   "unquoted": 0,
+   "prepared_feedback": {
+    "offered": 7,
+    "as_prepared": 2,
+    "changed": 5,
+    "discarded": 0
+   },
+   "problems": []
+  },
+  "stopped": {
+   "ok": true,
+   "case_topic": "CARD-11",
+   "case_topic_schedule": {
+    "last": null,
+    "attempts": 0,
+    "step": 0,
+    "due": null
+   },
+   "items_saved": 1,
+   "problems": []
+  }
+ },
+ "timings": {
+  "steps": [
+   {
+    "step": 1,
+    "label": "start of round",
+    "learner_message": 1,
+    "wait_s": 147.8,
+    "turn_s": 395.5,
+    "examiner_messages": 1,
+    "examiner_chars": 1823,
+    "learner_s": null
+   },
+   {
+    "step": 2,
+    "label": "after the answers to the questions",
+    "learner_message": 3,
+    "wait_s": 196.3,
+    "turn_s": 209.2,
+    "examiner_messages": 2,
+    "examiner_chars": 10770,
+    "learner_s": 15.1
+   },
+   {
+    "step": 3,
+    "label": "after the case answer",
+    "learner_message": 6,
+    "wait_s": 62.8,
+    "turn_s": 76.0,
+    "examiner_messages": 2,
+    "examiner_chars": 2698,
+    "learner_s": 56.0
+   },
+   {
+    "step": 4,
+    "label": "after the reflection",
+    "learner_message": 9,
+    "wait_s": 249.9,
+    "turn_s": 255.0,
+    "examiner_messages": 1,
+    "examiner_chars": 534,
+    "learner_s": 44.3
+   }
+  ],
+  "total_wait_s": 656.8,
+  "longest_wait_s": 249.9,
+  "elapsed_s": 1045.9
+ },
+ "quality": {
+  "scorer_model": "claude-opus-5-5",
+  "items": [
+   {
+    "id": "Q1",
+    "type": "focused",
+    "topic": "CARD-14",
+    "answered": true,
+    "score": 5,
+    "note": "Accurate ESC/EAS keying: DM with eGFR<45 is severe TOD, very high risk, LDL<1.4 and >=50%; ALT and rosuva renal traps well built; eGFR alone decides, no Rule 7 issue."
+   },
+   {
+    "id": "Case",
+    "type": "case",
+    "topic": "CARD-11",
+    "answered": false,
+    "score": 5,
+    "note": "Coherent: seated, no prodrome, PR 220 + RBBB/LAFB; seizure and tamsulosin lures fair; telemetry and orthostatics held in bank; key matches ESC 2018/2021."
+   }
+  ],
+  "feedback": [
+   {
+    "id": "questions",
+    "score": 4,
+    "note": "Claims correct and sourced, grades fair, decisive point well taught; quibble: 'eGFR 30-59 without albuminuria' as high risk misstates ESC moderate-CKD bands."
+   },
+   {
+    "id": "final",
+    "score": 5,
+    "note": "Gap stated precisely and correctly, calibration read fairly, correct DOIs for reading, honest about unverified listening; case set aside cleanly."
+   }
+  ],
+  "item_mean": 5.0,
+  "feedback_mean": 4.5,
+  "score": 5,
+  "note": "One strong, guideline-accurate focused item with fair grading and clear teaching; a well-built syncope case presented but unanswered.",
+  "concerns": [
+   "Q1 feedback: example of high risk as 'moderate CKD (eGFR 30-59) without albuminuria' is loose; ESC 2021 moderate CKD is eGFR 30-44 ACR<3 or 45-59 ACR 3-30 (judged from memory, no web search)."
+  ],
+  "problems": [
+   "feedback dispute has no score"
+  ]
+ },
+ "note": null
+}

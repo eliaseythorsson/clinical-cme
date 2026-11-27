@@ -516,15 +516,19 @@ def forbidden_terms(rnd):
     # A piece that both parts' files hold word for word (a generic line such as "nothing on it in
     # your record yet" in each reveal) tells nothing about the later part: it is searched for as
     # a term of the part whose seal lifts first only, so it stays a leak until then.
-    hidden_of = {}
+    # What the part shows the learner (its `present` and `bank` blocks) is shown whichever of the
+    # part's files repeats it: a kit's reveal may quote the stem word for word.
+    hidden_of, shown_of = {}, {}
     for name, text in rnd.sealed.items():
         part = "case" if name.endswith("case.md") else "questions"
         hidden_of[part] = hidden_of.get(part, "") + " " + norm(BANK_RE.sub("", PRESENT_RE.sub("", text))).lower()
+        shown_of[part] = shown_of.get(part, "") + " " + norm(
+            " ".join(b for _, b in PRESENT_RE.findall(text)) + " " + " ".join(BANK_RE.findall(text)))
     order = sorted(hidden_of, key=lambda p: (p in rnd.never_lifted, rnd.lift.get(p) or float("inf")))
     for name, text in rnd.sealed.items():
         part = "case" if name.endswith("case.md") else "questions"
         earlier = [hidden_of[p] for p in order[:order.index(part)]]
-        shown = norm(" ".join(b for _, b in PRESENT_RE.findall(text)) + " " + " ".join(BANK_RE.findall(text)))
+        shown = shown_of[part]
         hidden = BANK_RE.sub("", PRESENT_RE.sub("", text))
         kind = "key line" if name.startswith("sealed") else "feedback-notes line"
         for line in hidden.splitlines():
