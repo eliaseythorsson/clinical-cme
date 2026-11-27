@@ -6,7 +6,7 @@ you choose. Each round is graded against current guidelines, followed by a one-m
 reflection that feeds spaced repetition, logged in full, and periodically reviewed for
 reasoning patterns.
 
-Current version: **7.0.0**. Full documentation and what is new: [`skills/clinical-cme/README.md`](skills/clinical-cme/README.md).
+Current version: **7.1.0**. Full documentation and what is new: [`skills/clinical-cme/README.md`](skills/clinical-cme/README.md).
 
 ## Install
 
@@ -38,7 +38,14 @@ any time, by asking or under Settings on your page.
   deeper evidence, and rounds are smaller: 2 MCQs and a focused question, with the full case every
   other round. Anything you set yourself, such as your round mix, stays as you set it.
 
-How much less Economy uses: measured figures to follow.
+What we measured (simulated first rounds, 2026-11-27, Claude Opus 5.5; details in
+`docs/usage-measurement.md`): with the same round mix, Economy made about a third fewer web
+searches and page fetches (11–14 against 18). Reading the instructions costs about the same in
+both modes (around 130 000 characters per round, about 35% less than in version 7.0). The larger
+savings in Economy come from what the simulation cannot show: the questions are not written by
+the most capable model, and every other round has no full case, which roughly halves that
+round. Guideline checks for the default blueprint are done centrally and ship with updates, so
+no learner pays for them in either mode.
 
 ## Where it runs
 

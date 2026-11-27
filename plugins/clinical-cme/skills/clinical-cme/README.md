@@ -1,4 +1,4 @@
-# clinical-cme (version 7.0.0)
+# clinical-cme (version 7.1.0)
 
 Blinded clinical self-assessment rounds for physicians: single-best-answer questions and
 focused questions on unrelated topics, with their feedback, then one clinical case and its
@@ -20,7 +20,14 @@ any time, by asking or under Settings on your page.
   deeper evidence, and rounds are smaller: 2 MCQs and a focused question, with the full case every
   other round. Anything you set yourself, such as your round mix, stays as you set it.
 
-How much less Economy uses: measured figures to follow.
+What we measured (simulated first rounds, 2026-11-27, Claude Opus 5.5; details in
+`docs/usage-measurement.md`): with the same round mix, Economy made about a third fewer web
+searches and page fetches (11–14 against 18). Reading the instructions costs about the same in
+both modes (around 130 000 characters per round, about 35% less than in version 7.0). The larger
+savings in Economy come from what the simulation cannot show: the questions are not written by
+the most capable model, and every other round has no full case, which roughly halves that
+round. Guideline checks for the default blueprint are done centrally and ship with updates, so
+no learner pays for them in either mode.
 
 Technical: `config.usage` (`full`, the default and what every existing ledger reads as, or
 `economy`); a preset resolved whenever the settings are read, never written into the ledger;
@@ -36,6 +43,25 @@ it (Economy's every other round).
   to `cme/prefs` as `usage` and applied from the next round; the settings list shows the usage.
 - With Economy's own round the mix reads "… + 1 case every other round"; a mix saved on the page
   is the learner's own and has the case in every round.
+
+## What is new in version 7.1
+
+For learners:
+- **Full or Economy.** Setup asks how much of your Claude usage rounds should take; switch any
+  time by asking or on your page (page 5.7.0). Economy: questions written by the examiner's own
+  model, only the facts the keys turn on checked, no podcast picks or deeper evidence, and a
+  smaller round with the full case every other round. Your own settings always win.
+- **No warm-up for new learners.** Guideline citations of the default blueprint are checked once,
+  centrally, and ship with updates; your install no longer sweeps them. Any region reads the
+  shared checks (UK and Europe the European set, everyone else the International set).
+- **Lighter rounds.** The instructions are split so each step reads only what it needs: about 35%
+  less reading per round.
+
+Technical: `config.usage` preset applied at read time with `config.set_by_learner` (ADR 0015);
+`start --case`; central records in `templates/guideline_checks.json` kept by `cme.py
+central-checks` and `docs/maintaining-guidelines.md`, `config.guideline_sweeps` (ADR 0013);
+references split (ADR 0014, `docs/reading-load.md`); simulation records tokens per role (#94);
+measurements in `docs/usage-measurement.md`.
 
 ## What is new in version 7.0
 

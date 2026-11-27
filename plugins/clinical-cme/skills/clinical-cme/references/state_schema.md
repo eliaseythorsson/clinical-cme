@@ -7,7 +7,7 @@ memory: one JSON document, read to a file and written from a file (`publishing.m
 
 ```json
 {
-  "schema": 4, "skill_version": "7.0.0", "gen": 21, "content_gen": 20, "created": "2026-10-08", "updated": "2026-10-26", "next_id": "S0022",
+  "schema": 4, "skill_version": "7.1.0", "gen": 21, "content_gen": 20, "created": "2026-10-08", "updated": "2026-10-26", "next_id": "S0022",
   "profile": {"display_name": "Dr A", "specialty": "Internal medicine",
               "subspecialty": null, "practice_setting": ["University hospital, inpatient"],
               "journey": "Hospitalist for eight years; I run the take alone at night …",

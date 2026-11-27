@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Elias Eythorsson. The skill's content (SKILL.md, references, templates) is CC BY-NC 4.0: LICENSE.md.
-"""clinical-cme v7.0.0 state engine (standard library only, Python 3.8+).
+"""clinical-cme v7.1.0 state engine (standard library only, Python 3.8+).
 
 The learner's scheduling memory is ONE JSON document, the ledger (state.json); each round also
 has a session document, and the page file (data/page.json) holds exactly what the learner's
@@ -44,7 +44,7 @@ import tempfile
 import zlib
 
 SCHEMA = 4
-SKILL_VERSION = "7.0.0"
+SKILL_VERSION = "7.1.0"
 PAGE_VERSION = "5.7.0"   # templates/page.html carries <meta name="cme-page-version" content="5.7.0">
 
 DEFAULT_CONFIG = {

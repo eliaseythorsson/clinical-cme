@@ -4,7 +4,7 @@ description: "Blinded clinical self-assessment rounds for physicians: MCQs, focu
 license: "CC BY-NC 4.0 for the content; MIT for scripts/cme.py. See LICENSE.md"
 ---
 
-# Clinical CME — continuous clinical self-evaluation (version 7.0.0)
+# Clinical CME — continuous clinical self-evaluation (version 7.1.0)
 
 Each session is one short round, in the mix the learner chose (`config.mcqs`, `config.focused`,
 `config.case`): the **short questions** on unrelated topics (MCQs, and **focused questions**:
