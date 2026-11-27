@@ -211,7 +211,8 @@ def test_plan_and_due_dates_do_not_depend_on_the_process(name, tmp_path):
     after = json.loads(ledgers_after[0].decode("utf-8"))
     schedule = read(examples.expected_path(name, "schedule"))["after_record"]
     assert {tid: after["topics"][tid] for tid in schedule} == schedule
-    # and the command writes the ledger the core function gives
+    # and the command writes the ledger the core function gives, stamped with the engine's version
+    assert after.pop("skill_version") == cme.SKILL_VERSION
     st = examples.load_ledger(name)
     cme.record_round(st, copy.deepcopy(rnd), examples.today_of(name))
     assert after == json.loads(json.dumps(st))

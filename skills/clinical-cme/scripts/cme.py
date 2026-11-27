@@ -718,7 +718,7 @@ def guideline_context(st):
 
 def new_state(today):
     return {
-        "schema": SCHEMA, "gen": 0, "created": iso(today), "updated": iso(today),
+        "schema": SCHEMA, STAMP_KEY: SKILL_VERSION, "gen": 0, "created": iso(today), "updated": iso(today),
         "next_id": "S0001",
         "profile": json.loads(json.dumps(DEFAULT_PROFILE)),
         "config": json.loads(json.dumps(DEFAULT_CONFIG)),
@@ -1262,6 +1262,60 @@ def review_status(state, today):
     if today >= due + dt.timedelta(days=REVIEW_GRACE_DAYS):
         return True, iso(due)
     return False, iso(due)
+
+
+# ---------------------------------------------------------------- the engine that wrote the ledger (issue #83)
+#
+# Every write stamps the ledger with the version of the skill whose engine wrote it
+# (STAMP_KEY). An engine never writes a ledger stamped by a newer one: an older plugin on a
+# second device would drop or misread what the newer one added. A ledger without a stamp, or
+# with one it cannot read, is from an older engine. Reading is never refused.
+
+STAMP_KEY = "skill_version"
+
+
+def version_key(v):
+    """'5.10.2' -> (5, 10, 2): the leading digits of each dotted part, so a suffix ('5.1.0-rc1')
+    does not stop the comparison. () for anything else."""
+    if not isinstance(v, str):
+        return ()
+    out = []
+    for part in v.strip().split("."):
+        m = re.match(r"\d+", part)
+        if not m:
+            break
+        out.append(int(m.group()))
+    return tuple(out)
+
+
+def newer_engine(st):
+    """The stamp of a ledger last written by a newer engine than this one, else None."""
+    stamp = st.get(STAMP_KEY) if isinstance(st, dict) else None
+    key = version_key(stamp)
+    return stamp if key and key > version_key(SKILL_VERSION) else None
+
+
+def newer_line(stamp):
+    """The one line the learner is told."""
+    return ("This record was last saved by a newer version of the skill (%s; this one is %s): "
+            "update the plugin to continue." % (stamp, SKILL_VERSION))
+
+
+def refuse_newer(st, work=None):
+    """Stop before anything is written when the ledger was last written by a newer engine. With
+    a round's files in the work folder (answers given), the message says they are kept and how
+    the round is saved once the plugin is updated (store.md §6)."""
+    stamp = newer_engine(st)
+    if not stamp:
+        return
+    msg = newer_line(stamp) + " Nothing was written; the page and read-only requests still work."
+    if work and in_work(work, ANSWERS_FILE):
+        msg += (" The round is not lost and must not be reported as saved: its files stay in the work folder %s. "
+                "Once the plugin is updated, read the store again, run `open --work %s --store DIR --reread` "
+                "and this command again; if this conversation ends first, hand the learner the round's files "
+                "(references/store.md section 6, a record saved by a newer version)."
+                % (os.path.abspath(work), work))
+    die(msg)
 
 
 def check_schema(st):
@@ -4507,6 +4561,8 @@ def cmd_init(args):
     if info.get("state") and os.path.isfile(info["state"]) and not args.start_over:
         die("the store read into this work folder already holds a ledger: change it with `settings`, "
             "or pass --start-over if the learner asked to start again from nothing")
+    if info.get("state") and os.path.isfile(info["state"]):
+        refuse_newer(current_ledger(work, info)[0])     # never a way around the refusal
     st = new_state(today)
     deep_merge(st["profile"], load_json_arg(args.profile) or {})
     deep_merge(st["config"], load_json_arg(args.config) or {})
@@ -4895,10 +4951,12 @@ def cmd_start(args):
             info["prefs"] = load_json_arg(args.prefs)
         if args.version:
             info["version"] = args.version
+        refuse_newer(current_ledger(work, info)[0])     # before the earlier round's files are moved
         set_aside = set_aside_round(work)       # a round after another job here: its files must not mix
         if set_aside:
             extra["earlier_set_aside"] = set_aside
     st, path = current_ledger(work, info)
+    refuse_newer(st)                # a round this engine could not save is not begun
     prefs_warn = []
     prefs_changes = apply_prefs(st, info.get("prefs"), prefs_warn)
     rewritten = paragraphs_changed(prefs_changes)
@@ -5017,6 +5075,7 @@ def cmd_prepare(args):
     today = today_from(args)
     work, info = job(args)
     st, _ = current_ledger(work, info)
+    refuse_newer(st)                # the round would be tied to a ledger this engine cannot write
     # the round is written for the mix the next `start` will use: a mix set on the page and not
     # yet in the ledger counts here too (in memory only; `start` and `save` apply it for good)
     rewritten = paragraphs_changed(apply_prefs(st, info.get("prefs")))
@@ -5983,6 +6042,9 @@ COMMANDS = (
      'version read. If `W` holds an earlier job (answers, a publish set, drafts of a next round),'
      ' its files are first moved to `W/earlier/<n>/` (`earlier_set_aside`). Prints neutral '
      'status: `gen`, `next_id`, counts, `review_due`, `testing`, the block; never a topic. '
+     'With `newer_version` the ledger was last written by a newer version of the skill (`say`: '
+     'the line for the learner): read-only requests go on, and every command that would write the '
+     'ledger (`start` and `prepare` too) stops with nothing written (§1, `store.md` §6). '
      '`--reread`: the same job on a fresh read after a refused publish (`store.md` §4.1): the '
      "job's own files stay, the publish set is dropped, and the job's commands are run again."),
     ('`start --work W [--store DIR [--version V]] [--prefs J] [plan options] [--no-prepared]`',
@@ -6957,7 +7019,11 @@ def publish_ledger(work, info, st, out, session=None, review=None, empty_prepare
     """Put the ledger `st` into the publish set with what goes with it: the page file (with a new
     session or review document, which is put there too), an emptied prepared round when the
     change makes the prepared one unusable, and the page if the learner's is out of date.
-    Notes `page_upgraded` and warnings in `out`; returns the ledger's local path."""
+    The ledger is stamped with this engine's version; one stamped by a newer engine is refused
+    (refuse_newer), with nothing written. Notes `page_upgraded` and warnings in `out`; returns
+    the ledger's local path."""
+    refuse_newer(st, work)          # before any file goes into the publish set
+    st[STAMP_KEY] = SKILL_VERSION
     path = publish_json(work, STATE_PATH, st)
     publish_page(work, info, st, session=session, review=review, fresh=fresh_page)
     if empty_prepared:
@@ -7033,6 +7099,9 @@ def open_work(work, store, version, prefs, today, reread=False):
              "store_layout": "data" if ledger.endswith(os.path.join("data", "state.json")) else "flat",
              "store_files": [rel for rel in (STATE_PATH, PAGE_PATH, OLD_INDEX_PATH, PREPARED_PATH, "index.html")
                              if store_copy_file(store, rel)]}
+    if newer_engine(st):            # read-only requests go on; a command that writes is refused
+        extra["newer_version"] = {"ledger": newer_engine(st), "this": SKILL_VERSION,
+                                  "say": newer_line(newer_engine(st))}
     earlier = in_work(work, os.path.join(PUBLISH_DIR, *STATE_PATH.split("/")))
     earlier_gen = None
     if earlier:
@@ -7933,6 +8002,7 @@ def cmd_save(args):
         die("save needs %s in the work folder" % ROUND_FILE)
     rnd = load_json(round_src) or {}
     cur, _ = current_ledger(work, info)
+    refuse_newer(cur, work)         # before anything is written: the round's files stay as they are
     sid = rnd.get("log_id") or info.get("session_id") or cur.get("next_id")
     if info.get("closed") == sid:
         die("round %s is already closed in this work folder: saving it again would undo its reflection" % sid)
@@ -8042,6 +8112,7 @@ def cmd_close(args):
     if not reflection:
         die("close needs the reflection: %s in the work folder, or --reflection '<json>'" % REFLECTION_FILE)
     st, _ = current_ledger(work, info)
+    refuse_newer(st, work)          # before anything is written: the round's files stay as they are
     frm = in_work(work, CLOSE_FROM_FILE)
     again = load_json(frm) if not st.get("unreflected") and info.get("closed") and frm else None
     if again:                       # run again after a correction: the round as it stood before its reflection

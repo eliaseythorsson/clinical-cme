@@ -226,7 +226,7 @@ graded. If answers are missing, ask once; proceed if the learner says so.
 5. `python3 cme.py save --work <work>`, then publish every file in its `files` list in one
    write (`store.md` §4; `index.html` among them → `store.md` §4.5 once). Fix any `warnings`,
    or an `error` about a key header or a blank in the form, and run the same command again.
-   A save that fails: never report the round as saved and never retype a ledger (`store.md` §6).
+   A save that fails or says "update the plugin": never report it saved or retype a ledger (`store.md` §6).
 6. End the turn: "Saved so far; your reflection completes the record."
 
 ### Turn 5. Reflection → final save, close

@@ -222,6 +222,17 @@ its store and continue, or start a fresh ledger in it only if the learner asks t
   round as saved, and hand the learner the files of the publish set (`files`: state, page file,
   session file) as downloads. At the next session, save them as a carry-over
   (§4.3) after checking their `gen` is higher than the store's.
+- **A record saved by a newer version** (`open` reports `newer_version`, or a command stops with
+  "update the plugin to continue"): another device has a newer version of the skill, and this
+  one must not write the ledger. Tell the learner the line as given (`say`), and that the page,
+  past cases, stats and export still work here. Nothing was written. If a round was under way
+  (`save` or `close` stopped): never report it as saved; its files stay in the work folder.
+  Once the plugin is updated, read the store again, run `open --work <work> --store <work>/store
+  --reread` and the stopped command again, then publish. If the conversation ends before that,
+  hand the learner the round's files as downloads: every file of the work folder but
+  `work.json` and `publish.json` (not the folders `store/`, `publish/`, `earlier/`). At the
+  next session, with the plugin updated, `open` a work folder on a fresh read, copy them into
+  it and run `save` (then `close`).
 - **Session saved without a reflection** (the learner left after the feedback): nothing to do.
   `start` reports `last_session.unreflected`; the next `save` finalises it as "reflection
   skipped". If the learner wants to add the reflection at the start of the next session

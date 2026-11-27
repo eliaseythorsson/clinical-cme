@@ -80,6 +80,10 @@ The place the learner owns that holds all their data: their own artifact page, o
 The learner's schedule, gaps, coded results and settings (`state.json`).
 _Avoid_: state (in conversation with the learner)
 
+**Engine stamp**:
+The version of the skill whose state engine last wrote the ledger (`skill_version` in it), set on every write. An engine never writes a ledger stamped by a newer one: it says "update the plugin" and only reads. A ledger without a stamp counts as older.
+_Avoid_: schema version (that is `schema`, the ledger's shape)
+
 **Log**:
 The verbatim, append-only record of every round, one session document each.
 
