@@ -105,8 +105,10 @@ def test_a_4_2_ledger_gets_its_paragraphs_one_area_code_and_the_settings_of_late
     assert st["review"]["period_start"] == old["review"]["period_start"]
 
 
-def test_a_6_0_ledger_is_left_as_it_is_but_for_the_two_lists_it_may_lack():
-    assert cme.make_current(raw("6_0")) == dict(raw("6_0"), positions=[], mappings=[])
+def test_a_6_0_ledger_is_left_as_it_is_but_for_what_came_after_it():
+    old = raw("6_0")
+    old["profile"]["utc_offset"] = None             # the learner's UTC offset (issue #84): unset, UTC
+    assert cme.make_current(raw("6_0")) == dict(old, positions=[], mappings=[])
 
 
 def test_a_newer_ledger_is_filled_for_reading_and_nothing_else():
@@ -114,6 +116,7 @@ def test_a_newer_ledger_is_filled_for_reading_and_nothing_else():
     st = cme.make_current(copy.deepcopy(old))
     assert st["skill_version"] == "99.0.0" and cme.newer_engine(st) == "99.0.0"
     assert st["config"]["a_setting_from_the_future"] is True
+    assert st["profile"].pop("utc_offset") is None            # filled for reading (issue #84)
     assert {k: v for k, v in st.items() if k not in ("positions", "mappings")} == old
 
 

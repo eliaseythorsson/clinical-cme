@@ -173,10 +173,11 @@ pick other numbers, here or on the page.
 | No listening section | `listening` false |
 | Weakest areas named without ratings | 2 for those domains; strongest → 4 |
 | Review every 1 / 2 / 3 months | `review_interval_days` 30 / 60 / 90 |
+| (not asked) The app's message timestamp shows the learner's UTC offset | `profile.utc_offset` in hours (-8, 5.5): the date when no timestamp is given (`state_schema.md` §1); later `start`/`open --utc-offset` keep it current |
 
 ## 3. Create the ledger and the page
 
-`store.md` §5: `cme.py init --work <work>` with the answers (the profile holds `journey`, `aim`
+`store.md` §5: `cme.py --today <date> init --work <work>` with the answers (the profile holds `journey`, `aim`
 and their labels; the config holds `mcqs`, `focused`, `case`), then create the store from the `files` it prints: where the
 app can host a private page with files, publish `templates/page.html` with the ledger
 files as the page "Clinical CME" and pin it; otherwise a folder the learner names or files

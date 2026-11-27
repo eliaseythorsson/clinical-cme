@@ -25,7 +25,8 @@
   "domain_emphasis": {},
   "notes": "",
   "onboarded_at": "2026-01-05",
-  "podcast_sources": null
+  "podcast_sources": null,
+  "utc_offset": null
  },
  "config": {
   "session_minutes": 35,

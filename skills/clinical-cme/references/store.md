@@ -94,9 +94,13 @@ round, a review):
 
 1. **Read** the store's files into the store copy, `<work>/store/`, and note the store's
    version (the artifact version the read reports; a folder has none).
-2. **Open** the work folder on it: `python3 cme.py start --work <work> --store <work>/store
-   --version <version>` for a round, `python3 cme.py open --work <work> --store <work>/store
-   --version <version>` for anything else. Every later command takes only `--work <work>`.
+2. **Open** the work folder on it: `python3 cme.py --today <date> start --work <work> --store
+   <work>/store --version <version> --utc-offset <H>` for a round, `python3 cme.py --today
+   <date> open --work <work> --store <work>/store --version <version> --utc-offset <H>` for
+   anything else, `<date>` and `<H>` being the learner's local date and UTC offset in hours
+   from the app's message timestamp (each left out when there is none; the learner is never
+   asked). This fixes the job's date and keeps the offset for unattended jobs
+   (`state_schema.md` §1, the learner's date). Every later command takes only `--work <work>`.
 3. **Publish** after each command that writes: every entry of the `files` it printed, in the
    order listed. The same list, with the version the store was read at, is in the file the
    command names as `publish` (`<work>/publish.json`: `{"version": …, "files": [{"as", "path"}, …]}`).
@@ -108,7 +112,8 @@ round, a review):
 A second job later in the same conversation starts again at step 1 with a fresh read (`open`
 and `start --store` set the earlier job's files aside in `<work>/earlier/`). The exception is
 a round that follows another job in the same conversation without the learner leaving (a
-settings change first, or a late reflection closed first): run `start --work <work>` without
+settings change first, or a late reflection closed first): run `--today <date> start --work <work>
+--utc-offset <H>` without
 `--store`; the round continues from the ledger that job wrote.
 
 ### 4.1 The page
@@ -195,7 +200,7 @@ A folder: copy `index.html` into it like the other files. Carried files: no page
 
 After the onboarding questions (`onboarding.md` §2):
 
-1. `python3 cme.py init --work <work> --profile '<json>' --config '<json>' --blueprint
+1. `python3 cme.py --today <date> init --work <work> --profile '<json>' --config '<json>' --blueprint
    <skill>/templates/blueprint.json` (or a blueprint drafted for the learner's specialty in the
    same JSON shape, or as Markdown like `templates/blueprint.md`: `init` accepts both). The
    work folder needs no store yet: `init` writes the first ledger, the page file and the page
@@ -239,7 +244,8 @@ its store and continue, or start a fresh ledger in it only if the learner asks t
   (the snapshot is still in the ledger): read that session's file into the store copy with the
   rest (`data/sessions/<id>.json`), `open` the work folder, add the reflection with `cme.py
   answer --part reflection`, write `reflection.json` and `B.md`, run `cme.py close --work
-  <work>` and publish its `files`; then run `start --work <work>` (no `--store`) for today's
+  <work>` and publish its `files`; then run `--today <date> start --work <work> --utc-offset
+  <H>` (no `--store`) for today's
   round as usual: it continues from the closed ledger and sets the closed round's files aside.
 - **The artifact cannot be found**: ask for the link. Never create a second ledger silently.
 - **The page file is missing or damaged** (the page shows nothing, or lacks sessions): `cme.py`

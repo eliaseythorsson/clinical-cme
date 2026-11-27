@@ -177,6 +177,14 @@ The minimum of three days before a tested topic or a new gap can come back.
 The scratch folder in which one job is worked on (a round, or a settings change, a theme change or preparing the next round, set up with `open`); every file has a fixed name there and every command needs only the work folder.
 _Avoid_: temp folder, session folder, workbench (fine when explaining to the learner)
 
+**Learner's date**:
+The learner's local calendar date, the only date the record holds (never the sandbox's clock). The assistant passes it from the app's message timestamp; without one it is today at the learner's **UTC offset** (a profile setting in hours, set from a timestamp, never asked), else UTC.
+_Avoid_: system date, server date
+
+**Job's date**:
+The learner's date fixed once, when a job is opened (`open`, `start`, `init`), and read by every later command of the job, so a job that crosses midnight dates its start and its save the same.
+_Avoid_: today (in code that runs inside a job), run date
+
 **Publish set**:
 The one list in the work folder of what the store must hold now: the newest version of every store file that changed, the store version it was read at, and the write order (the ledger last). Every command updates it; whoever carries files to the store publishes all of it.
 _Avoid_: output folder, files list

@@ -8,14 +8,16 @@ Contents: 1. Requests · 2. Testing mode · 3. Round variants
 ## 1. Requests
 
 Every request that changes something has the same path: read the store (SKILL.md, turn 1,
-step 1) → `python3 cme.py open --work <work> --store <work>/store --version <version read>` →
+step 1) → `python3 cme.py --today <learner's date> open --work <work> --store <work>/store --version <version read>
+--utc-offset <H>` (SKILL.md, turn 1, step 2) →
 the command for the request, with `--work <work>` → publish its `files` (`store.md` §4) →
 confirm in one line. A change of settings is `python3 cme.py settings --work <work> --config
 '{…}' --profile '{…}'`. The output's `prepared` says whether the round prepared ahead was
 kept (`state_schema.md` §8: testing mode, reminders, helpers and the like keep it; anything that
 changes the plan or the items sets it aside). When `prepared.kept` is false, add half a line
 ("your next round will be written when it starts"); offer nothing. If a round follows in the same conversation, start
-it with `start --work <work>` (no `--store`): it continues from the changed ledger.
+it with `--today <date> start --work <work> --utc-offset <H>` (no `--store`): it continues from
+the changed ledger.
 
 | The learner asks | Do |
 |---|---|

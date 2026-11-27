@@ -34,7 +34,8 @@ CONTENT_CONFIG = {
 NEUTRAL_PROFILE = {"display_name": "Dr Example", "onboarded_at": "2026-10-01",
                    # display labels and the dates of the paragraphs (#55): never used to write an item
                    "journey_label": "resident", "aim_tags": ["exam"],
-                   "journey_set_at": "2026-10-01T08:00:00Z", "aim_set_at": "2026-10-01T08:00:00Z"}
+                   "journey_set_at": "2026-10-01T08:00:00Z", "aim_set_at": "2026-10-01T08:00:00Z",
+                   "utc_offset": -8}               # only dates the rounds (issue #84)
 CONTENT_PROFILE = {
     "journey": "Senior registrar in geriatrics, on call alone at night.", "aim": "Pass the specialty exam.",
     "specialty": "Geriatrics", "subspecialty": "Orthogeriatrics",
@@ -315,3 +316,23 @@ def test_prepare_writes_the_round_for_a_page_mix_that_is_waiting(w):
     r = next_session_start(w, "--prefs", prefs)
     assert r["page_settings_applied"] == {"mcqs": 3, "focused": 1}
     assert r["prepared"]["used"] is True and "round_mix" not in r and r["plan"]["mcqs"] == 3
+
+
+def test_a_utc_offset_passed_to_start_is_recorded_and_the_prepared_round_stands(w):
+    """Issue #84: the offset the assistant passes is kept for unattended jobs, as a content-free
+    change."""
+    before, packed = w.read_ledger(), stored_prepared(w)
+    r = w.start(NEXT_DAY, "--utc-offset", "-8")
+    assert r["utc_offset_recorded"] == -8
+    assert r["prepared"]["used"] is True and "round_mix" not in r
+    st = w.read_json("publish", "data", "state.json")
+    assert st["profile"]["utc_offset"] == -8
+    assert st["gen"] == before["gen"] + 1 and st["content_gen"] == before["gen"] == packed["gen"]
+    assert not os.path.exists(w.pub("data", "prepared.json"))       # not set aside
+    w.publish()
+    w.forget_job()
+    t0 = cme.learner_today({"utc_offset": -8}).isoformat()
+    out = w.open()                                                  # an unattended job: no flags
+    assert w.read_json("work.json")["started"] in (t0, cme.learner_today({"utc_offset": -8}).isoformat())
+    assert "utc_offset_recorded" not in out
+    assert stored_prepared(w) == packed

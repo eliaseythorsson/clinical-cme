@@ -51,11 +51,10 @@ If tools load on demand, search **once**, early, for all you will need. Give eve
 a neutral description ("Read the ledger", "Prepare the round", "Check sources", "File the
 answers", "Update today's round", "Save the round"). Run `python3 <skill>/scripts/cme.py
 <command> …` with one **work folder** `<work>` per job: `start --store` (a round) or `open`
-(anything else) sets it up from the store as read, and every later command takes only `--work
-<work>` and finds each file by its fixed name (`state_schema.md` §6, §6.1). A command that
-writes prints the **publish set** as `files`: all the store must hold now; publish all of it
-(`store.md` §4). Never write learner data into the skill's folder. This file covers what
-needs judgement; the rest is in the references:
+(else), with `--today`/`--utc-offset` as in turn 1 (on every `start`), sets it up and dates the
+job; later commands take only `--work <work>` (`state_schema.md` §6). A writing command prints
+the **publish set** as `files`: all the store must hold now; publish all of it (`store.md` §4).
+Never write learner data into the skill's folder. The rest is in references:
 
 | Reference | Read when |
 |---|---|
@@ -145,9 +144,10 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
    `data/page.json`, `data/prepared.json` and `index.html` as saved local files, never into
    the conversation, noting the version read; and the page's settings document `cme/prefs`.
    All but the ledger may be missing. No store → ask once (`store.md` §3) or `onboarding.md`.
-2. **One shell call**: copy the saved files into `<work>/store/` and run `python3 cme.py start
-   --work <work> --store <work>/store --version <version read>` (plus `--prefs '<the cme/prefs
-   JSON>'` when it exists, and the one-round options of `requests.md` §3 for a special round).
+2. **One shell call**: copy the saved files into `<work>/store/` and run `python3 cme.py --today D
+   start --work <work> --store <work>/store --version <version read> --utc-offset H` (D, H: the
+   learner's local date and UTC offset in hours from the app's message timestamp, never asked,
+   each left out without it; plus `--prefs '<cme/prefs JSON>'` if any, `requests.md` §3's options).
    It prints neutral status, never topics, and all the first message needs. Route on it:
    - `onboarding_needed` → setup. "Prepare only", or a scheduled task asking for it →
      `preparing.md` §3, not a round. Any other request → `requests.md`.

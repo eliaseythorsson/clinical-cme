@@ -20,7 +20,9 @@ command-table` and `cme.py file-table` print them as references/state_schema.md 
 holds them. A round in short: start → present → answer (which writes the grading form,
 round.json) → save → answer --part reflection (the reflection form) → close.
 
-Add `--today YYYY-MM-DD` before the command to fix the date.
+The learner's date: `open`, `start` and `init` fix the job's date, from `--today YYYY-MM-DD`
+(before the command; the learner's local date), else profile.utc_offset, else UTC, and note it in
+work.json; every later command of the job reads it there (a `--today` given to it still wins).
 """
 import argparse
 import base64
@@ -81,6 +83,8 @@ DEFAULT_PROFILE = {
     "practice_setting": [], "goals": [], "strengths": [], "weaknesses": [],
     "domain_self_ratings": {}, "domain_emphasis": {}, "notes": "", "onboarded_at": None,
     "podcast_sources": None,             # {"trusted": [shows], "avoid": [shows]}; None until the learner was asked
+    "utc_offset": None,                  # hours from UTC (-8, 5.5): the fallback for the learner's date when the
+                                         # assistant does not pass it (issue #84); None: UTC
 }
 # The two open questions, word for word the same at setup (onboarding.md §2) and on the page.
 JOURNEY_QUESTION = ("In a few sentences, describe where you are in your training or career and how you'd "
@@ -102,7 +106,7 @@ CONTENT_NEUTRAL_CONFIG = ("testing", "reminders", "prepare_task", "prepare_ahead
 # The labels are display only (never used to write an item), and the `_set_at` stamps only date
 # the paragraphs: the paragraphs themselves are not here.
 CONTENT_NEUTRAL_PROFILE = ("display_name", "onboarded_at", "journey_label", "aim_tags",
-                           "journey_set_at", "aim_set_at")
+                           "journey_set_at", "aim_set_at", "utc_offset")
 # Listening (issue #50; references/standards.md, rule 8): a pick is one Spotify episode of
 # 15 to 90 minutes; a kit keeps three candidates per topic.
 SPOTIFY_EPISODE_RE = re.compile(r"^https://open\.spotify\.com/episode/[A-Za-z0-9]{22}$")
@@ -242,14 +246,104 @@ def iso(d):
     return d.isoformat() if d else None
 
 
-def today_from(args):
+# The learner's date (issue #84). A job's date is fixed once, when the job is opened (`open`,
+# `start`, `init`), and noted in work.json (`started`); every later command of the job reads it,
+# so a job that crosses midnight dates its start and its save the same. When the job is opened
+# the date is the learner's local date the assistant passes (`--today`), else the date at the
+# learner's UTC offset (`--utc-offset`, else profile.utc_offset, hours; Python 3.8 has no time
+# zones) at `--at` or now, else (`start` in an open job) the job's date, else the sandbox's date
+# (UTC), as before. `open` and `start` record a `--utc-offset` that differs from the profile's
+# (a content-free change), so unattended jobs later (overnight preparation) date by it. A
+# `--today` given to a later command still wins (tests, a step filed late).
+UTC_OFFSET_RANGE = (-12, 14)
+
+
+def given_today(args):
+    """The date given with --today, else None."""
     t = getattr(args, "today", None)
-    if t:
-        d = parse_date(t)
-        if not d:
-            die("--today must be YYYY-MM-DD")
-        return d
-    return dt.date.today()
+    if not t:
+        return None
+    d = parse_date(t)
+    if not d:
+        die("--today must be YYYY-MM-DD")
+    return d
+
+
+def utc_offset(value, where="profile.utc_offset"):
+    """A UTC offset in hours (a finite whole or decimal number, -12 to 14; a whole number is kept
+    as an int), or None. Dies on anything else."""
+    if value is None:
+        return None
+    lo, hi = UTC_OFFSET_RANGE
+    if (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
+            or not lo <= value <= hi):
+        die("%s must be the learner's offset from UTC in hours, a number from %d to %d (Reykjavik 0, "
+            "Los Angeles -8, New York -5, Berlin 1, Delhi 5.5), or null" % (where, lo, hi))
+    return int(value) if value == int(value) else value
+
+
+def given_offset(args):
+    """The UTC offset given with --utc-offset (hours), else None."""
+    v = getattr(args, "utc_offset", None)
+    if v is None:
+        return None
+    try:
+        v = float(v)
+    except ValueError:
+        v = None
+    return utc_offset(v, "--utc-offset") if v is not None else utc_offset("x", "--utc-offset")
+
+
+def given_at(args):
+    """The time given with --at, checked before anything is written; None when not given."""
+    v = getattr(args, "at", None)
+    if v is None:
+        return None
+    t = parse_stamp(v)
+    if not t:
+        die("--at must be an ISO time such as 2026-11-26T08:15:00Z, not %r" % v)
+    return t
+
+
+def learner_today(profile, at=None, offset=None):
+    """The learner's date at the time `at` (an aware datetime; now when None), at the UTC offset
+    `offset`, else the profile's. None when there is neither an offset nor a time: the caller
+    falls back to the job's date or the sandbox's date, as the engine has always read it."""
+    off = offset if offset is not None else (profile or {}).get("utc_offset")
+    if isinstance(off, bool) or not isinstance(off, (int, float)) or not math.isfinite(off):
+        off = None
+    if off is None and at is None:
+        return None
+    t = at or dt.datetime.now(dt.timezone.utc)
+    return (t.astimezone(dt.timezone.utc) + dt.timedelta(hours=off or 0)).date()
+
+
+def note_utc_offset(st, offset):
+    """Record a UTC offset the assistant passed when it differs from the profile's: a change
+    that cannot alter what a round contains (the prepared round stands). True when recorded.
+    Nothing is recorded in a ledger a newer engine wrote."""
+    if offset is None or newer_engine(st) or st["profile"].get("utc_offset") == offset:
+        return False
+    st["profile"]["utc_offset"] = offset
+    bump_gen(st, content=False)
+    return True
+
+
+def job_date(work):
+    """The date of the job open in the work folder `work`, or None."""
+    if not work or not os.path.isfile(os.path.join(work, WORK_FILE)):
+        return None
+    try:
+        info = load_json(os.path.join(work, WORK_FILE))
+    except CmeError:
+        return None
+    return parse_date(info.get("started")) if isinstance(info, dict) else None
+
+
+def today_from(args):
+    """The date a command works with: --today, else the date of the job open in its work folder,
+    else the sandbox's date."""
+    return given_today(args) or job_date(getattr(args, "work", None)) or dt.date.today()
 
 
 def load_json(path):
@@ -1370,7 +1464,8 @@ LEDGER_OPTIONAL = {"content_gen": int}
 # the type the value has once set.
 CONFIG_NULLABLE = {"round_set_at": str}
 PROFILE_NULLABLE = {"display_name": str, "subspecialty": str, "journey_set_at": str, "aim_set_at": str,
-                    "journey_label": str, "aim_tags": list, "onboarded_at": str, "podcast_sources": dict}
+                    "journey_label": str, "aim_tags": list, "onboarded_at": str, "podcast_sources": dict,
+                    "utc_offset": NUMBER}
 # A setting given as null (an older page, a hand edit) reads as the engine has always read it:
 # the counts as 0 and the switches as off; one not listed here reads null as its default.
 # `listening` is on unless it is false.
@@ -4317,6 +4412,8 @@ def cmd_settings(args):
     prof_changes = load_json_arg(args.profile) if args.profile else {}
     check_setting_changes(cfg_changes or {})
     deep_merge(st["config"], cfg_changes or {})
+    if "utc_offset" in (prof_changes or {}):
+        utc_offset(prof_changes["utc_offset"])
     deep_merge(st["profile"], prof_changes or {})
     fill_defaults(st)           # a null given reads as it does in a stored ledger
     set_paragraphs(st["profile"], was["profile"] or {}, prof_changes or {})
@@ -4763,9 +4860,15 @@ def read_blueprint(path):
 def cmd_init(args):
     """Setup: the first ledger of a new learner, written into the publish set of the work folder
     with its page file, no prepared round and the page. The work folder needs no store yet; if
-    one was read into it with `open` and already holds a ledger, --start-over is needed."""
-    today = today_from(args)
+    one was read into it with `open` and already holds a ledger, --start-over is needed. The
+    date: --today, else the learner's date at the UTC offset given in the profile, else UTC
+    (never the date of an earlier job in the folder)."""
     work = args.work
+    profile = load_json_arg(args.profile) or {}
+    if isinstance(profile, dict) and "utc_offset" in profile:
+        utc_offset(profile["utc_offset"])
+    today = (given_today(args) or learner_today(profile if isinstance(profile, dict) else {})
+             or dt.date.today())
     os.makedirs(work, exist_ok=True)
     info = work_info(work)
     if info.get("state") and os.path.isfile(info["state"]) and not args.start_over:
@@ -4774,7 +4877,7 @@ def cmd_init(args):
     if info.get("state") and os.path.isfile(info["state"]):
         refuse_newer(current_ledger(work, info)[0])     # never a way around the refusal
     st = new_state(today)
-    deep_merge(st["profile"], load_json_arg(args.profile) or {})
+    deep_merge(st["profile"], profile)
     cfg_changes = load_json_arg(args.config) or {}
     check_setting_changes(cfg_changes)
     deep_merge(st["config"], cfg_changes)
@@ -5158,10 +5261,9 @@ def plan_options_given(args):
 def cmd_open(args):
     """Set up the work folder for one job from the local copy of the learner's store. Prints
     neutral status and counts only (never topics)."""
-    today = today_from(args)
-    info, st, extra = open_work(args.work, args.store, args.version, load_json_arg(args.prefs), today,
-                                reread=args.reread)
-    status = status_dict(st, info["state"], today)
+    info, st, extra = open_work(args.work, args.store, args.version, load_json_arg(args.prefs), given_today(args),
+                                reread=args.reread, offset=given_offset(args))
+    status = status_dict(st, info["state"], parse_date(info["started"]))
     status.update(extra)
     print(json.dumps(status, ensure_ascii=False))
 
@@ -5169,12 +5271,18 @@ def cmd_open(args):
 def cmd_start(args):
     """Start a round in the work folder: neutral status and plan counts (never topics) and, with
     a prepared round that still fits, the first part to present. With --store the work folder
-    is opened first (what `open` does); without, the round continues the job that is open."""
-    today = today_from(args)
+    is opened first (what `open` does); without, the round continues the job that is open. Either
+    way the round's date is set now (--today, else the learner's date at --at or now) and is the
+    job's date from here on."""
+    today = given_today(args)
+    at = given_at(args)
+    offset = given_offset(args)
     work = args.work
     extra = {}
     if args.store:
-        info, _, extra = open_work(work, args.store, args.version, load_json_arg(args.prefs), today)
+        info, _, extra = open_work(work, args.store, args.version, load_json_arg(args.prefs), today, at=at,
+                                   offset=offset)
+        today = parse_date(info["started"])
     else:
         info = job(args)[1]
         if args.prefs:
@@ -5186,7 +5294,12 @@ def cmd_start(args):
         if set_aside:
             extra["earlier_set_aside"] = set_aside
     st, path = current_ledger(work, info)
+    today = today or learner_today(st["profile"], at, offset) or job_date(work) or dt.date.today()
     refuse_newer(st)                # a round this engine could not save is not begun
+    if not args.store and note_utc_offset(st, offset):
+        st["updated"] = iso(today)
+        path = publish_ledger(work, info, st, extra)
+        extra["utc_offset_recorded"] = offset
     prefs_warn = []
     prefs_changes = apply_prefs(st, info.get("prefs"), prefs_warn)
     rewritten = paragraphs_changed(prefs_changes)
@@ -5755,8 +5868,9 @@ def assemble_part_a(sealed, answers, feedback, item_order, warnings, feedback_qu
     return "\n\n".join(parts) + "\n"
 
 
-def session_doc_a(rnd, sid, md):
-    doc = {"id": sid, "date": rnd.get("date") or iso(dt.date.today()),
+def session_doc_a(rnd, sid, md, today):
+    """Part A of a round's session document, dated as the round (else the job's date, `today`)."""
+    doc = {"id": sid, "date": rnd.get("date") or iso(today),
            "title": rnd.get("title"), "summary": rnd.get("summary"), "tags": rnd.get("tags") or [],
            "topics": sorted({it.get("topic") for it in rnd.get("items") or [] if it.get("topic")}),
            "score": None, "format": round_format(rnd), "drill": (rnd.get("drill") or {}).get("code"),
@@ -6262,12 +6376,16 @@ def cmd_key_table(args):
 # the parser is missing from the table. The cells are Markdown, as they stand in the table.
 
 COMMANDS = (
-    ('`open --work W --store DIR [--version V] [--prefs J] [--reread]`',
+    ('`open --work W --store DIR [--version V] [--prefs J] [--utc-offset H] [--reread]`',
      'Set up the work folder for any job from `DIR`, the local copy of the store as just read: '
      "the store's layout (`DIR/data/state.json`, `DIR/data/page.json`, `DIR/data/prepared.json`, "
      '`DIR/index.html`, `DIR/data/sessions/<id>.json`) or the files side by side '
-     '(`DIR/state.json`, …). Writes `W/work.json` and an empty manifest carrying `V`, the store '
-     'version read. If `W` holds an earlier job (answers, a publish set, drafts of a next round),'
+     "(`DIR/state.json`, …). Writes `W/work.json`, with the job's date (`--today`, else the date "
+     "at `--utc-offset H` or the learner's `utc_offset`, else UTC; every later command of the job "
+     "reads it), and an empty manifest carrying `V`, the store version read. A `--utc-offset` "
+     "that differs from the profile's is recorded in the ledger, into the publish set, without "
+     'setting the prepared round aside (`utc_offset_recorded`). If `W` holds an earlier job (answers, a '
+     'publish set, drafts of a next round),'
      ' its files are first moved to `W/earlier/<n>/` (`earlier_set_aside`). Prints neutral '
      'status: `gen`, `next_id`, counts, `review_due`, `testing`, the block; never a topic. '
      'With `newer_version` the ledger was last written by a newer version of the skill (`say`: '
@@ -6275,10 +6393,13 @@ COMMANDS = (
      'ledger (`start` and `prepare` too) stops with nothing written (§1, `store.md` §6). '
      '`--reread`: the same job on a fresh read after a refused publish (`store.md` §4.1): the '
      "job's own files stay, the publish set is dropped, and the job's commands are run again."),
-    ('`start --work W [--store DIR [--version V]] [--prefs J] [plan options] [--no-prepared]`',
+    ('`start --work W [--store DIR [--version V]] [--prefs J] [--utc-offset H] [plan options] [--no-prepared]`',
      'Start a round. With `--store` it does what `open` does first; without, it continues the job'
      ' that is open (a settings change or a late reflection earlier in the same conversation), '
-     'from the ledger that job wrote. The plan is written to `W/plan.json`. Prints the neutral '
+     "from the ledger that job wrote. Either way it sets the job's date afresh and records "
+     "`--utc-offset` as `open` does (with `--at`, the learner's date at that time; without "
+     "`--store`, `--today` or an offset, the open job's date). The plan is written to "
+     '`W/plan.json`. Prints the neutral '
      "status with the plan's counts (MCQs, focused, case, `estimated_minutes`, and "
      "`estimate_rounds` when the estimate is at the learner's own pace, §6.2) under `plan`, plus "
      '`helpers`, `prepare_ahead` and `speed_settings_new`. No topic names. With a plan it also '
@@ -6498,9 +6619,10 @@ MAINTENANCE_COMMANDS = (
 )
 WORK_FILES = (
     ('`work.json`',
-     '`open`, `start`: the store copy, the ledger as read, the store version, the session ID, the'
-     ' page settings; `save`, `close`: the round each recorded (`saved`, `closed`), so that '
-     'either can be run again in this job',
+     "`open`, `start`: the store copy, the ledger as read, the store version, the session ID, the"
+     " page settings, the job's date (`started`: the learner's date, fixed for the job); `save`, "
+     '`close`: the round each recorded (`saved`, `closed`), so that either can be run again in '
+     'this job',
      'every command'),
     ('`plan.json`',
      '`start`',
@@ -7300,13 +7422,18 @@ def set_aside_round(work):
     return set_aside(work, ROUND_FILES)
 
 
-def open_work(work, store, version, prefs, today, reread=False):
+def open_work(work, store, version, prefs, today=None, reread=False, at=None, offset=None):
     """Set up the work folder for one job from `store`, the local copy of the learner's store
     as it was just read (the store's layout, or its files side by side). Returns (what was
     noted in work.json, the ledger, what to add to the printed status).
     `reread`: the same job on a fresh read of the store, after a publish was refused because
     the store had moved on. The job's own files stay (answers, feedback, round.json, the next
-    round's drafts); what was computed from the old read goes, and the commands are run again."""
+    round's drafts); what was computed from the old read goes, and the commands are run again.
+    `today`: the date given with --today; without it the job's date is the learner's date now
+    (learner_today, at the time `at` and the UTC offset `offset` when given), or on a reread the
+    date the job already has. An `offset` that differs from the profile's is recorded in the
+    ledger, into the publish set (note_utc_offset; `utc_offset_recorded`). The job's date is noted in
+    work.json (`started`)."""
     store = os.path.abspath(store)
     if not os.path.isdir(store):
         die("the store copy %s is not a folder: read the store's files into a folder first" % store)
@@ -7344,7 +7471,9 @@ def open_work(work, store, version, prefs, today, reread=False):
             elif os.path.exists(path):
                 os.remove(path)
         prefs = prefs if prefs is not None else work_info(work).get("prefs")
+        today = today or parse_date(work_info(work).get("started"))
         extra["reread"] = True
+    today = today or learner_today(st["profile"], at, offset) or dt.date.today()
     aside = None if reread else set_aside_earlier_job(work)
     if aside:
         extra["earlier_set_aside"] = aside
@@ -7356,6 +7485,10 @@ def open_work(work, store, version, prefs, today, reread=False):
     info = {"store": store, "state": os.path.abspath(ledger), "session_id": st.get("next_id"),
             "version": version, "prefs": prefs, "started": iso(today)}
     save_json(info, os.path.join(work, WORK_FILE))
+    if note_utc_offset(st, offset):
+        st["updated"] = iso(today)
+        publish_ledger(work, info, st, extra)
+        extra["utc_offset_recorded"] = offset
     publish_set(work, info)
     return info, st, extra
 
@@ -8290,7 +8423,7 @@ def cmd_save(args):
     if again is None:               # before any file is written: a save interrupted after the ledger can run again
         info["saved"] = {"session": sid, "gen": [gen_before, st["gen"]]}
         save_json(info, os.path.join(work, WORK_FILE))
-    doc = session_doc_a(rnd, sid, md)
+    doc = session_doc_a(rnd, sid, md, today)
     if measured:
         doc["minutes"], doc["timing"] = measured["minutes"], measured["timing"]
         res["minutes"], res["timing"] = measured["minutes"], measured["timing"]
@@ -8588,8 +8721,10 @@ def build_parser():
         return s
 
     s = command("open", cmd_open); s.add_argument("--store", required=True); s.add_argument("--version")
+    s.add_argument("--utc-offset")
     s.add_argument("--prefs"); s.add_argument("--reread", action="store_true")
     s = command("start", cmd_start); s.add_argument("--store"); s.add_argument("--version"); s.add_argument("--prefs")
+    s.add_argument("--utc-offset")
     s.add_argument("--focused", type=int); s.add_argument("--mcqs", type=int); s.add_argument("--domain")
     s.add_argument("--seed", type=int); s.add_argument("--no-prepared", action="store_true")
     for flag in PLAN_FLAGS:

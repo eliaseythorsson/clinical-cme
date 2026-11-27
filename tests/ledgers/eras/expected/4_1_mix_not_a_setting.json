@@ -28,7 +28,8 @@
   "aim_tags": null,
   "journey_set_at": null,
   "aim_set_at": null,
-  "podcast_sources": null
+  "podcast_sources": null,
+  "utc_offset": null
  },
  "config": {
   "case_format": "unfolding",
