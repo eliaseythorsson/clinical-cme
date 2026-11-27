@@ -103,7 +103,7 @@ def test_a_malformed_candidate_sends_the_checker_back_once_and_is_then_accepted(
     _, out = nxt.finish("--revised")
     assert out["stashed"] is True and nxt.stashed()
     assert out["warnings"] == ["accepted after one revision: kit_case.md: the listening candidates of 1 topic are "
-                               "not three episodes in form (references/standards.md, rule 8)"]
+                               "not three episodes in form (references/standards_listening.md, rule 8)"]
 
 
 def test_fewer_than_three_candidates_need_a_line_saying_so(nxt):

@@ -9,7 +9,7 @@ all count, and they are checked automatically afterwards.
 What is particular to this session:
 
 - **The learner's first message** is in `{messages}/001-learner.md`. Read it now.
-- **The store** is a folder (`references/store.md` §4.2): `{store}`, with the usual `data/…`
+- **The store** is a folder (`references/publishing.md` §2): `{store}`, with the usual `data/…`
   layout. The learner is already set up; there is no page database. The folder is its own
   store copy: nothing has to be read into another folder first.
 - **Your work folder `<work>`** is `{work}`. Start the round with `start --work {work} --store
@@ -25,7 +25,7 @@ What is particular to this session:
   to send a message mid-turn and keep working: send first, file afterwards. When the text
   comes from `cme.py present` or `start`, put it into the file with the shell (redirect or
   append), never by retyping it.
-- **Grading** is as the protocol says (`{skill}/references/feedback_guide.md` §9): once a part's
+- **Grading** is as the protocol says (`{skill}/references/grading.md` §2): once a part's
   answers are filed, mark the grading form `answer` wrote (`{work}/round.json`: every rubric
   element hit, partial or missed with the learner's own words in `quote`, every MCQ's
   `correct`) before you use any prepared text; then run `cme.py draft --work {work} --part
@@ -33,7 +33,7 @@ What is particular to this session:
   `[live: …]` parts are yours, every prepared block may be kept, rewritten or dropped, and what
   you send holds none of the draft's comment lines. Leave the draft files in `{work}`: the run
   compares them with what you sent. When you write the items yourself, the kits hold the
-  prepared blocks of `{skill}/references/standards.md` rule 8, and `cme.py keys {work}` checks them.
+  prepared blocks of `{skill}/references/standards_kits.md` rule 8, and `cme.py keys {work}` checks them.
 - **The learner's replies** arrive as files; you will be told their paths. Read them as the
   learner's messages, verbatim, and file each with `cme.py answer --work {work} --part <part>
   --file <that path>`, never by retyping it.

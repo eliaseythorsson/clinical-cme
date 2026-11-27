@@ -232,7 +232,7 @@ work through the list in your thinking: there it would expose the content it che
 8. Is the vignette clearly different from every `already_used` and `recent_cases_any_topic`
    entry: patient, setting, presentation and twist (§10)?
 9. If this round has a drill, is the trap fair, avoidable from the data given, and invisible
-   as a trap (§9)?
+   as a trap (`drills.md`)?
 10. Does each focused question ask for exactly one decision, open-ended (no options), with the
     reasoning required in the lead-in (§11.2)?
 11. Does it have one best answer under the learner's guidelines, with the acceptable
@@ -251,29 +251,8 @@ Fix anything that fails before presenting the round.
 
 ## 9. Drills: provoking a known thinking pattern
 
-When `plan` attaches a `drill` to the case, the last progress review found a recurring
-pattern and the learner agreed to practise against it. Build the case so that the pattern is
-tempting, but a careful clinician avoids it with the data given. Everything else in this
-guide still applies: the trap must not be detectable as a trap, and the base-rate rules hold.
-
-| Drill code | How to build the case |
-|---|---|
-| `bias:premature_closure` | An early, salient explanation that accounts for most findings, plus a second process or an alternative that only the remaining data support |
-| `bias:anchoring` | Stage 1 points reasonably one way; Stage 2 brings data that should move the learner |
-| `bias:framing` | The referral letter or triage note frames the problem confidently, and plausibly wrongly |
-| `bias:search_satisficing` | Two concurrent problems; the obvious abnormality explains only part of the picture |
-| `bias:base_rate_neglect` / `bias:representativeness` | A common diagnosis presenting atypically, beside a rare one with textbook features that is less likely on the base rate |
-| `bias:availability` | A presentation that resembles a currently prominent or dramatic diagnosis, while the common cause fits better |
-| `bias:confirmation` | Data mixed in direction; test choice should seek to disconfirm |
-| `bias:omission` / `bias:commission` | A clear indication to act (or to wait) where the opposite feels safer |
-| `art:DG`, `art:TEST` | A decisive discriminator exists among several tempting low-yield tests |
-| `art:PR`, `art:DDX` | Several features of different weight; the summary and ranking decide the answer |
-| `knowledge:numeric` | A management decision that hinges on a threshold or dose |
-| `knowledge:outdated` | A decision where recent guidance changed the answer |
-
-In the feedback reveal, name the drill and what it targeted, and say whether the learner
-avoided it. Record `"drill": {"code": …, "result": "avoided" | "partial" | "fell_for"}` in the
-round JSON.
+Only when the plan attaches a `drill`: how the case (or a focused question, §11.5) is built
+around it, the drill codes and what the feedback and the round JSON record: `drills.md`.
 
 ## 10. Novelty: never reuse a vignette
 
@@ -366,5 +345,5 @@ ask only for the free-text answers.
 
 When the round has no case, `plan` may attach a drill to the first focused question (never the
 patterns that need two stages or a full differential: anchoring, search satisficing, problem
-representation, differential). Build one tempting wrong turn into the vignette, as in §9, and
+representation, differential). Build one tempting wrong turn into the vignette, as in `drills.md`, and
 keep it fair and invisible.

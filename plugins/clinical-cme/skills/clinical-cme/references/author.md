@@ -25,12 +25,17 @@ the conversation, and the keys must be good enough for another clinician to grad
 
 ## 1. Read first
 
-1. `standards.md` (same folder as this file), all of it: the numbered rules every item, key
-   and kit must meet. This brief and `case_design.md` cite them as "rule N".
+1. `standards.md` (same folder as this file), all of it, with the parts kept in their own
+   files: `standards_region.md` (rule 2), `standards_kits.md` (rule 8), `standards_listening.md`
+   (rule 8's Listening section) and `standards_positions.md` (rule 12): the numbered rules every
+   item, key and kit must meet. This brief and
+   `case_design.md` cite them as "rule N".
 2. `case_design.md`, all of it: how items are designed.
-3. `feedback_guide.md` §1–5 and §9–10, the examiner's brief: the feedback the kits' prepared
-   blocks (rule 8) are written as, and the rules it keeps. The examiner marks the answer first
-   and then adapts your blocks: write each so that it can be sent as it stands.
+3. `feedback_guide.md`, all of it: the feedback the kits' prepared blocks (rule 8) are written
+   as, the rules it keeps (sources: §3) and which parts the examiner writes live (§7); and
+   `evidence_depth.md` when the plan gives an item a `depth`.
+   The examiner marks the answer first and then adapts your blocks: write each so that it can
+   be sent as it stands.
 4. The plan (JSON). It gives, per item: slot (`mcq`, `focused`, `case`), topic and blueprint
    ID, the `subtopic` to write to where the blueprint has sub-topics (with its decision points), the reason it was chosen, any open gap to re-test, the learner's `positions` on its topic
    (rule 12), `aspect_hint` for focused items, a
@@ -72,7 +77,7 @@ Planning notes:
 - An item with `depth` in the plan gets a `deeper` block in its kit section, at that level,
   and a line on the verification list for each study it names (rule 8). The item itself is
   written no differently: the depth is about its feedback, not its difficulty.
-- A `drill` is built into its item (`case_design.md` §9, §11.5).
+- A `drill` is built into its item (`drills.md`; `case_design.md` §11.5).
 - Unless the plan's `listening` is false, each kit ends with `## Listening` (rule 8): the
   `Sources` line from the plan's `podcast_sources`, and one line per topic with the point
   tested and its likely failure points. You name no episode and search for none: the checker
@@ -87,32 +92,8 @@ Planning notes:
   for it.
 - `Parts: case`: `sealed_case.md` and `kit_case.md`, and `kit_questions.md` if it is not in
   the output folder yet.
-- `Parts: headers`: the round is written and `cme.py finish-prepare` refused it for its key
-  headers or its kits (the lint's blocking problems, `standards.md`, "The lint"). The
-  problems are listed in your prompt by file, key, field and kit section. Correct those
-  headers (rule 9), kit sections and prepared blocks (rule 8) and run the check of §4 until it prints
-  `"ok": true`. Change nothing else.
-- `Parts: revise`: the round is written and `cme.py finish-prepare` printed `"revise": true`:
-  a key is contradicted, or the lint made a judgement call, or both; or the checker retried
-  claims it had not verified, and the kits are to take up what it confirmed. Change nothing
-  but what these name, and leave the evidence files as they are: the round is stashed after
-  your "done", whatever the lint still finds.
-  - Read `evidence_questions.md` and `evidence_case.md` in the output folder, where they
-    exist. Wherever a **Note** says a key is contradicted by current guidance, correct the
-    item so that it has one best answer under that guidance: the key, the kit, and the stem or
-    options if they no longer work, keeping the `present` block complete. Replace every
-    `(verify)` in the kits' notes that the check confirmed with the confirmed figure and
-    source, and correct every prepared block that a claim marked changed, regional difference
-    or not verified names under **Blocks:** (state a claim not verified qualitatively).
-    The candidates under `## Listening` are the checker's: leave them as they are.
-  - Read the tag results (`tag_results_<n>.md`) in the output folder, if there are any. Where a tag an item's decision
-    point rests on is marked `superseded` (or `changed`), make the key, the kit and the
-    verification list cite the newer guideline (or the change) and correct any block that
-    rests on the old edition (rule 2.4). Leave the file as it is.
-  - Read `lint.md` in the output folder, if there is one. For each line decide whether the
-    rule it names is broken (rule 5: an abbreviation not spelled out at first use; rule 6:
-    more than one time anchor) and correct the presented text where it is. A finding that is
-    wrong is left alone.
+- `Parts: headers` or `Parts: revise`: a pass back after `cme.py finish-prepare`, on a round
+  already written: follow `author_revise.md` (same folder) for that part, and nothing below.
 
 Write the short questions first, then the case, so the case can be kept clear of them and of
 what their feedback will teach (`case_design.md` §2). With `Parts: case`, read the
@@ -181,6 +162,8 @@ round"). It prints names and counts only:
   left (`cme.py finish-prepare` runs the same check).
 - `review`: the lint's judgement calls on rules 5 and 6, with the findings in `lint.md` in the
   output folder. Read it, correct what is a real breach, and run the check once more.
+
+What the lint checks, and what its heuristics look at: `standards_lint.md`.
 
 No lint checks rule 7: pre-flight line 16 is its only check before the round is played.
 

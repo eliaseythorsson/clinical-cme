@@ -295,7 +295,7 @@ def prepared_blocks(kid, slot, planned):
 def sealed_files(st, plan):
     """{file name: text} for `plan`. Everything the learner must not see before answering sits
     outside the present and bank blocks and carries the word SEALED; each key starts with its
-    key header (with its rubric block for a focused question and the case), and the kits have the sections of the rulebook (references/standards.md, rule 8),
+    key header (with its rubric block for a focused question and the case), and the kits have the sections of the rulebook (references/standards_kits.md, rule 8),
     the "Listening" section among them unless the plan has listening off, and the prepared blocks
     of every item, with a `deeper` block for an item the plan gives an evidence depth."""
     listening = plan.get("listening") is not False

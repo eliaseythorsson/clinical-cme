@@ -1,5 +1,5 @@
 """Evidence depth: the more often a topic is answered well, the further behind the recommendation
-its feedback goes (guidance -> studies -> design -> frontier; references/feedback_guide.md §4.1).
+its feedback goes (guidance -> studies -> design -> frontier; references/evidence_depth.md).
 The engine counts, per topic and per aspect of a focused question, how many times in a row it
 was answered well; the plan tells the author (who writes 'Deeper' notes into the kit, rule 8 of
 references/standards.md), and `answer` tells the examiner once the part's answers are in."""

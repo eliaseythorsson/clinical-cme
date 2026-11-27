@@ -315,7 +315,7 @@ class Script:
             if part not in self.filed:
                 self.answer(part, logged[part])
         self.put("round.json", rnd)
-        if "no_draft" not in self.faults:       # marks before text, then the draft (feedback_guide.md §9)
+        if "no_draft" not in self.faults:       # marks before text, then the draft (grading.md §2)
             keys = [it.get("key") for it in rnd.get("items") or []]
             for part, there in (("questions", any(k and k != "case" for k in keys)), ("case", "case" in keys)):
                 if there:

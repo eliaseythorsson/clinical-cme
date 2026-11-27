@@ -47,7 +47,7 @@ tags, topics, score, format, drill), the reading pointers as the document's `rea
 and, when the round had a Listening section, the picks as its `listening` list
 (`state_schema.md` §2; the page shows both under "Reading & listening"):
 
-When the feedback was written from a draft (`feedback_guide.md` §9), `save` also compares each
+When the feedback was written from a draft (`grading.md` §2), `save` also compares each
 draft with the message as sent and keeps, as the document's `prepared_feedback`, which prepared
 blocks were used as prepared, which were changed and which were left out: `{"offered": 14,
 "as_prepared": ["Q1 model", …], "changed": ["Q4.2 missed"], "discarded": []}`. It is the log's
@@ -82,7 +82,7 @@ a "Reflection" heading is kept as it is.
   blocks in the round JSON.
 - **Grade changes**: each dispute with from → to (the same score when it stood), the reason and the outcome. "None." otherwise.
   A score the learner set, a gap they closed or a stop with its position note
-  (`feedback_guide.md` §7.1–7.2) is not written here by hand: `close` adds a "Set by the
+  (`disputes.md` §1–2) is not written here by hand: `close` adds a "Set by the
   learner" section with both scores, who closed the gap and the note word for word (`override` after the close: the same lines in the addendum), and the document keeps
   them as `learner_changes`.
 

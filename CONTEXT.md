@@ -312,7 +312,7 @@ The learner's own paragraph on what the rounds should help them achieve (an exam
 _Avoid_: goals list
 
 **Rulebook**:
-The numbered standards for writing items (`references/standards.md`), the same for every learner; briefs cite its rule numbers. Contrast with settings, which are per learner.
+The numbered standards for writing items (`references/standards.md`, with rules 2, 8 and 12 in their own small files for the checkers), the same for every learner; briefs cite its rule numbers. Contrast with settings, which are per learner.
 _Avoid_: guidelines (means clinical guidelines here)
 
 **Crux test**:
@@ -320,7 +320,7 @@ The decisive test of an item when it is one clinicians often fail to order; its 
 _Avoid_: key test, special test
 
 **Glossary line**:
-The one line "Abbreviations: …" that opens a feedback message and explains the abbreviations it uses (rule 5.3, written in the examiner's brief). Presented items have none: there an abbreviation is spelled out at first use.
+The one line "Abbreviations: …" that opens a feedback message and explains the abbreviations it uses (rule 5.3, written in `feedback_guide.md`). Presented items have none: there an abbreviation is spelled out at first use.
 
 **Time anchor**:
 The single point a case counts all its timings from: a named event (admission as day 0) or now, never both (rule 6).
@@ -342,6 +342,10 @@ The one sentence, from five timed rounds, comparing the learner's median round w
 The learner's field of practice, which sets the pitch of items and which guideline applies; asked at setup, default internal/hospital medicine.
 
 ## Development
+
+**Reading load**:
+The reference text a role reads in one turn of a round (examiner turns 1–5, author, checker), counted in characters of whole files opened; every learner pays it in every round, so each reference is a small file read whole by the turn that needs it (`docs/reading-load.md`).
+_Avoid_: context size (that includes the conversation)
 
 **Testing mode**:
 A learner setting that adds a short feedback check and a store-integrity check at the end of each round.

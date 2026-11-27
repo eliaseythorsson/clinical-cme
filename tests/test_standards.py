@@ -16,7 +16,7 @@ from test_finish_prepare import Next, edit
 
 REFERENCES = os.path.join(SKILL, "references")
 STANDARDS = os.path.join(REFERENCES, "standards.md")
-BRIEFS = ["author.md", "case_design.md", "evidence_check.md", "feedback_guide.md", "preparing.md"]
+BRIEFS = ["author.md", "case_design.md", "evidence_check.md", "feedback_guide.md", "grading.md", "preparing.md"]
 RULES = ["Blinding", "Guideline region", "Units and drug names", "Pitch", "Abbreviations",
          "One time anchor per case", "Crux tests are requested, not given", "What a kit contains",
          "Key headers", "Results the learner did not see", "Text for the learner speaks plainly",
@@ -60,21 +60,41 @@ def test_every_brief_cites_the_rulebook():
         assert "standards.md" in text and re.search(r"\brules? \d", text), name
 
 
-@pytest.mark.parametrize("sentence", [
-    # one sentence of each rule that used to be restated in the briefs
-    "the major European and US societies (e.g.",                   # rule 2
-    "mmol/L, µmol/L, g/L",                                         # rule 3
-    "anion gap, corrected calcium",                                # rule 3
-    "international non-proprietary name",                          # rule 3
-    "organ system or blueprint ID",                                # rule 1
-    "what a part-answer usually lacks",                             # rule 8
-    "one `field: value` per line",                                 # rule 9
+@pytest.mark.parametrize("sentence, home", [
+    # one sentence of each rule that used to be restated in the briefs, and the rulebook's file
+    # that holds it (rule 2 and rule 8's Listening section in their own files for the checkers, #92)
+    ("the major European and US societies (e.g.", "standards_region.md"),     # rule 2
+    ("mmol/L, µmol/L, g/L", "standards.md"),                                  # rule 3
+    ("anion gap, corrected calcium", "standards.md"),                         # rule 3
+    ("international non-proprietary name", "standards.md"),                   # rule 3
+    ("organ system or blueprint ID", "standards.md"),                         # rule 1
+    ("what a part-answer usually lacks", "standards_kits.md"),                # rule 8
+    ("Three candidates per topic", "standards_listening.md"),                 # rule 8, Listening
+    ("one `field: value` per line", "standards.md"),                          # rule 9
 ])
-def test_rule_text_is_written_once(sentence):
+def test_rule_text_is_written_once(sentence, home):
     holders = [os.path.basename(p) for p in glob.glob(os.path.join(REFERENCES, "*.md")) + [os.path.join(SKILL, "SKILL.md")]
                if sentence.lower() in flat(read(p)).lower()
                and os.path.basename(p) != "onboarding.md"]       # setup describes the settings a learner chooses
-    assert holders == ["standards.md"], (sentence, holders)
+    assert holders == [home], (sentence, holders)
+
+
+def test_rules_kept_in_their_own_files_keep_their_heading_in_the_rulebook():
+    """Issue #92: rule 2 and rule 8's Listening section live in small files a checker reads
+    alone; the rulebook keeps every rule's heading and points to them."""
+    assert "`standards_region.md`" in rule(2) and len(rule(2).split()) < 80
+    assert read(os.path.join(REFERENCES, "standards_region.md")).startswith("# Rule 2. Guideline region")
+    assert "`standards_kits.md`" in rule(8) and "`standards_positions.md`" in rule(12)
+    assert len(rule(8).split()) < 80 and len(rule(12).split()) < 80
+    assert read(os.path.join(REFERENCES, "standards_kits.md")).startswith("# Rule 8. What a kit contains")
+    assert read(os.path.join(REFERENCES, "standards_positions.md")).startswith("# Rule 12. The learner's position notes")
+    assert "`standards_listening.md`" in read(os.path.join(REFERENCES, "standards_kits.md"))
+    assert "## Rule" not in read(os.path.join(REFERENCES, "standards_region.md")).split("\n", 1)[1]
+    assert "## Rule" not in read(os.path.join(REFERENCES, "standards_listening.md"))
+    # the lint's table and heuristics, read by the author only when `keys` finds something
+    lint = read(os.path.join(REFERENCES, "standards_lint.md"))
+    assert "| **Blocking** (definite) |" in lint and "| **Blocking** (definite) |" not in read(STANDARDS)
+    assert "`standards_lint.md`" in read(STANDARDS).split("## The lint")[1]
 
 
 def test_key_header_blocks_are_shown_only_in_the_rulebook_and_the_schema():
@@ -88,8 +108,9 @@ def test_slots_for_the_issues_that_build_on_the_rulebook():
     text = read(STANDARDS)
     assert "slot: issue #45" not in text          # filled in: see the tests of issue #45 below
     assert "slot: issue #55" not in text          # filled in: tests/test_learner_settings.py
-    # issue #50 filled its slot in rule 8: the "## Listening" section of the kits
-    assert "slot: issue #50" not in text and "**Listening** (`## Listening`" in text
+    # issue #50 filled its slot in rule 8: the "## Listening" section of the kits (rule 8's own file, #92)
+    kits = read(os.path.join(REFERENCES, "standards_kits.md"))
+    assert "slot: issue #50" not in text + kits and "**Listening** (`## Listening`" in kits
 
 
 # ---------------------------------------------------------------- issue #45: rules 5–7 finished
@@ -119,12 +140,12 @@ def test_the_pre_flight_has_a_line_for_each_of_rules_5_to_7():
 
 def test_the_glossary_line_opens_every_feedback_message():
     assert '"Abbreviations:"' in rule(5)
-    assert "feedback_guide.md` §10.1" in rule(5)          # written once, in the examiner's brief (#77)
+    assert "feedback_guide.md` §6.1" in rule(5)          # written once, in the examiner's brief (#77)
     brief = read(os.path.join(REFERENCES, "feedback_guide.md"))
     guide = flat(brief.split("## 2. Structure")[1].split("### A.")[0])
-    assert "each opening with the glossary line (§10.1)" in guide
+    assert "each opening with the glossary line (§6.1)" in guide
     assert guide.count("glossary line, A") == 2
-    glossary = flat(brief.split("### 10.1 The glossary line (rule 5.3)")[1].split("### 10.2")[0])
+    glossary = flat(brief.split("### 6.1 The glossary line (rule 5.3)")[1].split("### 6.2")[0])
     assert 'starts with the word "Abbreviations:"' in glossary and "comes before the reveal" in glossary
     skill = flat(read(os.path.join(SKILL, "SKILL.md")))
     assert "glossary line → reveal" in skill and "glossary line → case reveal" in skill
@@ -180,7 +201,7 @@ def test_the_header_the_parser_accepts_is_the_one_in_the_rulebook():
 
 
 def test_the_kit_sections_of_the_rulebook_are_the_ones_the_lint_requires():
-    rule = read(STANDARDS).split("## Rule 8.")[1].split("## Rule 9.")[0]
+    rule = read(os.path.join(REFERENCES, "standards_kits.md"))           # rule 8, in its own file (#92)
     assert re.findall(r"^\| `## (.+?)` \|", rule, re.M) == list(cme.KIT_CASE_SECTIONS)
     # "Listening" is a section of both kits, required unless the plan has listening off (issue #50)
     assert "`## Q1`" in rule and "`## Listening`" in rule and cme.KIT_LISTENING == "Listening"
@@ -506,3 +527,35 @@ def test_internal_terms_found_and_clinical_text_passes():
     spec.loader.exec_module(cme)
     assert cme.internal_terms("As rule 7 says, see standards.md and the kit.") == ["rule 7", "standards.md", "kit"]
     assert cme.internal_terms("The authors of ADVOR found less congestion; follow ESC 2021 section 11.") == []
+
+
+# ---------------------------------------------------------------- #92: each role can reach the rules it is sent to
+
+# Where each rule's text lives: in the rulebook itself, or in a file of its own that a checker
+# reads alone (rules 10 and 11 are written in feedback_guide.md, which binds the feedback).
+RULE_HOMES = {2: "standards_region.md", 8: "standards_kits.md", 10: "feedback_guide.md",
+              11: "feedback_guide.md", 12: "standards_positions.md"}
+# What each role reads, as its brief tells it (asserted below), besides the brief itself.
+ROLE_READS = {
+    "author.md": ["standards.md", "standards_region.md", "standards_kits.md", "standards_listening.md",
+                  "standards_positions.md", "case_design.md", "feedback_guide.md"],
+    "evidence_check.md": ["standards_region.md", "standards_kits.md", "standards_listening.md",
+                          "standards_positions.md"],
+    "tag_check.md": ["evidence_check.md", "standards_region.md"],
+}
+
+
+@pytest.mark.parametrize("brief", sorted(ROLE_READS))
+def test_every_rule_a_brief_cites_is_in_a_file_its_role_reads(brief):
+    """Issue #92: a brief that sends its role to "rule N" must also send it to the file that holds
+    rule N (rule 8.5 and its Listening section in `standards_listening.md` count as rule 8's)."""
+    text = flat(read(os.path.join(REFERENCES, brief)))
+    reads = ROLE_READS[brief]
+    for name in reads:
+        assert "`%s`" % name in text, "%s does not send its reader to %s" % (brief, name)
+    cited = {int(n) for n in re.findall(r"\brules? (\d+)", text)}
+    cited |= {int(last) for last in re.findall(r"\brules? \d+(?:\.\d+)?[–-](\d+)", text)}
+    assert cited, brief
+    for n in sorted(cited):
+        home = RULE_HOMES.get(n, "standards.md")
+        assert home in reads, "%s cites rule %d, held in %s, which its reader is not sent to" % (brief, n, home)

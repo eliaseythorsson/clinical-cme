@@ -115,7 +115,7 @@ CONTENT_NEUTRAL_CONFIG = ("testing", "reminders", "prepare_task", "prepare_ahead
 # the paragraphs: the paragraphs themselves are not here.
 CONTENT_NEUTRAL_PROFILE = ("display_name", "onboarded_at", "journey_label", "aim_tags",
                            "journey_set_at", "aim_set_at", "utc_offset")
-# Listening (issue #50; references/standards.md, rule 8): a pick is one Spotify episode of
+# Listening (issue #50; references/standards_listening.md, rule 8): a pick is one Spotify episode of
 # 15 to 90 minutes; a kit keeps three candidates per topic.
 SPOTIFY_EPISODE_RE = re.compile(r"^https://open\.spotify\.com/episode/[A-Za-z0-9]{22}$")
 LISTEN_MINUTES = (15, 90)
@@ -150,7 +150,7 @@ SHORT_BLOCK_ROUNDS = 2
 # tested topics, factor), linear between the points and clamped outside them. Nothing tested: 1.0.
 THEME_MASTERY_FACTOR = ((2.5, 1.5), (3.5, 1.0), (4.5, 0.7))
 THEME_REST_BLOCKS = 4    # a domain's pull as the next theme recovers over this many blocks after its own
-# Evidence depth (feedback_guide.md §4.1): how far behind the recommendation the feedback on an
+# Evidence depth (evidence_depth.md): how far behind the recommendation the feedback on an
 # item goes when it is answered well. Earned per topic, and per aspect for a focused question:
 # (name, answered well this many times in a row before this round). An item that is missed, or
 # written on an open gap, is taught at the first depth whatever the topic had reached.
@@ -5840,7 +5840,7 @@ def load_guidelines(work, info, st):
 
 
 NOT_READ = ("data/guidelines.json is in the store but was not read in this job: read it into the store copy "
-            "(store.md section 4) and run the command again")
+            "(publishing.md) and run the command again")
 
 
 def sweep_divisor(doc):
@@ -5946,12 +5946,12 @@ def tag_chunks(tags):
 
 
 def write_tag_list(path, st, idx, tags, today):
-    """One list a checker works from (references/evidence_check.md §7): one line per tag, sorted, with
+    """One list a checker works from (references/tag_check.md): one line per tag, sorted, with
     what its record says; the items' tags are not told apart from the sweep's."""
     ctx = guideline_context(st)
     lines = ["# Guideline tags to check", "",
              "Region: %s · Specialty: %s · Date: %s" % (ctx["guideline_region"], ctx["specialty"], iso(today)),
-             "Brief: references/evidence_check.md section 7. Write one line per tag into the output file:",
+             "Brief: references/tag_check.md. Write one line per tag into the output file:",
              "`Tag: <tag> | current|changed|superseded|uncertain | <the newer guideline, or -> | <source link> | <note>`",
              ""]
     for t in sorted(tags):
@@ -6323,7 +6323,7 @@ def write_central_list(path, name, s, tags, today):
     lines = ["# Guideline tags to check (central records, set %s)" % name, "",
              "Region: %s · Specialty: %s (the default blueprint) · Date: %s"
              % (" / ".join(s.get("regions") or [name]), DEFAULT_PROFILE["specialty"], iso(today)),
-             "Brief: references/evidence_check.md section 7. Write one line per tag into the output file:",
+             "Brief: references/tag_check.md. Write one line per tag into the output file:",
              "`Tag: <tag> | current|changed|superseded|uncertain | <the newer guideline, or -> | <source link> | <note>`",
              ""]
     for t in sorted(tags):
@@ -7432,7 +7432,7 @@ COMMANDS = (
      'With `newer_version` the ledger was last written by a newer version of the skill (`say`: '
      'the line for the learner): read-only requests go on, and every command that would write the '
      'ledger (`start` and `prepare` too) stops with nothing written (§1, `store.md` §6). '
-     '`--reread`: the same job on a fresh read after a refused publish (`store.md` §4): the '
+     '`--reread`: the same job on a fresh read after a refused publish (`publishing.md`): the '
      "job's own files stay and the engine applies the job's steps (every command that wrote) the "
      "fresh ledger does not hold yet (each step's token goes into the ledger it publishes, "
      '`applied_steps`) again on it, printing the new publish set as `files` and `rebased` (`steps`, '
@@ -7480,7 +7480,7 @@ COMMANDS = (
      "part's items by key id (`level` 1–4, `name`, `in_a_row`; §4.2), read from the key headers "
      'and the ledger, for the feedback about to be written. No `depth` with `evidence_ladder` '
      "false. It also prints `positions`: the learner's position notes in force on each item's "
-     'topic, by key id (`standards.md` rule 12), for the grading. With such a part it also writes '
+     'topic, by key id (`standards_positions.md` rule 12), for the grading. With such a part it also writes '
      'the **grading form** into `W/round.json` (§2), and with `reflection` the **reflection form** '
      'into `W/reflection.json` (§3), and prints `form` (the file, the key ids `added`, '
      '`draft`, the part to give `draft` once the form is marked, `rubric_missing` for a focused '
@@ -7490,7 +7490,7 @@ COMMANDS = (
     ('`draft --work W --part questions\\|case\\|all`',
      'Once the grading form is marked (every rubric element hit, partial or missed with the '
      "learner's words, every MCQ's `correct`; refused while one is blank: marks before text), put "
-     'together the draft of a feedback message from the kits\' prepared blocks (`standards.md` '
+     'together the draft of a feedback message from the kits\' prepared blocks (`standards_kits.md` '
      'rule 8; ADR 0009): the reveals, then per item the rubric as marked and the blocks its marks '
      'call for, with `[live: …]` where only the examiner can write and a `check` line above a '
      'block whose claim the evidence file does not confirm; the final message also gets the '
@@ -7564,7 +7564,7 @@ COMMANDS = (
      'central records then still overlay the plan).'),
     ('`finish-prepare --work W [--revised] [--no-evidence]`',
      'After the checkers: finish preparing the round planned in `W/next/plan.json` and drafted in'
-     ' `W/next`. First lints it against the rulebook (`standards.md`, "The lint"). **Blocking**: '
+     ' `W/next`. First lints it against the rulebook (`standards_lint.md`). **Blocking**: '
      'the key headers of the sealed files against the plan, as `keys --plan` checks them, and the'
      ' kits and their sections (rule 8); a problem is an error (exit 2, nothing stashed) that '
      'lists every one by file, key, field or section, whatever the evidence says and also with '
@@ -7593,7 +7593,7 @@ COMMANDS = (
      'evidence files, so the sources are checked at the session; the lint runs all the same. The '
      "first part's sealed file must be there; a missing case is a warning (it is then written at "
      'the next session). With tag lists from `prepare` for the round, it reads their checkers\' `Tag:` '
-     'lines (`W/next/tag_results_<n>.md`, `evidence_check.md` §7) and prints `tag_checks` (counts by '
+     'lines (`W/next/tag_results_<n>.md`, `tag_check.md`) and prints `tag_checks` (counts by '
      'status; `items_changed`: tags of the items found changed or superseded, which sends the author '
      'back once, `revise`); when the round is stashed it files them as `tag-checks --results` does. '
      'Missing results hold nothing up: those tags come due again. The review sweep is not read here.'),
@@ -7625,7 +7625,7 @@ COMMANDS = (
      'DIR`: per set (or only `--region`), the tags as cited now not checked within `D` days (90), '
      'never-checked first, then the oldest, all of them or at most ceil(tags/N) per set with '
      '`--share N`, in lists of at most 40 (`DIR/<set>_checks_<n>.md` → `<set>_results_<n>.md`, one '
-     'checker each, `evidence_check.md` §7); prints `count`, `due` per set and `checkers`. '
+     'checker each, `tag_check.md`); prints `count`, `due` per set and `checkers`. '
      '`--results F` (once per file): the `Tag:` lines filed into the set the file\'s name names (or '
      '`--region`), only for the tags its list asked (others skipped, `not_listed`), each checked today, as `tag-checks --results` files them; the file is validated, '
      'then written (refused, nothing written, when it would not validate). `--validate`: refused '
@@ -7674,7 +7674,7 @@ COMMANDS = (
     ('`position --work W [--drop ID \\| --reopened ID]`',
      "The learner's position notes (§1). Alone: the notes in force (`id`, `point`, `text`, `set`,"
      ' `topic`, `lapses`), writing nothing. `--drop`: the learner takes one back. `--reopened`: '
-     'the examiner raised a changed guideline on it once more (`standards.md` rule 12); refused '
+     'the examiner raised a changed guideline on it once more (`standards_positions.md` rule 12); refused '
      'the second time. The ledger and the page file go into the publish set; the prepared round '
      'is kept.'),
     ('`snooze --work W [--days 7]`',
@@ -8103,7 +8103,7 @@ def block_problems(sealed, kit, sealed_text, kit_text, plan):
         missing = [b for b in want if not blocks.get(b)]
         if missing:
             problems.append("%s, key %s: no prepared block %s (finished text between '<!-- block: %s -->' and "
-                            "'<!-- /block -->'; references/standards.md rule 8)"
+                            "'<!-- /block -->'; references/standards_kits.md rule 8)"
                             % (kit, kid, ", ".join(missing), missing[0]))
     stray = [b for b in blocks if b not in allowed]
     if stray:
@@ -8251,7 +8251,7 @@ def lint_lines(lint):
                          % (name, n6, "" if n6 == 1 else "s"))
         if n8:
             lines.append("%s: the listening candidates of %d topic%s are not three episodes in form "
-                         "(references/standards.md, rule 8)" % (name, n8, "" if n8 == 1 else "s"))
+                         "(references/standards_listening.md, rule 8)" % (name, n8, "" if n8 == 1 else "s"))
     return lines
 
 
@@ -9412,9 +9412,9 @@ def part_keys(work, part):
 
 def answer_depth(work, part, today=None, keys=None):
     """What the examiner grades with for each item whose answers this part completes, by key id:
-    its evidence depth ({"Q1": {"level", "name", "in_a_row"}}, feedback_guide.md §4.1) and the
+    its evidence depth ({"Q1": {"level", "name", "in_a_row"}}, evidence_depth.md) and the
     learner's position notes on its topic ({"Q1": [{"id", "point", "text", "set"}]},
-    standards.md rule 12). Read from the key headers and the ledger as it stands before the
+    standards_positions.md rule 12). Read from the key headers and the ledger as it stands before the
     round is recorded. Returns (depth, positions), each None where there is nothing to say (no
     job open here, no key headers, the ladder turned off, no note): filing an answer never
     fails over it."""
@@ -9489,14 +9489,14 @@ def grading_guide(listening):
         "`quote` (for a missed element: empty, or what they wrote instead) and a short `note`; for an MCQ "
         "`correct` and `confidence` as the learner gave it (null when none). Then run `draft` for the "
         "part: it puts the prepared text your marks call for into the feedback's order "
-        "(feedback_guide.md section 9).",
+        "(grading.md section 2).",
         "Each item: `mastery` (a focused question and the case by feedback_guide.md section 2; an MCQ "
         "4-5 correct with sound reasoning, 3 correct with flawed reasoning, 1-2 wrong).",
         "`given` is what grading uses and nobody edits: `depth`, how far behind the recommendation the "
-        "feedback goes (feedback_guide.md section 4.1), `positions`, the learner's position notes "
-        "on the topic (standards.md rule 12), and `sibling`, the other sub-topic of the disease answered "
+        "feedback goes (evidence_depth.md), `positions`, the learner's position notes "
+        "on the topic (standards_positions.md rule 12), and `sibling`, the other sub-topic of the disease answered "
         "last time, for the sibling line (feedback_guide.md section 4.2).",
-        "Coding (feedback_guide.md section 11): `art` for the case and a focused question (a focused "
+        "Coding (coding.md): `art` for the case and a focused question (a focused "
         "question scores only the domains it tested: leave the others null), `idea` for the case only, "
         "and one entry in `errors` for every rubric element marked missed or partial and for a wrong MCQ.",
         "`retests`: keep it only when the item asked about the gap's decision point; set it to null "
@@ -9656,12 +9656,12 @@ def round_from_form(rnd):
                            and not str(e.get("quote") or "").strip())
             if unquoted:
                 warnings.append("%s: %d rubric element(s) marked hit or partial without the learner's words in "
-                                "`quote` (feedback_guide.md section 9.1)" % (name, unquoted))
+                                "`quote` (grading.md section 2.1)" % (name, unquoted))
             short = sum(1 for m in marks if m in ("partial", "missed"))
             errors = len(((coding or {}).get("errors") or []) if isinstance(coding, dict) else [])
             if short > errors:
                 warnings.append("%s: %d rubric element(s) missed or partial but %d error record(s): one error "
-                                "per element (feedback_guide.md section 11.3)" % (name, short, errors))
+                                "per element (coding.md section 3)" % (name, short, errors))
     if rnd.get("drill") and isinstance(rnd["drill"], dict) and rnd["drill"].get("result") is None:
         blank.append("drill result")
     if blank:
@@ -9733,7 +9733,7 @@ def rubric_lines(rubric):
 
 
 def answered_well_today(it):
-    """Does the item get its `deeper` block: answered well by its marks (feedback_guide.md §4.1)?"""
+    """Does the item get its `deeper` block: answered well by its marks (evidence_depth.md)?"""
     if it.get("type") == "mcq":
         return it.get("correct") is True and it.get("confidence") not in ("unsure", "guess")
     marks = [e.get("mark") for e in it.get("rubric") or [] if isinstance(e, dict)]
@@ -9844,7 +9844,7 @@ def write_draft(work, part):
     name = DRAFT_FILES["final" if final else "questions"]
     used, lines = [], ["<!-- draft: prepared text chosen by your marks. Write each [live: ...] part, rewrite or "
                        "drop any block the answer calls for, then send it without these comment lines "
-                       "(feedback_guide.md section 9). -->"]
+                       "(grading.md section 2). -->"]
     if contradicted:
         lines.append("<!-- check: the evidence check found %d key(s) contradicted: grade against the "
                      "guidance, and correct the key and its blocks -->" % contradicted)
@@ -9943,7 +9943,7 @@ def prepared_feedback(work, warnings):
     if not any_draft:
         if any(parse_blocks(read_text(p))[0] for p in (in_work(work, k) for k in KIT_FOR.values()) if p):
             warnings.append("the kits hold prepared blocks but no draft was made: mark the grading form, run "
-                            "`draft`, and write the feedback from it (feedback_guide.md section 9)")
+                            "`draft`, and write the feedback from it (grading.md section 2)")
         return None
     return out
 
@@ -9965,7 +9965,7 @@ def reflection_guide(items, ask_sources):
         "`learner_scores` (\"record it as 4\"), `learner_closed_gaps` (\"close that gap\") and "
         "`learner_stops` (\"I know this, stop bringing it back\", with the position note when the "
         "learner gave one): only what the learner said, matched by topic, and by type where the round "
-        "has two items on it (feedback_guide.md section 7).",
+        "has two items on it (disputes.md).",
     ]
     if ask_sources:
         how.append("`podcast_sources`: the shows the learner named to trust or to avoid, if asked this "
@@ -10188,10 +10188,10 @@ def cmd_save(args):
         found = internal_terms(read_text(path)) if path else []
         if found:                   # plain language: logged as sent; next time, write it for the learner
             warnings.append("the %s as sent names the skill's own machinery (%s): feedback_guide.md "
-                            "section 10.3" % (label, ", ".join(found)))
+                            "section 6.3" % (label, ", ".join(found)))
         if path and LEFTOVER_RE.search(read_text(path)):
             warnings.append("the %s as sent still holds the draft's comment lines or a [live: …] part: "
-                            "logged as sent (feedback_guide.md section 9)" % label)
+                            "logged as sent (grading.md section 2)" % label)
     adapted = prepared_feedback(work, warnings)
     res = record_round(st, copy.deepcopy(rnd), today, again)
     if again is None:               # before any file is written: a save interrupted after the ledger can run again

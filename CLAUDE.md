@@ -16,7 +16,9 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
     in `references/`
   - `scripts/cme.py` — the state engine (Python 3.8+, standard library only)
   - `references/` — store, schema, the rulebook (`standards.md`), case design, feedback, analysis, logging, review, onboarding,
-    preparing ahead, other requests
+    preparing ahead, other requests. Small files, each read whole by the role and turn that needs
+    it (SKILL.md's table; #92, `docs/reading-load.md`): split a file rather than point into part of
+    a large one, and never send a round to `state_schema.md` whole
   - `templates/` — learner page (`page.html`), default blueprint, resource library, the default
     blueprint's central guideline-tag check records per region (`guideline_checks.json`, #91;
     kept current by `cme.py central-checks`, procedure in `docs/maintaining-guidelines.md`)
@@ -57,7 +59,9 @@ an agent session: releasing is the owner's.
   installed (test-only; the engine stays standard library), `-n auto` runs it on every core, as CI
   does; tests must stay independent under it: own `tmp_path`, nothing written into the repo tree.
 - Domain vocabulary: `CONTEXT.md`. Decisions: `docs/adr/`. Current plan: `docs/plan-v5.md`.
-- A rule for writing items is written once, in `references/standards.md`; briefs cite its number.
+- A rule for writing items is written once, in the rulebook (`references/standards.md`; rules 2, 8, 8's
+  Listening section, 12 and the lint in `standards_region.md`, `standards_kits.md`, `standards_listening.md`,
+  `standards_positions.md`, `standards_lint.md`); briefs cite its number, and send their role to the file that holds it.
   After changing `KEY_*` in `cme.py`, paste `cme.py key-table` into rule 9 (a test compares them).
 - After changing a command or a work-folder file, paste `cme.py command-table` and `cme.py file-table`
   into `state_schema.md` §6 and §6.1 (a test compares them).

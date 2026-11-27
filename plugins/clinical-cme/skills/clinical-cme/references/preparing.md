@@ -1,17 +1,18 @@
 # Preparing a round ahead
 
-Read this when a round has just been closed (§2), when the session's whole job is to prepare a
-round (§3), when the learner asks for rounds to be prepared overnight (§4), or when a session
-starts and no prepared round could be used (§6).
+Read this when a round has just been closed (§2). When the session's whole job is to prepare a
+round, or the learner asks for rounds to be prepared overnight: `prepare_only.md`. When a
+session starts and no prepared round could be used: `unprepared.md`.
 
-Contents: 1. What is made ready, and when · 2. After the close · 3. Prepare only ·
-4. Always-ready rounds · 5. Telling the learner once · 6. A round that was not prepared
+Contents: 1. What is made ready, and when · 2. After the close · 3. Prepare only (in
+`prepare_only.md`) · 4. Always-ready rounds (there too) · 5. Telling the learner once · 6. A
+round that was not prepared (in `unprepared.md`)
 
 ## 1. What is made ready, and when
 
 - **The whole round is prepared ahead.** After each close, the next round is planned and
   written in full — short questions, case Stage 1 with its results bank, and the finished text
-  of both feedbacks (the kits' prepared blocks, `standards.md` rule 8) — its evidence is
+  of both feedbacks (the kits' prepared blocks, `standards_kits.md` rule 8) — its evidence is
   checked, and all of it is kept, packed, in the store
   (`state_schema.md` §8). The next session reads the store and presents; it writes and looks
   up nothing before the learner starts, before the case appears, or before either feedback.
@@ -21,7 +22,7 @@ Contents: 1. What is made ready, and when · 2. After the close · 3. Prepare on
   first minute of the session. A claim the checker's first pass did not reach is retried by
   other routes as part of preparation (`evidence_check.md` §3; step 4 below), so that the
   session is left with no list to run: at grading the examiner searches only for what the
-  answers raise (`feedback_guide.md` §1).
+  answers raise (`grading.md` §1).
 - **The next round is sealed from the start.** With an author you never see it: do not read
   the plan, the sealed files, the kits or the evidence files in `<work>/next`.
 - **Preparation takes longer than writing the items alone** (about twice the author's time,
@@ -46,7 +47,7 @@ Contents: 1. What is made ready, and when · 2. After the close · 3. Prepare on
 
 Run this behind the scenes after the close message is out and the files `close` printed are
 published, in the same work folder: the next round is planned from the ledger as `close` left
-it. Skip it for a store of files the learner carries (`store.md` §4.3). If a progress review
+it. Skip it for a store of files the learner carries (`publishing.md` §3). If a progress review
 follows the round now, run it after the review instead (`progress_review.md`, "After the
 review is saved"); the same commands then plan from the ledger the review wrote.
 
@@ -63,18 +64,18 @@ review is saved"); the same commands then plan from the ledger the review wrote.
    `<work>/next/evidence_questions.md`; `sealed_case.md` → `evidence_case.md`), and wait for
    both. Each also finds the listening candidates for its kit (`evidence_check.md` §6). At the
    same time start one tag checker per entry of `tag_checks.checkers` and of
-   `tag_checks.review_checkers` (its `list` → its `results`, `evidence_check.md` §7). Wait for
+   `tag_checks.review_checkers` (its `list` → its `results`, `tag_check.md`). Wait for
    the evidence checkers and the `checkers` only: the review sweep is filed in step 5.
    Without helpers, skip this step: the evidence is then checked at the session, after the
-   answers, and episodes are searched for after grading (`feedback_guide.md` §2 E2).
+   answers, and episodes are searched for after grading (`listening.md`).
 4. **Finish**: `python3 cme.py finish-prepare --work <work>` (add `--no-evidence` when step 3
-   was skipped). It lints the round against the rulebook (`standards.md`, "The lint"), reads
+   was skipped). It lints the round against the rulebook (`standards.md`; the lint: `standards_lint.md`), reads
    the checkers' counts (keys contradicted; claims and claims not verified, per file under
    `not_verified`), prints counts and the names of files, keys, fields and kit sections
    only, and, when the round is clean, packs it and adds `data/prepared.json` to the publish
    set, with the tag checks filed (`data/guidelines.json` and the ledger; `tag_checks` counts
    them; results that are missing hold nothing up):
-   - `"stashed": true` → publish its `files` (`store.md` §4). `warnings` that begin "accepted
+   - `"stashed": true` → publish its `files` (`publishing.md`). `warnings` that begin "accepted
      after one revision" or "accepted after one retry" need nothing done.
    - `"recheck"` lists evidence files, or `"revise": true` (nothing stashed yet; its `next`
      line says the same) → one pass back, in this order, then the command again with
@@ -110,31 +111,11 @@ message only if the learner agrees to the wait; otherwise skip it.
 
 ## 3. Prepare only (a scheduled task, or "prepare my next round")
 
-A session whose whole job is to make sure a round is ready. The learner is not there: ask
-nothing, and never write anything about the round's content.
-
-1. Read the store as at the start of a round (SKILL.md, turn 1, step 1: `state.json`,
-   `page.json`, `prepared.json`, and `cme/prefs` when it exists) and `data/guidelines.json`,
-   then `python3 cme.py open --work <work> --store <work>/store --version <version read>`
-   (plus `--prefs '<the cme/prefs JSON>'`, so the round is written for the mix and the
-   paragraphs set on the page). A scheduled task has no message from the learner: pass no
-   `--today` and no `--utc-offset`; the job is dated by the offset the learner's rounds recorded (`state_schema.md` §1).
-2. `python3 cme.py prepare --work <work> --if-needed --allow-unreflected`. `"prepare": false`
-   → reply "A round is already prepared." (or the reason it gives) and stop.
-3. Write, check and finish as in §2, steps 2–5, and publish the `files` (`data/prepared.json`;
-   with it the ledger and the page file when `prepare` took over a paragraph the learner wrote
-   on the page or tag checks were filed, and then `data/guidelines.json`), pinned to the
-   version you read. If the store changed in between, stop: a round is being played.
-4. Reply in one line: "Next round prepared." Nothing else.
+A session whose whole job is to make sure a round is ready: `prepare_only.md` §1.
 
 ## 4. Always-ready rounds ("prepare my rounds overnight", and off again)
 
-Create (or delete) a scheduled task, daily at a quiet hour in the learner's time zone, with the
-prompt "Run the clinical-cme skill in prepare-only mode: make sure the next round is prepared.
-Do not show or describe its content." and set `settings --config '{"prepare_task": true}'` (or
-false; `requests.md` §1 for the `settings` call). It covers the days when the preparation after
-the close did not finish — the app was closed early, or the reflection was skipped — and stops
-at once when a round is ready. If this session cannot schedule tasks, say so.
+The scheduled task that prepares a round every night: `prepare_only.md` §2.
 
 ## 5. Telling the learner once
 
@@ -146,26 +127,5 @@ always ready, even if you close the app early — say 'prepare my rounds overnig
 
 ## 6. A round that was not prepared
 
-`prepared.used` is false in the `start` output (a first round, a changed mix, a setting that
-changes the round (`state_schema.md` §8), a one-off option, or a preparation that did not finish): the round is written at the session
-from `<work>/plan.json`, the first part before the opening message and the rest while the
-learner answers. If `prepared.ready` lists some files, only what is missing is written.
-
-- **The first part, before anything is sent.** With an author: start one (Plan
-  `<work>/plan.json`, Write into `<work>`, Parts `questions`; `case` if the round has no short
-  questions), wait, then `python3 cme.py present --work <work> --block questions` (or `--block
-  case`) prints the text to send and notes that it went out. Without an author: read
-  `author.md`, `standards.md`, `case_design.md` and `plan.json` (never paste it) and write
-  `<work>/sealed_questions.md` yourself (`author.md` §3), in the file and not in your
-  reasoning; its `present` block is the text.
-- **The rest, behind the scenes of turn 1**, after the checker for the first part is started:
-  the case (`sealed_case.md`) and both kits. With an author: start it again (Parts `case`),
-  wait, then start the case's checker in the background. Without: write them yourself
-  (`author.md` §3; `standards.md` rule 8), the case first. A kit not finished when its part's
-  answers arrive is not waited for: the draft marks the blocks it lacks, and the examiner
-  writes them (`feedback_guide.md` §9.3).
-- **Evidence**: a checker is started in the background for every sealed file without an
-  evidence file. Without helpers, the examiner runs each part's verification list only after
-  that part's answers are in (`evidence_check.md` §5).
-- **Listening**: a checker fills in the candidates only when the kit is there when it
-  starts; otherwise the examiner searches after grading (`feedback_guide.md` §2 E2).
+`prepared.used` is false in the `start` output: the round is written at the session,
+`unprepared.md`.

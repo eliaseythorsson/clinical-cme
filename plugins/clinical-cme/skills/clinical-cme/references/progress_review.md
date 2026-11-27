@@ -27,7 +27,7 @@ If some of the period's older sessions have no transcript (only scores, gaps and
 
 ## 1. Gather
 
-1. Read the store and `open` the work folder (`store.md` §4), then `python3 cme.py stats --work <work>`. Use only these figures and the
+1. Read the store and `open` the work folder (`publishing.md`), then `python3 cme.py stats --work <work>`. Use only these figures and the
    state; never estimate numbers in prose. It lists the period's session IDs.
 2. With the deep analysis on: take the period's session IDs from `stats` (or the page file), and
    read those session documents into local files in `<work>/period` (the page: the read-files
@@ -44,7 +44,7 @@ If some of the period's older sessions have no transcript (only scores, gaps and
    records). Only when its `review_sweep_due` is above zero (swept tags the sweep did not reach
    ahead; on the default blueprint usually none), run it now, behind the scenes: `python3 cme.py tag-checks
    --work <work> --list <work>/tags`, one tag checker per entry of its `checkers`, together
-   (`evidence_check.md` §7), then `tag-checks --work <work>` with `--results <file>` for each,
+   (`tag_check.md`), then `tag-checks --work <work>` with `--results <file>` for each,
    publish its `files`, and run `stats` again. Its `guidelines.teaching_to_recheck` (the
    teaching earlier rounds based on a tag found changed or superseded, centrally or by the
    learner's own checks) goes into the
@@ -79,7 +79,7 @@ If some of the period's older sessions have no transcript (only scores, gaps and
 - Your positions: each position note in force (`stats` `positions`), one line each, in the
   learner's own words with its topic and date: **keep** or **drop** ("<topic label>, <the
   point>: '<the learner's words>' (since <date>): keep or drop?").
-  Only when there are any. Do not argue them again (`standards.md` rule 12); a note not kept
+  Only when there are any. Do not argue them again (`standards_positions.md` rule 12); a note not kept
   lapses on its own about six months after it was set or last kept (`lapses`).
 - With the deep analysis: its three-line headline, the reasoning-step profile in one line, the
   number of critical errors.
@@ -111,7 +111,7 @@ context changes a finding.
    The page renders it. Offer a shareable document (for an appraisal or revalidation
    portfolio) if they want one.
 2. **Review JSON** → `python3 cme.py review --work <work> --review <work>/review.json` →
-   publish every file in its `files` in one write (`store.md` §4; the report from step 1 is
+   publish every file in its `files` in one write (`publishing.md`; the report from step 1 is
    among them):
 
 ```json

@@ -6,11 +6,14 @@ settings, and reaches the author through the plan. Each rule is written here onc
 (`author.md`, `case_design.md`, `evidence_check.md`, `feedback_guide.md`, `preparing.md`,
 SKILL.md) cite it by number ("rule 5") and do not restate it.
 
-Who reads what: the **author** all of it; the **checker** rules 2 and 8; the **examiner** none
-of it before grading, and all of it when it writes items itself. What binds the feedback is in
-the examiner's brief (`feedback_guide.md`): rules 5.3, 10 and 11 are written there, and the
-author reads them there for the kits' prepared blocks (rule 8). This file holds no content of
-any round, so anyone may read it at any time.
+Who reads what: the **author** all of it, with the parts a checker needs kept in their own
+files so that it reads them alone: rule 2 (`standards_region.md`), rule 8 (`standards_kits.md`,
+its Listening section in `standards_listening.md`) and rule 12 (`standards_positions.md`); the
+**checker** those four files only; the **examiner** none of it
+before grading, and all of it when it writes items itself. What binds the feedback is in
+`feedback_guide.md`: rules 5.3, 10 and 11 are written there, and the author reads them there for
+the kits' prepared blocks (rule 8). This file holds no content of any round, so anyone may read
+it at any time.
 
 | Rule | Title | Checked by `cme.py` |
 |---|---|---|
@@ -23,12 +26,12 @@ any round, so anyone may read it at any time.
 | 7 | Crux tests are requested, not given | – (pre-flight line 16; the simulation's quality scorer) |
 | 8 | What a kit contains | lint, blocking (sections and prepared blocks); the listening candidates' form, judgement call |
 | 9 | Key headers | lint, blocking |
-| 10 | Results the learner did not see (in `feedback_guide.md` §10.2) | – (the simulation's quality scorer) |
-| 11 | Text for the learner speaks plainly (in `feedback_guide.md` §10.3) | `save` warns; the simulation's standards check fails the run |
+| 10 | Results the learner did not see (in `feedback_guide.md` §6.2) | – (the simulation's quality scorer) |
+| 11 | Text for the learner speaks plainly (in `feedback_guide.md` §6.3) | `save` warns; the simulation's standards check fails the run |
 | 12 | The learner's position notes | – (nothing a lint can check) |
 
 Numbers are never reused or renumbered: a new rule gets the next number, a withdrawn one
-keeps its number with the word "withdrawn". How the lint works: last section.
+keeps its number with the word "withdrawn". How the lint works: last section (`standards_lint.md`).
 
 ## Rule 1. Blinding
 
@@ -57,32 +60,9 @@ until its last answer. Until a part's answers are in, nothing reveals what it te
 
 ## Rule 2. Guideline region
 
-Items are written, keyed, checked and graded against the guidelines of the plan's
-`guideline_region` (the `start` output gives the examiner the same value), in the edition
-relevant to the plan's `specialty`.
-
-1. Keys, model answers, verification searches and feedback name that region's guideline first,
-   with body and year. For a country: its national guidance where it exists, otherwise its
-   continent's societies (for a European country, the European society's). For "International"
-   (the default, and what a skipped answer means): the major European and US societies (e.g.
-   ESC and ACC/AHA, ESCMID and IDSA, KDIGO); where they differ materially on the point tested,
-   the key accepts what either recommends, the feedback names both with the difference, and an
-   item never turns on a point where they disagree. A region in the learner's own words (an
-   open answer: "Nordic", "what my hospital follows: NICE") is read as they wrote it.
-2. Where another region's guidance differs materially, or guidance changed recently, the
-   item is still keyed to the learner's region; what the feedback then says is in
-   `feedback_guide.md` §1.
-3. One line above each verification list states the region and the specialty, so that author,
-   checker and examiner work to the same ones.
-4. **The blueprint's guideline tag is a baseline**, not the only source. A decision point's tag
-   (`[ESC ACS 2023]`) says where to start; where the plan gives a newer guideline in its place,
-   or the sub-topic's `guidelines` say a tag changed or is uncertain, the key and the kit cite
-   the guideline in force for the region. Tags are re-checked centrally for the default
-   blueprint and while rounds are prepared (the items' tags when not checked within 90 days,
-   and a rolling sweep of the tags not checked centrally: `evidence_check.md` §7,
-   `state_schema.md` §10); a tag the check finds superseded is cited as its successor from then
-   on. The tag check concerns only the edition and the appropriateness of the source: every
-   claim is still verified one by one on the verification list.
+Written in `standards_region.md`, so that a checker reads it without the rest of the rulebook:
+items are written, keyed, checked and graded against the guidelines of the learner's region, in
+the edition for their specialty.
 
 ## Rule 3. Units and drug names
 
@@ -112,7 +92,7 @@ with the `specialty`, before writing or grading.
    comfortably is tested for its own sake, and nothing is tested that their stage never
    decides.
 2. **How the feedback is written**, and how far behind the recommendation it goes (the
-   evidence depth, `feedback_guide.md` §4.1): in the examiner's brief, `feedback_guide.md` §1.
+   evidence depth, `evidence_depth.md`): in `feedback_guide.md` §1.
    The kits' prepared blocks (rule 8) are written to it.
 3. **Which sources.** An aim that names an exam is keyed to that exam's standard sources (its
    syllabus, the textbooks and guidelines it examines from); every other aim by rule 2. How
@@ -151,8 +131,8 @@ with the `specialty`, before writing or grading.
    need no entry.
 
 3. Each feedback message opens with a one-line glossary of the abbreviations it uses, the
-   listed ones excepted: the line that starts "Abbreviations:" is written in the examiner's
-   brief, `feedback_guide.md` §10.1. Presented items get no glossary: there the rule is 5.1,
+   listed ones excepted: the line that starts "Abbreviations:" is written in
+   `feedback_guide.md` §6.1. Presented items get no glossary: there the rule is 5.1,
    in the text itself.
 
 ## Rule 6. One time anchor per case
@@ -192,127 +172,14 @@ question (`case_design.md` §11.1).
    asking for it. Written to this rule, the stem stops before the test and asks what to
    request and why (aspect `testing`), or the patient becomes a case and the ammonia waits
    in the results bank.
-4. **In the feedback**: `feedback_guide.md` §10.2. The rubric has an element for asking for
+4. **In the feedback**: `feedback_guide.md` §6.2. The rubric has an element for asking for
    the crux test, so that the step is graded.
 
 ## Rule 8. What a kit contains
 
-A kit holds the feedback's text that does not depend on the answers, written as **finished text
-for the learner** when the round is prepared, and checked with it (ADR 0009). It is sealed with
-the items and reaches the learner only through the examiner, once the answers are in: the
-examiner marks the answers first, then `cme.py draft` takes the blocks the marks call for, and
-the examiner adapts them (`feedback_guide.md` §9). Each part sits under a Markdown heading that
-starts with the name given here; the lint looks for the headings and the blocks.
-
-**Prepared blocks.** Each piece of finished text is one block, between
-`<!-- block: <id> <kind> -->` and `<!-- /block -->`, where `<id>` is the key id, with `.n` for the
-n-th element of its rubric block (rule 9), counted from 1 down the block, across both stages of
-the case:
-
-```
-<!-- block: Q4.2 missed -->
-You gave vitamin K but not the reason it is enough here: …
-<!-- /block -->
-```
-
-| Item | Blocks |
-|---|---|
-| MCQ | `reveal`; `model` (why the correct option is right: the decisive datum in the stem); `distractors` (one line each: wrong here because …, right when …); `missed` (the full briefing); `hit` (the two or three lines for a correct, sure answer: why correct, one pearl, the source line) |
-| Focused question | `reveal`; `model` (the best answer, two to four sentences); `decisive` (the decisive point and the tempting wrong turn); and for **every element** of its rubric, `n missed`, `n partial` and `n hit` |
-| Case | `reveal`; `model` (the final diagnosis and the model answer in one paragraph); `differential` (the table of how the differential separates, complete, with the incidental findings and why they are noise); `pearls` (one to three pearls or pitfalls); and for every element of its rubric, `n missed`, `n partial` and `n hit` |
-| Any item the plan gives a `depth` | `deeper` (below) |
-
-How they are written:
-
-1. **For the learner, finished**: written to the examiner's brief, as the feedback would say it
-   — its structure (`feedback_guide.md` §2), the evidence briefing (§3), the scaling (§4), the
-   rules of §10 (no glossary line: that is the examiner's, per message), pitched by the
-   profile's paragraphs (§1), in the plan's units. Never an outline, never a note to the
-   examiner, no `(verify)` marks, nothing about the learner's answer, which is not known yet:
-   the examiner opens with the learner's words (§9.3).
-2. **By the mark**: `missed`, the full briefing on that element (§3: the rule, why, the
-   evidence, the source line; 120–300 words, about 120 with `feedback_depth: standard`);
-   `partial`, what a part-answer usually lacks and the rule that completes it (60–120 words);
-   `hit`, two or three lines confirming why it is right, with the source. A missed testing
-   element of the case is written for the test not ordered (`feedback_guide.md` §10.2).
-3. **Checked**: every figure, recommendation and source a block states is on the verification
-   list, the line ending with the ids of the blocks that state it (`… [Q4.2 missed, Q4 model]`),
-   so the checker can name the blocks a correction touches. The examiner sees those flags in the
-   draft.
-4. **Within the item**: blocks sit in their item's section (`## Q1` in `kit_questions.md`; the
-   case's sections below), and a block names no other item and nothing of the case.
-
-`kit_questions.md`: one section per question, headed with its key id (`## Q1`, `## Q2`, …),
-holding that question's blocks.
-
-`kit_case.md`:
-
-| Heading | Holds |
-|---|---|
-| `## Reveal` | the block `case reveal`: the reveal line, and the drill if there is one |
-| `## Model answer` | `case model` |
-| `## Differential` | `case differential` |
-| `## Briefing` | the element blocks, `case.1 missed` … , three per element of the rubric block |
-| `## Pearls` | `case pearls` |
-| `## Reading` | the reading pointers for the round (notes, below) |
-
-**Deeper** (`<id> deeper`, in the question's section of `kit_questions.md`; under `## Deeper` in
-`kit_case.md`): only for an item that has `depth` in the plan, which means the learner has
-answered the topic well before and, if they do again, the feedback goes behind the
-recommendation (`feedback_guide.md` §4.1). Finished text at the plan's `depth.level`, starting
-with one line of the depth before it: 2 `studies`, the one or two studies the recommendation
-rests on (name, year, population, comparison, primary result in absolute figures, the class and
-level the guideline gives); 3 `design`, the design features that decide how far the result can
-be trusted and for whom; 4 `frontier`, where the evidence stops or is disputed and how the panel
-got from evidence to recommendation. Each study and figure is **put on the verification list**
-as its own line, so the checker confirms it. An item without `depth` in the plan gets no such
-block; one that is missed never uses it.
-
-**Reading pointers** (`## Reading`; in `kit_questions.md` when the round has no case): notes,
-not a block. Up to two for the round, in the form of `feedback_guide.md` §2 E (the exact
-section, why it fits, a reading time) with the document's link and the key id of the topic it
-serves, each marked `(verify)` until the checker has confirmed that the section exists.
-
-**Listening** (`## Listening`, the last section of both kits; left out only when the plan
-has `listening` false): the candidate podcast episodes from which each topic of the round
-gets one pick in the final feedback (`feedback_guide.md` §2 E2). Three candidates per topic,
-sealed with the kit. Two hands write the section:
-
-- the **author** writes the heading, one `Sources` line copied from the plan's
-  `podcast_sources`, and one line per topic of that kit, headed with its key id (`Q1`, `Q2`,
-  …; `case` in `kit_case.md`): the point the item tests and its likely failure points (the
-  tempting wrong turn, the rubric elements a learner may miss). The author searches for
-  nothing (rule 1.3);
-- the **checker** finds the episodes (`evidence_check.md` §6) and writes them under each
-  topic's line, one line per candidate, six fields separated by ` | `: the link
-  (`https://open.spotify.com/episode/<id>`, nothing after the id), the show, the title, the
-  length in minutes, what it covers, and which failure point it matches.
-
-```
-## Listening
-Sources | trusted: Example Show, Another Show | avoid: none
-Q1 | points: when to anticoagulate new AF after surgery; tempting: starting at once
-- https://open.spotify.com/episode/<22 letters and digits> | Example Show | <the episode's title> | 52 min | covers: stroke risk and timing after surgery | matches: starting at once
-- …
-- …
-Q2 | points: …
-- none: only one episode of 15 to 90 minutes was found
-- …
-```
-
-1. An episode is one a physician would learn the point from, 15 to 90 minutes long, as
-   specific to the topic's failure points as can be found. Shows on the learner's `trusted`
-   list come first where they fit; a show on the `avoid` list is never kept.
-2. Only an episode whose own Spotify page was reached is kept, with the title and the length
-   read from that page. A link that was not reached is not kept (`evidence_check.md` §6).
-3. Fewer than three is honest when no more exist: the topic then carries a line `- none:
-   <why>`, alone when nothing suitable was found.
-4. No search for an episode is run where the learner could see it before the part's last
-   answer (rule 1.3): the checker searches out of the conversation, the examiner only once
-   the answers are in.
-5. Spotify has no link that saves an episode to the learner's library: the link opens the
-   episode in the app, and one tap there saves it. Nothing in a kit or in the feedback
-   promises more.
+Written in `standards_kits.md` (its Listening section in `standards_listening.md`), so that a
+checker reads it without the rest of the rulebook: the kits hold the feedback's finished text
+in prepared blocks, checked with the round.
 
 ## Rule 9. Key headers
 
@@ -417,75 +284,25 @@ Stage 2
 
 ## Rule 10. Results the learner did not see
 
-Written in the examiner's brief, `feedback_guide.md` §10.2, because it binds the feedback: the
+Written in `feedback_guide.md` §6.2, because it binds the feedback: the
 feedback teaches with every result the case was written with, and a result the learner did not
 see is never quoted as if it had been shown. The author follows it there in the case's prepared
 blocks; a result a block may need is in the results bank, so that Stage 2 can show it.
 
 ## Rule 11. Text for the learner speaks plainly
 
-Written in the examiner's brief, `feedback_guide.md` §10.3: everything the learner reads (items,
+Written in `feedback_guide.md` §6.3: everything the learner reads (items,
 results, feedback, the close) is written for a clinician and never names the skill's own
 machinery. It binds the items and the results bank as much as the feedback.
 
 ## Rule 12. The learner's position notes
 
-A **position note** is what the learner holds on one decision point of a topic, in their own
-words, kept when they stopped the topic ("I know this, stop bringing it back";
-`feedback_guide.md` §7.2). It covers that one point, not the topic. The plan gives an item
-`positions` (`notes`: `id`, `point`, `text`, `set`, and `reopened` once it has been raised
-again) when the learner holds one on its topic; `answer` gives the examiner the same notes by
-key id.
-
-1. **No item is keyed on the disputed point.** The author writes the item on another decision
-   point of the topic, and no distractor, rubric element or model answer turns on the premise
-   the learner rejects. Where the point cannot be avoided in a case, the key accepts the
-   learner's position as a defensible answer.
-2. **The learner is never marked down on it**, and the feedback does not argue the point
-   again: the examiner's side is `feedback_guide.md` §7.2 and §9.1.
-3. **The evidence is said once**, when the note is set (`feedback_guide.md` §7.2), unless
-   guidance on that exact point has changed since the note's `set` date (4).
-4. **A changed guideline is raised once.** For an item with a note that has no `reopened`, the
-   author puts one line on the verification list: has guidance on the note's point changed
-   since its `set` date? If the checker finds it has, the examiner may raise it once more, in
-   one line with the source, and records that it did (`cme.py position --reopened <id>`).
-
-The note ends when the learner takes it back (any time), when the progress review drops it
-(each review lists the notes in force, one line each: keep or drop), or on its own after about
-six months without being kept at a review. Nothing here names the note's machinery to the
-learner (rule 11): it is "the position you hold on …".
+Written in `standards_positions.md`, so that a checker reads it without the rest of the
+rulebook: no item is keyed on a point the learner holds a position on, and they are never
+marked down on it.
 
 ## The lint
 
-`cme.py finish-prepare` lints a round prepared ahead, while nobody waits; `cme.py keys
-<folder> --plan <plan>` runs the same checks for the author. It prints file names, key ids,
-section names and counts only.
-
-| Category | What | Then |
-|---|---|---|
-| **Blocking** (definite) | a key header that is missing or malformed (rule 9); a kit that is missing, a question without its section in `kit_questions.md`, a missing section of `kit_case.md`, a prepared block that is missing, empty, unclosed or names no item, element or kind of the round, or, with listening on, a kit without `## Listening` or a topic without its line there (rule 8) | Nothing is stashed until it is corrected. |
-| **Judgement call** (heuristic) | an abbreviation in the presented text that is not spelled out where the session first shows it (rule 5); a case or short question that counts time both from now and from a numbered day (rule 6) | The author revises once (`author.md` §2, Parts `revise`); what the lint still finds is accepted, and listed as a warning. A round is never left unprepared over a heuristic. |
-| **Judgement call** (form) | once a checker has run: a topic's listening candidates that are not three episodes in form (rule 8) | That kit's checker is started once more (`evidence_check.md` §6); what the lint still finds is accepted, and listed as a warning. |
-
-What the heuristics look at, so that a finding can be judged:
-
-- **Abbreviations**: every token of two to six capital letters (a plural "s" allowed), in the
-  order of rule 5.1, at its first appearance. It passes when it is on the list of rule 5.2,
-  when it is a Roman numeral, when an expansion in brackets follows it, or when it stands
-  first in brackets after its expansion. A word written in capitals for emphasis is flagged
-  too: do not write one.
-- **Time anchors**: phrases that count from now ("3 hours ago", "since this morning",
-  "yesterday", "last night") against phrases that count from a numbered day ("day 3",
-  "hospital day", "the third postoperative day", "POD 2"), within one short question, or
-  within the case and its bank together. Periods of months or years ("stopped smoking ten
-  years ago") are not counted.
-
-- **Listening candidates**: under each topic's line, every line with a link or with fields
-  is a candidate. It is in form when it has its six fields, a link to one Spotify episode
-  (`https://open.spotify.com/episode/` and an id of 22 letters and digits), a length of 15 to
-  90 minutes ("52 min") and a show that is not on the plan's `avoid` list. A topic is flagged
-  for a candidate out of form, for fewer than three in form without a `none:` line, and for
-  more than three. Whether the episode exists and fits is the checker's work, not the lint's.
-
-The findings themselves name content, so they are written to `lint.md` beside the sealed
-files, for the author only; the examiner never opens it.
+How `cme.py` lints a round against these rules (what blocks, what is a judgement call, what the
+heuristics look at): `standards_lint.md`. The author reads it when `keys` prints a problem or a
+finding to review.

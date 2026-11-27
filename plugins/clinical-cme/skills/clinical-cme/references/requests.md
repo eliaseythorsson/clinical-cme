@@ -10,7 +10,7 @@ Contents: 1. Requests · 2. Testing mode · 3. Round variants
 Every request that changes something has the same path: read the store (SKILL.md, turn 1,
 step 1) → `python3 cme.py --today <learner's date> open --work <work> --store <work>/store --version <version read>
 --utc-offset <H>` (SKILL.md, turn 1, step 2) →
-the command for the request, with `--work <work>` → publish its `files` (`store.md` §4) →
+the command for the request, with `--work <work>` → publish its `files` (`publishing.md`) →
 confirm in one line. A change of settings is `python3 cme.py settings --work <work> --config
 '{…}' --profile '{…}'`. The output's `prepared` says whether the round prepared ahead was
 kept (`state_schema.md` §8: testing mode, reminders, helpers and the like keep it; anything that
@@ -27,11 +27,11 @@ the changed ledger.
 | **Where you are, where you're aiming** ("I'm a fellow now", "make it harder", "aim at the exam in May", "what do you have on my level?") | The learner's own words are the setting: ask the open question of `onboarding.md` §2 if they gave only a wish ("harder"), then `settings --profile '{"journey": "<their paragraph, word for word>"}'` (or `"aim"`), with the labels you derive in the same call (`"journey_label"`, `"aim_tags"`: last row). Never rephrase, never set a level from scores. What is stored now is `pitch` in the `start` or `open` output. The page's Settings tab has an Update box for each. |
 | **Round mix** ("add a focused question to my rounds", "no more MCQs", "drop the case") | `settings --config '{"focused": 1}'` (or `mcqs`, `case`; at least one item stays); confirm with the new mix and its time estimate (`round` in what `settings` prints: about 5 min per MCQ, 10 per focused question, 25 for the case, 15 for a one-step case), and mention that the page's Settings tab has the same switches. For one round only, use the `start` options instead (SKILL.md, turn 1) and leave the settings alone. |
 | **Listening** ("listening off", "no podcasts", and back on; "I trust The Curbsiders", "never Example Show") | `settings --config '{"listening": false}'` (or true), or `--profile '{"podcast_sources": {"trusted": ["The Curbsiders"], "avoid": ["Example Show"]}}'` (send only the list that changes; a list replaces the one before it, so add to what `listening` in the output shows). Confirm from the `listening` it prints. Both change what a prepared round holds, so it is set aside. |
-| **Evidence depth** ("skip the trial details", "no deep dives", and back on; "why did Q2 get the trial design?") | `settings --config '{"evidence_ladder": false}'` (or true). On (the default), an item answered well on a topic the learner keeps answering well gets the studies behind the recommendation, then their design, then where the evidence is disputed (`feedback_guide.md` §4.1); off, every item gets the same feedback as a new topic. It changes what a kit holds, so the prepared round is set aside. To explain a depth: the topic was answered well that many times in a row. |
+| **Evidence depth** ("skip the trial details", "no deep dives", and back on; "why did Q2 get the trial design?") | `settings --config '{"evidence_ladder": false}'` (or true). On (the default), an item answered well on a topic the learner keeps answering well gets the studies behind the recommendation, then their design, then where the evidence is disputed (`evidence_depth.md`); off, every item gets the same feedback as a new topic. It changes what a kit holds, so the prepared round is set aside. To explain a depth: the topic was answered well that many times in a row. |
 | **Speed settings** ("helpers off", "don't prepare ahead", and back on) | `settings --config '{"helpers": false}'` or `'{"prepare_ahead": false}'`. Without helpers you write, check and grade everything yourself (less usage; a short wait before each feedback; no separate author); without preparing ahead, each round is written at its start. |
 | **Guideline checks** ("check every guideline yourself", "stop checking guidelines", "how current are the guidelines?") | The default blueprint's guidelines are checked centrally and arrive with plugin updates; the learner's own areas are checked while rounds are prepared (`state_schema.md` §10). `settings --config '{"guideline_sweeps": "all"}'` (every tag also checked for them), `"off"` (no sweeps; the round's own tags are still checked when stale) or `"custom"` (the default). How current: `stats` `guidelines` (`central.updated`, counts by status). |
-| **Always-ready rounds** ("prepare my rounds overnight", and off again) | `preparing.md` §4. |
-| **Prepare my next round** | `preparing.md` §3. |
+| **Always-ready rounds** ("prepare my rounds overnight", and off again) | `prepare_only.md` §2. |
+| **Prepare my next round** | `prepare_only.md` §1. |
 | **Testing mode on or off** | `settings --config '{"testing": true}'` (or false); then §2 applies to every round. |
 | **Reminders on or off** | Create or delete a scheduled task (`onboarding.md` §4) and set `config.reminders`. If this session cannot schedule tasks, say so. |
 | **Progress review** ("how am I doing?", or when due) | `progress_review.md`. |
@@ -41,9 +41,9 @@ the changed ledger.
 | **Move my data to a folder** | `store.md` §3 and §7. |
 | **Export everything** ("give me my data") | `store.md` §7. |
 | **FAQ or how it works** | `onboarding.md` §5, briefly. |
-| **A score or a gap set by the learner** ("record that as 4", "close that gap") | After the close: read the store with that session's document, `open`, then `cme.py override --work <work> --scores '[{"topic": "CARD-03", "score": 4}]' --close-gaps '[{"gap": "G0007"}]'` → publish its `files` (`feedback_guide.md` §7.1). Before the close it goes in the reflection JSON. Never edit the ledger by hand. |
-| **A stop** ("I know this, stop bringing it back", with what they hold if they say it) | Before the close: `learner_stops` in the reflection JSON. After it: read the store with that session's document, `open`, then `cme.py override --work <work> --stops '[{"topic": "CARD-03", "position": {"point": "…", "text": "the learner's words"}}]'` → publish its `files` (`feedback_guide.md` §7.2). |
-| **A position note taken back** ("drop my position on …") | `open`, `cme.py position --work <work>` lists the notes in force; `--drop <id>` takes one back → publish its `files` (`feedback_guide.md` §7.2). |
+| **A score or a gap set by the learner** ("record that as 4", "close that gap") | After the close: read the store with that session's document, `open`, then `cme.py override --work <work> --scores '[{"topic": "CARD-03", "score": 4}]' --close-gaps '[{"gap": "G0007"}]'` → publish its `files` (`disputes.md` §1). Before the close it goes in the reflection JSON. Never edit the ledger by hand. |
+| **A stop** ("I know this, stop bringing it back", with what they hold if they say it) | Before the close: `learner_stops` in the reflection JSON. After it: read the store with that session's document, `open`, then `cme.py override --work <work> --stops '[{"topic": "CARD-03", "position": {"point": "…", "text": "the learner's words"}}]'` → publish its `files` (`disputes.md` §2). |
+| **A position note taken back** ("drop my position on …") | `open`, `cme.py position --work <work>` lists the notes in force; `--drop <id>` takes one back → publish its `files` (`disputes.md` §2). |
 | **Add the reflection to the last session** | `store.md` §6, "Session saved without a reflection". |
 | *(not a request)* **`labels_needed`** in the output of `start`, `open`, `init` or `settings` | The learner wrote or rewrote a paragraph (at setup, in a chat, on the page) and its display label is not derived yet. Behind the scenes, in a round after its first message: read each `from`, choose from its `labels` (one stage for `journey_label`; for `aim_tags` every tag that fits, `[]` if none), and run `settings --work <work> --profile '{"journey_label": "…", "aim_tags": ["…"]}'` with only the labels asked for. It keeps the prepared round, and its files go out with the round's next publish. Say nothing about it; the labels are for the page and never reach the author (`standards.md` rule 4.5). |
 
@@ -71,7 +71,8 @@ On while the skill is being tested (`config.testing`; `testing` true in the `sta
 
 - **Case first** (`item_order` `case_first` in the `start` output): present the case first, the
   short questions after its Stage 1, Stage 2 last, and all feedback in one final message
-  (`feedback.md` only, from `draft --part all`; `feedback_guide.md` §2).
+  (`feedback.md` only, from `draft --part all`; `feedback_guide.md` §2). The coding and the
+  Listening section come only in that message: read `coding.md` (and `listening.md`) before it.
 - **No short questions**: the case is the first part. Turn 1 sends it (`present --block
   case`), and turns 3–5 follow.
 - **A specific topic by name**: allowed, but not blind; say so in one line and proceed. Run

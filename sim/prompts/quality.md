@@ -49,7 +49,7 @@ nothing else in it except as said below.
 - Is every clinical claim correct, current and attributed to the right source?
 - Is each grade fair to what the learner actually wrote: nothing right marked wrong, nothing
   wrong let through?
-- Results the learner never ordered (`{skill}/references/feedback_guide.md` §10.2): are they
+- Results the learner never ordered (`{skill}/references/feedback_guide.md` §6.2): are they
   quoted only marked as unseen, with the feedback saying they were not ordered and what they
   would have changed? A result quoted as if it had been shown goes under `concerns`, starting
   the line "Rule 10:".

@@ -130,7 +130,7 @@ waiting for something to be generated.
   is ever played. The next session reads the store and presents (`start` finds it in the store copy,
   `present`); nothing is written or looked up before the learner starts, before the case
   appears, or before either feedback. An optional nightly scheduled task (`prepare_task`;
-  `references/preparing.md` §3–4) prepares a round whenever none is ready. A prepared round is used only if the ledger and the mix are
+  `references/prepare_only.md`) prepares a round whenever none is ready. A prepared round is used only if the ledger and the mix are
   unchanged (`state_schema.md` §8).
 - **Three roles, three models (the `helpers` setting, on by default).** Where the app has
   helper agents: an **author** on the most capable model writes the round
@@ -140,7 +140,7 @@ waiting for something to be generated.
   (`references/evidence_check.md`). Mechanical steps stay with the conversation. `helpers:
   false` makes one assistant do all three (`SKILL.md`, "Roles").
 - **Behind the scenes at every step** the remaining work (filing for the log, the save, the
-  next round) happens while the learner reads (`SKILL.md`, "Session flow"; `references/preparing.md`; `feedback_guide.md` §9).
+  next round) happens while the learner reads (`SKILL.md`, "Session flow"; `references/preparing.md`; `grading.md` §2).
 - Leaner sealed drafts (one-line pre-flight record, keys before stems), so a round that could
   not be prepared still starts quickly.
 
@@ -214,7 +214,7 @@ waiting for something to be generated.
   (diagnosis, interpretation, the next test, management, disposition, prevention or prognosis),
   graded on the reasoning with a rubric written before the question is sent. They go with the
   MCQs, before the case; due topics and open gaps go to them before the MCQs, and the aspect
-  asked rotates (`case_design.md` §11, `feedback_guide.md` §2 B2, `feedback_guide.md` §11.6).
+  asked rotates (`case_design.md` §11, `feedback_guide.md` §2 B2, `coding.md` §5).
 - **Choose the round mix.** MCQs, focused questions and the full case can each be on or off, at
   setup, in a chat, or with switches in the page's Settings tab (stored by the page as `cme/prefs`
   and applied at the next round; the latest change wins).
@@ -248,21 +248,36 @@ run creates their own private store. Licences: `LICENSE.md` (content CC BY-NC 4.
 SKILL.md                      the round protocol: what needs judgement (presenting, grading,
                               feedback); the rest is in the references
 scripts/cme.py                the state engine (start, present, save, close, prepare, finish-prepare, stats …)
-references/store.md           the store: documents, tools, kinds of store, reading/writing,
-                              setup, recovery, export
+references/store.md           the store: documents, tools, kinds of store, setup, recovery, export
+references/publishing.md      reading the store and publishing what a job wrote (every job)
 references/state_schema.md    ledger layout, round and reflection JSON, spacing rules, commands
 references/standards.md       the rulebook: numbered rules for items, keys and kits; what the lint checks
+references/standards_region.md     rule 2, guideline region (read by the checkers too)
+references/standards_kits.md  rule 8, what a kit contains (read by the checkers too)
+references/standards_listening.md  rule 8's Listening section (read by the checkers too)
+references/standards_positions.md  rule 12, the learner's position notes (read by the checkers too)
+references/standards_lint.md  what the lint checks, and its heuristics
 references/case_design.md     how cases and MCQs are designed (realism, formats, pre-flight)
-references/feedback_guide.md  the examiner's brief: marking, prepared and live feedback, coding,
-                              reflection prompt, disputes
+references/drills.md          building an item around a drill (a thinking pattern to practise against)
+references/grading.md         the examiner's brief: verifying, marks before text, the draft,
+                              live text, reflection prompt, the log
+references/feedback_guide.md  what the feedback says (examiner and author): guidance, structure,
+                              evidence briefing, scaling, length, the rules it keeps
+references/evidence_depth.md  how far behind the recommendation feedback goes on a topic known well
+references/listening.md       the final feedback's Listening section: one episode per topic
+references/coding.md          coding a round at grading time (ART, Revised-IDEA, errors)
+references/disputes.md        disputes, scores and gaps the learner sets, the learner's stop
 references/author.md          the author's brief: how a round's items and prepared feedback are written
+references/author_revise.md   the author's pass back on a written round (headers, revise)
 references/evidence_check.md  the checker's brief: how the evidence is verified
-references/analysis_framework.md  the deep review (the coding is in the feedback guide)
+references/tag_check.md       the tag checker's brief: is a cited guideline still the one to cite
+references/analysis_framework.md  the deep review, and calibration as `stats` reports it
 references/session_log.md     the per-session document, errata, search, teaching export
 references/progress_review.md the periodic review
 references/onboarding.md      first run, FAQ
-references/preparing.md       preparing a round ahead: after the close, prepare-only sessions,
-                              overnight preparation, a round that was not prepared
+references/preparing.md       preparing a round ahead: what is made ready, after the close
+references/prepare_only.md    prepare-only sessions and overnight (always-ready) preparation
+references/unprepared.md      a round that was not prepared: written at the session
 references/requests.md        requests other than a round, testing mode, round variants
 templates/page.html           the learner's page, published at setup
 templates/blueprint.json      default internal/hospital-medicine curriculum, two levels (also blueprint.md)

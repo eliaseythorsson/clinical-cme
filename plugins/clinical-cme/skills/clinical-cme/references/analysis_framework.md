@@ -27,10 +27,43 @@ The coding is the assistant's judgement, made by one rater. The review report sa
 ## 1. Coding a round
 
 The examiner codes every item at grading time, in the grading form; the codes and how to give
-them are written once, in the examiner's brief: `feedback_guide.md` §11 (ART domains §11.1,
-Revised-IDEA §11.2, errors with their category, knowledge type, severity and bias §11.3,
-confidence and calibration §11.4, the coding line in the feedback §11.5, focused questions
-§11.6). For the deep review, read that section with this one: the review counts those codes.
+them are written once, in `coding.md` (ART domains §1, Revised-IDEA §2, errors with their
+category, knowledge type, severity and bias §3, the coding line in the feedback §4, focused
+questions §5). For the deep review, read that file with this one: the review counts those
+codes. How confidence and calibration are reported, and how focused questions are kept apart
+from the case, is below (§1.1–1.2).
+
+### 1.1 Confidence and calibration
+
+The learner's optional per-item confidence (sure / unsure / guess) is mapped to a probability
+of being right: 0.9 / 0.6 / 0.3. This mapping is a convention, not a validated scale.
+Outcomes:
+
+- MCQs: 1 if correct, 0 if wrong.
+- Cases and focused questions: mastery ÷ 5.
+
+The `stats` command reports, for each period:
+
+- the calibration table (expected vs observed per confidence level)
+- the **Brier score** (mean squared error of the stated probability; 0 is perfect, lower is better)
+- the **overconfidence index** (mean expected − mean observed; positive means overconfident)
+
+Interpret these only with enough items. Below about 20 rated items, describe the pattern but
+do not lean on the numbers.
+
+Why this matters: physicians' self-assessment tracks external measures of competence poorly,
+and is least accurate in the least skilled and most confident (Davis et al., *JAMA* 2006).
+Physicians in a vignette study were overconfident on both easy and hard cases (Meyer et al.,
+*JAMA Intern Med* 2013). Confident errors corrected with feedback tend to be corrected well
+(the hypercorrection effect), so they are worth surfacing.
+
+### 1.2 Focused questions apart from the case
+
+`stats` keeps focused questions apart from the case: `art_domains` counts the case only (so it
+stays comparable with earlier periods), `art_domains_focused` the focused questions, and
+`items_by_type` the counts. In the review, report them separately; a learner who reasons well in
+focused questions but not across a full case (or the reverse) is telling you where the
+difficulty lies — breadth of the work-up, or the single decision.
 
 ## 2. The deep analysis at the progress review
 
@@ -82,7 +115,7 @@ Sections, in this order:
 3. **Weaknesses.** Ranked. Critical-severity errors first, whether or not they recur.
 4. **Thought errors.**
    - The reasoning-step profile (ART table: this period, the previous period, all time)
-     and where reasoning tends to break; focused questions in their own line (`feedback_guide.md` §11.6).
+     and where reasoning tends to break; focused questions in their own line (`coding.md` §5).
    - Recurring biases, with two or three short quotations.
    - Synthesis vs data gathering vs slips.
    - Anchoring across Stage 1 → Stage 2.

@@ -674,7 +674,7 @@ LISTENING_HEAD_RE = re.compile(r"(?im)^[ \t>#*_]*Listening\b")
 
 
 def check_listening(rnd):
-    """The round ends with its Listening section (standards.md, rule 8; feedback_guide.md §2 E2):
+    """The round ends with its Listening section (standards_listening.md, rule 8; listening.md):
     the final feedback has it, the session document has the `listening` list, every pick is one
     Spotify episode whose link is in the feedback as sent, and no Spotify link was sent before
     the last answer. A topic for which nothing suitable was found has no pick: that passes, and
@@ -719,7 +719,7 @@ LEFTOVER_RE = re.compile(r"<!--\s*/?\s*(?:block|draft|notes|check)\b|\[live:", r
 
 
 def check_prepared(rnd):
-    """Marks before text, and the feedback from the draft (feedback_guide.md §9; ADR 0009): every
+    """Marks before text, and the feedback from the draft (grading.md §2; ADR 0009): every
     rubric element of the round record is marked, a draft was made (the session document has
     `prepared_feedback`), and no feedback as sent still holds the draft's comment lines or a
     [live: …] part. Elements marked hit or partial without the learner's words are counted, for
@@ -955,7 +955,7 @@ def check_dispute(rnd):
     elif not changes:
         problems.append("the ledger records no grade change for this round (grade_changes is empty; every "
                         "settled dispute has an entry, an upheld one or one on a teaching point with "
-                        "from = to: feedback_guide.md section 7)")
+                        "from = to: disputes.md)")
     for g in changes:
         if g.get("outcome") not in OUTCOMES:
             problems.append("grade change on %s is not settled: outcome %s (expected one of %s)"
@@ -1335,7 +1335,7 @@ def report_markdown(rep):
         lines.append("")
     if (c.get("standards") or {}).get("findings"):
         lines += ["### Writing standards: to review", "",
-                  "Found by the lint's heuristics (`references/standards.md`, \"The lint\"): each is for a person to "
+                  "Found by the lint's heuristics (`references/standards_lint.md`): each is for a person to "
                   "judge and none fails the run.", "",
                   "| Rule | Where | What |", "|---|---|---|"]
         lines += ["| %s | %s | %s |" % (f["rule"], f["where"], f["detail"].replace("|", "/")) for f in c["standards"]["findings"]]

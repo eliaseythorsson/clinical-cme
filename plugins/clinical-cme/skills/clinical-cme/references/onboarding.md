@@ -175,7 +175,7 @@ pick other numbers, here or on the page.
 | Specialty | `profile.specialty` (default "Internal/hospital medicine") |
 | Time per session | `session_minutes` 15 / 25 / 35 / 45, and the mix from the table above |
 | Feedback depth | `feedback_depth` detailed (default) / standard |
-| No deeper evidence on topics answered well | `evidence_ladder` false (default true: `feedback_guide.md` §4.1) |
+| No deeper evidence on topics answered well | `evidence_ladder` false (default true: `evidence_depth.md`) |
 | Frequency | `target_sessions_per_week` 5 / 3 / 2 / 1 |
 | Self-ratings | `profile.domain_self_ratings` {CODE: n} |
 | Podcasts trusted / avoided | `profile.podcast_sources` {"trusted": […], "avoid": […]} |
@@ -212,7 +212,7 @@ Tell the learner (show this):
 
 - **Always-ready rounds; ask once**, where this session can create scheduled tasks: "Shall I
   add a nightly task that makes sure your next round is prepared, so it always starts at once
-  even if you close the app early?" Yes → `preparing.md` §4. No is the default.
+  even if you close the app early?" Yes → `prepare_only.md` §2. No is the default.
 - **Reminders are optional; ask once.** "Would you like reminders for your sessions?" No (the
   default) · Yes, matching my frequency. Save with `settings --config '{"reminders": …}'`.
   Yes: if this session can create scheduled tasks, create one matching `target_sessions_per_week`

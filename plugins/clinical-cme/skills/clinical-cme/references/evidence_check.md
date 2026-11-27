@@ -10,9 +10,12 @@ The check runs either when a round is prepared ahead (nobody is waiting) or whil
 is answering questions whose topics are hidden from them. Nothing about the content
 may reach the conversation they see.
 
-A third kind of checker, the **tag checker**, is started with this file's path, one tag list
-(`tag_checks_<n>.md` or `review_checks_<n>.md`, at most 40 tags) and its output path (the same
-name with `results` for `checks`): it follows the rules below and §7 only.
+The rules a checker works to are in four files of the rulebook (`standards.md`), each read whole:
+`standards_region.md` (rule 2), `standards_kits.md` (rule 8: prepared blocks, reading pointers,
+`deeper` blocks), `standards_listening.md` (rule 8's Listening section) and
+`standards_positions.md` (rule 12: position notes).
+
+A third kind of checker, the **tag checker**, has its own brief: `tag_check.md`.
 
 ## Rules for a checker agent
 
@@ -37,9 +40,9 @@ Open the list file and find its **verification list**: three to six lines, each 
 search for one claim the feedback will rest on (a guideline recommendation and its year, a
 threshold or dose, a trial result, a test's accuracy, an approval status). The keys and model
 answers in the same file tell you exactly what each claim is, and the line above the list
-gives the learner's guideline region and specialty: check against them as rule 2 of
-`standards.md` says. Each line ends with the ids of the kit's prepared blocks that state the
-claim (`[Q1 missed, Q4.2 missed]`; rule 8): the feedback's finished text, which the examiner
+gives the learner's guideline region and specialty: check against them as rule 2 says
+(`standards_region.md`). Each line ends with the ids of the kit's prepared blocks that state the
+claim (`[Q1 missed, Q4.2 missed]`; rule 8, `standards_kits.md`): the feedback's finished text, which the examiner
 will send. Check those claims, and any other specific number, dose or recommendation in the
 keys or in those blocks that could have changed or that you are not certain of, and that
 the section each reading pointer names exists (rule 8, when the kit is beside the list file).
@@ -47,7 +50,7 @@ A list line that names a study for a kit's `deeper` block (rule 8) is checked li
 claim, from the paper's own abstract or full text: its population, comparison, primary result
 and the design feature the note relies on.
 A list line that asks whether guidance on a point has changed since a date (a learner's
-position note, `standards.md` rule 12) gets **changed** only for a change on that exact point
+position note, `standards_positions.md` rule 12) gets **changed** only for a change on that exact point
 published after that date, with the source and its date; otherwise **confirmed** (unchanged).
 Nothing else, apart from the listening candidates of §6.
 
@@ -77,7 +80,7 @@ verified" only after every route for its kind of source was tried, in this order
 | The claim rests on | Routes, in order |
 |---|---|
 | A trial or paper | 1. the PubMed abstract page (`pubmed.ncbi.nlm.nih.gov/<PMID>`) · 2. Europe PMC (`europepmc.org`, search by title or PMID: abstract, often the full text) · 3. the publisher's open-access page, or a copy in HAL or a university repository · 4. the DOI landing page (`doi.org/<DOI>`) |
-| A guideline recommendation | 1. the society's own guideline page or document (the body rule 2 of `standards.md` names for the learner's region first) · 2. the PubMed record of the guideline paper, then routes 2–4 above for its text · 3. the society's or a journal's published summary of the guideline (executive summary, pocket version, "ten points") |
+| A guideline recommendation | 1. the society's own guideline page or document (the body rule 2 (`standards_region.md`) names for the learner's region first) · 2. the PubMed record of the guideline paper, then routes 2–4 above for its text · 3. the society's or a journal's published summary of the guideline (executive summary, pocket version, "ten points") |
 | A drug fact (dose, indication, contraindication, interaction, approval) | 1. the regulator's product text: the SmPC on eMC (`medicines.org.uk`) or from the EMA, the label on DailyMed · 2. the national formulary or medicines agency of the learner's region |
 | A reading pointer's section (rule 8) | 1. the document's own contents page · 2. its PubMed or publisher abstract page, for the section headings |
 
@@ -130,7 +133,7 @@ run again. It also compares the count with the blocks marked "not verified", so 
 honestly. What the script then does:
 
 - **Keys contradicted** above zero → the author is started once more to revise those items
-  before the round is kept (`author.md` §2, Parts `revise`).
+  before the round is kept (`author_revise.md`, Parts `revise`).
 - **More than a third of the file's claims not verified**, or a "not verified" block without
   **Tried:** → you are started once more on the same file (the retry pass above). After that
   one pass the round is kept as it is, and the examiner states what is still not verified
@@ -142,10 +145,10 @@ Same steps and the same routes (§3), run only **after that part's answers are i
 names the topic, and the learner can see your searches): one batch of searches, one batch of
 fetches, then grade. No file is needed; cite from what you fetched. This is for a part that
 has **no evidence file**. Where a file exists, its list is not run again: search only for
-what the answers raise (`feedback_guide.md` §1).
+what the answers raise (`grading.md` §1).
 
 Listening follows the same rule: the examiner searches for an episode only once the part's
-answers are in, by the routes and the verification of §6 (`feedback_guide.md` §2 E2).
+answers are in, by the routes and the verification of §6 (`listening.md`).
 
 ## 6. Listening: candidate podcast episodes
 
@@ -153,7 +156,7 @@ Do this last, after the output file is written, so that the evidence never waits
 applies when the kit beside the list file (`kit_questions.md` for `sealed_questions.md`,
 `kit_case.md` for `sealed_case.md`) has a `## Listening` section; with no kit yet, or no such
 section, there is nothing to do. What the section holds and the form of a candidate line is
-rule 8 of `standards.md`; this is how the candidates are found.
+rule 8's Listening section (`standards_listening.md`); this is how the candidates are found.
 
 1. **Read the section.** Its `Sources` line names the shows the learner trusts and the shows
    to avoid; each topic's line (`Q1 | points: …`) names the point tested and the likely
@@ -185,56 +188,9 @@ rule 8 of `standards.md`; this is how the candidates are found.
    three exist, add `- none: <why>` under that topic; alone, when nothing suitable was
    found. An honest "none" is better than a weak or unverified episode.
 
-The limits of Spotify are those of rule 8.5: no link saves an episode to the library; it
+The limits of Spotify are those of rule 8.5 (`standards_listening.md`): no link saves an episode to the library; it
 opens the episode, and one tap there saves it.
 
 `cme.py finish-prepare` counts, per topic, the candidates that are in form. A kit with a
 topic short of three and no `none:` line, or a line out of form, sends you back once (the
 retry pass above).
-
-## 7. Guideline tags: is the cited guideline still the one to cite?
-
-Each decision point of the learner's blueprint ends with the guideline it rests on, in brackets
-(`[ESC ACS 2023]`). These **tags** are a baseline: `cme.py prepare` lists the ones due for a
-check (the tags the next round's items rest on, and a share of the tags the learner's install
-sweeps, oldest first; before a progress review, every swept tag not checked within 30 days), in
-lists of at most 40, one tag checker per list, all started together. The default blueprint's
-tags are checked centrally instead, by the same brief: the maintainer's job
-(`cme.py central-checks`, run monthly in the plugin's repo) writes lists per region set
-(`<set>_checks_<n>.md` → `<set>_results_<n>.md`) and ships the results with the plugin. Your
-list's first lines give the guideline region (for a central list, the set's names) and
-specialty. A tag check is not an evidence check:
-it asks only about the edition and the appropriateness of the source, never about a claim.
-
-For each tag on the list, one question: **is there a newer edition, or a more appropriate
-guideline for the learner's region and specialty (rule 2 of `standards.md`), than the one
-tagged?** "More appropriate" means the body rule 2.1 names first for the region, never simply
-a newer guideline from another region.
-
-1. **Search**, all tags in one parallel batch: the society's or body's own guideline list page
-   (the route of §3 for a guideline recommendation), then PubMed for the guideline's title and
-   "update" or "focused update".
-2. **Fetch** only where a search result does not settle it, all in one batch.
-3. **Decide**:
-   - **current**: the tagged edition is the latest and the right body for the region;
-   - **changed**: the same guideline was revised in place (a focused update, a corrigendum, a
-     new version of the same document under the same name) in a way that may matter; say what;
-   - **superseded**: a newer edition, or a more appropriate guideline for the region, replaces it:
-     name it as a tag in the same form (body, short title, year), e.g. `ESC ACS 2026`;
-   - **uncertain**: a successor is announced, in consultation, or adopted but not yet in force,
-     or what you found does not settle it; say what is pending.
-
-Write the output file once, one line per tag on the list, in the list's order, and nothing else
-that the script reads:
-
-```
-Tag: <tag exactly as listed> | current|changed|superseded|uncertain | <the newer tag, or -> | <source link> | <one-line note>
-```
-
-A `superseded` line without its newer tag is not read. Never invent an edition, a year or a
-link: a tag you could not settle is `uncertain`, with what you found. `cme.py finish-prepare` (or
-`tag-checks --results` at a review; `central-checks --results` for a central list) files the lines: each tag counts as checked today, a
-superseded tag is cited as its successor from then on (the learner's blueprint itself is never
-rewritten), and the teaching earlier rounds based on a changed or superseded tag is queued for
-the review's guideline-change check (`analysis_framework.md` §2.3), which raises an erratum only
-where that teaching actually differs. A tag missing from the file simply comes due again.

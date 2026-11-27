@@ -66,8 +66,8 @@ CME="python3 plugins/clinical-cme/skills/clinical-cme/scripts/cme.py"
 
 3. **Run one checker per list, all together.** Give each helper this prompt, with its two paths:
 
-   > You are a tag checker. Read `plugins/clinical-cme/skills/clinical-cme/references/evidence_check.md`
-   > section 7 ("Guideline tags") and follow it exactly, with web search, for the list at
+   > You are a tag checker. Read `plugins/clinical-cme/skills/clinical-cme/references/tag_check.md`
+   > ("Tag check") and follow it exactly, with web search, for the list at
    > `<list>`. Its first lines give the region set and the specialty. For every tag on the list
    > write exactly one line `Tag: <tag exactly as listed> | current|changed|superseded|uncertain |
    > <the newer tag, or -> | <source link> | <one-line note>` into `<results>`, in the list's
