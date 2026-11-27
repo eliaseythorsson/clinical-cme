@@ -512,9 +512,18 @@ def forbidden_terms(rnd):
             phrase("case", "diagnosis", "fail", stated.strip("*_` "))
     if rnd.round.get("title"):
         phrase(last_part, "session title", "fail", rnd.round["title"])
-    # key and feedback-note lines: everything in the sealed files that is not text to present
+    # key and feedback-note lines: everything in the sealed files that is not text to present.
+    # A piece that both parts' files hold word for word (a generic line such as "nothing on it in
+    # your record yet" in each reveal) tells nothing about the later part: it is searched for as
+    # a term of the part whose seal lifts first only, so it stays a leak until then.
+    hidden_of = {}
     for name, text in rnd.sealed.items():
         part = "case" if name.endswith("case.md") else "questions"
+        hidden_of[part] = hidden_of.get(part, "") + " " + norm(BANK_RE.sub("", PRESENT_RE.sub("", text))).lower()
+    order = sorted(hidden_of, key=lambda p: (p in rnd.never_lifted, rnd.lift.get(p) or float("inf")))
+    for name, text in rnd.sealed.items():
+        part = "case" if name.endswith("case.md") else "questions"
+        earlier = [hidden_of[p] for p in order[:order.index(part)]]
         shown = norm(" ".join(b for _, b in PRESENT_RE.findall(text)) + " " + " ".join(BANK_RE.findall(text)))
         hidden = BANK_RE.sub("", PRESENT_RE.sub("", text))
         kind = "key line" if name.startswith("sealed") else "feedback-notes line"
@@ -523,7 +532,8 @@ def forbidden_terms(rnd):
             # the whole line, and each sentence or clause of it long enough to be telling
             for piece in [line] + re.split(r"[.;:]\s+", line):
                 piece = piece.strip(" .;:")
-                if len(piece) >= KEY_LINE_MIN and piece not in shown:
+                if (len(piece) >= KEY_LINE_MIN and piece not in shown
+                        and not any(piece.lower() in h for h in earlier)):
                     phrase(part, kind, "fail", piece)
     seen, out = set(), []
     for t in terms:
@@ -818,14 +828,17 @@ def holds_message(body, messages, role, min_chars):
 
 def check_dispute(rnd):
     """The dispute persona: the round holds a settled dispute, in the ledger's grade changes and in
-    the log (the exchange word for word, and the change under 'Grade changes')."""
+    the log (the exchange word for word, and the change under 'Grade changes'). An upheld grade, or
+    a challenged teaching point with the score unchanged, is settled too: its entry has from = to."""
     problems = []
     # a score the learner set themselves (outcome learner_set) is not a dispute and settles none
     changes = [g for g in (rnd.session or {}).get("grade_changes") or [] if g.get("outcome") != "learner_set"]
     if not rnd.session:
         problems.append("the ledger holds no record of this round")
     elif not changes:
-        problems.append("the ledger records no grade change for this round (grade_changes is empty)")
+        problems.append("the ledger records no grade change for this round (grade_changes is empty; every "
+                        "settled dispute has an entry, an upheld one or one on a teaching point with "
+                        "from = to: feedback_guide.md section 7)")
     for g in changes:
         if g.get("outcome") not in OUTCOMES:
             problems.append("grade change on %s is not settled: outcome %s (expected one of %s)"

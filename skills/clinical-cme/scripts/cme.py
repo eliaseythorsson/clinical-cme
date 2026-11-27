@@ -6470,7 +6470,7 @@ def grading_guide(listening):
         "when it did not. Only such an item can close the gap.",
         "Round: `gaps`, one per topic with something to retest, written precisely enough to retest and "
         "carrying forward what is still open; `resolved`, a prior gap closed this time; `key_learning`, "
-        "one-line teaching points; `grade_changes`, a grade settled in a dispute; `errata`, a correction "
+        "one-line teaching points; `grade_changes`, each dispute settled (also an upheld one); `errata`, a correction "
         "to an earlier round.",
         "`reading`: the Further reading pointers of the feedback, at most two; `listening` (when "
         "present): the Listening picks, one per topic. Empty lists when the feedback gave none.",
@@ -6915,8 +6915,11 @@ def reflection_guide(items, ask_sources):
         "in the learner's words, `reading_minutes` the further reading they report (null when none).",
         "`self_gaps`: each shaky area as a precise gap on a blueprint ID (source self); an ID the "
         "blueprint lacks gets `domain` and `label` too.",
-        "`grade_changes` and `items` (the item's new score and coding, matched by type and topic): a "
-        "grade disputed and settled now. Not for a score the learner sets: that is `learner_scores`.",
+        "`grade_changes`: every dispute settled now, one entry each, also when the grade stands "
+        "(`upheld`, `from` = `to`) and when the learner challenged a teaching point rather than a mark "
+        "(the item's score as `from` and `to`, the outcome saying who was right); `items` (the item's "
+        "new score and coding, matched by type and topic) only when a score changed. Not for a score "
+        "the learner sets: that is `learner_scores`.",
         "`learner_scores` (\"record it as 4\"), `learner_closed_gaps` (\"close that gap\") and "
         "`learner_stops` (\"I know this, stop bringing it back\", with the position note when the "
         "learner gave one): only what the learner said, matched by topic, and by type where the round "
@@ -6925,6 +6928,10 @@ def reflection_guide(items, ask_sources):
     if ask_sources:
         how.append("`podcast_sources`: the shows the learner named to trust or to avoid, if asked this "
                    "round; leave null when none were named.")
+    how.append("With it, write B.md (session_log.md section 3): \"### Discussion (verbatim)\", \"### Grade "
+               "changes\" (each dispute, from → to, the reason and the outcome; \"None.\" otherwise), "
+               "\"### Coded analysis\" (from the `coding` of each item in record.json), \"### Errata\" only "
+               "when there are any; `close` adds the reflection above them.")
     shapes = {
         "self_gap": {"topic": "<blueprint ID>", "gap": "…", "source": "self", "domain": "only for a new ID",
                      "label": "only for a new ID"},

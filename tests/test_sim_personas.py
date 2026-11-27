@@ -92,6 +92,10 @@ class Disputes(Script):
             reflection["grade_changes"] = [dict(GRADE_CHANGE, outcome=None)]
         if "dispute_not_logged" in self.faults:
             discussion = "None."
+        if "upheld" in self.faults:
+            reflection["grade_changes"] = [dict(GRADE_CHANGE, to=4, outcome="upheld")]
+            del reflection["items"]
+            changes = "Case stage 2: 4 → 4, upheld: the guideline asks for ten days."
         if "dispute_paraphrased" in self.faults:
             discussion = "The learner questioned the treatment duration; the examiner agreed that a week is defensible."
         self.close(reflection, part_b(REFLECTION_AFTER, discussion, changes), REFLECTION_AFTER)
@@ -354,3 +358,11 @@ def test_history_lines_up_the_reports_for_comparison(play, tmp_path):
     table = sim("history", "--reports", s.reports).stdout
     assert table.count("\n") == 4 and "| pass |" in table
     assert json.loads(sim("history", "--reports", s.reports, "--persona", "disputes", "--json").stdout) == []
+
+
+def test_an_upheld_dispute_is_settled_with_the_grade_as_it_stood(play):
+    # disputes, 2026-11-27: a grade that stands (or a teaching point challenged without a mark
+    # at stake) is still a settled dispute, recorded with from = to
+    out, rep = play(Disputes, "upheld").report()
+    assert out["checks"]["dispute"] is True, rep["checks"]["dispute"]["problems"]
+    assert rep["checks"]["dispute"]["grade_changes"] == [dict(GRADE_CHANGE, to=4, outcome="upheld")]

@@ -154,3 +154,20 @@ def test_feedback_naming_the_skills_machinery_fails_the_run(played):
     assert out["ok"] is False and out["checks"]["standards"] is False
     assert st["problems"] == ["the questions feedback names the skill's own machinery (rule 7, standards.md, kit): "
                               "references/standards.md rule 11"]
+
+
+def test_a_line_both_parts_kits_hold_is_searched_for_only_until_the_first_part_is_answered():
+    # stops-halfway, 2026-11-27: each reveal ended "nothing on it in your record yet"; the case's
+    # copy of that clause is no leak in the questions' feedback, while a line of the case alone is
+    from types import SimpleNamespace
+    rnd = SimpleNamespace(
+        state={}, block=None, items=[{"type": "focused", "topic": "HEME-01"}], unanswered=[{"type": "case"}],
+        has_case=False, round={}, never_lifted={"case"}, lift={"questions": 3},
+        sealed={"kit_questions.md": "## Q1\n\n**Question 1.** A new topic in the first round of the block: "
+                                    "nothing on it in your record yet.\n",
+                "kit_case.md": "## Reveal\n\n**The case.** A new topic, in the theme of the block: nothing on it "
+                               "in your record yet.\nThe conduction block is unmasked by eye drops.\n"})
+    terms = [(t[0], t[3]) for t in simulate.forbidden_terms(rnd)]
+    assert ("questions", "nothing on it in your record yet") in terms         # sealed until the questions' answers
+    assert ("case", "nothing on it in your record yet") not in terms
+    assert ("case", "The conduction block is unmasked by eye drops") in terms

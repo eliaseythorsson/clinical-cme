@@ -80,7 +80,7 @@ a "Reflection" heading is kept as it is.
   words); one bullet per MCQ; one bullet per focused question (aspect, mastery, ART domains
   scored); calibration notes; drill result. It must agree with the `coding`
   blocks in the round JSON.
-- **Grade changes**: each with from → to, the reason and the outcome. "None." otherwise.
+- **Grade changes**: each dispute with from → to (the same score when it stood), the reason and the outcome. "None." otherwise.
   A score the learner set, a gap they closed or a stop with its position note
   (`feedback_guide.md` §7.1–7.2) is not written here by hand: `close` adds a "Set by the
   learner" section with both scores, who closed the gap and the note word for word (`override` after the close: the same lines in the addendum), and the document keeps

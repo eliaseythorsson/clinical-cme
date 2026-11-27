@@ -377,11 +377,19 @@ supports both positions, say so plainly, correct the model answer and adjust the
 before recording. If the original grading stands, explain why with the specific source.
 Never defend a grade by repeating it.
 
-The whole debate goes into the log verbatim (Discussion section), and each change goes into
-`grade_changes` in the reflection JSON (with the new score in `items`):
+The whole debate goes into the log verbatim (Discussion section), and every dispute settled
+goes into `grade_changes` in the reflection JSON, one entry each, whatever the outcome (with
+the new score in `items` when it changed):
 `{"item": "Q2", "topic": "CARD-03", "from": 2, "to": 4, "outcome": "learner_right"}`.
-Use `both_defensible` or `upheld` as appropriate. If the dispute changes the coding, code
-the final position. The review reports dispute outcomes honestly; a learner who is often
+Use `both_defensible` or `upheld` as appropriate; an upheld grade is recorded too, with `from`
+equal to `to`. A challenge to a teaching point rather than a mark ("correct it in the record")
+is a dispute as well: the item's score as `from` and `to`, the outcome saying who was right,
+and the corrected point in the Discussion. If the dispute changes the coding, code the final
+position.
+
+A dispute that arrives without the reflection: settle it in that reply, end it by asking for
+the reflection, and close only when the reflection (or "skip") arrives; never close on the
+dispute message as if it were the reflection. The review reports dispute outcomes honestly; a learner who is often
 right is telling you something about the grading.
 
 ### 7.1 A score the learner sets, a gap the learner closes

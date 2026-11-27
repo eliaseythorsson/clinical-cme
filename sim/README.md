@@ -104,7 +104,7 @@ in the persona's file (`"expect"`) and fails the run like the others:
 
 | Check | Persona | Passes when | How |
 |---|---|---|---|
-| **Dispute** | `disputes` | the round holds a settled dispute, in the log and in the grade changes | The ledger's record of the round has at least one entry in `grade_changes`, each with an outcome (`learner_right`, `both_defensible`, `upheld`); part B's "Grade changes" section is not "None."; and the exchange is in the log word for word, the learner's challenge and the examiner's reply both, under "Discussion" (raised after the final feedback) or "Notes" (settled mid-round). |
+| **Dispute** | `disputes` | the round holds a settled dispute, in the log and in the grade changes | The ledger's record of the round has at least one entry in `grade_changes`, each with an outcome (`learner_right`, `both_defensible`, `upheld`; a grade that stood, or a challenged teaching point, has `from` = `to`); part B's "Grade changes" section is not "None."; and the exchange is in the log word for word, the learner's challenge and the examiner's reply both, under "Discussion" (raised after the final feedback) or "Notes" (settled mid-round). |
 | **Stopped** | `stops-halfway` | the round is saved without the case, and the case's topic is still due | The ledger's record of the round holds short questions and no case; the case's topic (from `plan.json`) is not among the round's topics, and its schedule in the ledger (last tested, attempts, step, due date) is exactly what it was when the round began (`ledger_at_start.json`). |
 
 Limits of this first version: only what is *sent* is searched. The examiner's reasoning and its

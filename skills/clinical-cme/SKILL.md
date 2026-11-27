@@ -193,8 +193,10 @@ graded. If answers are missing, ask once; proceed if the learner says so.
   reflection prompt included, as `feedback.md`) and go to turn 4, step 4.
 - A disputed grade → settle it briefly now (`feedback_guide.md` §7), file the exchange with
   `answer --part notes`, and return to the case.
-- The learner stops here ("no time for the case") → close the round without it: send the gap
-  summary and reflection prompt, and save with the items answered; the case's topic stays due.
+- The learner stops here ("no time for the case") → close the round without it: send turn 4's
+  final feedback without the case (gap summary, reading, Listening for the topics answered,
+  reflection prompt) and save with the items answered. Say "the case is set aside unread and
+  comes back in a later round" (never "sealed": rule 11); its topic stays due.
 
 ### Turn 3. Stage 1 answer in → Stage 2 (unfolding cases)
 
@@ -231,11 +233,12 @@ graded. If answers are missing, ask once; proceed if the learner says so.
 
 1. **Read the reflection** (comfort and performance 1–5, solid and shaky areas, reading minutes,
    `podcast_sources`); each shaky area becomes a precise gap on a blueprint ID. A disputed grade
-   is resolved first (`feedback_guide.md` §7; never defend a grade by repeating it). "Record it
+   is resolved first (`feedback_guide.md` §7: recorded whatever the outcome; sent without the
+   reflection → ask for it, close when it arrives; never defend a grade by repeating it). "Record it
    as 4", "close that gap": §7.1; "I know this, stop it": §7.2.
-2. `cme.py answer --work <work> --part reflection` writes the **reflection form**; then, in one
-   batch, fill in `<work>/reflection.json` and write `<work>/B.md` (discussion verbatim, grade
-   changes, coded analysis, errata from `errata_to_log`; `session_log.md` §3). Then
+2. First `cme.py answer --work <work> --part reflection`: its **reflection form** says all this
+   step needs. Then, in one batch, fill in `<work>/reflection.json` and write `<work>/B.md`
+   (discussion verbatim, grade changes, coded analysis, errata from `errata_to_log`). Then
    `python3 cme.py close --work <work>`, which prints everything the close message needs.
 3. **Close** in one message, sent before the store is written: what was saved (topics tested,
    score, session ID, the number of items due over the next few days, not their names; "1
