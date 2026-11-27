@@ -1,23 +1,41 @@
 {
  "after_record": {
-  "NEURO-04": {
-   "attempts": 1,
-   "calibration": "confident_error",
+  "ID-10": {
+   "attempts": 4,
+   "calibration": "not_rated",
    "comfort": null,
-   "domain": "NEURO",
+   "domain": "ID",
    "due": "2026-11-23",
    "history": [
     [
+     "2026-08-03",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-08-05",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-08-07",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
      "2026-11-20",
-     1.0,
+     3.0,
      null,
-     "confident_error"
+     "not_rated"
     ]
    ],
-   "label": "Altered mental status / delirium",
+   "label": "Healthcare-associated / MDRO, antibiotic selection",
    "last": "2026-11-20",
-   "mastery": 1.0,
-   "step": 0
+   "mastery": 3.0,
+   "step": 1
   },
   "NEURO-05": {
    "attempts": 1,
@@ -40,21 +58,21 @@
   },
   "NEURO-06": {
    "attempts": 1,
-   "calibration": "not_rated",
+   "calibration": "confident_error",
    "comfort": null,
    "domain": "NEURO",
    "due": "2026-11-23",
    "history": [
     [
      "2026-11-20",
-     3.0,
+     1.0,
      null,
-     "not_rated"
+     "confident_error"
     ]
    ],
    "label": "Headache — dangerous causes",
    "last": "2026-11-20",
-   "mastery": 3.0,
+   "mastery": 1.0,
    "step": 0
   },
   "TOX-02": {
@@ -90,24 +108,42 @@
   }
  },
  "after_reflect": {
-  "NEURO-04": {
-   "attempts": 1,
-   "calibration": "confident_error",
-   "comfort": 4,
-   "domain": "NEURO",
+  "ID-10": {
+   "attempts": 4,
+   "calibration": "overconfident",
+   "comfort": 5,
+   "domain": "ID",
    "due": "2026-11-23",
    "history": [
     [
+     "2026-08-03",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-08-05",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-08-07",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
      "2026-11-20",
-     1.0,
-     4,
-     "confident_error"
+     3.0,
+     5,
+     "overconfident"
     ]
    ],
-   "label": "Altered mental status / delirium",
+   "label": "Healthcare-associated / MDRO, antibiotic selection",
    "last": "2026-11-20",
-   "mastery": 1.0,
-   "step": 0
+   "mastery": 3.0,
+   "step": 1
   },
   "NEURO-05": {
    "attempts": 1,
@@ -130,21 +166,21 @@
   },
   "NEURO-06": {
    "attempts": 1,
-   "calibration": "overconfident",
-   "comfort": 5,
+   "calibration": "confident_error",
+   "comfort": 4,
    "domain": "NEURO",
    "due": "2026-11-23",
    "history": [
     [
      "2026-11-20",
-     3.0,
-     5,
-     "overconfident"
+     1.0,
+     4,
+     "confident_error"
     ]
    ],
    "label": "Headache — dangerous causes",
    "last": "2026-11-20",
-   "mastery": 3.0,
+   "mastery": 1.0,
    "step": 0
   },
   "TOX-02": {

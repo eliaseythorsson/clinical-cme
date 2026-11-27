@@ -166,7 +166,7 @@
     "source": [
      "misconception"
     ],
-    "topic": "NEURO-04"
+    "topic": "NEURO-06"
    }
   ],
   "gen": 14,
@@ -271,7 +271,7 @@
      "correct": true,
      "mastery": 4,
      "stem": "Example MCQ stem 7.2",
-     "topic": "NEURO-06",
+     "topic": "ID-10",
      "type": "mcq"
     },
     {
@@ -289,7 +289,7 @@
      "correct": false,
      "mastery": 1,
      "stem": "Example MCQ stem 7.3",
-     "topic": "NEURO-04",
+     "topic": "NEURO-06",
      "type": "mcq"
     }
    ],
@@ -311,19 +311,27 @@
    "topics": [
     "NEURO-05",
     "TOX-02",
-    "NEURO-06",
-    "NEURO-04"
+    "ID-10",
+    "NEURO-06"
    ],
    "undo": {
     "topics": {
-     "NEURO-04": {
-      "gap": null,
-      "new": true
+     "ID-10": {
+      "row": true,
+      "was": {
+       "attempts": 3,
+       "calibration": "aligned",
+       "comfort": 5,
+       "due": "2026-08-10",
+       "last": "2026-08-07",
+       "mastery": 5.0
+      }
      },
      "NEURO-05": {
       "new": true
      },
      "NEURO-06": {
+      "gap": null,
       "new": true
      },
      "TOX-02": {
@@ -348,7 +356,7 @@
     }
    },
    "why": {
-    "NEURO-04": "new",
+    "ID-10": "due",
     "NEURO-05": "new",
     "NEURO-06": "new",
     "TOX-02": "due"
@@ -494,8 +502,8 @@
    "GEN": 4.0,
    "GI": 4.0,
    "HEME": 3.9,
-   "ID": 3.0,
-   "NEURO": 4.6,
+   "ID": 3.7,
+   "NEURO": 4.5,
    "RENAL": 4,
    "RHEUM": 2.5,
    "TOX": 3.3
@@ -533,7 +541,7 @@
     "source": [
      "misconception"
     ],
-    "topic": "NEURO-04"
+    "topic": "NEURO-06"
    }
   ],
   "gen": 15,
@@ -638,7 +646,7 @@
      "correct": true,
      "mastery": 4,
      "stem": "Example MCQ stem 7.2",
-     "topic": "NEURO-06",
+     "topic": "ID-10",
      "type": "mcq"
     },
     {
@@ -656,7 +664,7 @@
      "correct": false,
      "mastery": 1,
      "stem": "Example MCQ stem 7.3",
-     "topic": "NEURO-04",
+     "topic": "NEURO-06",
      "type": "mcq"
     }
    ],
@@ -672,9 +680,9 @@
    },
    "score": 2.75,
    "self_comfort": {
-    "NEURO-04": 4,
+    "ID-10": 5,
     "NEURO-05": 5,
-    "NEURO-06": 5,
+    "NEURO-06": 4,
     "TOX-02": 2
    },
    "self_performance": 3,
@@ -687,23 +695,31 @@
    "topics": [
     "NEURO-05",
     "TOX-02",
-    "NEURO-06",
-    "NEURO-04"
+    "ID-10",
+    "NEURO-06"
    ],
    "undo": {
     "ratings": {
+     "ID": 3.0,
      "NEURO": 4.7,
      "TOX": 4.0
     },
     "topics": {
-     "NEURO-04": {
-      "gap": null,
-      "new": true
+     "ID-10": {
+      "row": true,
+      "was": {
+       "attempts": 3,
+       "calibration": "aligned",
+       "due": "2026-08-10",
+       "last": "2026-08-07",
+       "mastery": 5.0
+      }
      },
      "NEURO-05": {
       "new": true
      },
      "NEURO-06": {
+      "gap": null,
       "new": true
      },
      "TOX-02": {
@@ -727,7 +743,7 @@
     }
    },
    "why": {
-    "NEURO-04": "new",
+    "ID-10": "due",
     "NEURO-05": "new",
     "NEURO-06": "new",
     "TOX-02": "due"
@@ -755,14 +771,14 @@
   "score": 2.75,
   "session_id": "S0007",
   "topics": {
-   "NEURO-04": {
-    "calibration": "confident_error",
+   "ID-10": {
+    "calibration": "not_rated",
     "comfort": null,
     "due": "2026-11-23",
     "interval_days": 3,
-    "mastery": 1.0,
-    "misconception": true,
-    "step": 0
+    "mastery": 3.0,
+    "misconception": false,
+    "step": 1
    },
    "NEURO-05": {
     "calibration": "not_rated",
@@ -774,12 +790,12 @@
     "step": 1
    },
    "NEURO-06": {
-    "calibration": "not_rated",
+    "calibration": "confident_error",
     "comfort": null,
     "due": "2026-11-23",
     "interval_days": 3,
-    "mastery": 3.0,
-    "misconception": false,
+    "mastery": 1.0,
+    "misconception": true,
     "step": 0
    },
    "TOX-02": {
@@ -801,14 +817,14 @@
   "open_gaps": 3,
   "session_id": "S0007",
   "topics": {
-   "NEURO-04": {
-    "calibration": "confident_error",
-    "comfort": 4,
+   "ID-10": {
+    "calibration": "overconfident",
+    "comfort": 5,
     "due": "2026-11-23",
     "interval_days": 3,
-    "mastery": 1.0,
-    "misconception": true,
-    "step": 0
+    "mastery": 3.0,
+    "misconception": false,
+    "step": 1
    },
    "NEURO-05": {
     "calibration": "aligned",
@@ -820,12 +836,12 @@
     "step": 1
    },
    "NEURO-06": {
-    "calibration": "overconfident",
-    "comfort": 5,
+    "calibration": "confident_error",
+    "comfort": 4,
     "due": "2026-11-23",
     "interval_days": 3,
-    "mastery": 3.0,
-    "misconception": false,
+    "mastery": 1.0,
+    "misconception": true,
     "step": 0
    },
    "TOX-02": {
@@ -845,9 +861,9 @@
   "performance": 3,
   "solid": "Example: what felt solid in round 7",
   "topic_comfort": {
-   "NEURO-04": 4,
+   "ID-10": 5,
    "NEURO-05": 5,
-   "NEURO-06": 5,
+   "NEURO-06": 4,
    "TOX-02": 2
   }
  },
@@ -915,7 +931,7 @@
     "correct": true,
     "mastery": 4,
     "stem_summary": "Example MCQ stem 7.2",
-    "topic": "NEURO-06",
+    "topic": "ID-10",
     "type": "mcq"
    },
    {
@@ -932,14 +948,14 @@
     "correct": false,
     "mastery": 1,
     "stem_summary": "Example MCQ stem 7.3",
-    "topic": "NEURO-04",
+    "topic": "NEURO-06",
     "type": "mcq"
    }
   ],
   "log_id": "S0007",
   "minutes": 40,
   "selection_reasons": {
-   "NEURO-04": "new",
+   "ID-10": "due",
    "NEURO-05": "new",
    "NEURO-06": "new",
    "TOX-02": "due"

@@ -186,7 +186,10 @@ _Avoid_: module, month
 The domain of the current block. It is visible to the learner; topics stay blind. It is proposed with a one-line reason and the learner can change it, at the end of a block or in the middle of one.
 
 **Share**:
-The part of a round's short questions given to the theme (60%), to due repeats (25%) or to the wildcard (15%), met over the block rather than in every round.
+The part of a round's short questions given to the theme (60%), to due repeats (25%) or to the wildcard (15%), met over the block rather than in every round. While the backlog is large the theme gives up 15 points to the repeats (45/40/15).
+
+**Backlog**:
+The topics whose spacing date has come (as `status` counts them, `due_count`). Six or more is a large backlog: the plan says so in `block.backlog` and takes the backlog shares until fewer are left.
 
 **Due repeat**:
 A topic whose spacing date has come, or a gap ready for its retest, from any domain; fills the repeat share.
@@ -195,7 +198,7 @@ A topic whose spacing date has come, or a gap ready for its retest, from any dom
 A short question on an untested topic outside the theme, so breadth is not lost during a block.
 
 **Drill-down**:
-Successive rounds coming back to one topic after wrong answers. Limited: no topic is in more than two rounds in a row; outside the theme a miss gets one retest, then at least a week between returns.
+Successive rounds coming back to one topic after wrong answers. Limited: no topic is in more than two rounds in a row; outside the theme a miss gets one retest, then at least a week between returns; inside the theme a topic missed on its second round of the block (or later) waits at least a week (the **pause**), and no gap retest or revisit brings it back before its date.
 
 **Guideline region**:
 The learner's choice of whose guidelines items are written and graded against; asked at setup, default Iceland/Europe.

@@ -319,7 +319,8 @@ reply "skip" to save without a reflection. If you stop after the short questions
 time for the case") and they are saved on their own; if you simply leave mid-round, nothing is
 recorded and the same topics come back next time.
 
-**What if I fall behind?** Nothing breaks: overdue topics come first at your normal round size.
+**What if I fall behind?** Nothing breaks: overdue topics come first at your normal round size,
+and while six or more are overdue, repeats get more of each round until fewer are left.
 
 **How do I reset or stop?** Say "start over" (a fresh ledger in the same page) or delete the page.
 

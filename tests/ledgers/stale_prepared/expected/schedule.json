@@ -1,6 +1,6 @@
 {
  "after_record": {
-  "PULM-04": {
+  "PULM-06": {
    "attempts": 1,
    "calibration": "not_rated",
    "comfort": null,
@@ -14,28 +14,9 @@
      "not_rated"
     ]
    ],
-   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
-   "last": "2026-11-20",
-   "mastery": 3.0,
-   "step": 0
-  },
-  "PULM-06": {
-   "attempts": 1,
-   "calibration": "not_rated",
-   "comfort": null,
-   "domain": "PULM",
-   "due": "2026-11-23",
-   "history": [
-    [
-     "2026-11-20",
-     2.0,
-     null,
-     "not_rated"
-    ]
-   ],
    "label": "Pulmonary embolism (management)",
    "last": "2026-11-20",
-   "mastery": 2.0,
+   "mastery": 3.0,
    "step": 0
   },
   "PULM-07": {
@@ -99,10 +80,35 @@
    "last": "2026-11-20",
    "mastery": 5.0,
    "step": 2
+  },
+  "RHEUM-04": {
+   "attempts": 2,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "RHEUM",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-09-03",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-11-20",
+     2.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Anaphylaxis, drug hypersensitivity",
+   "last": "2026-11-20",
+   "mastery": 2.0,
+   "step": 0
   }
  },
  "after_reflect": {
-  "PULM-04": {
+  "PULM-06": {
    "attempts": 1,
    "calibration": "overconfident",
    "comfort": 5,
@@ -116,28 +122,9 @@
      "overconfident"
     ]
    ],
-   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
-   "last": "2026-11-20",
-   "mastery": 3.0,
-   "step": 0
-  },
-  "PULM-06": {
-   "attempts": 1,
-   "calibration": "aligned",
-   "comfort": 2,
-   "domain": "PULM",
-   "due": "2026-11-23",
-   "history": [
-    [
-     "2026-11-20",
-     2.0,
-     2,
-     "aligned"
-    ]
-   ],
    "label": "Pulmonary embolism (management)",
    "last": "2026-11-20",
-   "mastery": 2.0,
+   "mastery": 3.0,
    "step": 0
   },
   "PULM-07": {
@@ -201,6 +188,31 @@
    "last": "2026-11-20",
    "mastery": 5.0,
    "step": 2
+  },
+  "RHEUM-04": {
+   "attempts": 2,
+   "calibration": "aligned",
+   "comfort": 2,
+   "domain": "RHEUM",
+   "due": "2026-11-23",
+   "history": [
+    [
+     "2026-09-03",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-11-20",
+     2.0,
+     2,
+     "aligned"
+    ]
+   ],
+   "label": "Anaphylaxis, drug hypersensitivity",
+   "last": "2026-11-20",
+   "mastery": 2.0,
+   "step": 0
   }
  },
  "date": "2026-11-20",

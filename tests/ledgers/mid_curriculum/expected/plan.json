@@ -1,10 +1,18 @@
 {
  "block": {
+  "backlog": {
+   "overdue": 13,
+   "shares": {
+    "repeat": 40,
+    "theme": 45,
+    "wildcard": 15
+   }
+  },
   "length": 12,
   "line": "Block: Pulmonary & Critical Care, round 1 of 12",
   "mix": {
-   "repeat": 1,
-   "theme": 2,
+   "repeat": 2,
+   "theme": 1,
    "wildcard": 1
   },
   "name": "Pulmonary & Critical Care",
@@ -58,6 +66,58 @@
    "topic": "TOX-03"
   },
   {
+   "already_used": [
+    {
+     "date": "2026-10-05",
+     "id": "S0001",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 1.3",
+     "topic": "ENDO-06"
+    },
+    {
+     "date": "2026-10-09",
+     "id": "S0003",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 3.3",
+     "topic": "ENDO-06"
+    },
+    {
+     "date": "2026-10-12",
+     "id": "S0004",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 4.2",
+     "topic": "ENDO-06"
+    },
+    {
+     "date": "2026-10-16",
+     "id": "S0006",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 6.3",
+     "topic": "ENDO-06"
+    },
+    {
+     "date": "2026-10-23",
+     "id": "S0010",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 10.3",
+     "topic": "ENDO-06"
+    }
+   ],
+   "domain": "ENDO",
+   "label": "Pheochromocytoma, hypercalcemia of malignancy",
+   "reason": "spaced review due 2026-10-24; last 2.0/5 on 2026-10-23; open gap: Example gap 10.3: missed the decision point",
+   "reason_code": "due",
+   "retest_gap": {
+    "gap": "Example gap 10.3: missed the decision point",
+    "how": "Write this item on the gap's decision point, in a new clinical context, and write the line 'retests: ENDO-06' in the item's key header (references/standards.md, rule 9). Only an item that says so, answered well, closes the gap.",
+    "id": "ENDO-06"
+   },
+   "separation": "other domain",
+   "share": "repeat",
+   "slot": "mcq",
+   "topic": "ENDO-06"
+  },
+  {
    "domain": "PULM",
    "label": "Pulmonary embolism (management)",
    "reason": "not yet tested; in the block's theme",
@@ -68,24 +128,14 @@
    "topic": "PULM-06"
   },
   {
-   "domain": "PULM",
-   "label": "Pleural effusion / empyema",
-   "reason": "not yet tested; in the block's theme",
-   "reason_code": "new",
-   "separation": "same domain as the case (the block's theme), unrelated topic",
-   "share": "theme",
-   "slot": "mcq",
-   "topic": "PULM-05"
-  },
-  {
    "domain": "GEN",
-   "label": "Perioperative anticoagulation / antiplatelet bridging",
+   "label": "Pain management & opioid stewardship",
    "reason": "not yet tested; chosen by domain weight (blueprint, your self-ratings, emphasis)",
    "reason_code": "new",
    "separation": "other domain",
    "share": "wildcard",
    "slot": "mcq",
-   "topic": "GEN-02"
+   "topic": "GEN-04"
   }
  ],
  "lab_units": "SI",
@@ -99,9 +149,9 @@
  },
  "prepare_ahead": true,
  "presentation_order": [
+  "mcq ENDO-06",
   "mcq PULM-06",
-  "mcq PULM-05",
-  "mcq GEN-02",
+  "mcq GEN-04",
   "focused TOX-03",
   "case PULM-08"
  ],

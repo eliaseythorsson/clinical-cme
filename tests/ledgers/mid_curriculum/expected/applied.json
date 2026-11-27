@@ -137,17 +137,6 @@
   },
   "gaps": [
    {
-    "date": "2026-10-23",
-    "gap": "Example gap 10.3: missed the decision point",
-    "id": "G0001",
-    "opened": "2026-10-23",
-    "self": null,
-    "source": [
-     "graded"
-    ],
-    "topic": "ENDO-06"
-   },
-   {
     "date": "2026-10-28",
     "gap": "Confident but incorrect answer on 2026-10-28; re-test the same decision point.",
     "id": "G0002",
@@ -231,6 +220,14 @@
     "partial": false,
     "resolved": "2026-10-23",
     "topic": "PULM-04"
+   },
+   {
+    "id": "G0001",
+    "note": "Example gap 10.3: missed the decision point",
+    "opened": "2026-10-23",
+    "partial": false,
+    "resolved": "2026-10-28",
+    "topic": "ENDO-06"
    }
   ],
   "session": {
@@ -305,8 +302,9 @@
      "confidence": "unsure",
      "correct": true,
      "mastery": 4,
+     "retests": "ENDO-06",
      "stem": "Example MCQ stem 11.2",
-     "topic": "PULM-06",
+     "topic": "ENDO-06",
      "type": "mcq"
     },
     {
@@ -317,7 +315,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 11.3",
-     "topic": "PULM-05",
+     "topic": "PULM-06",
      "type": "mcq"
     },
     {
@@ -328,7 +326,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 11.4",
-     "topic": "GEN-02",
+     "topic": "GEN-04",
      "type": "mcq"
     }
    ],
@@ -350,16 +348,40 @@
    "topics": [
     "PULM-08",
     "TOX-03",
+    "ENDO-06",
     "PULM-06",
-    "PULM-05",
-    "GEN-02"
+    "GEN-04"
    ],
    "undo": {
     "topics": {
-     "GEN-02": {
-      "new": true
+     "ENDO-06": {
+      "gap": [
+       0,
+       {
+        "date": "2026-10-23",
+        "gap": "Example gap 10.3: missed the decision point",
+        "id": "G0001",
+        "opened": "2026-10-23",
+        "self": null,
+        "source": [
+         "graded"
+        ],
+        "topic": "ENDO-06"
+       }
+      ],
+      "resolved": 1,
+      "row": true,
+      "was": {
+       "attempts": 5,
+       "calibration": "aligned",
+       "comfort": 2,
+       "due": "2026-10-24",
+       "last": "2026-10-23",
+       "mastery": 2.0,
+       "step": 0
+      }
      },
-     "PULM-05": {
+     "GEN-04": {
       "new": true
      },
      "PULM-06": {
@@ -383,8 +405,8 @@
     }
    },
    "why": {
-    "GEN-02": "new",
-    "PULM-05": "new",
+    "ENDO-06": "due",
+    "GEN-04": "new",
     "PULM-06": "new",
     "PULM-08": "new",
     "TOX-03": "due"
@@ -531,7 +553,7 @@
   "domain_self_ratings": {
    "CARD": 3.9,
    "EMRG": 4,
-   "ENDO": 2.9,
+   "ENDO": 3.3,
    "GEN": 2.9,
    "GI": 3.1,
    "HEME": 3.9,
@@ -543,17 +565,6 @@
    "TOX": 4.2
   },
   "gaps": [
-   {
-    "date": "2026-10-23",
-    "gap": "Example gap 10.3: missed the decision point",
-    "id": "G0001",
-    "opened": "2026-10-23",
-    "self": null,
-    "source": [
-     "graded"
-    ],
-    "topic": "ENDO-06"
-   },
    {
     "date": "2026-10-28",
     "gap": "Confident but incorrect answer on 2026-10-28; re-test the same decision point.",
@@ -638,6 +649,14 @@
     "partial": false,
     "resolved": "2026-10-23",
     "topic": "PULM-04"
+   },
+   {
+    "id": "G0001",
+    "note": "Example gap 10.3: missed the decision point",
+    "opened": "2026-10-23",
+    "partial": false,
+    "resolved": "2026-10-28",
+    "topic": "ENDO-06"
    }
   ],
   "session": {
@@ -712,8 +731,9 @@
      "confidence": "unsure",
      "correct": true,
      "mastery": 4,
+     "retests": "ENDO-06",
      "stem": "Example MCQ stem 11.2",
-     "topic": "PULM-06",
+     "topic": "ENDO-06",
      "type": "mcq"
     },
     {
@@ -724,7 +744,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 11.3",
-     "topic": "PULM-05",
+     "topic": "PULM-06",
      "type": "mcq"
     },
     {
@@ -735,7 +755,7 @@
      "correct": true,
      "mastery": 5,
      "stem": "Example MCQ stem 11.4",
-     "topic": "GEN-02",
+     "topic": "GEN-04",
      "type": "mcq"
     }
    ],
@@ -751,8 +771,8 @@
    },
    "score": 3.8,
    "self_comfort": {
-    "GEN-02": 2,
-    "PULM-05": 4,
+    "ENDO-06": 4,
+    "GEN-04": 2,
     "PULM-06": 4,
     "PULM-08": 5,
     "TOX-03": 4
@@ -767,21 +787,45 @@
    "topics": [
     "PULM-08",
     "TOX-03",
+    "ENDO-06",
     "PULM-06",
-    "PULM-05",
-    "GEN-02"
+    "GEN-04"
    ],
    "undo": {
     "ratings": {
+     "ENDO": 2.9,
      "GEN": 3.3,
      "PULM": 3.3,
      "TOX": 4.3
     },
     "topics": {
-     "GEN-02": {
-      "new": true
+     "ENDO-06": {
+      "gap": [
+       0,
+       {
+        "date": "2026-10-23",
+        "gap": "Example gap 10.3: missed the decision point",
+        "id": "G0001",
+        "opened": "2026-10-23",
+        "self": null,
+        "source": [
+         "graded"
+        ],
+        "topic": "ENDO-06"
+       }
+      ],
+      "resolved": 1,
+      "row": true,
+      "was": {
+       "attempts": 5,
+       "comfort": 2,
+       "due": "2026-10-24",
+       "last": "2026-10-23",
+       "mastery": 2.0,
+       "step": 0
+      }
      },
-     "PULM-05": {
+     "GEN-04": {
       "new": true
      },
      "PULM-06": {
@@ -805,8 +849,8 @@
     }
    },
    "why": {
-    "GEN-02": "new",
-    "PULM-05": "new",
+    "ENDO-06": "due",
+    "GEN-04": "new",
     "PULM-06": "new",
     "PULM-08": "new",
     "TOX-03": "due"
@@ -833,21 +877,23 @@
   "errata_to_log": [],
   "gen": 22,
   "next_id": "S0012",
-  "open_gaps": 2,
+  "open_gaps": 1,
   "reflection_pending": true,
   "score": 3.8,
   "session_id": "S0011",
   "topics": {
-   "GEN-02": {
+   "ENDO-06": {
     "calibration": "not_rated",
     "comfort": null,
     "due": "2026-10-31",
+    "gap_resolved": true,
+    "gap_retested": true,
     "interval_days": 3,
-    "mastery": 5.0,
+    "mastery": 4.0,
     "misconception": false,
     "step": 1
    },
-   "PULM-05": {
+   "GEN-04": {
     "calibration": "not_rated",
     "comfort": null,
     "due": "2026-10-31",
@@ -861,7 +907,7 @@
     "comfort": null,
     "due": "2026-10-31",
     "interval_days": 3,
-    "mastery": 4.0,
+    "mastery": 5.0,
     "misconception": false,
     "step": 1
    },
@@ -891,21 +937,23 @@
   "errata_ids": [],
   "errata_to_log": [],
   "gen": 23,
-  "open_gaps": 2,
+  "open_gaps": 1,
   "session_id": "S0011",
   "topics": {
-   "GEN-02": {
-    "calibration": "underconfident",
-    "comfort": 2,
+   "ENDO-06": {
+    "calibration": "aligned",
+    "comfort": 4,
     "due": "2026-10-31",
+    "gap_resolved": true,
+    "gap_retested": true,
     "interval_days": 3,
-    "mastery": 5.0,
+    "mastery": 4.0,
     "misconception": false,
     "step": 1
    },
-   "PULM-05": {
-    "calibration": "aligned",
-    "comfort": 4,
+   "GEN-04": {
+    "calibration": "underconfident",
+    "comfort": 2,
     "due": "2026-10-31",
     "interval_days": 3,
     "mastery": 5.0,
@@ -917,7 +965,7 @@
     "comfort": 4,
     "due": "2026-10-31",
     "interval_days": 3,
-    "mastery": 4.0,
+    "mastery": 5.0,
     "misconception": false,
     "step": 1
    },
@@ -948,8 +996,8 @@
   "performance": 3,
   "solid": "Example: what felt solid in round 11",
   "topic_comfort": {
-   "GEN-02": 2,
-   "PULM-05": 4,
+   "ENDO-06": 4,
+   "GEN-04": 2,
    "PULM-06": 4,
    "PULM-08": 5,
    "TOX-03": 4
@@ -1015,8 +1063,9 @@
     "confidence": "unsure",
     "correct": true,
     "mastery": 4,
+    "retests": "ENDO-06",
     "stem_summary": "Example MCQ stem 11.2",
-    "topic": "PULM-06",
+    "topic": "ENDO-06",
     "type": "mcq"
    },
    {
@@ -1027,7 +1076,7 @@
     "correct": true,
     "mastery": 5,
     "stem_summary": "Example MCQ stem 11.3",
-    "topic": "PULM-05",
+    "topic": "PULM-06",
     "type": "mcq"
    },
    {
@@ -1038,15 +1087,15 @@
     "correct": true,
     "mastery": 5,
     "stem_summary": "Example MCQ stem 11.4",
-    "topic": "GEN-02",
+    "topic": "GEN-04",
     "type": "mcq"
    }
   ],
   "log_id": "S0011",
   "minutes": 50,
   "selection_reasons": {
-   "GEN-02": "new",
-   "PULM-05": "new",
+   "ENDO-06": "due",
+   "GEN-04": "new",
    "PULM-06": "new",
    "PULM-08": "new",
    "TOX-03": "due"

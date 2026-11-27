@@ -153,7 +153,7 @@
     "source": [
      "graded"
     ],
-    "topic": "PULM-06"
+    "topic": "RHEUM-04"
    }
   ],
   "gen": 10,
@@ -247,7 +247,7 @@
      "correct": false,
      "mastery": 2,
      "stem": "Example MCQ stem 5.2",
-     "topic": "PULM-06",
+     "topic": "RHEUM-04",
      "type": "mcq"
     },
     {
@@ -258,7 +258,7 @@
      "correct": true,
      "mastery": 4,
      "stem": "Example MCQ stem 5.3",
-     "topic": "PULM-04",
+     "topic": "PULM-06",
      "type": "mcq"
     }
    ],
@@ -280,22 +280,12 @@
    "topics": [
     "PULM-07",
     "RENAL-06",
-    "PULM-06",
-    "PULM-04"
+    "RHEUM-04",
+    "PULM-06"
    ],
    "undo": {
     "topics": {
-     "PULM-04": {
-      "new": true
-     },
      "PULM-06": {
-      "gap": null,
-      "in": [
-       {
-        "gap": "Example gap 5.2: missed the decision point",
-        "source": "graded"
-       }
-      ],
       "new": true
      },
      "PULM-07": {
@@ -319,14 +309,33 @@
        "last": "2026-09-01",
        "step": 1
       }
+     },
+     "RHEUM-04": {
+      "gap": null,
+      "in": [
+       {
+        "gap": "Example gap 5.2: missed the decision point",
+        "source": "graded"
+       }
+      ],
+      "row": true,
+      "was": {
+       "attempts": 1,
+       "calibration": "aligned",
+       "comfort": 4,
+       "due": "2026-09-06",
+       "last": "2026-09-03",
+       "mastery": 4.0,
+       "step": 1
+      }
      }
     }
    },
    "why": {
-    "PULM-04": "new",
     "PULM-06": "new",
     "PULM-07": "due",
-    "RENAL-06": "due"
+    "RENAL-06": "due",
+    "RHEUM-04": "due"
    }
   },
   "session_ids": [
@@ -469,7 +478,7 @@
    "NEURO": 4,
    "PULM": 3.0,
    "RENAL": 5.0,
-   "RHEUM": 4
+   "RHEUM": 3.3
   },
   "gaps": [
    {
@@ -493,7 +502,7 @@
     "source": [
      "graded"
     ],
-    "topic": "PULM-06"
+    "topic": "RHEUM-04"
    }
   ],
   "gen": 11,
@@ -587,7 +596,7 @@
      "correct": false,
      "mastery": 2,
      "stem": "Example MCQ stem 5.2",
-     "topic": "PULM-06",
+     "topic": "RHEUM-04",
      "type": "mcq"
     },
     {
@@ -598,7 +607,7 @@
      "correct": true,
      "mastery": 4,
      "stem": "Example MCQ stem 5.3",
-     "topic": "PULM-04",
+     "topic": "PULM-06",
      "type": "mcq"
     }
    ],
@@ -614,10 +623,10 @@
    },
    "score": 3.75,
    "self_comfort": {
-    "PULM-04": 5,
-    "PULM-06": 2,
+    "PULM-06": 5,
     "PULM-07": 2,
-    "RENAL-06": 5
+    "RENAL-06": 5,
+    "RHEUM-04": 2
    },
    "self_performance": 3,
    "started_at": null,
@@ -629,25 +638,16 @@
    "topics": [
     "PULM-07",
     "RENAL-06",
-    "PULM-06",
-    "PULM-04"
+    "RHEUM-04",
+    "PULM-06"
    ],
    "undo": {
     "ratings": {
-     "PULM": 2.0
+     "PULM": 2.0,
+     "RHEUM": 4
     },
     "topics": {
-     "PULM-04": {
-      "new": true
-     },
      "PULM-06": {
-      "gap": null,
-      "in": [
-       {
-        "gap": "Example gap 5.2: missed the decision point",
-        "source": "graded"
-       }
-      ],
       "new": true
      },
      "PULM-07": {
@@ -667,14 +667,32 @@
        "last": "2026-09-01",
        "step": 1
       }
+     },
+     "RHEUM-04": {
+      "gap": null,
+      "in": [
+       {
+        "gap": "Example gap 5.2: missed the decision point",
+        "source": "graded"
+       }
+      ],
+      "row": true,
+      "was": {
+       "attempts": 1,
+       "comfort": 4,
+       "due": "2026-09-06",
+       "last": "2026-09-03",
+       "mastery": 4.0,
+       "step": 1
+      }
      }
     }
    },
    "why": {
-    "PULM-04": "new",
     "PULM-06": "new",
     "PULM-07": "due",
-    "RENAL-06": "due"
+    "RENAL-06": "due",
+    "RHEUM-04": "due"
    }
   },
   "session_ids": [
@@ -697,21 +715,12 @@
   "score": 3.75,
   "session_id": "S0005",
   "topics": {
-   "PULM-04": {
-    "calibration": "not_rated",
-    "comfort": null,
-    "due": "2026-11-23",
-    "interval_days": 3,
-    "mastery": 3.0,
-    "misconception": false,
-    "step": 0
-   },
    "PULM-06": {
     "calibration": "not_rated",
     "comfort": null,
     "due": "2026-11-23",
     "interval_days": 3,
-    "mastery": 2.0,
+    "mastery": 3.0,
     "misconception": false,
     "step": 0
    },
@@ -732,6 +741,15 @@
     "mastery": 5.0,
     "misconception": false,
     "step": 2
+   },
+   "RHEUM-04": {
+    "calibration": "not_rated",
+    "comfort": null,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 2.0,
+    "misconception": false,
+    "step": 0
    }
   },
   "warnings": []
@@ -743,21 +761,12 @@
   "open_gaps": 2,
   "session_id": "S0005",
   "topics": {
-   "PULM-04": {
+   "PULM-06": {
     "calibration": "overconfident",
     "comfort": 5,
     "due": "2026-11-23",
     "interval_days": 3,
     "mastery": 3.0,
-    "misconception": false,
-    "step": 0
-   },
-   "PULM-06": {
-    "calibration": "aligned",
-    "comfort": 2,
-    "due": "2026-11-23",
-    "interval_days": 3,
-    "mastery": 2.0,
     "misconception": false,
     "step": 0
    },
@@ -778,6 +787,15 @@
     "mastery": 5.0,
     "misconception": false,
     "step": 2
+   },
+   "RHEUM-04": {
+    "calibration": "aligned",
+    "comfort": 2,
+    "due": "2026-11-23",
+    "interval_days": 3,
+    "mastery": 2.0,
+    "misconception": false,
+    "step": 0
    }
   },
   "warnings": []
@@ -787,10 +805,10 @@
   "performance": 3,
   "solid": "Example: what felt solid in round 5",
   "topic_comfort": {
-   "PULM-04": 5,
-   "PULM-06": 2,
+   "PULM-06": 5,
    "PULM-07": 2,
-   "RENAL-06": 5
+   "RENAL-06": 5,
+   "RHEUM-04": 2
   }
  },
  "round": {
@@ -805,7 +823,7 @@
    {
     "gap": "Example gap 5.2: missed the decision point",
     "source": "graded",
-    "topic": "PULM-06"
+    "topic": "RHEUM-04"
    }
   ],
   "items": [
@@ -860,7 +878,7 @@
     "correct": false,
     "mastery": 2,
     "stem_summary": "Example MCQ stem 5.2",
-    "topic": "PULM-06",
+    "topic": "RHEUM-04",
     "type": "mcq"
    },
    {
@@ -871,17 +889,17 @@
     "correct": true,
     "mastery": 4,
     "stem_summary": "Example MCQ stem 5.3",
-    "topic": "PULM-04",
+    "topic": "PULM-06",
     "type": "mcq"
    }
   ],
   "log_id": "S0005",
   "minutes": 45,
   "selection_reasons": {
-   "PULM-04": "new",
    "PULM-06": "new",
    "PULM-07": "due",
-   "RENAL-06": "due"
+   "RENAL-06": "due",
+   "RHEUM-04": "due"
   },
   "summary": "Synthetic round 5 of an example ledger.",
   "tags": [

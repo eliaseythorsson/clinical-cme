@@ -64,15 +64,78 @@ def test_three_short_questions_still_get_a_wildcard_some_rounds():
     assert sum(m["wildcard"] for m in mixes) == 5 and sum(m["repeat"] for m in mixes) == 9
 
 
+def test_with_a_large_backlog_repeats_get_40_percent_from_the_themes_share():
+    # issue #79: 45/40/15 over a block while six or more topics are overdue; the wildcard keeps its 15%
+    backlog = dict(cme.BACKLOG_SHARES)
+    assert backlog == {"theme": 45, "repeat": 40, "wildcard": 15} and cme.BACKLOG_OVERDUE == 6
+    for shorts in range(2, 17):
+        given = {name: 0 for name in SHARES}
+        for n in range(1, cme.BLOCK_LENGTH + 1):
+            mix, plain = cme.block_mix(shorts, n, True), cme.block_mix(shorts, n)
+            assert sum(mix.values()) == shorts and min(mix.values()) >= 0
+            assert mix["wildcard"] == plain["wildcard"] and mix["repeat"] >= plain["repeat"]
+            for name in SHARES:
+                given[name] += mix[name]
+                assert abs(given[name] - shorts * n * backlog[name] / 100.0) < 2, (shorts, n, name)
+    # the first round of a backlog gains a repeat at once
+    assert cme.block_mix(3, 1, True) == {"theme": 1, "repeat": 2, "wildcard": 0}
+
+
+def test_the_wildcards_share_holds_however_often_the_backlog_comes_and_goes():
+    import itertools
+    for shorts in (3, 4, 6):
+        for seq in itertools.product((False, True), repeat=cme.BLOCK_LENGTH):
+            total = sum(cme.block_mix(shorts, n, b)["wildcard"] for n, b in enumerate(seq, 1))
+            assert total == sum(cme.block_mix(shorts, n)["wildcard"] for n in range(1, cme.BLOCK_LENGTH + 1))
+
+
+def overdue_ledger(n_due):
+    st, today = fresh()
+    cme.start_block(st, "CARD", "learner")
+    off = sorted(tid for tid, info in cme.bp_topics(st).items() if info["domain"] != "CARD")
+    for tid in off[:n_due]:
+        t = cme.ensure_topic(st, tid)
+        t.update({"last": "2026-08-01", "due": "2026-08-10", "attempts": 1, "mastery": 3, "step": 1,
+                  "history": [["2026-08-01", 3, None, "not_rated"]]})
+    return st, today
+
+
+@pytest.mark.parametrize("n_due, backlog", [(5, False), (6, True), (11, True)])
+def test_the_plan_takes_the_backlog_shares_from_six_overdue_topics(n_due, backlog):
+    st, today = overdue_ledger(n_due)
+    st["config"]["mcqs"] = 3
+    plan = cme.plan_round(st, examples.plan_options(), today)
+    assert plan["block"]["mix"] == cme.block_mix(3, 1, backlog)
+    assert ("backlog" in plan["block"]) is backlog
+    if backlog:
+        assert plan["block"]["backlog"] == {"overdue": n_due, "shares": dict(cme.BACKLOG_SHARES)}
+        assert sum(it["share"] == "repeat" for it in plan["items"]) == 2
+
+
+def test_a_backlog_is_worked_off_faster(monkeypatch):
+    def retested(rounds):
+        st, today = overdue_ledger(11)
+        st["config"]["mcqs"] = 3
+        backlog = set(st["topics"])
+        plans = play_rounds(st, today, rounds)
+        return len({it.get("topic") for p in plans for it in p["items"]} & backlog)
+    faster = retested(8)
+    monkeypatch.setattr(cme, "BACKLOG_OVERDUE", 10 ** 6)          # the shares as before issue #79
+    assert faster >= retested(8) + 3
+
+
 def test_a_block_of_rounds_follows_the_mix_and_keeps_the_case_on_the_theme():
     st, today = fresh()
     st["config"]["mcqs"] = 4
     plans = play_rounds(st, today, cme.BLOCK_LENGTH)
     theme = plans[0]["block"]["theme"]
     count = {"theme": 0, "repeat": 0, "wildcard": 0}
+    owed = dict(count)
     for n, plan in enumerate(plans, 1):
         assert plan["block"]["theme"] == theme and plan["block"]["round"] == n
-        assert plan["block"]["mix"] == cme.block_mix(4, n)
+        assert plan["block"]["mix"] == cme.block_mix(4, n, "backlog" in plan["block"])
+        for name in owed:
+            owed[name] += plan["block"]["mix"][name]
         case = [it for it in plan["items"] if it["slot"] == "case"]
         assert len(case) == 1 and case[0]["domain"] == theme and case[0]["share"] == "theme"
         for it in plan["items"]:
@@ -87,9 +150,9 @@ def test_a_block_of_rounds_follows_the_mix_and_keeps_the_case_on_the_theme():
                 assert it["domain"] != theme and it["reason_code"] in ("new", "new_in_domain")
     shorts = 4 * cme.BLOCK_LENGTH
     # a repeat slot with nothing waiting goes to the theme, so the theme can only gain
-    assert count["wildcard"] == round(shorts * 0.15)
-    assert 0 < count["repeat"] <= round(shorts * 0.25)
-    assert count["theme"] >= round(shorts * 0.60)
+    assert count["wildcard"] == owed["wildcard"] == round(shorts * 0.15)
+    assert 0 < count["repeat"] <= owed["repeat"]
+    assert count["theme"] >= owed["theme"] >= round(shorts * 0.45)
     assert sum(count.values()) == shorts
 
 
@@ -206,7 +269,7 @@ def test_opening_line_names_the_theme_and_position_and_nothing_else(name, work):
     assert m and m.group(1) in names and m.group(2) == "1"
     # a block that starts also gives its reason (issue #17): domain level, like the theme itself
     assert out["block"]["starts"] is True and out["block"]["reason"].startswith(m.group(1) + ": ")
-    assert {k: v for k, v in out["block"].items() if k != "reason"} == {k: v for k, v in plan["block"].items() if k != "mix"}
+    assert {k: v for k, v in out["block"].items() if k != "reason"} == {k: v for k, v in plan["block"].items() if k not in ("mix", "backlog")}
     assert out["plan"]["block"] == out["block"]["line"]
     assert set(out["block"]) == {"theme", "name", "round", "length", "starts", "line", "reason"}
     labels = {it["label"] for it in plan["items"] if it.get("label")}

@@ -1,6 +1,55 @@
 {
  "after_record": {
-  "GEN-02": {
+  "ENDO-06": {
+   "attempts": 6,
+   "calibration": "not_rated",
+   "comfort": null,
+   "domain": "ENDO",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-05",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-10-09",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-12",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-16",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-23",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-28",
+     4.0,
+     null,
+     "not_rated"
+    ]
+   ],
+   "label": "Pheochromocytoma, hypercalcemia of malignancy",
+   "last": "2026-10-28",
+   "mastery": 4.0,
+   "step": 1
+  },
+  "GEN-04": {
    "attempts": 1,
    "calibration": "not_rated",
    "comfort": null,
@@ -14,26 +63,7 @@
      "not_rated"
     ]
    ],
-   "label": "Perioperative anticoagulation / antiplatelet bridging",
-   "last": "2026-10-28",
-   "mastery": 5.0,
-   "step": 1
-  },
-  "PULM-05": {
-   "attempts": 1,
-   "calibration": "not_rated",
-   "comfort": null,
-   "domain": "PULM",
-   "due": "2026-10-31",
-   "history": [
-    [
-     "2026-10-28",
-     5.0,
-     null,
-     "not_rated"
-    ]
-   ],
-   "label": "Pleural effusion / empyema",
+   "label": "Pain management & opioid stewardship",
    "last": "2026-10-28",
    "mastery": 5.0,
    "step": 1
@@ -47,14 +77,14 @@
    "history": [
     [
      "2026-10-28",
-     4.0,
+     5.0,
      null,
      "not_rated"
     ]
    ],
    "label": "Pulmonary embolism (management)",
    "last": "2026-10-28",
-   "mastery": 4.0,
+   "mastery": 5.0,
    "step": 1
   },
   "PULM-08": {
@@ -103,7 +133,56 @@
   }
  },
  "after_reflect": {
-  "GEN-02": {
+  "ENDO-06": {
+   "attempts": 6,
+   "calibration": "aligned",
+   "comfort": 4,
+   "domain": "ENDO",
+   "due": "2026-10-31",
+   "history": [
+    [
+     "2026-10-05",
+     5.0,
+     5,
+     "aligned"
+    ],
+    [
+     "2026-10-09",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-12",
+     4.0,
+     4,
+     "aligned"
+    ],
+    [
+     "2026-10-16",
+     5.0,
+     2,
+     "underconfident"
+    ],
+    [
+     "2026-10-23",
+     2.0,
+     2,
+     "aligned"
+    ],
+    [
+     "2026-10-28",
+     4.0,
+     4,
+     "aligned"
+    ]
+   ],
+   "label": "Pheochromocytoma, hypercalcemia of malignancy",
+   "last": "2026-10-28",
+   "mastery": 4.0,
+   "step": 1
+  },
+  "GEN-04": {
    "attempts": 1,
    "calibration": "underconfident",
    "comfort": 2,
@@ -117,26 +196,7 @@
      "underconfident"
     ]
    ],
-   "label": "Perioperative anticoagulation / antiplatelet bridging",
-   "last": "2026-10-28",
-   "mastery": 5.0,
-   "step": 1
-  },
-  "PULM-05": {
-   "attempts": 1,
-   "calibration": "aligned",
-   "comfort": 4,
-   "domain": "PULM",
-   "due": "2026-10-31",
-   "history": [
-    [
-     "2026-10-28",
-     5.0,
-     4,
-     "aligned"
-    ]
-   ],
-   "label": "Pleural effusion / empyema",
+   "label": "Pain management & opioid stewardship",
    "last": "2026-10-28",
    "mastery": 5.0,
    "step": 1
@@ -150,14 +210,14 @@
    "history": [
     [
      "2026-10-28",
-     4.0,
+     5.0,
      4,
      "aligned"
     ]
    ],
    "label": "Pulmonary embolism (management)",
    "last": "2026-10-28",
-   "mastery": 4.0,
+   "mastery": 5.0,
    "step": 1
   },
   "PULM-08": {

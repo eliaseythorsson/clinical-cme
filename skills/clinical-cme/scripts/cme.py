@@ -118,13 +118,20 @@ READING_LINK_RE = re.compile(r"^https?://[^\s/]+\.[^\s]+$")
 SELF_RATING_FACTOR = {1: 1.6, 2: 1.3, 3: 1.0, 4: 0.8, 5: 0.6}
 MIN_RETURN_DAYS = 3      # no tested topic and no open gap comes back sooner than this (ADR 0003)
 # Drill-down limit (ADR 0003): no topic is in more than this many rounds in a row, and a topic
-# missed again once its drill-down is used up waits at least the pause before it comes back.
+# missed again once its drill-down is used up waits at least the pause before it comes back. A
+# theme topic seen in this many rounds of the block waits the pause after each further round on
+# it (issue #79).
 DRILLDOWN_MAX_ROUNDS = 2
 DRILLDOWN_PAUSE_DAYS = 7
+DRILLDOWN_BLOCK_ROUNDS = 2
 # Themed blocks (ADR 0003): a run of rounds on one domain. Shares are of a round's short questions,
 # in percent; the case is always on the theme.
 BLOCK_LENGTH = 12
 BLOCK_SHARES = (("theme", 60), ("repeat", 25), ("wildcard", 15))
+# A large backlog (issue #79): while this many topics are overdue, repeats take 40%, the extra
+# from the theme's share; the wildcard keeps its 15%. Same order of shares as BLOCK_SHARES.
+BACKLOG_OVERDUE = 6
+BACKLOG_SHARES = (("theme", 45), ("repeat", 40), ("wildcard", 15))
 MIN_THEME_TOPICS = 4     # a domain with fewer blueprint topics is not proposed as a theme
 THEME_REST_BLOCKS = 4    # a domain's pull as the next theme recovers over this many blocks after its own
 # Evidence depth (feedback_guide.md §4.1): how far behind the recommendation the feedback on an
@@ -845,14 +852,32 @@ def evidence_depth(st, tid, aspect=None, retests=False):
     return {"level": level, "name": EVIDENCE_DEPTHS[level - 1][0], "in_a_row": run}
 
 
-def drilldown_over(state, tid, theme):
+def block_rounds_on(st, tid, block):
+    """How many earlier rounds of the block `block` (its `theme`, and `round`: the number of the
+    round being planned or applied) were on topic `tid`, counting back through the rounds
+    recorded with that block (each session keeps its `block`)."""
+    if not block or not block.get("theme"):
+        return 0
+    want, n = int(block.get("round") or 0) - 1, 0
+    for s in reversed((st.get("previous") or []) + (st.get("sessions") or [])):
+        b = s.get("block") or {}
+        if want < 1 or b.get("theme") != block["theme"] or int(b.get("round") or 0) != want:
+            break
+        n += tid in (s.get("topics") or [])
+        want -= 1
+    return n
+
+
+def drilldown_over(state, tid, theme, block=None):
     """True when a miss on topic `tid` in the round being applied should not bring it straight
-    back. In the block's theme a topic may be drilled in two rounds in a row: over when the round
-    before was on it too. Outside the theme a miss gets one targeted retest: over when the topic
+    back. In the block's theme a topic may be drilled twice in the block (issue #79): over when
+    an earlier round of the block (`block`: theme and this round's number) was on it, or the
+    round before was. Outside the theme a miss gets one targeted retest: over when the topic
     already had an open gap or was missed the last time it was tested."""
     t = state["topics"].get(tid) or {}
     if theme and t.get("domain") == theme:
-        return bool(state["sessions"]) and tid in (state["sessions"][-1].get("topics") or [])
+        return (bool(state["sessions"]) and tid in (state["sessions"][-1].get("topics") or [])) \
+            or block_rounds_on(state, tid, block) + 1 >= DRILLDOWN_BLOCK_ROUNDS
     prev = (t.get("history") or [None])[-1]
     return any(g.get("topic") == tid for g in state["gaps"]) or bool(prev and not answered_well(prev[1], prev[3]))
 
@@ -1139,11 +1164,15 @@ def change_theme(st, theme=None, another=False):
     return {"changed": theme != cur["theme"] or not is_open, "was": was, "reason": reason, "warnings": warnings}
 
 
-def block_mix(shorts, n):
+def block_mix(shorts, n, backlog=False):
     """How many of a round's `shorts` short questions go to the theme, to due repeats and to the
     wildcard in round `n` of a block. The shares (60/25/15) are met over the block, not in each
     round: with three short questions a round would otherwise never have a wildcard. Round n gets
-    what the first n rounds are owed (largest remainder) less what the first n-1 were given."""
+    what the first n rounds are owed (largest remainder) less what the first n-1 were given.
+    With a large `backlog` (BACKLOG_SHARES, issue #79) the theme hands the repeats what the
+    difference of the two shares owes the first n rounds (rounded up, so the first round of a
+    backlog gains at once) less what the first n-1 were owed; the wildcard is untouched, so its
+    share over the block holds however often the backlog comes and goes."""
     def owed(k):
         quota = [shorts * k * pct for _, pct in BLOCK_SHARES]
         got = [q // 100 for q in quota]
@@ -1154,7 +1183,15 @@ def block_mix(shorts, n):
     while sum(mix) > shorts:
         mix[mix.index(max(mix))] -= 1
     mix[0] += shorts - sum(mix)
-    return {name: mix[i] for i, (name, _) in enumerate(BLOCK_SHARES)}
+    mix = {name: mix[i] for i, (name, _) in enumerate(BLOCK_SHARES)}
+    if backlog:
+        extra = dict(BACKLOG_SHARES)["repeat"] - dict(BLOCK_SHARES)["repeat"]
+        def ceil_owed(k):
+            return -(-shorts * k * extra // 100)
+        shift = min(mix["theme"], ceil_owed(max(1, n)) - ceil_owed(max(1, n) - 1))
+        mix["theme"] -= shift
+        mix["repeat"] += shift
+    return mix
 
 
 def next_case_format(st):
@@ -1388,6 +1425,9 @@ def plan_round(st, args, today):
     # one-off domain round (--domain), which still counts as a round of the block.
     block = block_status(st)
     theme = block["theme"] if block and not restrict else None
+    # A large backlog (issue #79): topics whose date has come, counted as `status` counts them.
+    overdue = sum(1 for t in topics.values() if parse_date(t.get("due")) and parse_date(t["due"]) <= today)
+    backlog = bool(theme) and overdue >= BACKLOG_OVERDUE
 
     # Tested in the last few days: left to rest, whatever its due date says (a ledger written by
     # an older version can hold a topic due the day after a miss).
@@ -1397,13 +1437,21 @@ def plan_round(st, args, today):
     history = (st.get("previous") or []) + log
     last_rounds = [set(s.get("topics") or []) for s in history[-DRILLDOWN_MAX_ROUNDS:]]
     drilled = set.intersection(*last_rounds) if len(last_rounds) == DRILLDOWN_MAX_ROUNDS else set()
+    # A theme topic missed when it was seen in two rounds of the block waits for its date (the
+    # pause, issue #79): no gap retest or revisit brings it back sooner, as with the learner's
+    # stop (issue #75); in a one-off --domain round of the block too.
+    paused = {tid for tid, t in topics.items()
+              if block and (t.get("domain") or domain_of(tid)) == block["theme"]
+              and (parse_date(t.get("due")) or today) > today and t.get("history")
+              and not answered_well(t["history"][-1][1], t["history"][-1][3])
+              and block_rounds_on(st, tid, block) >= DRILLDOWN_BLOCK_ROUNDS}
     recent = set()
     for s in log[-3:]:
         recent.update(s.get("topics") or [])
     recent_domains = [domain_of(t) for s in log[-10:] for t in (s.get("topics") or [])]
 
     def allowed(tid):
-        if (tid in resting or tid in drilled) and not args.allow_repeat:
+        if (tid in resting or tid in drilled or tid in paused) and not args.allow_repeat:
             return False
         if restrict and (topics.get(tid, {}).get("domain") or domain_of(tid)) != restrict:
             return False
@@ -1640,7 +1688,13 @@ def plan_round(st, args, today):
                 continue
             if fits(slot, tid, theme, level):
                 return entry(slot, tid, theme, "revisit", "theme")
-        if eff.get(theme, 0) > 0 or theme in bp_weights(st):
+        # no untested topic of the theme left for the author to choose (the others resting,
+        # drilled or paused, or taken by this round's items left to the author): a short question
+        # goes elsewhere rather than to a topic the limits hold back; the case stays on the theme
+        untested = [tid for tid, i in bpt.items() if i["domain"] == theme and tid not in topics and tid not in used_topics]
+        tested_out = slot != "case" and any(i["domain"] == theme for i in bpt.values()) and len(untested) <= sum(
+            1 for c in chosen if c.get("topic") is None and c.get("domain") == theme)
+        if (eff.get(theme, 0) > 0 or theme in bp_weights(st)) and not tested_out:
             return {"slot": slot, "topic": None, "domain": theme, "share": "theme", "reason_code": "new_in_domain",
                     "reason": "the block's theme; choose a specific untested topic in it"
                               + ("" if slot == "case" else ", unrelated to the case")}
@@ -1696,7 +1750,7 @@ def plan_round(st, args, today):
     total = n_case + len(shorts)
     wants_new = int(cfg.get("new_topics_per_round", 1) or 0) > 0 and not args.no_new
     reserve_new = wants_new and len(shorts) >= 1 and total >= 2 and (total >= 4 or not last_session_had_new())
-    mix = block_mix(len(shorts), block["round"]) if theme else None
+    mix = block_mix(len(shorts), block["round"], backlog) if theme else None
     # Due repeats take the first slots (the focused questions, when the round has them), then the
     # theme, then the wildcard.
     shares = [name for name, _ in sorted(BLOCK_SHARES, key=lambda x: x[0] != "repeat") for _ in range(mix[name])] \
@@ -1811,7 +1865,8 @@ def plan_round(st, args, today):
         "recent_cases_any_topic": used_cases[-15:],
         # the block: `line` is what the learner is told (theme and position); `mix` is how this
         # round's short questions were shared out (None in a one-off domain round)
-        "block": dict(block, mix=mix) if block else None,
+        "block": dict(block, mix=mix, **({"backlog": {"overdue": overdue, "shares": dict(BACKLOG_SHARES)}}
+                                          if backlog else {})) if block else None,
         "items": chosen,
         "pending_errata": st.get("pending_errata") or [],
         **({"estimate_rounds": own_pace["rounds"]} if own_pace["rounds"] else {}),   # the estimate is at the learner's pace
@@ -2003,9 +2058,10 @@ def agg_add_session(agg, s, sign=1):
         add(agg, "reflection_skipped", 1)
 
 
-def apply_round(state, rnd, today, theme=None, gap_ids=None):
+def apply_round(state, rnd, today, theme=None, gap_ids=None, block=None):
     """Apply the graded round `rnd` to the ledger `state`, appending its session entry; `theme`
-    is the theme of the block the round was recorded in. The entry keeps an undo record (`undo`)
+    is the theme of the block the round was recorded in, `block` that block as the session keeps
+    it (theme, the round's number in it, length). The entry keeps an undo record (`undo`)
     of only what the round changed, so that undo_round can take it out again. `gap_ids`: the ids
     a round applied again gives the gaps it opens ({topic: id}), so that they keep the ids they
     had. The aggregates are the caller's (agg_add_session, once the entry is final).
@@ -2079,7 +2135,7 @@ def apply_round(state, rnd, today, theme=None, gap_ids=None):
         step, due, calibration, interval = schedule_topic(t.get("step"), mastery, comfort, misconception,
                                                           tid in self_gap_topics, intervals, rdate)
         limited = (not answered_well(mastery, calibration) and interval < DRILLDOWN_PAUSE_DAYS
-                   and drilldown_over(state, tid, theme))
+                   and drilldown_over(state, tid, theme, block))
         if limited:      # the drill-down on this topic is used up: it comes back later, not next round
             interval, due = DRILLDOWN_PAUSE_DAYS, rdate + dt.timedelta(days=DRILLDOWN_PAUSE_DAYS)
         if tid in stops:  # the learner's stop: the longest interval, whatever the rules above said
@@ -2616,7 +2672,7 @@ def apply_round_again(st, sess, rnd, today):
     tail, st["sessions"] = st["sessions"][pos:], st["sessions"][:pos]
     try:
         entry, summary, warnings, errata_ids, changes = apply_round(st, rnd, today, (old.get("block") or {}).get("theme"),
-                                                                    gap_ids)
+                                                                    gap_ids, old.get("block"))
     finally:
         st["sessions"] += tail
     for k in ("block", "url"):
@@ -2753,7 +2809,8 @@ def record_round(st, rnd, today, again=None):
     else:
         # The round counts in its block here, once: applying it again keeps the block it was counted in.
         in_block = advance_block(st, parse_date(rnd.get("date")) or today)
-        entry, summary, warnings, errata_ids, changes = apply_round(st, rnd, today, (in_block or {}).get("theme"))
+        entry, summary, warnings, errata_ids, changes = apply_round(st, rnd, today, (in_block or {}).get("theme"),
+                                                                    block=in_block)
         if in_block:
             entry["block"] = in_block
         agg_add_session(st["agg"], entry)

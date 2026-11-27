@@ -1,5 +1,5 @@
 """Drill-down limit (issue #18, ADR 0003): no topic is in more than two rounds in a row; in the
-theme a topic missed in two rounds in a row then pauses; a miss outside the theme gets one
+theme a topic missed on its second round of the block (or after) then pauses (issue #79); a miss outside the theme gets one
 targeted retest and after that ordinary spacing. The example ledger `drilled` holds the old
 pattern (rounds by an engine with no limit, every repeat missed) and the tests show it capped."""
 import copy
@@ -158,12 +158,62 @@ def test_in_the_theme_a_topic_is_drilled_in_two_rounds_in_a_row_then_pauses():
     assert "CARD-01" in planned(st, DAY + days(6 + PAUSE))
 
 
-def test_in_the_theme_a_miss_after_a_round_on_something_else_is_drilled_again():
+def test_in_the_theme_a_topic_seen_twice_in_the_block_waits_the_pause_when_missed():
+    # issue #79: a miss on a theme topic's second round in the block pauses it, rounds in a row
+    # or not (before, a round on something else in between let it return after the rest)
     st = new_ledger("CARD")
     play(st, DAY, [mcq("CARD-01", 2)], ["CARD-01"])
-    play(st, DAY + days(2), [mcq("CARD-02", 5)])
-    res = play(st, DAY + days(4), [mcq("CARD-01", 2, retests="G0001")], ["CARD-01"])
-    assert "drilldown_limit" not in res["CARD-01"] and due(st, "CARD-01") == DAY + days(7)
+    play(st, DAY + days(3), [mcq("CARD-02", 5)])
+    res = play(st, DAY + days(6), [mcq("CARD-01", 2, retests="G0001")], ["CARD-01"])
+    assert res["CARD-01"]["drilldown_limit"] is True and due(st, "CARD-01") == DAY + days(6 + PAUSE)
+    # and after each further miss in the block
+    play(st, DAY + days(9), [mcq("CARD-02", 5)])
+    res = play(st, DAY + days(6 + PAUSE), [mcq("CARD-01", 2, retests="G0001")], ["CARD-01"])
+    assert res["CARD-01"]["drilldown_limit"] is True and due(st, "CARD-01") == DAY + days(6 + 2 * PAUSE)
+
+
+def test_in_the_theme_the_first_miss_in_the_block_still_comes_back_after_the_rest():
+    st = new_ledger("CARD")
+    play(st, DAY, [mcq("CARD-01", 5)])
+    cme.start_block(st, "CARD", "learner")          # a new block on the same theme: its count starts again
+    play(st, DAY + days(4), [mcq("CARD-02", 5)])
+    res = play(st, DAY + days(7), [mcq("CARD-01", 2)], ["CARD-01"])
+    assert "drilldown_limit" not in res["CARD-01"] and due(st, "CARD-01") == DAY + days(10)
+
+
+def test_a_paused_theme_topic_is_not_brought_back_before_its_date():
+    # a gap awaiting its retest, or the theme running out, does not undo the pause (as with the
+    # learner's stop, issue #75)
+    st = new_ledger("CARD")
+    play(st, DAY, [mcq("CARD-01", 2)])                         # missed, no gap written
+    play(st, DAY + days(3), [mcq("CARD-01", 2)], ["CARD-01"])  # missed again: paused, a gap awaiting its retest
+    assert cme.gap_awaits_retest(gap_of(st, "CARD-01")) and due(st, "CARD-01") == DAY + days(3 + PAUSE)
+    for k in (6, 8):
+        assert "CARD-01" not in planned(st, DAY + days(k))
+        play(st, DAY + days(k), [mcq("CARD-0%d" % k, 5)])
+    assert "CARD-01" in planned(st, DAY + days(3 + PAUSE))
+    assert "CARD-01" in planned(st, DAY + days(8), allow_repeat=True)   # the learner's one-off request
+
+
+def test_a_good_answer_on_the_second_round_is_not_paused():
+    st = new_ledger("CARD")
+    play(st, DAY, [mcq("CARD-01", 2)], ["CARD-01"])
+    res = play(st, DAY + days(3), [mcq("CARD-01", 5, retests="G0001")])
+    assert "drilldown_limit" not in res["CARD-01"] and due(st, "CARD-01") == DAY + days(6)
+    play(st, DAY + days(6), [mcq("CARD-02", 5)])
+    assert "CARD-01" in planned(st, DAY + days(9))
+
+
+def test_applying_a_round_again_keeps_its_place_in_the_block():
+    st = new_ledger("CARD")
+    play(st, DAY, [mcq("CARD-01", 2)], ["CARD-01"])
+    play(st, DAY + days(3), [mcq("CARD-02", 5)])
+    rnd = {"items": [mcq("CARD-01", 2, retests="G0001")], "title": "t", "summary": "s", "tags": ["x"],
+           "gaps": [{"topic": "CARD-01", "gap": "missed the point", "source": "graded"}]}
+    cme.record_round(st, copy.deepcopy(rnd), DAY + days(6))
+    sess = st["sessions"][-1]
+    again = cme.record_round(st, copy.deepcopy(rnd), DAY + days(6), again=sess)
+    assert again["topics"]["CARD-01"]["drilldown_limit"] is True and due(st, "CARD-01") == DAY + days(6 + PAUSE)
 
 
 def test_outside_the_theme_a_miss_gets_one_retest_then_ordinary_spacing():

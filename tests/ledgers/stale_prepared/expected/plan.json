@@ -1,10 +1,18 @@
 {
  "block": {
+  "backlog": {
+   "overdue": 9,
+   "shares": {
+    "repeat": 40,
+    "theme": 45,
+    "wildcard": 15
+   }
+  },
   "length": 12,
   "line": "Block: Pulmonary & Critical Care, round 1 of 12",
   "mix": {
-   "repeat": 1,
-   "theme": 2,
+   "repeat": 2,
+   "theme": 1,
    "wildcard": 0
   },
   "name": "Pulmonary & Critical Care",
@@ -96,6 +104,31 @@
    "topic": "RENAL-06"
   },
   {
+   "already_used": [
+    {
+     "date": "2026-09-03",
+     "id": "S0002",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 2.3",
+     "topic": "RHEUM-04"
+    }
+   ],
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 1,
+    "level": 2,
+    "name": "studies"
+   },
+   "domain": "RHEUM",
+   "label": "Anaphylaxis, drug hypersensitivity",
+   "reason": "spaced review due 2026-09-06; last 4.0/5 on 2026-09-03",
+   "reason_code": "due",
+   "separation": "other domain",
+   "share": "repeat",
+   "slot": "mcq",
+   "topic": "RHEUM-04"
+  },
+  {
    "domain": "PULM",
    "label": "Pulmonary embolism (management)",
    "reason": "not yet tested; in the block's theme",
@@ -104,16 +137,6 @@
    "share": "theme",
    "slot": "mcq",
    "topic": "PULM-06"
-  },
-  {
-   "domain": "PULM",
-   "label": "Acute respiratory failure, ARDS, mechanical ventilation basics",
-   "reason": "not yet tested; in the block's theme",
-   "reason_code": "new",
-   "separation": "same domain as the case (the block's theme), unrelated topic",
-   "share": "theme",
-   "slot": "mcq",
-   "topic": "PULM-04"
   }
  ],
  "lab_units": "SI",
@@ -127,8 +150,8 @@
  },
  "prepare_ahead": true,
  "presentation_order": [
+  "mcq RHEUM-04",
   "mcq PULM-06",
-  "mcq PULM-04",
   "focused RENAL-06",
   "case PULM-07"
  ],

@@ -1,10 +1,18 @@
 {
  "block": {
+  "backlog": {
+   "overdue": 11,
+   "shares": {
+    "repeat": 40,
+    "theme": 45,
+    "wildcard": 15
+   }
+  },
   "length": 12,
   "line": "Block: Neurology, round 1 of 12",
   "mix": {
-   "repeat": 1,
-   "theme": 2,
+   "repeat": 2,
+   "theme": 1,
    "wildcard": 0
   },
   "name": "Neurology",
@@ -69,6 +77,47 @@
    "topic": "TOX-02"
   },
   {
+   "already_used": [
+    {
+     "date": "2026-08-05",
+     "diagnosis": "Example diagnosis: Healthcare-associated / MDRO, antibiotic selection",
+     "id": "S0002",
+     "patient": "Example patient 2",
+     "presentation": "Example presentation 2",
+     "setting": "ward",
+     "topic": "ID-10"
+    },
+    {
+     "date": "2026-08-03",
+     "id": "S0001",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 1.2",
+     "topic": "ID-10"
+    },
+    {
+     "date": "2026-08-07",
+     "id": "S0003",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 3.2",
+     "topic": "ID-10"
+    }
+   ],
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 1,
+    "level": 2,
+    "name": "studies"
+   },
+   "domain": "ID",
+   "label": "Healthcare-associated / MDRO, antibiotic selection",
+   "reason": "spaced review due 2026-08-10; last 5.0/5 on 2026-08-07",
+   "reason_code": "due",
+   "separation": "other domain",
+   "share": "repeat",
+   "slot": "mcq",
+   "topic": "ID-10"
+  },
+  {
    "domain": "NEURO",
    "label": "Headache — dangerous causes",
    "reason": "not yet tested; in the block's theme",
@@ -77,16 +126,6 @@
    "share": "theme",
    "slot": "mcq",
    "topic": "NEURO-06"
-  },
-  {
-   "domain": "NEURO",
-   "label": "Altered mental status / delirium",
-   "reason": "not yet tested; in the block's theme",
-   "reason_code": "new",
-   "separation": "same domain as the case (the block's theme), unrelated topic",
-   "share": "theme",
-   "slot": "mcq",
-   "topic": "NEURO-04"
   }
  ],
  "lab_units": "SI",
@@ -101,8 +140,8 @@
  "prepare_ahead": true,
  "presentation_order": [
   "mcq TOX-02",
+  "mcq ID-10",
   "mcq NEURO-06",
-  "mcq NEURO-04",
   "case NEURO-05"
  ],
  "profile": {

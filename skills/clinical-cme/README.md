@@ -12,8 +12,9 @@ Built from four real rounds in testing mode and an architecture review (issues #
 GitHub; plan in `docs/plan-v5.md`).
 
 - **Themed blocks.** Rounds run in blocks of 12 on one domain (60% theme, 25% due repeats,
-  15% wildcard; the case on the theme), with a capped drill-down and a three-day rest after a
-  miss. The theme is shown; topics stay blind.
+  15% wildcard; 45/40/15 while six or more topics are overdue; the case on the theme), with a
+  capped drill-down (a theme topic missed on its second round of a block waits a week) and a
+  three-day rest after a miss. The theme is shown; topics stay blind.
 - **Your level and aim in your own words.** Setup asks where you are and where you're aiming
   as two open questions; items are pitched to your paragraphs, editable on your page.
 - **One work folder per job.** Every command takes only the work folder; one publish set says

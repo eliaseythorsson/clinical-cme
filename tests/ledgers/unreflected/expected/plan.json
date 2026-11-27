@@ -1,10 +1,18 @@
 {
  "block": {
+  "backlog": {
+   "overdue": 9,
+   "shares": {
+    "repeat": 40,
+    "theme": 45,
+    "wildcard": 15
+   }
+  },
   "length": 12,
   "line": "Block: Pulmonary & Critical Care, round 1 of 12",
   "mix": {
-   "repeat": 1,
-   "theme": 2,
+   "repeat": 2,
+   "theme": 1,
    "wildcard": 0
   },
   "name": "Pulmonary & Critical Care",
@@ -100,6 +108,47 @@
    "topic": "HEME-02"
   },
   {
+   "already_used": [
+    {
+     "date": "2026-10-07",
+     "diagnosis": "Example diagnosis: Perioperative risk assessment & medical consultation",
+     "id": "S0002",
+     "patient": "Example patient 2",
+     "presentation": "Example presentation 2",
+     "setting": "ward",
+     "topic": "GEN-01"
+    },
+    {
+     "date": "2026-10-05",
+     "id": "S0001",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 1.2",
+     "topic": "GEN-01"
+    },
+    {
+     "date": "2026-10-09",
+     "id": "S0003",
+     "kind": "mcq",
+     "stem": "Example MCQ stem 3.2",
+     "topic": "GEN-01"
+    }
+   ],
+   "depth": {
+    "how": "If this item is answered well its feedback goes to this depth: write the notes for it under 'Deeper' in the item's kit section and put its studies on the verification list (references/standards.md, rule 8).",
+    "in_a_row": 1,
+    "level": 2,
+    "name": "studies"
+   },
+   "domain": "GEN",
+   "label": "Perioperative risk assessment & medical consultation",
+   "reason": "spaced review due 2026-10-12; last 5.0/5 on 2026-10-09",
+   "reason_code": "due",
+   "separation": "other domain",
+   "share": "repeat",
+   "slot": "mcq",
+   "topic": "GEN-01"
+  },
+  {
    "domain": "PULM",
    "label": "Shock differentiation & resuscitation",
    "reason": "not yet tested; in the block's theme",
@@ -108,16 +157,6 @@
    "share": "theme",
    "slot": "mcq",
    "topic": "PULM-08"
-  },
-  {
-   "domain": "PULM",
-   "label": "Pleural effusion / empyema",
-   "reason": "not yet tested; in the block's theme",
-   "reason_code": "new",
-   "separation": "same domain as the case (the block's theme), unrelated topic",
-   "share": "theme",
-   "slot": "mcq",
-   "topic": "PULM-05"
   }
  ],
  "lab_units": "SI",
@@ -132,8 +171,8 @@
  "prepare_ahead": true,
  "presentation_order": [
   "mcq HEME-02",
+  "mcq GEN-01",
   "mcq PULM-08",
-  "mcq PULM-05",
   "case PULM-02"
  ],
  "profile": {

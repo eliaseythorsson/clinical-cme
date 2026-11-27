@@ -422,8 +422,12 @@ so that a block stays on its theme and one weak point does not fill the rounds:
 - The plan never puts a topic in a third round in a row: a topic that was in both of the last two
   recorded rounds is left out of the next one, due or not, with an open gap or not (again only
   `--allow-repeat` overrides it). It is eligible again the round after.
-- In the block's theme a missed topic comes back after the three-day rest. Missed again in the
-  round straight after (two rounds in a row), it waits at least seven days.
+- In the block's theme a missed topic comes back after the three-day rest, once. A theme topic
+  missed on its second round of the block (in a row or not), or on any later one, waits at
+  least seven days (the pause), and the plan does not bring it back before that date by any
+  route (a gap awaiting its retest, a revisit when the theme runs out), as with the learner's
+  stop. A good answer is not paused. The rounds counted are those recorded in the current
+  block (each session's `block`); a new block, also on the same theme, counts afresh.
 - Outside the theme a miss gets one targeted retest (its gap, after the rest). If the topic is
   not answered well then either, it waits at least seven days, and so after every further miss
   until its domain is the theme: no short returns outside the theme. When its domain becomes
@@ -501,12 +505,23 @@ order, and never the theme just finished. Each session entry keeps its `block` (
 In a block the case is always on the theme, and the short questions are shared 60% theme, 25%
 due repeats, 15% wildcard. The shares are met over the block, not in each round (round `n` gets
 what the first `n` rounds are owed less what the earlier ones got), so three short questions are
-2 theme + 1 repeat in most rounds and a wildcard takes a slot in five of the twelve. Each plan
-item says which `share` it fills:
+2 theme + 1 repeat in most rounds and a wildcard takes a slot in five of the twelve.
+
+**A large backlog.** While six or more topics are overdue (their date has come, as `status`
+counts `due_count`), repeats take 40% and the theme 45%; the wildcard keeps its 15%. The theme
+hands the repeats, in each round, what 15% of the short questions owes the first `n` rounds
+(rounded up, so the first round of a backlog gains a repeat at once) less what it owed the first
+`n − 1`; with three short questions that is one more repeat every other round. Below six the
+shares are 60/25/15 again from the next round. The wildcard's slots are the same either way. The
+plan's `block` then carries `backlog` (`overdue`: the count, `shares`); the learner is not told.
+
+Each plan item says which `share` it fills:
 
 - `theme`: a theme topic that is due or has a gap ready for its retest, then an untested theme
   topic, then the theme topic tested longest ago (`reason_code: revisit`: another decision point
-  of it), then the domain alone (`new_in_domain`). The last theme slot goes to an untested topic
+  of it), then the domain alone (`new_in_domain`) while the theme has an untested topic left for
+  the author to choose; otherwise a short question's slot goes to whatever the ledger has (the
+  case stays on the theme). The last theme slot goes to an untested topic
   first when the round has nothing new yet. The case is not on the topic of the last round's
   case while the theme has another to give.
 - `repeat`: the most urgent due topic or gap outside the theme, then inside it. With nothing
@@ -515,7 +530,7 @@ item says which `share` it fills:
 
 Short questions on the theme share the case's domain but are still unrelated to its topic. The
 plan's `block` holds `theme`, `name`, `round` (this round's number), `length`, `starts`, `mix`
-and `line`, the one thing the learner is told: "Block: Gastroenterology & Hepatology, round 4 of
+(`backlog` too while the backlog is large) and `line`, the one thing the learner is told: "Block: Gastroenterology & Hepatology, round 4 of
 12". `open`, `start` and `prepare` print it too. A one-off `--domain` round ignores the
 theme (`mix` is null) and still counts as a round of the block. A prepared round is used only
 for the round of the block it was planned for.
