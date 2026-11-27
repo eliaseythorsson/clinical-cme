@@ -305,7 +305,7 @@ def test_a_page_from_the_last_version_is_replaced_with_the_first_save(work):
     work.write(os.path.join("store", "index.html"), '<meta name="cme-page-version" content="5.3.0">old page')
     saved = work.save_round("2026-11-02", dict(ROUND, reading=READING))
     names = [f["as"] for f in saved["files"]]
-    assert cme.PAGE_VERSION == "5.4.0" and saved["page_upgraded"] == {"from": "5.3.0", "to": "5.4.0"}
+    assert saved["page_upgraded"] == {"from": "5.3.0", "to": cme.PAGE_VERSION}
     assert names.index("data/page.json") < names.index("index.html") < names.index("data/state.json")
     with open(work.pub("index.html"), encoding="utf-8") as fh:
         assert fh.read() == page_text() and PAGE.endswith("page.html")

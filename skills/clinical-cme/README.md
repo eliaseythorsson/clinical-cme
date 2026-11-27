@@ -1,10 +1,45 @@
-# clinical-cme (version 5.0.0)
+# clinical-cme (version 6.0.0)
 
 Blinded clinical self-assessment rounds for physicians: single-best-answer questions and
 focused questions on unrelated topics, with their feedback, then one clinical case and its
 feedback — in the mix each learner chooses — graded against current evidence, with a one-minute
 reflection that feeds spaced repetition. Every round is coded (reasoning steps, error types,
 biases, calibration) and periodically analysed in a candid progress review.
+
+## What is new in version 6.0
+
+Built overnight on 2026-11-27 from the queue in issue #87, before the learner's test week
+(issues #73–#83, #86, #88; ADR 0009).
+
+- **Two-level blueprint (#81, #82).** The default blueprint is now 16 areas, 144 diseases and
+  347 sub-topics, on the ABIM Internal Medicine skeleton with European guidance, each sub-topic
+  with its decision points and aspect weights. The disease returns on schedule; the sub-topic
+  rotates and is recorded; gaps retest the exact point; feedback links sibling sub-topics. An
+  area's weight is its share of new material whatever its number of diseases. Existing ledgers
+  keep their own blueprint; `settings --blueprint` and `apply-mapping` move one across.
+- **Feedback from prepared, checked text (#78, #77, ADR 0009).** Kits hold finished feedback per
+  rubric element (hit, partial, missed); the examiner marks first, then `cme.py draft` assembles
+  the feedback, adapted live to the learner's words. One examiner brief (`feedback_guide.md`).
+- **Grading and reflection forms (#76).** The engine prints them, rubric included; the command
+  and file tables in `state_schema.md` are generated.
+- **Evidence depth (#86).** The more often a topic is answered well in a row, the further behind
+  the recommendation its feedback goes (guidance → studies → design → frontier).
+- **The learner's stop and position note (#75).** "I know this, stop bringing it back" pauses a
+  topic for 90 days (never for good); a position note on one decision point is respected, never
+  marked down, and reviewed at each progress review.
+- **One way to apply a round again (#74).** Save again, close, override and undo all go through
+  one path; only the latest round on a topic is re-applied.
+- **Scheduling (#79, #80).** With six or more topics overdue, repeats take 40% (theme 45%); a
+  theme topic seen twice in a block waits a week. The theme proposal counts measured weakness;
+  any area can be a theme; TOX and EMRG are one area.
+- **Engine version on the ledger (#83, step 1).** An older engine will not overwrite a ledger
+  saved by a newer one.
+- **Tests run in-process (#73):** the suite takes about 40 s instead of 5 minutes.
+
+## Page update 5.5.0
+
+- "Your positions": the position notes in force.
+- Tested sub-topics listed under their disease.
 
 ## What is new in version 5.0
 

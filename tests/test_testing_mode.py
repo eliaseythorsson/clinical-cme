@@ -1,7 +1,15 @@
 """Testing mode: the setting, the store check and the feedback note."""
 import json
 import os
+import re
 import shutil
+
+CME = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "clinical-cme", "scripts", "cme.py")
+
+
+def skill_version():
+    with open(CME, encoding="utf-8") as fh:
+        return re.search(r'^SKILL_VERSION = "([^"]+)"', fh.read(), re.M).group(1)
 
 
 def reread(work, only=None):
@@ -75,4 +83,4 @@ def test_testing_note_takes_the_session_and_the_store_check_from_the_work_folder
     assert [f["as"] for f in out["files"]][:2] == ["data/sessions/S0001.json", "data/testing/S0001.json"]
     assert out["files"][-1]["as"] == "data/state.json"
     note = work.read_json("publish", "data", "testing", "S0001.json")
-    assert note["feedback"] == fb and note["store_check"]["ok"] and note["skill_version"] == "5.0.0"
+    assert note["feedback"] == fb and note["store_check"]["ok"] and note["skill_version"] == skill_version()

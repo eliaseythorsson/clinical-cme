@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""clinical-cme v5.0.0 state engine (standard library only, Python 3.8+).
+"""clinical-cme v6.0.0 state engine (standard library only, Python 3.8+).
 
 The learner's scheduling memory is ONE JSON document, the ledger (state.json); each round also
 has a session document, and the page file (data/page.json) holds exactly what the learner's
@@ -38,8 +38,8 @@ import tempfile
 import zlib
 
 SCHEMA = 4
-SKILL_VERSION = "5.0.0"
-PAGE_VERSION = "5.4.0"   # templates/page.html carries <meta name="cme-page-version" content="5.4.0">
+SKILL_VERSION = "6.0.0"
+PAGE_VERSION = "5.5.0"   # templates/page.html carries <meta name="cme-page-version" content="5.5.0">
 
 DEFAULT_CONFIG = {
     # The mix a new learner starts with: one focused question and the case, about 35 minutes
