@@ -62,7 +62,7 @@ needs judgement; the rest is in the references:
 | `references/standards.md` | Before grading: the numbered rules for items and feedback (rules 1–5, 10–12 bind your feedback); all of it when you write items |
 | `references/feedback_guide.md` | Before grading; contains the reflection prompt |
 | `references/analysis_framework.md` | Before grading (§1 coding); for the deep review (§2) |
-| `references/state_schema.md` | Writing `round.json` (§2) and `reflection.json` (§3); commands (§6); spacing and blocks (§4) |
+| `references/state_schema.md` | Commands (§6); spacing and blocks (§4); the forms, only if one is unclear (§2–3) |
 | `references/session_log.md` | Writing `B.md` (§3); errata, addendum, search, teaching export |
 | `references/preparing.md` | After the close (§2); "prepare only" sessions (§3); overnight preparation (§4); a round that was not prepared (§6) |
 | `references/requests.md` | Any request that is not a round (§1); testing mode (§2); case first and other variants (§3) |
@@ -181,13 +181,13 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    case` (the case file stays unopened). No evidence file → run the questions' verification
    list now (`evidence_check.md` §5); with one, search only for what the answers raise.
 2. **Grade and code** the short questions against the evidence, the key and kit being the author's
-   view (`feedback_guide.md` §2 part 1; §4.1 for `depth`, rule 12 for `positions`, as `answer` printed them; `analysis_framework.md` §1).
+   view, in the **grading form** `answer` wrote (`<work>/round.json`: each rubric element, `depth`,
+   `positions`, the codes; `feedback_guide.md` §2 part 1, §4.1; rule 12; `analysis_framework.md` §1).
 3. **Send the questions' feedback** (glossary line, rule 5.3 → reveal of these items → MCQs →
    focused questions; no gap summary or reflection prompt yet; nothing that touches the case;
    it ends "The case follows."), and **straight after it the case**, exactly as printed.
 4. **Behind the scenes, in one batch**: write `<work>/feedback_questions.md` (the feedback
-   exactly as sent) and `<work>/round.json` with the short questions' grading
-   (`state_schema.md` §2), to be completed after the case.
+   exactly as sent) and fill in the form (its `_form` says how), to be completed after the case.
 
 - No case in the round → this is the final feedback: send it complete (gap summary and
   reflection prompt included, as `feedback.md`) and go to turn 4, step 4.
@@ -210,9 +210,9 @@ graded. If answers are missing, ask once; proceed if the learner says so.
 
 ### Turn 4. Final answers in → case feedback, first save
 
-1. **In one batch** file the last answers (`answer --part final`; `--part case` for a one-step
-   case) and read `sealed_case.md`, `kit_case.md` and `evidence_case.md` now (only with no
-   evidence file: run the case's verification list); the round is no longer sealed.
+1. **In one batch** file the last answers (`answer --part final`, or `--part case` for a one-step
+   case; it adds the case to the form) and read `sealed_case.md`, `kit_case.md` and `evidence_case.md`
+   now (with no evidence file, run the case's verification list); the round is no longer sealed.
 2. **Grade** against current guidance for the learner's region and specialty (rule 2);
    watch for transfer gaps and calibration across the whole round; code the case (ART steps
    and Revised-IDEA; an error record for every missed or partial element); `depth` as in turn 2.
@@ -221,11 +221,11 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    to two reading pointers → with `listening.on`, an episode per topic → the reflection prompt).
 4. **Behind the scenes, in one batch**: write `<work>/feedback.md`, the final feedback exactly
    as sent; file change requests and anything else to log with `answer --part notes`; complete
-   `<work>/round.json` with the grading, `reading` and `listening` only (`state_schema.md` §2;
-   no `reflection` key, no times). `save` fills in the rest from the key headers and the plan.
+   the form `<work>/round.json` with the grading, `reading` and `listening` only (no `reflection`
+   key, no times). `save` fills in the rest from the key headers and the plan.
 5. `python3 cme.py save --work <work>`, then publish every file in its `files` list in one
    write (`store.md` §4; `index.html` among them → `store.md` §4.5 once). Fix any `warnings`,
-   or an `error` about a key header (`state_schema.md` §2), and run the same command again.
+   or an `error` about a key header or a blank in the form, and run the same command again.
    A save that fails: never report the round as saved and never retype a ledger (`store.md` §6).
 6. End the turn: "Saved so far; your reflection completes the record."
 
@@ -236,9 +236,9 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    into a precise gap linked to a blueprint ID (`self_gaps`). A disputed grade is resolved first
    (`feedback_guide.md` §7; never defend a grade by repeating it), outcome in `grade_changes`.
    "skip" → `{"skipped": true}`. "Record it as 4", "close that gap": §7.1; "I know this, stop it": §7.2.
-2. **In one batch**: `cme.py answer --work <work> --part reflection`; write
-   `<work>/reflection.json` (`state_schema.md` §3) and `<work>/B.md` (discussion verbatim,
-   grade changes, coded analysis, errata from `errata_to_log`; `session_log.md` §3). Then
+2. `cme.py answer --work <work> --part reflection` writes the **reflection form**; then, in one
+   batch, fill in `<work>/reflection.json` and write `<work>/B.md` (discussion verbatim, grade
+   changes, coded analysis, errata from `errata_to_log`; `session_log.md` §3). Then
    `python3 cme.py close --work <work>`, which prints everything the close message needs.
 3. **Close** in one message, sent before the store is written: what was saved (topics tested,
    score, session ID, the number of items due over the next few days, not their names; "1

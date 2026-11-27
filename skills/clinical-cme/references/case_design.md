@@ -337,7 +337,8 @@ In `sealed_questions.md`, for each focused question:
 
 - **Best answer** in two to four sentences, with the guideline or evidence it rests on (to be
   verified before grading; put the searches on the verification list).
-- **Rubric**: two to four elements, each one line — usually (1) the decision; (2) the decisive
+- **Rubric**, in the key's rubric block (`standards.md` rule 9), which the examiner marks in the
+  grading form: two to four elements, each one line — usually (1) the decision; (2) the decisive
   reason or discriminating finding; (3) the safety element, threshold or dose that matters;
   (4) optionally, what should change the decision.
 - **Acceptable alternatives** (defensible under current guidance or regional variation, and

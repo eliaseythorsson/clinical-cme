@@ -14,71 +14,11 @@ data/state.json, data/sessions/…), and prints the whole set as `files` ({"as":
 W/publish.json ({"version": the store version read, "files": […]}). The assistant publishes
 whatever the set lists; it is cumulative, so a failed publish is covered by the next one.
 
-A job (one work folder):
-  open    --work W --store DIR [--version V] [--prefs J] [--reread]
-                                                  set W up for any job from DIR, the store as just read
-                                                  (data/state.json … or the files side by side);
-                                                  prints neutral status and counts, never topics.
-                                                  --reread: the same job on a fresh read, after a refused
-                                                  publish; then run its commands again
-  start   --work W [--store DIR [--version V]] [--prefs J] [plan options] [--no-prepared]
-                                                  a round: with --store it opens W first. Neutral status +
-                                                  plan (W/plan.json; no topics); with a prepared round in
-                                                  the store that still fits, also the questions to present
-                                                  plan options: --mcqs N --focused N --no-case --domain D --no-new
-  answer  --work W --part questions|case|final|notes|reflection [--file F | --text T]
-                                                  append the learner's answer to W/answers.md (default: stdin);
-                                                  with a part's last answer, prints `depth`: how far behind
-                                                  the recommendation each item's feedback goes (EVIDENCE_DEPTHS)
-  present --work W --block questions|case|bank    print only the text to show the learner
-  save    --work W                                record the graded round + session doc (part A) + page file,
-                                                  from the files in W by their fixed names. round.json names
-                                                  each item's key ("key": "Q1") and holds the grading; the
-                                                  rest comes from the key headers. Can be run again
-  close   --work W [--reflection J] [--session ID]
-                                                  apply the reflection (W/reflection.json) + part B (W/B.md)
-  prepare --work W [--if-needed] [--allow-unreflected]
-                                                  plan the NEXT round into W/next/plan.json (counts only)
-  finish-prepare --work W [--revised] [--no-evidence]
-                                                  after the checkers: lint the round in W/next against the
-                                                  rulebook (references/standards.md), count contradicted
-                                                  keys and claims not verified. A bad key header, a missing
-                                                  kit section or an evidence file that is missing or lacks
-                                                  its two count lines is an error; an abbreviation that looks
-                                                  undefined or mixed time anchors send the round back to the
-                                                  author once (details in W/next/lint.md), more than a third
-                                                  of a part's claims not verified sends it back to its
-                                                  checker once, then they are accepted with a warning
-                                                  (--revised). Packs the round as
-                                                  data/prepared.json
-  keys    DIR|SEALED.. [--plan PLAN]              the author's check: key headers, kit sections and the same
-                                                  lint (no content printed; details in DIR/lint.md)
-  key-table                                       the key-header table of references/standards.md (rule 9),
-                                                  as generated from the KEY_* definitions
-  addendum --work W --md ADD.md [--session ID]    append to a session document (default: the last session)
-  override --work W [--scores J] [--close-gaps J] [--session ID]
-                                                  after the close: a score the learner sets themselves, a gap
-                                                  closed at the learner's request (before it: reflection JSON)
-  verify  --work W --store CHECK_DIR              testing mode: the publish set against a fresh re-read
-  testing-note --work W --feedback J              testing mode: the learner's feedback + the store check
-
-Settings, review, setup (each on an open work folder):
-  settings --work W [--config J] [--profile J] [--blueprint F]
-  theme   --work W [--set DOMAIN | --another]     the learner changes the block's theme (a named domain, or
-                                                  the next proposal); alone: the block and the choices
-  stats   --work W                                figures and coded analysis for a progress review
-  review  --work W --review REVIEW.json           record a completed review; starts a new period
-  review-doc --work W --md REPORT.md [--headline H] [--date D] [--title T]
-  snooze  --work W [--days N]
-  init    --work W --profile J --config J --blueprint FILE(.json|.md) [--start-over]
-                                                  setup: the first ledger (W needs no store yet), page file and page
-
-Maintenance, outside the protocol (their own files and folders):
-  validate STATE | validate --work W
-  import  EXPORT.json --out-dir D                 page export {state, sessions, reviews} -> file layout
-  rebuild-page ROOT                               rebuild ROOT/data/page.json from the session and review
-                                                  files and the ledger (`reindex` is the old name)
-  blueprint-md FILE --out BP.json
+A job is one work folder. The commands, what each takes and prints, and the files of the work
+folder are tabled once, in COMMANDS, MAINTENANCE_COMMANDS and WORK_FILES below: `cme.py
+command-table` and `cme.py file-table` print them as references/state_schema.md (§6, §6.1)
+holds them. A round in short: start → present → answer (which writes the grading form,
+round.json) → save → answer --part reflection (the reflection form) → close.
 
 Add `--today YYYY-MM-DD` before the command to fix the date.
 """
@@ -4827,6 +4767,17 @@ def page_upgrade(work, info, warnings):
 #
 # `save` builds the round record from these headers: an item of round.json names its key
 # ("key": "Q1") and carries only what the examiner decided (score, confidence, coding).
+#
+# A focused question and the case also carry their rubric in a marked block beside the header,
+# one expected element per line (a line "Stage 1" / "Stage 2" groups the case's elements):
+#
+#   <!-- rubric: Q4 -->
+#   - the decision: …
+#   - the decisive reason: …
+#   <!-- /rubric -->
+#
+# `answer` copies the elements into the grading form (round.json), to be marked hit, partial or
+# missed (issue #76).
 
 KEY_RE = re.compile(r"<!--[ \t]*key:[ \t]*([A-Za-z0-9_]+)[ \t]*-->[ \t]*\n(.*?)\n?[ \t]*<!--[ \t]*/key[ \t]*-->", re.S)
 KEY_OPEN_RE = re.compile(r"<!--\s*key\b")
@@ -4840,6 +4791,12 @@ KEY_ANY = ("domain", "retests")                              # optional in every
 KEY_ITEM_FIELDS = ("type", "topic", "label", "domain", "retests", "stem_summary", "aspect")
 KEY_CASE_FIELDS = ("patient", "setting", "presentation", "diagnosis", "twist")
 KEY_EMPTY = ("", "-", "none", "null", "n/a", "na")
+RUBRIC_RE = re.compile(r"<!--[ \t]*rubric:[ \t]*([A-Za-z0-9_]+)[ \t]*-->[ \t]*\n(.*?)\n?[ \t]*<!--[ \t]*/rubric[ \t]*-->", re.S)
+RUBRIC_OPEN_RE = re.compile(r"<!--\s*rubric\b")
+RUBRIC_BULLET_RE = re.compile(r"^(?:(?:[-*+]|\d+[.)])[ \t]+)?(?:\[[ xX]?\][ \t]+)?")
+RUBRIC_STAGE_RE = re.compile(r"^[#*_`\s]*stage[ \t]*([1-9])\b[*_`\s]*(?:\([^)]*\))?[*_`\s:.\u2013\u2014-]*(.*)$", re.I)
+RUBRIC_TYPES = ("focused", "case")        # an MCQ's key is its correct option: it has no rubric
+RUBRIC_MARKS = ("hit", "partial", "missed")     # ✓ ◐ ✗ in the feedback
 RECORD_FILE = "record.json"             # written by save: the round record as it was recorded
 PLAN_FILE = "plan.json"
 
@@ -5029,7 +4986,66 @@ def check_key_headers(paths, plan=None):
             if part in written and int(want.get(k) or 0) != have[k]:
                 problems.append("%s: the plan has %d %s item(s), the keys have %d header(s) of that type"
                                 % (part, int(want.get(k) or 0), name, have[k]))
+    problems.extend(rubric_problems(paths))
     return by_file, problems
+
+
+def parse_rubrics(text, where="sealed file"):
+    """The rubric blocks of one sealed file: ({id: [{"element", "stage"?}]}, [problems]), the
+    elements in the order written. The problems name the file and the key, never an element."""
+    rubrics, problems = {}, []
+    found = RUBRIC_RE.findall(text or "")
+    if len(RUBRIC_OPEN_RE.findall(text or "")) > len(found):
+        problems.append("%s: a rubric block is not closed, or its first line is not '<!-- rubric: Q1 -->' "
+                        "(or '<!-- rubric: case -->'); close each with '<!-- /rubric -->'" % where)
+    for raw_id, body in found:
+        kid = key_id(raw_id)
+        if kid in rubrics:
+            problems.append("%s, key %s: there are two rubric blocks with this id" % (where, kid))
+            continue
+        stage, elements = None, []
+        for line in body.splitlines():
+            line = line.strip()
+            bullet = RUBRIC_BULLET_RE.match(line)
+            text_ = line[bullet.end():] if bullet else line
+            m = RUBRIC_STAGE_RE.match(text_)
+            if m:
+                stage, text_ = int(m.group(1)), m.group(2)
+            text_ = text_.strip().strip("#").strip()
+            if text_:
+                elements.append(dict({"element": text_}, **({"stage": stage} if stage else {})))
+        if not elements:
+            problems.append("%s, key %s: the rubric block has no elements (one expected element per line)"
+                            % (where, kid))
+        rubrics[kid] = elements
+    return rubrics, problems
+
+
+def rubric_problems(paths):
+    """Rule 9, the rubric: every focused question and the case have a rubric block in their sealed
+    file, with at least one element, outside the text to present; no block for an MCQ or for a
+    key that has no header. Names files and keys only."""
+    problems = []
+    for path in paths or []:
+        name, text = os.path.basename(path), read_text(path)
+        headers = parse_key_headers(text, name)[0]
+        rubrics, probs = parse_rubrics(text, name)
+        problems.extend(probs)
+        for kid, h in headers.items():
+            if h.get("type") in RUBRIC_TYPES and kid not in rubrics:
+                problems.append("%s, key %s: no rubric block ('<!-- rubric: %s -->', one expected element per "
+                                "line, '<!-- /rubric -->'; references/standards.md rule 9)" % (name, kid, kid))
+        for kid in rubrics:
+            if kid not in headers:
+                problems.append("%s, key %s: a rubric block without a key header in the same file" % (name, kid))
+            elif headers[kid].get("type") == "mcq":
+                problems.append("%s, key %s: an MCQ has no rubric block (its key is the correct option)" % (name, kid))
+        for block in PRESENT_RE.findall(text) + BANK_RE.findall(text):
+            if RUBRIC_OPEN_RE.search(block[1]):
+                problems.append("%s: a rubric block sits inside the text to present or the results bank "
+                                "(rule 1.2)" % name)
+                break
+    return problems
 
 
 # What each field holds, for the table of references/standards.md (rule 9). The table there is
@@ -5085,6 +5101,318 @@ def cmd_key_table(args):
     sys.stdout.write("%s\n%s\n%s\n" % (KEY_TABLE_OPEN, key_header_table(), KEY_TABLE_CLOSE))
 
 
+# ---------------------------------------------------------------- the command and file tables
+#
+# The command table (§6) and the work-folder file table (§6.1) of references/state_schema.md are
+# printed from these rows by `command-table` and `file-table`, between their markers, as
+# `key-table` prints rule 9; tests/test_tables.py fails when a copy differs, or when a command of
+# the parser is missing from the table. The cells are Markdown, as they stand in the table.
+
+COMMANDS = (
+    ('`open --work W --store DIR [--version V] [--prefs J] [--reread]`',
+     'Set up the work folder for any job from `DIR`, the local copy of the store as just read: '
+     "the store's layout (`DIR/data/state.json`, `DIR/data/page.json`, `DIR/data/prepared.json`, "
+     '`DIR/index.html`, `DIR/data/sessions/<id>.json`) or the files side by side '
+     '(`DIR/state.json`, …). Writes `W/work.json` and an empty manifest carrying `V`, the store '
+     'version read. If `W` holds an earlier job (answers, a publish set, drafts of a next round),'
+     ' its files are first moved to `W/earlier/<n>/` (`earlier_set_aside`). Prints neutral '
+     'status: `gen`, `next_id`, counts, `review_due`, `testing`, the block; never a topic. '
+     '`--reread`: the same job on a fresh read after a refused publish (`store.md` §4.1): the '
+     "job's own files stay, the publish set is dropped, and the job's commands are run again."),
+    ('`start --work W [--store DIR [--version V]] [--prefs J] [plan options] [--no-prepared]`',
+     'Start a round. With `--store` it does what `open` does first; without, it continues the job'
+     ' that is open (a settings change or a late reflection earlier in the same conversation), '
+     'from the ledger that job wrote. The plan is written to `W/plan.json`. Prints the neutral '
+     "status with the plan's counts (MCQs, focused, case, `estimated_minutes`, and "
+     "`estimate_rounds` when the estimate is at the learner's own pace, §6.2) under `plan`, plus "
+     '`helpers`, `prepare_ahead` and `speed_settings_new`. No topic names. With a plan it also '
+     'prints what the first message needs, so that nothing else is run or read before it: '
+     '`opening` (the opening line, word for word: the mix, the minutes, "(based on your last N '
+     'rounds)" once rounds are timed, the block\'s line, with its reason when a block starts, and '
+     "the last saved session) and `started_at` (when the round's clock started, §6.2; nothing to "
+     "copy). `--prefs` is the page's `cme/prefs` document (§7.1); `page_settings_applied` says "
+     'when it changed the mix or brought a new paragraph (which `start` writes to the ledger at '
+     "once, into the publish set; §7.1), `pitch` holds the learner's two paragraphs for the "
+     'examiner and `labels_needed` the display labels still to derive (§1), and `round_mix` says '
+     'when a prepared round was written for another mix than the one in force (§8). The prepared '
+     'round is read from the store copy (§8): when it still fits, `prepared.used` is true, '
+     "`present` holds the first part's text to send (`prepared.present_block` says which) and the"
+     ' drafted files (`prepared.ready`: `sealed_questions.md`, `sealed_case.md`, '
+     '`kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) are written'
+     ' into the work folder, with `prepared.unchecked` naming the sealed files that came without '
+     'an evidence file (start a checker for each); otherwise `prepared.why` says why not and the '
+     'round is planned as usual. Plan options, for this round only: `--mcqs N`, `--focused N`, '
+     '`--no-case`, `--domain CODE`, `--no-new`, `--allow-repeat`, `--no-drill`.'),
+    ('`present --work W --block questions\\|case\\|bank`',
+     'Print only the text the learner is to see from the sealed files in `W` (one `present` '
+     "block, or the case's results bank), so it can be sent without opening the keys. For the "
+     'first part of a round written now it also notes that the part went out (§6.2).'),
+    ('`answer --work W --part questions\\|case\\|final\\|notes\\|reflection [--file F \\| --text T]`',
+     'Append what the learner answered for one part to `W/answers.md`, exactly as given (default:'
+     ' standard input). Earlier parts are never rewritten; the same text for the same part is '
+     'added once; a second message for a part is added after the first. Prints the part names '
+     'filed so far, never the text. With a part that completes its answers (`questions`; `final`;'
+     ' `case` for a one-step case) it also prints `depth`: the evidence depth of each of that '
+     "part's items by key id (`level` 1–4, `name`, `in_a_row`; §4.2), read from the key headers "
+     'and the ledger, for the feedback about to be written. No `depth` with `evidence_ladder` '
+     "false. It also prints `positions`: the learner's position notes in force on each item's "
+     'topic, by key id (`standards.md` rule 12), for the grading. With such a part it also writes '
+     'the **grading form** into `W/round.json` (§2), and with `reflection` the **reflection form** '
+     'into `W/reflection.json` (§3), and prints `form` (the file, the key ids `added`, '
+     '`rubric_missing` for a focused question or case whose key has no rubric block); a form never '
+     'overwrites what was filled in. It also notes when it ran, as '
+     "the time the learner's message arrived (§6.2): run it first when a message arrives."),
+    ('`sent --work W --part questions\\|questions_feedback\\|case\\|stage2\\|feedback\\|close [--at '
+     'T]`',
+     'Not part of a normal round. Notes when a message went out, where the engine cannot tell '
+     '(§6.2): no file was written as sent, or it was written late.'),
+    ('`save --work W`',
+     'First save after the final feedback: the round is recorded in the ledger from the grading '
+     'form as filled in (`W/round.json`, §2; a blank score stops it, nothing recorded), the session '
+     'document is written (part A assembled in the order of the round from the sealed `present` '
+     "blocks, Stage 2 as sent, the answers, the questions' feedback and the final feedback), with"
+     ' the page file (§7) and an emptied `data/prepared.json`. Everything is found by its fixed '
+     'name (§6.1); the page settings given at the start are applied so the mix is kept in the '
+     "ledger. Prints per-topic next due, warnings, `errata_to_log`, and `files`. If the learner's"
+     " `index.html` is older than the skill's template, the new one joins the publish set "
+     '(`page_upgraded`). Run again in the same job, it undoes the round and records it again '
+     '(§3.1), so it gives the same result (a settings change made earlier in the same job is '
+     'kept). Records the time measured so far (`minutes`, `timing`; §6.2).'),
+    ('`close --work W [--reflection J] [--session ID]`',
+     'Second save: the reflection is applied and part B goes into the session document, with the '
+     'page file. It continues from the current ledger: the one `save` wrote in this job, or, for '
+     'a reflection given at a later session, the ledger as read; the session document then comes '
+     'from the store copy (`data/sessions/<id>.json`), and the command stops if it was not read. '
+     'The reflection JSON is `W/reflection.json` (the reflection form as filled in, §3) unless '
+     'given inline. Can be run again after a '
+     'correction to `B.md` or to the reflection (§3.1), until `override` changes the round. '
+     "Completes the round's measured time (the reading of the final feedback, up to the "
+     'reflection) and prints `time_hint` once five rounds are timed (§6.2): one line of the '
+     'closing message.'),
+    ('`override --work W [--scores J] [--close-gaps J] [--stops J] [--session ID]`',
+     "After the close: a score the learner sets themselves, a gap closed at the learner's request"
+     ' and a stop with its position note (the entries of `learner_scores`, `learner_closed_gaps` '
+     'and `learner_stops`, §3). Writes the ledger, the session document (`learner_changes`, a '
+     '"Set by the learner" addendum) and the page file into the publish set. Refused while the '
+     'round is unreflected (use the reflection JSON) and, for scores, for a round from before the'
+     ' last review.'),
+    ('`addendum --work W --md ADD.md [--session ID]`',
+     'Append later discussion to a session document (default: the last session; the document '
+     'comes from the publish set or the store copy).'),
+    ('`prepare --work W [--if-needed] [--allow-unreflected]`',
+     'Plan the next round (as of tomorrow) from the current ledger, into `W/next/plan.json`. '
+     'Prints counts only, or `"prepare": false` with the reason (setting off, reflection pending,'
+     ' or — with `--if-needed` — a usable round is already prepared in the store). `--allow-'
+     'unreflected` plans although the last session has no reflection yet (the scheduled task uses'
+     ' it). A paragraph the learner wrote on the page (in the `--prefs` given to `open`) is '
+     'written to the ledger first, into the publish set, and reported as `page_settings_applied` '
+     'with the `files` (§7.1); a round prepared for the old words does not count as usable.'),
+    ('`finish-prepare --work W [--revised] [--no-evidence]`',
+     'After the checkers: finish preparing the round planned in `W/next/plan.json` and drafted in'
+     ' `W/next`. First lints it against the rulebook (`standards.md`, "The lint"). **Blocking**: '
+     'the key headers of the sealed files against the plan, as `keys --plan` checks them, and the'
+     ' kits and their sections (rule 8); a problem is an error (exit 2, nothing stashed) that '
+     'lists every one by file, key, field or section, whatever the evidence says and also with '
+     '`--no-evidence` or `--revised`. **Judgement calls** (an abbreviation that looks undefined, '
+     'rule 5; time anchors that look mixed, rule 6): counted in `lint` (`abbreviations`, '
+     '`time_anchors`, `where` by file, `details`: the path of `W/next/lint.md`, where the '
+     'findings are written for the author and never printed). Then reads the last two lines of '
+     'each evidence file (`Checked: <date>, <n> claims, <n> not verified` and `Keys contradicted:'
+     ' <n>`, `evidence_check.md` §4) for every sealed part the round has, and prints counts and '
+     'file names only: `evidence` (keys contradicted per file), `contradicted` (the total), '
+     '`not_verified` (per file: `claims`, `not_verified`, and `untried`, the "not verified" '
+     "blocks without a `Tried:` line; `not_verified` is the larger of the line's number and the "
+     'blocks so marked), `not_verified_total`, `claims_total`, `recheck` (the evidence files that'
+     " go back to their checker: more than a third of the file's claims not verified, or any "
+     '`untried`), `revise` and `stashed`. Nothing contradicted, no judgement call and no file to '
+     'recheck → the round is packed and joins the publish set as `data/prepared.json` (§8) in the'
+     ' same command. Otherwise → `"stashed": false` and a `next` line: the checker retries the '
+     'files in `recheck` once, then the author revises once (`"revise": true` when a key is '
+     'contradicted or the lint made a judgement call; after a retry it also carries what was '
+     'confirmed into the kits), and the command is run again with `--revised`, which stashes; '
+     'what is still found is then listed under `warnings` ("accepted after one revision: …", '
+     '"accepted after one retry: … n of m claims not verified"). An evidence file that is '
+     'missing, empty or without either count line in that form (also one that counts no claims, '
+     'or more not verified than claims) is an error (exit 2, nothing stashed), never a count of '
+     'zero. `--no-evidence` is for a session that runs no checker: the round is stashed without '
+     'evidence files, so the sources are checked at the session; the lint runs all the same. The '
+     "first part's sealed file must be there; a missing case is a warning (it is then written at "
+     'the next session).'),
+    ('`keys DIR\\|SEALED… [--plan PLAN]`',
+     "The author's check before finishing: the key headers and rubric blocks of sealed files "
+     "(`standards.md` rule 9) and, for a folder, the kits' sections (rule 8; a kit not written yet is not a problem "
+     'here). Prints the key ids each file has and `problems`, naming file, key, field and section'
+     ' only, never a topic or a value; with `--plan`, also whether the number of headers of each '
+     "type matches the plan's counts. `review` lists the lint's judgement calls as counts per "
+     'file; the findings go to `lint.md` in the folder (`details`). Exit code 1 when there is a '
+     'problem; `review` alone does not fail it.'),
+    ('`key-table`',
+     "Prints the key-header table of `standards.md` rule 9 from the engine's `KEY_*` definitions;"
+     " a test fails when the rulebook's copy differs."),
+    ('`command-table`, `file-table`',
+     "Print this table and the work-folder table of §6.1 from the engine's own rows; a test fails "
+     'when the copy here differs, or when a command is missing from the table.'),
+    ('`verify --work W --store CHECK`',
+     'Testing mode: compare the publish set with the store read again into `CHECK`; the result is'
+     ' also written to `W/verify.json`.'),
+    ('`testing-note --work W --feedback J`',
+     "Testing mode: the learner's quick feedback and `W/verify.json`, as `data/testing/<id>.json`"
+     " for this job's round."),
+    ('`stats --work W`',
+     'Review figures: period, previous period, all time; gaps, calibration, teaching points '
+     'unchecked, blind spots; `timing` (medians of the last timed rounds: minutes, answering, '
+     "waiting, reading; the pace; the hint); `positions`, the notes in force with their topic's "
+     '`label` and the day each `lapses`. Writes nothing.'),
+    ('`review --work W --review REVIEW.json`',
+     'Record a review; closes the period. Its `positions` (`{"keep": [ids], "drop": [ids]}`) '
+     'confirm or end position notes; lapsed notes leave the ledger.'),
+    ('`review-doc --work W --md REPORT.md [--headline H] [--date D] [--title T]`',
+     'A review report as `data/reviews/<date>.json`, listed in the page file.'),
+    ('`position --work W [--drop ID \\| --reopened ID]`',
+     "The learner's position notes (§1). Alone: the notes in force (`id`, `point`, `text`, `set`,"
+     ' `topic`, `lapses`), writing nothing. `--drop`: the learner takes one back. `--reopened`: '
+     'the examiner raised a changed guideline on it once more (`standards.md` rule 12); refused '
+     'the second time. The ledger and the page file go into the publish set; the prepared round '
+     'is kept.'),
+    ('`snooze --work W [--days 7]`',
+     'Postpone a due review. Keeps the prepared round.'),
+    ('`settings --work W [--config J] [--profile J] [--blueprint FILE]`',
+     'Change settings: the changed ledger, the page file and the page if it is out of date go '
+     'into the publish set, with an emptied `data/prepared.json` when the change can alter a '
+     'round; `prepared` says whether the prepared round was kept and why (§8). A change to '
+     '`mcqs`, `focused` or `case` is checked (at least one item) and supersedes any older page '
+     'setting; a refused change writes nothing. Prints `round`: the mix in force in words, its '
+     '`estimated_minutes`, and once rounds are timed `basis` ("based on your last N rounds") and '
+     '`time_hint` (§6.2). `--profile \'{"journey": "…"}\'` or `\'{"aim": "…"}\'` stores a new '
+     "paragraph in the learner's words, dates it and clears its label unless the same change "
+     'gives one; `\'{"journey_label": "…", "aim_tags": […]}\'` sets the display labels (from their '
+     'fixed lists, §1) and keeps the prepared round. With a paragraph or a label in the change it'
+     ' prints `profile` (the two paragraphs and their labels), and `labels_needed` while a label '
+     'is still to derive.'),
+    ('`theme --work W [--set DOMAIN \\| --another]`',
+     'The learner changes the theme of the block (§4.1): `--set` a domain by id or name, '
+     '`--another` the next proposal. Prints `block`, `was`, `say` and, like `settings`, the '
+     '`files` to publish. Alone: the block, the proposal and the domains to choose from; writes '
+     'nothing.'),
+    ('`init --work W --profile J --config J --blueprint FILE [--start-over]`',
+     'Setup: the first ledger, its page file and the page, into the publish set. Prints `round` '
+     '(the mix in words and its `estimated_minutes`) to confirm the mix with, and `labels_needed`'
+     ' when a paragraph came without its label. A profile given in the old fields (`role`, '
+     '`goals`, `notes`) is folded into the paragraphs (§1). `W` needs no store yet. In a work '
+     'folder opened on a store that already holds a ledger it stops unless `--start-over` is '
+     'given.'),
+)
+MAINTENANCE_COMMANDS = (
+    ('`import EXPORT.json --out-dir D`',
+     'A page export into the file layout (`store.md` §6, a damaged ledger).'),
+    ('`rebuild-page ROOT`',
+     'Rebuild `ROOT/data/page.json` (§7) from the session and review files and the ledger of a '
+     "folder in the store's layout; `reindex` is its old name and still works."),
+    ('`blueprint-md FILE --out BP.json`',
+     'Convert a Markdown blueprint.'),
+    ('`validate STATE` (or `validate --work W`)',
+     'Structural check.'),
+)
+WORK_FILES = (
+    ('`work.json`',
+     '`open`, `start`: the store copy, the ledger as read, the store version, the session ID, the'
+     ' page settings; `save`, `close`: the round each recorded (`saved`, `closed`), so that '
+     'either can be run again in this job',
+     'every command'),
+    ('`plan.json`',
+     '`start`',
+     'whoever writes the items'),
+    ('`sealed_questions.md`, `sealed_case.md`, `kit_*.md`, `evidence_*.md`',
+     'the author and the checker, or `start` from a prepared round',
+     '`present`, the examiner once a part is answered, `save` (the `present` blocks)'),
+    ('`answers.md`',
+     '`answer`, one block per part (`<!-- answers: questions -->` … `<!-- /answers -->`)',
+     '`save` (questions, case, final, notes), `close` (reflection)'),
+    ('`feedback_questions.md`, `stage2.md`, `feedback.md`',
+     'the examiner: each message exactly as sent',
+     '`save`'),
+    ('`round.json` (§2)',
+     '`answer`: the grading form, one entry per key id, once a part\'s answers are in; the examiner '
+     'fills it in',
+     '`save`'),
+    ('`record.json` (§2), `A.md`',
+     '`save`: the round record, built from the key headers and `round.json`; part A as assembled',
+     "the simulation's checks; anyone who wants to see what was recorded"),
+    ('`reflection.json` (§3), `B.md` (`session_log.md` §3)',
+     '`answer --part reflection`: the reflection form, which the examiner fills in; `B.md`: the '
+     'examiner',
+     '`close`'),
+    ('`next/`',
+     "`prepare` (`plan.json`), the author and the checker (the next round's files), `finish-"
+     'prepare` (`lint.md`: what the lint found, for the author)',
+     '`finish-prepare`; the author for `lint.md`'),
+    ('`publish/`',
+     'every command that writes: the newest version of each store file this job changed, at its '
+     'store path',
+     'the commands that follow (the current ledger is `publish/data/state.json`), `verify`, '
+     'whoever publishes'),
+    ('`publish.json`',
+     'every command that writes: `{"version": <store version read>, "files": [{"as", "path"}, '
+     '…]}`, in write order',
+     'whoever publishes'),
+    ('`verify.json`',
+     '`verify`',
+     '`testing-note`'),
+    ('`times.json`',
+     '`start`, `present`, `answer`, `sent`, `save`, `close`: when each step of the round happened'
+     ' (§6.2)',
+     '`save`, `close`'),
+    ('`close_from.json`',
+     '`close`: the round as it stood before its reflection, and its entry as `close` left it, so '
+     'that `close` can be run again (§3.1)',
+     '`close`'),
+    ('`earlier/<n>/`',
+     '`open`, `start`: the files of an earlier job in the same folder, set aside',
+     'nobody'),
+)
+COMMAND_TABLE_OPEN = "<!-- command-table: generated by `cme.py command-table`; do not edit by hand -->"
+COMMAND_TABLE_CLOSE = "<!-- /command-table -->"
+FILE_TABLE_OPEN = "<!-- file-table: generated by `cme.py file-table`; do not edit by hand -->"
+FILE_TABLE_CLOSE = "<!-- /file-table -->"
+
+
+def markdown_table(head, rows):
+    return "\n".join(["| %s |" % " | ".join(head), "|%s" % ("---|" * len(head))]
+                     + ["| %s |" % " | ".join(r) for r in rows])
+
+
+def command_table():
+    """The command tables of state_schema.md §6, as Markdown: the protocol's, then the maintenance tools'."""
+    return "\n".join([markdown_table(("Command", "Use"), COMMANDS), "",
+                      "Maintenance tools, outside the protocol; they take their own files and folders:", "",
+                      markdown_table(("Command", "Use"), MAINTENANCE_COMMANDS)])
+
+
+def file_table():
+    """The work-folder file table of state_schema.md §6.1, as Markdown."""
+    return markdown_table(("File", "Written by", "Read by"), WORK_FILES)
+
+
+def command_names():
+    """The command each row of the command tables documents."""
+    names = []
+    for r in COMMANDS + MAINTENANCE_COMMANDS:
+        for n in re.findall(r"`([a-z][a-z-]*)", r[0]):
+            if n not in names:
+                names.append(n)
+    return names
+
+
+def cmd_command_table(args):
+    """Print the command tables for references/state_schema.md §6 (between their two markers)."""
+    sys.stdout.write("%s\n%s\n%s\n" % (COMMAND_TABLE_OPEN, command_table(), COMMAND_TABLE_CLOSE))
+
+
+def cmd_file_table(args):
+    """Print the work-folder file table for references/state_schema.md §6.1 (between its two markers)."""
+    sys.stdout.write("%s\n%s\n%s\n" % (FILE_TABLE_OPEN, file_table(), FILE_TABLE_CLOSE))
+
+
 # ---------------------------------------------------------------- the lint of a written round
 #
 # The rulebook (references/standards.md) holds the rules for writing items. What can be checked
@@ -5110,7 +5438,7 @@ KIT_FOR = {"sealed_questions.md": "kit_questions.md", "sealed_case.md": "kit_cas
 # line per topic of the kit ("Q1 | points: …", written by the author), and under it the
 # candidate episodes (found by the checker), one line each:
 #   - <link> | <show> | <title> | <n> min | covers: … | matches: …
-KIT_CASE_SECTIONS = ("Reveal", "Model answer", "Rubric", "Differential", "Briefing", "Pearls", "Reading")
+KIT_CASE_SECTIONS = ("Reveal", "Model answer", "Differential", "Briefing", "Pearls", "Reading")   # the rubric: in the key
 KIT_READING = "Reading"
 KIT_LISTENING = "Listening"
 # An item the plan gives an evidence depth beyond the first has its notes for that depth under
@@ -5513,17 +5841,8 @@ def cmd_keys(args):
 # a review, or preparing the next round. `open` (or `start --store`) notes there where the
 # local copy of the learner's store is; from then on every command needs only `--work`.
 #
-#   <work>/work.json      what `open` noted: the store copy, the ledger as read, the session id
-#   <work>/plan.json, sealed_*.md, kit_*.md, evidence_*.md, answers.md, stage2.md,
-#          feedback_questions.md, feedback.md, round.json, reflection.json, B.md
-#                         the files of the round, each under its fixed name
-#   <work>/times.json     when each step of the round happened (the round's clock, below)
-#   <work>/next/          the next round: its plan and drafts (`prepare`, `finish-prepare`)
-#   <work>/publish/       the publish set: the newest version of every store file this job
-#                         changed, at its store path (data/state.json, data/sessions/…)
-#   <work>/publish.json   the publish set's manifest: the store version read and the files
-#                         in write order, the ledger last
-#   <work>/earlier/<n>/   the files of an earlier job in the same folder, set aside
+# Every file there has a fixed name: WORK_FILES (above, with the command tables) says which
+# command writes each and who reads it.
 #
 # The current ledger of a job is the one in the publish set, or the one read while nothing
 # has been written. Any other store file is looked up in the publish set first, then in the
@@ -5916,33 +6235,45 @@ def answer_blocks(path):
     return [(name, body.strip()) for name, body in ANSWER_RE.findall(read_text(path))]
 
 
-def answer_depth(work, part, today=None):
-    """What the examiner grades with for each item whose answers this part completes, by key id:
-    its evidence depth ({"Q1": {"level", "name", "in_a_row"}}, feedback_guide.md §4.1) and the
-    learner's position notes on its topic ({"Q1": [{"id", "point", "text", "set"}]},
-    standards.md rule 12). Read from the key headers and the ledger as it stands before the
-    round is recorded. Only for a part whose sealed file may now be opened: the questions, and
-    the case once its last answer is in. Returns (depth, positions), each None where there is
-    nothing to say (no job open here, no key headers, the ladder turned off, no note): filing an
-    answer never fails over it."""
+def part_keys(work, part):
+    """The key headers of the items whose answers `part` completes, in the order written, with
+    their rubrics and the ledger they are graded against: (headers, rubrics, ledger), or None.
+    Only for a part whose sealed file may now be opened: the questions, and the case once its
+    last answer is in (`case` for a one-step case, `final` for an unfolding one)."""
     name = {"questions": SEALED_FILES[0], "final": SEALED_FILES[1], "case": SEALED_FILES[1]}.get(part)
     sealed, info = in_work(work, name) if name else None, work_info(work)
     if not sealed or not info:
-        return None, None
+        return None
     if part == "case":
         plan_path = in_work(work, PLAN_FILE)
         fmt = (load_json(plan_path) if plan_path else {}).get("case_format")
         if fmt != "discriminate":       # an unfolding case stays sealed until its final answers
-            return None, None
+            return None
     try:
         st, _ = current_ledger(work, info)
-        headers = parse_key_headers(read_text(sealed), name)[0]
+        text = read_text(sealed)
+        headers = parse_key_headers(text, name)[0]
+        rubrics = parse_rubrics(text, name)[0]
     except (CmeError, OSError):
+        return None
+    headers = {k: h for k, h in headers.items() if not h.get("_bad") and (k == "case") == (name == SEALED_FILES[1])}
+    return headers, rubrics, st
+
+
+def answer_depth(work, part, today=None, keys=None):
+    """What the examiner grades with for each item whose answers this part completes, by key id:
+    its evidence depth ({"Q1": {"level", "name", "in_a_row"}}, feedback_guide.md §4.1) and the
+    learner's position notes on its topic ({"Q1": [{"id", "point", "text", "set"}]},
+    standards.md rule 12). Read from the key headers and the ledger as it stands before the
+    round is recorded. Returns (depth, positions), each None where there is nothing to say (no
+    job open here, no key headers, the ladder turned off, no note): filing an answer never
+    fails over it."""
+    keys = keys or part_keys(work, part)
+    if not keys:
         return None, None
+    headers, _, st = keys
     out, notes = {}, {}
     for kid, h in headers.items():
-        if h.get("_bad") or (kid == "case") != (name == SEALED_FILES[1]):
-            continue
         d = evidence_depth(st, h.get("topic"), h.get("aspect"), bool(h.get("retests")))
         if d:
             out[kid] = d
@@ -5950,6 +6281,330 @@ def answer_depth(work, part, today=None):
         if held:
             notes[kid] = [position_for_round(p) for p in held]
     return out or None, notes or None
+
+
+# ---------------------------------------------------------------- the grading and reflection forms
+#
+# When a part's answers are in, `answer` writes the form the examiner fills: round.json with one
+# entry per key id, everything the author and the ledger already know filled in (topic, type,
+# aspect, retests, the evidence depth, the position notes, the rubric's elements), and blanks for
+# what only grading decides (marks, score, confidence, coding). `_form` holds how to fill it and
+# the allowed codes, from the engine's own lists; `save` takes the scaffolding off again
+# (round_from_form). The reflection form is written the same way when the reflection arrives.
+# A form never overwrites what the examiner has filled: a part answered again adds only the
+# items that are not there yet.
+
+FORM_KEY = "_form"
+FORM_GIVEN = "given"            # per item: what the engine knows and the examiner reads, not edits
+GAP_SOURCES = ("graded", "transfer", "misconception")      # `self` is the reflection's (self_gaps)
+
+
+def grading_codes():
+    """The codes allowed where a code is chosen, from the engine's own lists."""
+    return {
+        "mastery": "0-5, halves allowed",
+        "confidence": list(CONFIDENCE_LEVELS) + ["null (the learner gave none)"],
+        "rubric_mark": list(RUBRIC_MARKS),
+        "art": {k: "0-%d, %s" % (v, ART_LABELS[k]) for k, v in ART_MAX.items()},
+        "idea": {k: "0-%d" % v for k, v in IDEA_MAX.items()},
+        "error_category": list(ERROR_CATEGORIES),
+        "knowledge_type": list(KNOWLEDGE_TYPES),
+        "severity": list(SEVERITIES),
+        "bias": list(BIASES) + ["other:<name>"],
+        "gap_source": list(GAP_SOURCES),
+        "drill_result": list(DRILL_RESULTS),
+        "dispute_outcome": list(DISPUTE_OUTCOMES),
+        "aspect": list(FOCUSED_ASPECTS),
+    }
+
+
+def grading_guide(listening):
+    """`_form` of the grading form: how to fill it, the codes and the shape of each list entry."""
+    how = [
+        "Fill this file in place; `save` reads it. Values already filled come from the key headers "
+        "and the ledger: change one only to correct the author (it is reported as overridden).",
+        "Each item: mark every rubric element hit, partial or missed with a short note; then `mastery` "
+        "(a focused question and the case by feedback_guide.md section 2; an MCQ 4-5 correct with sound "
+        "reasoning, 3 correct with flawed reasoning, 1-2 wrong), `correct` for an MCQ, and `confidence` "
+        "as the learner gave it (null when none).",
+        "`given` is what grading uses and nobody edits: `depth`, how far behind the recommendation the "
+        "feedback goes (feedback_guide.md section 4.1), and `positions`, the learner's position notes "
+        "on the topic (standards.md rule 12).",
+        "Coding (analysis_framework.md section 1): `art` for the case and a focused question (a focused "
+        "question scores only the domains it tested: leave the others null), `idea` for the case only, "
+        "and one entry in `errors` for every rubric element marked missed or partial and for a wrong MCQ.",
+        "`retests`: keep it only when the item asked about the gap's decision point; set it to null "
+        "when it did not. Only such an item can close the gap.",
+        "Round: `gaps`, one per topic with something to retest, written precisely enough to retest and "
+        "carrying forward what is still open; `resolved`, a prior gap closed this time; `key_learning`, "
+        "one-line teaching points; `grade_changes`, a grade settled in a dispute; `errata`, a correction "
+        "to an earlier round.",
+        "`reading`: the Further reading pointers of the feedback, at most two; `listening` (when "
+        "present): the Listening picks, one per topic. Empty lists when the feedback gave none.",
+        "Leave out `reflection` and every time: `save` fills title, summary, tags, the compact case, "
+        "the selection reasons and the round's times.",
+    ]
+    shapes = {
+        "error": {"element": "what was missed, one line", "stage": "1 or 2 (case only)",
+                  "category": "error_category", "knowledge_type": "for a knowledge error",
+                  "art_domain": "one of art", "bias": ["bias"], "bias_evidence": "the learner's words, with a bias",
+                  "severity": "severity", "confidence": "the learner's confidence on it"},
+        "gap": {"topic": "<blueprint ID>", "gap": "the decision point, the rule, what the learner did",
+                "source": "gap_source"},
+        "resolved": {"topic": "<blueprint ID>", "note": "what was closed this time"},
+        "grade_change": {"item": "Q2", "topic": "<blueprint ID>", "from": 3, "to": 3.5,
+                         "outcome": "dispute_outcome"},
+        "erratum": {"corrects": "<session ID>", "point": "…", "correction": "…", "source": "…"},
+        "reading": {"topic": "<blueprint ID>", "title": "the document, with its year", "link": "https://…",
+                    "section": "the section to read", "minutes": 8, "why": "one line"},
+    }
+    if listening:
+        shapes["listening"] = {"topic": "<blueprint ID>", "link": "https://open.spotify.com/episode/<22 letters "
+                               "and digits>", "show": "…", "title": "…", "minutes": 52, "why": "one line",
+                               "source": "kit or search"}
+    return {"how": how, "codes": grading_codes(), "shapes": shapes}
+
+
+def form_item(kid, h, rubric, depth=None, positions=None):
+    """One entry of the grading form for the item of key `kid`."""
+    typ = h.get("type")
+    it = {"key": kid, "type": typ, "topic": h.get("topic"), "label": h.get("label")}
+    if typ == "focused":
+        it["aspect"] = h.get("aspect")
+    if h.get("retests"):
+        it["retests"] = h["retests"]
+    given = dict(({"depth": depth} if depth else {}), **({"positions": positions} if positions else {}))
+    if given:
+        it[FORM_GIVEN] = given
+    if typ in RUBRIC_TYPES:
+        it["rubric"] = [dict(e, mark=None, note="") for e in rubric or []]
+    it["mastery"] = None
+    if typ == "mcq":
+        it["correct"] = None
+    it["confidence"] = None
+    coding = {}
+    if typ in RUBRIC_TYPES:
+        coding["art"] = {k: None for k in ART_MAX}
+    if typ == "case":
+        coding["idea"] = {k: None for k in IDEA_MAX}
+    coding["errors"] = []
+    it["coding"] = coding
+    return it
+
+
+def write_grading_form(work, part, today=None, keys=None):
+    """Write or extend the grading form, W/round.json, with the items whose answers `part`
+    completes. Returns what `answer` prints about it, or None when there is no form to write."""
+    keys = keys or part_keys(work, part)
+    if not keys or not keys[0]:
+        return None
+    headers, rubrics, st = keys
+    depth, positions = answer_depth(work, part, today, keys)
+    path = os.path.join(work, ROUND_FILE)
+    rnd = {}
+    if os.path.isfile(path):
+        try:
+            with open(path, encoding="utf-8") as fh:
+                rnd = json.load(fh)
+        except (OSError, ValueError):
+            return {"file": ROUND_FILE, "kept": "round.json is not valid JSON: it was left as it is"}
+        if not isinstance(rnd, dict) or any(isinstance(it, dict) and not it.get("key")
+                                            for it in rnd.get("items") or []):
+            return {"file": ROUND_FILE, "kept": "round.json was written out in full: it was left as it is"}
+    items = rnd.get("items") if isinstance(rnd.get("items"), list) else []
+    have = {key_id(it.get("key")) for it in items if isinstance(it, dict)}
+    added = []
+    for kid, h in headers.items():
+        if kid not in have:
+            items.append(form_item(kid, h, rubrics.get(kid), (depth or {}).get(kid), (positions or {}).get(kid)))
+            added.append(kid)
+    listening = listening_on(st)
+    form = {FORM_KEY: grading_guide(listening)}
+    for k, v in rnd.items():
+        if k != FORM_KEY:
+            form[k] = v
+    form["items"] = items
+    for k in ("gaps", "resolved", "key_learning", "grade_changes", "errata", "reading"):
+        form.setdefault(k, [])
+    if listening:
+        form.setdefault("listening", [])
+    if st.get("pending_errata"):
+        form.setdefault("pending_errata_logged", "all")
+    plan_path = in_work(work, PLAN_FILE)
+    plan = (load_json(plan_path) if plan_path else None) or {}
+    for c in plan.get("items") or []:       # the drill sits on the case, or on the first focused question
+        target = "case" if c.get("slot") == "case" else "focused" if c.get("slot") == "focused" else None
+        if c.get("drill") and target and not form.get("drill") \
+                and any(h.get("type") == target for h in headers.values()):
+            form["drill"] = {"code": c["drill"].get("code"), "result": None}
+    save_json(form, path)
+    out = {"file": ROUND_FILE, "added": added}
+    missing = [k for k in added if headers[k].get("type") in RUBRIC_TYPES and not rubrics.get(k)]
+    if missing:
+        out["rubric_missing"] = missing      # a round written before rubric blocks: mark the key's own list
+    return out
+
+
+def round_from_form(rnd):
+    """The grading form as the examiner filled it, as `save` records it: the scaffolding taken
+    off (`_form`, `given`, scores left null in a focused question's ART), the rubric's marks
+    checked against the coding. Stops when a score is still blank. Returns warnings."""
+    rnd.pop(FORM_KEY, None)
+    warnings, blank = [], []
+    for n, it in enumerate(rnd.get("items") or [], 1):
+        if not isinstance(it, dict):
+            continue
+        name = it.get("key") or "item %d" % n
+        it.pop(FORM_GIVEN, None)
+        if "mastery" in it and it["mastery"] is None:
+            blank.append("%s mastery" % name)
+        if it.get("type") == "mcq" and "correct" in it and it["correct"] is None:
+            blank.append("%s correct" % name)
+        if "confidence" in it and it["confidence"] is None:
+            del it["confidence"]
+        coding = it.get("coding")
+        if isinstance(coding, dict):
+            for part in ("art", "idea"):
+                scores = coding.get(part)
+                if isinstance(scores, dict):
+                    left = [k for k, v in scores.items() if v is None]
+                    if left and it.get("type") == "case":
+                        warnings.append("%s: %s not scored: %s" % (name, part, ", ".join(left)))
+                    coding[part] = {k: v for k, v in scores.items() if v is not None}
+                    if not coding[part]:
+                        del coding[part]
+        rubric = it.get("rubric")
+        if isinstance(rubric, list) and rubric:
+            marks = [e.get("mark") if isinstance(e, dict) else None for e in rubric]
+            unmarked = sum(1 for m in marks if m not in RUBRIC_MARKS)
+            if unmarked:
+                warnings.append("%s: %d rubric element(s) not marked %s" % (name, unmarked, " / ".join(RUBRIC_MARKS)))
+            short = sum(1 for m in marks if m in ("partial", "missed"))
+            errors = len(((coding or {}).get("errors") or []) if isinstance(coding, dict) else [])
+            if short > errors:
+                warnings.append("%s: %d rubric element(s) missed or partial but %d error record(s): one error "
+                                "per element (analysis_framework.md section 1.3)" % (name, short, errors))
+    if rnd.get("drill") and isinstance(rnd["drill"], dict) and rnd["drill"].get("result") is None:
+        blank.append("drill result")
+    if blank:
+        die("the grading form in round.json is not filled in: %s. Fill it in and run save again. Nothing "
+            "was recorded." % ", ".join(blank))
+    return warnings
+
+
+def reflection_guide(items, ask_sources):
+    """`_form` of the reflection form."""
+    how = [
+        "Fill this file in place from the learner's reflection; `close` reads it. Skipped → set "
+        "`skipped` true and leave the rest.",
+        "`topic_comfort` 1-5 per topic as the learner rated it, `performance` 1-5, `solid` and `gaps` "
+        "in the learner's words, `reading_minutes` the further reading they report (null when none).",
+        "`self_gaps`: each shaky area as a precise gap on a blueprint ID (source self); an ID the "
+        "blueprint lacks gets `domain` and `label` too.",
+        "`grade_changes` and `items` (the item's new score and coding, matched by type and topic): a "
+        "grade disputed and settled now. Not for a score the learner sets: that is `learner_scores`.",
+        "`learner_scores` (\"record it as 4\"), `learner_closed_gaps` (\"close that gap\") and "
+        "`learner_stops` (\"I know this, stop bringing it back\", with the position note when the "
+        "learner gave one): only what the learner said, matched by topic, and by type where the round "
+        "has two items on it (feedback_guide.md section 7).",
+    ]
+    if ask_sources:
+        how.append("`podcast_sources`: the shows the learner named to trust or to avoid, if asked this "
+                   "round; leave null when none were named.")
+    shapes = {
+        "self_gap": {"topic": "<blueprint ID>", "gap": "…", "source": "self", "domain": "only for a new ID",
+                     "label": "only for a new ID"},
+        "grade_change": {"item": "Q2", "topic": "<blueprint ID>", "from": 3, "to": 3.5,
+                         "outcome": list(DISPUTE_OUTCOMES)},
+        "item": {"type": "case", "topic": "<blueprint ID>", "mastery": 3.5},
+        "learner_score": {"item": "Q2", "type": "mcq", "topic": "<blueprint ID>", "score": 4,
+                          "note": "the learner's words"},
+        "learner_closed_gap": {"gap": "<gap ID>, or topic: <blueprint ID>", "note": "the learner's words"},
+        "learner_stop": {"item": "Q3", "type": "focused", "topic": "<blueprint ID>",
+                         "score": "%d unless the learner named one" % STOP_SCORE,
+                         "position": {"point": "the one decision point", "text": "the learner's words"}},
+    }
+    if ask_sources:
+        shapes["podcast_sources"] = {"trusted": ["show"], "avoid": ["show"]}
+    return {"how": how, "round": items, "shapes": shapes}
+
+
+def reflection_items(work, st):
+    """The items the reflection is about: [{"item"?, "type", "topic", "label"}], from the round
+    record of this job, otherwise from the unreflected session of the ledger."""
+    rec = in_work(work, RECORD_FILE)
+    try:
+        rnd = load_json(rec) if rec else None
+    except CmeError:
+        rnd = None
+    labels = bp_topics(st)
+    out = []
+    if rnd and rnd.get("log_id") == st.get("unreflected"):
+        for it in rnd.get("items") or []:
+            out.append(dict(({"item": it["key"]} if it.get("key") else {}), type=it.get("type"),
+                            topic=it.get("topic"), label=it.get("label")))
+        return out
+    sess = next((s for s in st.get("sessions") or [] if s.get("id") == st.get("unreflected")), None)
+    for it in (sess or {}).get("items") or []:
+        out.append({"type": it.get("type"), "topic": it.get("topic"),
+                    "label": ((labels.get(it.get("topic")) or {}).get("label")
+                              or (st.get("topics", {}).get(it.get("topic")) or {}).get("label"))})
+    return out
+
+
+def write_reflection_form(work):
+    """Write the reflection form, W/reflection.json, when the reflection arrives and there is none
+    yet. Returns what `answer` prints about it, or None."""
+    info = work_info(work)
+    path = os.path.join(work, REFLECTION_FILE)
+    if not info:
+        return None
+    if os.path.isfile(path):
+        return {"file": REFLECTION_FILE, "kept": "reflection.json is already there: it was left as it is"}
+    try:
+        st, _ = current_ledger(work, info)
+    except CmeError:
+        return None
+    if not st.get("unreflected"):
+        return None
+    items = reflection_items(work, st)
+    ask = listening_status(st).get("ask_sources")
+    form = {FORM_KEY: reflection_guide(items, ask),
+            "topic_comfort": {it["topic"]: None for it in items if it.get("topic")},
+            "performance": None, "solid": "", "gaps": "", "reading_minutes": None, "skipped": False,
+            "self_gaps": [], "grade_changes": [], "items": [], "learner_scores": [], "learner_closed_gaps": [],
+            "learner_stops": []}
+    if ask:
+        form["podcast_sources"] = None
+    save_json(form, path)
+    return {"file": REFLECTION_FILE, "session": st["unreflected"], "topics": len(form["topic_comfort"])}
+
+
+def reflection_from_form(refl):
+    """The reflection form as filled, as `close` applies it: the scaffolding and blanks taken off."""
+    if not isinstance(refl, dict):
+        return refl
+    refl = dict(refl)
+    refl.pop(FORM_KEY, None)
+    if isinstance(refl.get("topic_comfort"), dict):
+        refl["topic_comfort"] = {k: v for k, v in refl["topic_comfort"].items() if v is not None}
+    for k in ("performance", "reading_minutes", "podcast_sources"):
+        if k in refl and refl[k] is None:
+            del refl[k]
+    for k in ("solid", "gaps"):
+        if refl.get(k) == "":
+            del refl[k]
+    stops = []
+    for req in refl.get("learner_stops") or []:
+        if isinstance(req, dict):
+            req = {k: v for k, v in req.items() if v is not None}
+            pos = req.get("position")
+            if isinstance(pos, dict) and not any((pos.get(k) or "").strip() for k in ("point", "text")):
+                del req["position"]
+        stops.append(req)
+    if "learner_stops" in refl:
+        refl["learner_stops"] = stops
+    return refl
 
 
 def cmd_answer(args):
@@ -5985,11 +6640,18 @@ def cmd_answer(args):
         have.append((args.part, text.strip()))
         out["at"] = stamp(args.work, "answer:" + args.part, args.at)      # when the learner's message arrived
     out["parts"] = [name for name, _ in have]
-    depth, positions = answer_depth(args.work, args.part, today_from(args))
+    keys = part_keys(args.work, args.part)
+    depth, positions = answer_depth(args.work, args.part, today_from(args), keys)
     if depth:
         out["depth"] = depth
     if positions:
         out["positions"] = positions
+    # the form the examiner fills: the grading form once a part's answers are in, the
+    # reflection form when the reflection arrives
+    form = (write_reflection_form(args.work) if args.part == "reflection"
+            else write_grading_form(args.work, args.part, today_from(args), keys))
+    if form:
+        out["form"] = form
     print(json.dumps(out, ensure_ascii=False))
 
 
@@ -6029,6 +6691,8 @@ def cmd_save(args):
     measured = measured_time(times, sid)
     if measured:
         rnd.update(measured)
+    # the grading form as filled (answer wrote it), without its scaffolding
+    warnings.extend(round_from_form(rnd))
     # the round record: what the author wrote in the key headers + what the examiner graded
     plan_path = in_work(work, PLAN_FILE)
     keys = fill_round_from_keys(rnd, sealed, load_json(plan_path) if plan_path else None)
@@ -6119,7 +6783,8 @@ def cmd_close(args):
     gen_before = st.get("gen")
     times = stamped(work, "close", args.at, once=True)      # the reflection arrived: the round's clock stops
     measured = measured_time(times, sid)
-    res = reflect_round(st, load_json_arg(reflection) or {}, today, sid, measured, base)
+    refl = reflection_from_form(load_json_arg(reflection) or {})       # the reflection form, without its scaffolding
+    res = reflect_round(st, refl, today, sid, measured, base)
     md_path = in_work(work, PART_B_FILE)
     md_b = read_text(md_path) if md_path else ""
     said = "\n\n".join(body for name, body in answer_blocks(in_work(work, ANSWERS_FILE)) if name == "reflection")
@@ -6137,7 +6802,6 @@ def cmd_close(args):
         die("session document %s does not match the reflected session %s" % (doc.get("id"), sid))
     # the podcast sources are asked for once, in the first Listening section: what the learner
     # answered is in the reflection; no answer is kept as "none named", so it is not asked again
-    refl = load_json_arg(reflection) or {}
     if refl.get("podcast_sources") is not None:
         st["profile"]["podcast_sources"] = podcast_sources(refl["podcast_sources"], "reflection podcast_sources")
         res["podcast_sources"] = st["profile"]["podcast_sources"]
@@ -6337,7 +7001,8 @@ def cmd_review_doc(args):
 PLAN_FLAGS = ("--allow-repeat", "--no-drill", "--force-drill", "--no-new", "--no-case")
 
 
-def main(argv=None):
+def build_parser():
+    """The command line: every command with its options (the table of them: COMMANDS)."""
     ap = argparse.ArgumentParser(prog="cme.py", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--today")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -6373,6 +7038,8 @@ def main(argv=None):
     s.add_argument("--no-evidence", action="store_true")
     s = command("keys", cmd_keys, work=False); s.add_argument("paths", nargs="+"); s.add_argument("--plan")
     s = command("key-table", cmd_key_table, work=False)
+    s = command("command-table", cmd_command_table, work=False)
+    s = command("file-table", cmd_file_table, work=False)
     s = command("verify", cmd_verify); s.add_argument("--store", required=True)
     s = command("testing-note", cmd_testing_note); s.add_argument("--feedback", required=True); s.add_argument("--session")
     s = command("stats", cmd_stats); s.add_argument("--all", action="store_true")
@@ -6396,7 +7063,11 @@ def main(argv=None):
         p.add_argument("--today", dest="today_sub")
     for name in ("start", "answer", "sent", "present", "save", "close"):     # the round's clock: another time than now
         sub.choices[name].add_argument("--at")
-    args = ap.parse_args(argv)
+    return ap
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
     if getattr(args, "today_sub", None):
         args.today = args.today_sub
     try:

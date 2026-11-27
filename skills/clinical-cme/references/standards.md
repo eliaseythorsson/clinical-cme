@@ -207,9 +207,8 @@ headings.
 |---|---|
 | `## Reveal` | the reveal line, and the drill if there is one |
 | `## Model answer` | the final diagnosis and the model answer in one paragraph |
-| `## Rubric` | the expected elements of each stage, as a checklist to mark ✓ ◐ ✗ |
 | `## Differential` | the table of how the differential separates (`feedback_guide.md` §2 C.3), complete, with the incidental findings and why they are noise |
-| `## Briefing` | a briefing outline for each rubric element a learner could plausibly miss |
+| `## Briefing` | a briefing outline for each rubric element (the key's rubric block, rule 9) a learner could plausibly miss |
 | `## Pearls` | one to three pearls or pitfalls |
 | `## Reading` | the reading pointers for the round |
 
@@ -338,6 +337,35 @@ diagnosis: exercise-associated hyponatraemia
 twist: looked hypovolaemic
 <!-- /key -->
 ```
+
+**The rubric block.** A focused question and the case carry their rubric beside the key header,
+in the same sealed file and outside the text to present, one expected element per line; the
+case's elements are grouped under a line `Stage 1` and a line `Stage 2` (a one-step case has
+one group, or none). An MCQ has none: its key is the correct option. The engine copies the
+elements into the grading form, where the examiner marks each hit, partial or missed, so
+write each as one line that can be marked against an answer (what makes a good element:
+`case_design.md` §11.3 for a focused question; for the case, the decisions of each stage).
+
+```
+<!-- rubric: Q4 -->
+- the decision: hold warfarin and give oral vitamin K
+- the decisive reason: INR above 9 with only minor bleeding
+- the safety element: no prothrombin complex concentrate without major bleeding
+<!-- /rubric -->
+
+<!-- rubric: case -->
+Stage 1
+- exercise-associated hyponatraemia high in the differential
+- serum and urine osmolality and urine sodium requested
+Stage 2
+- hypertonic saline bolus for severe symptoms, with the correction limit
+<!-- /rubric -->
+```
+
+4. A rubric block starts `<!-- rubric: Q4 -->` (the key's own id) and ends `<!-- /rubric -->`;
+   one per focused question and one for the case, each with at least one element. A missing,
+   empty or unclosed block, one for an MCQ or for a key with no header, or one inside a
+   `present` or `bank` block stops the round as a bad header does.
 
 ## Rule 10. Results the learner did not see
 

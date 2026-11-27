@@ -110,9 +110,9 @@ In this order:
    (rule 9), then:
    - MCQ: the correct option and a one-line reason; a few words per distractor on the
      scenario in which it would be right.
-   - Focused question: best answer (two to four sentences); rubric (two to four one-line
-     elements); acceptable alternatives and how they score; unacceptable answers
-     (`case_design.md` §11.3).
+   - Focused question: its **rubric block** right after the header (two to four one-line
+     elements, rule 9); best answer (two to four sentences); acceptable alternatives and how
+     they score; unacceptable answers (`case_design.md` §11.3).
 2. **Pre-flight**: one line (`case_design.md` §8, lines 6 and 10–16; the last three are
    rules 5–7).
 3. **Verification list**: one precise search per claim the feedback will rest on (guideline
@@ -125,8 +125,8 @@ In this order:
 ### `sealed_case.md`
 
 1. **Key**: its key header (`<!-- key: case -->`, rule 9), which holds the diagnosis and the
-   compact description for the log; then the decisive tests; the two or three leading
-   alternatives; the expected elements of each stage (the rubric); the drill, if any.
+   compact description for the log; its **rubric block** (the expected elements of each stage,
+   rule 9); then the decisive tests; the two or three leading alternatives; the drill, if any.
 2. **Results bank** (unfolding cases), between `<!-- bank -->` and `<!-- /bank -->`: the result
    of every investigation a competent clinician might reasonably order here, each as it would
    be reported, typically ten to fifteen; one line "Add if not ordered: <decisive test>; with:
@@ -154,8 +154,8 @@ is closed (rule 1.1–1.2 for what they must not hold). Then run the lint: `pyth
 file's folder>/../scripts/cme.py keys <output folder> --plan <plan>` (description "Prepare the
 round"). It prints names and counts only:
 
-- `problems`: key headers (rule 9) and kit sections (rule 8) that are missing or malformed.
-  Correct them until it prints `"ok": true`; a round prepared ahead is not kept while one is
+- `problems`: key headers and rubric blocks (rule 9) and kit sections (rule 8) that are
+  missing or malformed. Correct them until it prints `"ok": true`; a round prepared ahead is not kept while one is
   left (`cme.py finish-prepare` runs the same check).
 - `review`: the lint's judgement calls on rules 5 and 6, with the findings in `lint.md` in the
   output folder. Read it, correct what is a real breach, and run the check once more.

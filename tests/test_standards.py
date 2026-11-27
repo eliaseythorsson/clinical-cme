@@ -225,13 +225,13 @@ def test_a_round_without_a_case_keeps_its_reading_pointers_in_the_questions_kit(
 
 
 def test_blocking_problems_are_all_named_and_no_revision_gets_past_them(nxt):
-    edit(nxt, "kit_case.md", "## Rubric\n", "")
+    edit(nxt, "kit_case.md", "## Pearls\n", "")
     edit(nxt, "sealed_questions.md", "stem_summary: Example stem Q1\n", "")
     for extra in ((), ("--revised",), ("--no-evidence",)):
         error = refused(nxt, *extra)
-        assert "key Q1: 'stem_summary' is missing" in error and "section 'Rubric' missing" in error
+        assert "key Q1: 'stem_summary' is missing" in error and "section 'Pearls' missing" in error
     # corrected, the same command stashes
-    edit(nxt, "kit_case.md", "## Reading\n", "## Rubric\n## Reading\n")
+    edit(nxt, "kit_case.md", "## Reading\n", "## Pearls\n## Reading\n")
     edit(nxt, "sealed_questions.md", "type: mcq\n", "type: mcq\nstem_summary: Example stem Q1\n")
     _, out = nxt.finish()
     assert out["stashed"] is True
@@ -239,7 +239,7 @@ def test_blocking_problems_are_all_named_and_no_revision_gets_past_them(nxt):
 
 def test_headings_may_be_of_any_level_and_longer_than_the_name(nxt):
     text = read(nxt.p("next", "kit_case.md"))
-    text = text.replace("## Rubric\n", "### Rubric — Stage 1 and Stage 2\n").replace("## Reading\n", "# Reading pointers:\n")
+    text = text.replace("## Differential\n", "### Differential — Stage 1 and Stage 2\n").replace("## Reading\n", "# Reading pointers:\n")
     text = text.replace("## Briefing\n", "## Briefings\n").replace("## Pearls\n", "## **Pearl**\n")
     nxt.write(os.path.join("next", "kit_case.md"), text)
     _, out = nxt.finish()

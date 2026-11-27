@@ -27,6 +27,10 @@ _Avoid_: answer sheet, solution
 The few fixed lines at the top of a key (topic, stem summary, aspect, compact case, selection reason, the gap it retests) that the state engine reads.
 _Avoid_: metadata, front matter
 
+**Rubric**:
+The expected elements of a focused question's or the case's answer, one line each (the case's grouped by stage), that the examiner marks hit, partial or missed. The author writes it in a **rubric block** beside the key header, where the state engine reads it.
+_Avoid_: checklist, marking scheme
+
 **Results bank**:
 The prepared results of tests the learner may order in Stage 1 of a case.
 
@@ -64,6 +68,13 @@ The verbatim, append-only record of every round, one session document each.
 **Round record**:
 What the ledger keeps of one round: its items with topic, score, confidence and coding, the gaps and the compact case. The state engine builds it from the key headers and the examiner's grading.
 _Avoid_: round JSON (for the assembled record)
+
+**Grading form**:
+The skeleton of the round's grading that the state engine writes once a part's answers are in: one entry per key, with what the key headers and the ledger already know (topic, aspect, retest, evidence depth, position notes, the rubric's elements) and blanks for the marks, scores, confidence and coding, plus how to fill it and the allowed codes. The examiner fills it in; `save` records it.
+_Avoid_: round template, grading sheet
+
+**Reflection form**:
+The same for the reflection: written when the reflection arrives, with a blank comfort rating per topic tested and the shapes of a self-reported gap, a learner-set score, a closed gap and a stop with its position note.
 
 **Undo record**:
 What a round's session entry keeps of only what the round changed in the ledger (topics, gaps, resolved gaps, comfort ratings) and its own gaps as written, so it can be taken out and applied again. It holds a topic only while the round is the latest on it.

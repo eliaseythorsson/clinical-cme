@@ -41,6 +41,8 @@ do not add one. Run `claude plugin validate .` after touching either manifest.
 - Domain vocabulary: `CONTEXT.md`. Decisions: `docs/adr/`. Current plan: `docs/plan-v5.md`.
 - A rule for writing items is written once, in `references/standards.md`; briefs cite its number.
   After changing `KEY_*` in `cme.py`, paste `cme.py key-table` into rule 9 (a test compares them).
+- After changing a command or a work-folder file, paste `cme.py command-table` and `cme.py file-table`
+  into `state_schema.md` §6 and §6.1 (a test compares them).
 - Never commit learner data (`data/`, `state.json`, session logs).
 
 ## Agent skills

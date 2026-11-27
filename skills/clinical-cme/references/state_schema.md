@@ -175,42 +175,42 @@ session drops them and marks the reflection skipped.
 
 Teaching points are the `key_learning` lines, identified as `<id>.<n>` (`S0021.2`).
 
-## 2. Round JSON (`round.json`) and the round record
+## 2. The grading form (`round.json`) and the round record
 
-The examiner writes `round.json` with **the grading only**: each item names its key header
-(`standards.md` rule 9) and carries the score, the confidence and the coding. `save` fills in
-everything the author already wrote down, and writes the result, the **round record**, to
-`record.json` in the work folder.
+The examiner does not write `round.json` from nothing. Once a part's answers are in, `answer`
+writes the **grading form** into it: one entry per key id of that part, with everything the
+author and the ledger already know filled in, and blanks for what only grading decides. The
+case's entry is added when its last answer is in, beside the short questions' as graded; a form
+never overwrites what was filled in. The form carries its own instructions and the allowed
+codes, from the engine's lists, in `_form` (`how`, `codes`, `shapes`); `save` takes it off.
 
 ```json
-{
-  "items": [
-    {"key": "Q1", "mastery": 1, "correct": false, "confidence": "guess",
-     "coding": {"errors": [{"element": "…", "category": "knowledge", "knowledge_type": "outdated", "severity": "important"}]}},
-    {"key": "Q2", "mastery": 3, "confidence": "unsure",
-     "coding": {"art": {"MGMT": 1}, "errors": [{"element": "…", "category": "knowledge", "knowledge_type": "numeric",
-                                                "art_domain": "MGMT", "severity": "important"}]}},
-    {"key": "case", "mastery": 3, "confidence": "unsure",
-     "coding": {"art": {"DG": 2, "PR": 1, "DDX": 1, "TEST": 2, "META": 0, "MGMT": 1}, "idea": {"I": 2, "D": 1, "E": 1, "A": 0},
-                "errors": [{"element": "…", "stage": 1, "category": "synthesis", "art_domain": "DDX",
-                            "bias": ["premature_closure"], "bias_evidence": "'clearly dry from the run'", "severity": "critical", "confidence": "sure"}]}}
-  ],
-  "gaps": [{"topic": "RENAL-02", "gap": "Precise description incl. still-unresolved prior parts", "source": "graded"}],
-  "resolved": [{"topic": "CARD-03", "note": "What was closed this time"}],
-  "key_learning": ["One-line teaching points"],
-  "summary": "One or two sentences on the main teaching.",
-  "grade_changes": [], "drill": {"code": "bias:premature_closure", "result": "fell_for"},
-  "errata": [{"corrects": "S0012", "point": "…", "correction": "…", "source": "…"}],
-  "pending_errata_logged": "all",
-  "reading": [{"topic": "RENAL-02", "title": "<guideline or article, with its year>", "link": "https://…",
-               "section": "section 9 (indications for surgery) and its table", "minutes": 8,
-               "why": "the thresholds you were unsure of"}],
-  "listening": [{"topic": "CARD-03", "link": "https://open.spotify.com/episode/<id, 22 letters and digits>",
-                 "show": "<show>", "title": "<episode title>", "minutes": 52,
-                 "why": "when to start anticoagulation after surgery, the step you were unsure of",
-                 "source": "kit"}]
-}
+{"_form": {"how": ["…"], "codes": {"confidence": ["sure", "unsure", "guess", "…"], "art": {"DG": "0-2, …"}, "…": "…"},
+           "shapes": {"error": {"…": "…"}, "gap": {"…": "…"}, "…": "…"}},
+ "items": [
+  {"key": "Q2", "type": "focused", "topic": "HEME-04", "label": "Anticoagulation reversal", "aspect": "management",
+   "given": {"depth": {"level": 2, "name": "studies", "in_a_row": 1}},
+   "rubric": [{"element": "the decision: …", "mark": null, "note": ""}, {"element": "the decisive reason: …", "mark": null, "note": ""}],
+   "mastery": null, "confidence": null,
+   "coding": {"art": {"DG": null, "PR": null, "DDX": null, "TEST": null, "META": null, "MGMT": null}, "errors": []}}],
+ "gaps": [], "resolved": [], "key_learning": [], "grade_changes": [], "errata": [], "reading": [], "listening": []}
 ```
+
+- Filled in from the key header (rule 9): `key`, `type`, `topic`, `label`, `aspect`, `retests`;
+  the case's rubric elements carry their `stage`. From the ledger, under `given` (read, not
+  edited): `depth` (§4.2) and `positions` (`standards.md` rule 12), as `answer` printed them.
+  From the plan: `drill` with its `code` when the item carries one; `pending_errata_logged:
+  "all"` when errata are pending. `listening` only with listening on.
+- The rubric is the author's rubric block (`standards.md` rule 9), one element per line, each to
+  be marked `hit`, `partial` or `missed`. A key without a block (a round written before rubric
+  blocks) gets an empty list and `answer` names it under `rubric_missing`: mark the rubric the
+  key or the kit holds, as before.
+- `save` stops, recording nothing, while a `mastery`, an MCQ's `correct` or the drill's
+  `result` is still blank. A blank `confidence` means the learner gave none; ART and IDEA
+  scores left blank are dropped (a focused question scores only the domains it tested; the
+  case is warned about). It warns when a rubric element is not marked, or when more elements
+  are missed or partial than the item has error records (one per element,
+  `analysis_framework.md` §1.3). The marks stay in `record.json`; the ledger keeps the coding.
 
 What `save` fills in, and from where:
 
@@ -318,7 +318,13 @@ The round record, as `save` writes it to `record.json`. A
   out a pick that is not complete, with a warning naming what to correct.
 - Omit `reflection`: the first save is provisional. `save` can be run again in the same job: it undoes the round and records it again (§3.1).
 
-## 3. Reflection JSON (input to `close`)
+## 3. The reflection form (`reflection.json`, input to `close`)
+
+When the reflection arrives, `answer --part reflection` writes the **reflection form** (only if
+there is no `reflection.json` yet): `_form` with how to fill it, the round's items (`round`:
+key id where known, type, topic, label, for matching what the learner names) and the shape of
+each list entry; then the fields to fill. `close` takes `_form` off, and drops blanks (a null
+comfort rating, performance or reading time, an empty position note).
 
 ```json
 {"topic_comfort": {"RENAL-02": 5, "CARD-03": 4}, "performance": 3,
@@ -331,9 +337,10 @@ The round record, as `save` writes it to `record.json`. A
  "learner_closed_gaps": [{"gap": "G0007", "note": "the learner's words"}],
  "learner_stops": [{"item": "Q3", "type": "focused", "topic": "HEME-04", "score": 5,
                     "position": {"point": "the one decision point", "text": "the learner's words"}}],
- "podcast_sources": {"trusted": ["The Curbsiders"], "avoid": []},
- "errata": [], "key_learning": [], "resolved": []}
+ "podcast_sources": {"trusted": ["The Curbsiders"], "avoid": []}}
 ```
+
+`podcast_sources` is in the form only while the learner has not been asked (`listening.ask_sources`).
 
 - `self_gaps` map each shaky area to a blueprint ID; an untested topic is created (or pulled
   forward) to within seven days. If no ID fits, make one in the blueprint's style and say so.
@@ -613,21 +620,23 @@ fixed names (§6.1). A command that writes puts its files into the publish set (
 and prints the whole set as `files` (`as`: the store path, `path`: the local file, in write
 order with the ledger last) and `publish`, the path of the manifest `W/publish.json`.
 
+<!-- command-table: generated by `cme.py command-table`; do not edit by hand -->
 | Command | Use |
 |---|---|
 | `open --work W --store DIR [--version V] [--prefs J] [--reread]` | Set up the work folder for any job from `DIR`, the local copy of the store as just read: the store's layout (`DIR/data/state.json`, `DIR/data/page.json`, `DIR/data/prepared.json`, `DIR/index.html`, `DIR/data/sessions/<id>.json`) or the files side by side (`DIR/state.json`, …). Writes `W/work.json` and an empty manifest carrying `V`, the store version read. If `W` holds an earlier job (answers, a publish set, drafts of a next round), its files are first moved to `W/earlier/<n>/` (`earlier_set_aside`). Prints neutral status: `gen`, `next_id`, counts, `review_due`, `testing`, the block; never a topic. `--reread`: the same job on a fresh read after a refused publish (`store.md` §4.1): the job's own files stay, the publish set is dropped, and the job's commands are run again. |
 | `start --work W [--store DIR [--version V]] [--prefs J] [plan options] [--no-prepared]` | Start a round. With `--store` it does what `open` does first; without, it continues the job that is open (a settings change or a late reflection earlier in the same conversation), from the ledger that job wrote. The plan is written to `W/plan.json`. Prints the neutral status with the plan's counts (MCQs, focused, case, `estimated_minutes`, and `estimate_rounds` when the estimate is at the learner's own pace, §6.2) under `plan`, plus `helpers`, `prepare_ahead` and `speed_settings_new`. No topic names. With a plan it also prints what the first message needs, so that nothing else is run or read before it: `opening` (the opening line, word for word: the mix, the minutes, "(based on your last N rounds)" once rounds are timed, the block's line, with its reason when a block starts, and the last saved session) and `started_at` (when the round's clock started, §6.2; nothing to copy). `--prefs` is the page's `cme/prefs` document (§7.1); `page_settings_applied` says when it changed the mix or brought a new paragraph (which `start` writes to the ledger at once, into the publish set; §7.1), `pitch` holds the learner's two paragraphs for the examiner and `labels_needed` the display labels still to derive (§1), and `round_mix` says when a prepared round was written for another mix than the one in force (§8). The prepared round is read from the store copy (§8): when it still fits, `prepared.used` is true, `present` holds the first part's text to send (`prepared.present_block` says which) and the drafted files (`prepared.ready`: `sealed_questions.md`, `sealed_case.md`, `kit_questions.md`, `kit_case.md`, `evidence_questions.md`, `evidence_case.md`) are written into the work folder, with `prepared.unchecked` naming the sealed files that came without an evidence file (start a checker for each); otherwise `prepared.why` says why not and the round is planned as usual. Plan options, for this round only: `--mcqs N`, `--focused N`, `--no-case`, `--domain CODE`, `--no-new`, `--allow-repeat`, `--no-drill`. |
 | `present --work W --block questions\|case\|bank` | Print only the text the learner is to see from the sealed files in `W` (one `present` block, or the case's results bank), so it can be sent without opening the keys. For the first part of a round written now it also notes that the part went out (§6.2). |
-| `answer --work W --part questions\|case\|final\|notes\|reflection [--file F \| --text T]` | Append what the learner answered for one part to `W/answers.md`, exactly as given (default: standard input). Earlier parts are never rewritten; the same text for the same part is added once; a second message for a part is added after the first. Prints the part names filed so far, never the text. With a part that completes its answers (`questions`; `final`; `case` for a one-step case) it also prints `depth`: the evidence depth of each of that part's items by key id (`level` 1–4, `name`, `in_a_row`; §4.2), read from the key headers and the ledger, for the feedback about to be written. No `depth` with `evidence_ladder` false. It also prints `positions`: the learner's position notes in force on each item's topic, by key id (`standards.md` rule 12), for the grading. It also notes when it ran, as the time the learner's message arrived (§6.2): run it first when a message arrives. |
+| `answer --work W --part questions\|case\|final\|notes\|reflection [--file F \| --text T]` | Append what the learner answered for one part to `W/answers.md`, exactly as given (default: standard input). Earlier parts are never rewritten; the same text for the same part is added once; a second message for a part is added after the first. Prints the part names filed so far, never the text. With a part that completes its answers (`questions`; `final`; `case` for a one-step case) it also prints `depth`: the evidence depth of each of that part's items by key id (`level` 1–4, `name`, `in_a_row`; §4.2), read from the key headers and the ledger, for the feedback about to be written. No `depth` with `evidence_ladder` false. It also prints `positions`: the learner's position notes in force on each item's topic, by key id (`standards.md` rule 12), for the grading. With such a part it also writes the **grading form** into `W/round.json` (§2), and with `reflection` the **reflection form** into `W/reflection.json` (§3), and prints `form` (the file, the key ids `added`, `rubric_missing` for a focused question or case whose key has no rubric block); a form never overwrites what was filled in. It also notes when it ran, as the time the learner's message arrived (§6.2): run it first when a message arrives. |
 | `sent --work W --part questions\|questions_feedback\|case\|stage2\|feedback\|close [--at T]` | Not part of a normal round. Notes when a message went out, where the engine cannot tell (§6.2): no file was written as sent, or it was written late. |
-| `save --work W` | First save after the final feedback: the round is recorded in the ledger, the session document is written (part A assembled in the order of the round from the sealed `present` blocks, Stage 2 as sent, the answers, the questions' feedback and the final feedback), with the page file (§7) and an emptied `data/prepared.json`. Everything is found by its fixed name (§6.1); the page settings given at the start are applied so the mix is kept in the ledger. Prints per-topic next due, warnings, `errata_to_log`, and `files`. If the learner's `index.html` is older than the skill's template, the new one joins the publish set (`page_upgraded`). Run again in the same job, it undoes the round and records it again (§3.1), so it gives the same result (a settings change made earlier in the same job is kept). Records the time measured so far (`minutes`, `timing`; §6.2). |
-| `close --work W [--reflection J] [--session ID]` | Second save: the reflection is applied and part B goes into the session document, with the page file. It continues from the current ledger: the one `save` wrote in this job, or, for a reflection given at a later session, the ledger as read; the session document then comes from the store copy (`data/sessions/<id>.json`), and the command stops if it was not read. The reflection JSON is `W/reflection.json` unless given inline. Can be run again after a correction to `B.md` or to the reflection (§3.1), until `override` changes the round. Completes the round's measured time (the reading of the final feedback, up to the reflection) and prints `time_hint` once five rounds are timed (§6.2): one line of the closing message. |
-| `override --work W [--scores J] [--close-gaps J] [--stops J] [--session ID]` | After the close: a score the learner sets themselves, a gap closed at the learner's request and a stop with its position note (the entries of `learner_scores`, `learner_closed_gaps` and `learner_stops`, §3). Writes the ledger, the session document (`learner_changes`, a "Set by the learner" addendum) and the page file into the publish set. Refused while the round is unreflected (use the reflection JSON) and, for scores, for a round from before the last review |
+| `save --work W` | First save after the final feedback: the round is recorded in the ledger from the grading form as filled in (`W/round.json`, §2; a blank score stops it, nothing recorded), the session document is written (part A assembled in the order of the round from the sealed `present` blocks, Stage 2 as sent, the answers, the questions' feedback and the final feedback), with the page file (§7) and an emptied `data/prepared.json`. Everything is found by its fixed name (§6.1); the page settings given at the start are applied so the mix is kept in the ledger. Prints per-topic next due, warnings, `errata_to_log`, and `files`. If the learner's `index.html` is older than the skill's template, the new one joins the publish set (`page_upgraded`). Run again in the same job, it undoes the round and records it again (§3.1), so it gives the same result (a settings change made earlier in the same job is kept). Records the time measured so far (`minutes`, `timing`; §6.2). |
+| `close --work W [--reflection J] [--session ID]` | Second save: the reflection is applied and part B goes into the session document, with the page file. It continues from the current ledger: the one `save` wrote in this job, or, for a reflection given at a later session, the ledger as read; the session document then comes from the store copy (`data/sessions/<id>.json`), and the command stops if it was not read. The reflection JSON is `W/reflection.json` (the reflection form as filled in, §3) unless given inline. Can be run again after a correction to `B.md` or to the reflection (§3.1), until `override` changes the round. Completes the round's measured time (the reading of the final feedback, up to the reflection) and prints `time_hint` once five rounds are timed (§6.2): one line of the closing message. |
+| `override --work W [--scores J] [--close-gaps J] [--stops J] [--session ID]` | After the close: a score the learner sets themselves, a gap closed at the learner's request and a stop with its position note (the entries of `learner_scores`, `learner_closed_gaps` and `learner_stops`, §3). Writes the ledger, the session document (`learner_changes`, a "Set by the learner" addendum) and the page file into the publish set. Refused while the round is unreflected (use the reflection JSON) and, for scores, for a round from before the last review. |
 | `addendum --work W --md ADD.md [--session ID]` | Append later discussion to a session document (default: the last session; the document comes from the publish set or the store copy). |
 | `prepare --work W [--if-needed] [--allow-unreflected]` | Plan the next round (as of tomorrow) from the current ledger, into `W/next/plan.json`. Prints counts only, or `"prepare": false` with the reason (setting off, reflection pending, or — with `--if-needed` — a usable round is already prepared in the store). `--allow-unreflected` plans although the last session has no reflection yet (the scheduled task uses it). A paragraph the learner wrote on the page (in the `--prefs` given to `open`) is written to the ledger first, into the publish set, and reported as `page_settings_applied` with the `files` (§7.1); a round prepared for the old words does not count as usable. |
 | `finish-prepare --work W [--revised] [--no-evidence]` | After the checkers: finish preparing the round planned in `W/next/plan.json` and drafted in `W/next`. First lints it against the rulebook (`standards.md`, "The lint"). **Blocking**: the key headers of the sealed files against the plan, as `keys --plan` checks them, and the kits and their sections (rule 8); a problem is an error (exit 2, nothing stashed) that lists every one by file, key, field or section, whatever the evidence says and also with `--no-evidence` or `--revised`. **Judgement calls** (an abbreviation that looks undefined, rule 5; time anchors that look mixed, rule 6): counted in `lint` (`abbreviations`, `time_anchors`, `where` by file, `details`: the path of `W/next/lint.md`, where the findings are written for the author and never printed). Then reads the last two lines of each evidence file (`Checked: <date>, <n> claims, <n> not verified` and `Keys contradicted: <n>`, `evidence_check.md` §4) for every sealed part the round has, and prints counts and file names only: `evidence` (keys contradicted per file), `contradicted` (the total), `not_verified` (per file: `claims`, `not_verified`, and `untried`, the "not verified" blocks without a `Tried:` line; `not_verified` is the larger of the line's number and the blocks so marked), `not_verified_total`, `claims_total`, `recheck` (the evidence files that go back to their checker: more than a third of the file's claims not verified, or any `untried`), `revise` and `stashed`. Nothing contradicted, no judgement call and no file to recheck → the round is packed and joins the publish set as `data/prepared.json` (§8) in the same command. Otherwise → `"stashed": false` and a `next` line: the checker retries the files in `recheck` once, then the author revises once (`"revise": true` when a key is contradicted or the lint made a judgement call; after a retry it also carries what was confirmed into the kits), and the command is run again with `--revised`, which stashes; what is still found is then listed under `warnings` ("accepted after one revision: …", "accepted after one retry: … n of m claims not verified"). An evidence file that is missing, empty or without either count line in that form (also one that counts no claims, or more not verified than claims) is an error (exit 2, nothing stashed), never a count of zero. `--no-evidence` is for a session that runs no checker: the round is stashed without evidence files, so the sources are checked at the session; the lint runs all the same. The first part's sealed file must be there; a missing case is a warning (it is then written at the next session). |
-| `keys DIR\|SEALED… [--plan PLAN]` | The author's check before finishing: the key headers of sealed files (`standards.md` rule 9) and, for a folder, the kits' sections (rule 8; a kit not written yet is not a problem here). Prints the key ids each file has and `problems`, naming file, key, field and section only, never a topic or a value; with `--plan`, also whether the number of headers of each type matches the plan's counts. `review` lists the lint's judgement calls as counts per file; the findings go to `lint.md` in the folder (`details`). Exit code 1 when there is a problem; `review` alone does not fail it. |
+| `keys DIR\|SEALED… [--plan PLAN]` | The author's check before finishing: the key headers and rubric blocks of sealed files (`standards.md` rule 9) and, for a folder, the kits' sections (rule 8; a kit not written yet is not a problem here). Prints the key ids each file has and `problems`, naming file, key, field and section only, never a topic or a value; with `--plan`, also whether the number of headers of each type matches the plan's counts. `review` lists the lint's judgement calls as counts per file; the findings go to `lint.md` in the folder (`details`). Exit code 1 when there is a problem; `review` alone does not fail it. |
 | `key-table` | Prints the key-header table of `standards.md` rule 9 from the engine's `KEY_*` definitions; a test fails when the rulebook's copy differs. |
+| `command-table`, `file-table` | Print this table and the work-folder table of §6.1 from the engine's own rows; a test fails when the copy here differs, or when a command is missing from the table. |
 | `verify --work W --store CHECK` | Testing mode: compare the publish set with the store read again into `CHECK`; the result is also written to `W/verify.json`. |
 | `testing-note --work W --feedback J` | Testing mode: the learner's quick feedback and `W/verify.json`, as `data/testing/<id>.json` for this job's round. |
 | `stats --work W` | Review figures: period, previous period, all time; gaps, calibration, teaching points unchecked, blind spots; `timing` (medians of the last timed rounds: minutes, answering, waiting, reading; the pace; the hint); `positions`, the notes in force with their topic's `label` and the day each `lapses`. Writes nothing. |
@@ -647,6 +656,7 @@ Maintenance tools, outside the protocol; they take their own files and folders:
 | `rebuild-page ROOT` | Rebuild `ROOT/data/page.json` (§7) from the session and review files and the ledger of a folder in the store's layout; `reindex` is its old name and still works. |
 | `blueprint-md FILE --out BP.json` | Convert a Markdown blueprint. |
 | `validate STATE` (or `validate --work W`) | Structural check. |
+<!-- /command-table -->
 
 Add `--today YYYY-MM-DD` (before the command) to fix the date. No command writes over a file
 it read: the store copy stays as it was read, so a failed step can be run again.
@@ -655,6 +665,7 @@ it read: the store copy stays as it was read, so a failed step can be run again.
 
 One job is worked on in one scratch folder, and every file has a fixed name there:
 
+<!-- file-table: generated by `cme.py file-table`; do not edit by hand -->
 | File | Written by | Read by |
 |---|---|---|
 | `work.json` | `open`, `start`: the store copy, the ledger as read, the store version, the session ID, the page settings; `save`, `close`: the round each recorded (`saved`, `closed`), so that either can be run again in this job | every command |
@@ -662,9 +673,9 @@ One job is worked on in one scratch folder, and every file has a fixed name ther
 | `sealed_questions.md`, `sealed_case.md`, `kit_*.md`, `evidence_*.md` | the author and the checker, or `start` from a prepared round | `present`, the examiner once a part is answered, `save` (the `present` blocks) |
 | `answers.md` | `answer`, one block per part (`<!-- answers: questions -->` … `<!-- /answers -->`) | `save` (questions, case, final, notes), `close` (reflection) |
 | `feedback_questions.md`, `stage2.md`, `feedback.md` | the examiner: each message exactly as sent | `save` |
-| `round.json` (§2) | the examiner: the grading, each item naming its key | `save` |
+| `round.json` (§2) | `answer`: the grading form, one entry per key id, once a part's answers are in; the examiner fills it in | `save` |
 | `record.json` (§2), `A.md` | `save`: the round record, built from the key headers and `round.json`; part A as assembled | the simulation's checks; anyone who wants to see what was recorded |
-| `reflection.json` (§3), `B.md` (`session_log.md` §3) | the examiner | `close` |
+| `reflection.json` (§3), `B.md` (`session_log.md` §3) | `answer --part reflection`: the reflection form, which the examiner fills in; `B.md`: the examiner | `close` |
 | `next/` | `prepare` (`plan.json`), the author and the checker (the next round's files), `finish-prepare` (`lint.md`: what the lint found, for the author) | `finish-prepare`; the author for `lint.md` |
 | `publish/` | every command that writes: the newest version of each store file this job changed, at its store path | the commands that follow (the current ledger is `publish/data/state.json`), `verify`, whoever publishes |
 | `publish.json` | every command that writes: `{"version": <store version read>, "files": [{"as", "path"}, …]}`, in write order | whoever publishes |
@@ -672,6 +683,7 @@ One job is worked on in one scratch folder, and every file has a fixed name ther
 | `times.json` | `start`, `present`, `answer`, `sent`, `save`, `close`: when each step of the round happened (§6.2) | `save`, `close` |
 | `close_from.json` | `close`: the round as it stood before its reflection, and its entry as `close` left it, so that `close` can be run again (§3.1) | `close` |
 | `earlier/<n>/` | `open`, `start`: the files of an earlier job in the same folder, set aside | nobody |
+<!-- /file-table -->
 
 The **current ledger** of a job is the one in the publish set, or the ledger as read while
 nothing has been written. Any other store file (the page file, the page, a session document, the

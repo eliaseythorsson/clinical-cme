@@ -243,7 +243,18 @@ def key_header(kid, st, item, taken):
         if item["slot"] == "focused":
             lines.append("aspect: %s" % (item.get("aspect_hint") or "diagnosis"))
         lines.append("stem_summary: Example stem %s" % kid)
-    return "<!-- key: %s -->\n%s\n<!-- /key -->" % (kid, "\n".join(lines))
+    return "<!-- key: %s -->\n%s\n<!-- /key -->%s" % (kid, "\n".join(lines), rubric(kid, item["slot"]))
+
+
+def rubric(kid, slot):
+    """The rubric block beside a focused question's or the case's key header (rule 9); none for an MCQ."""
+    if slot == "case":
+        return ("\n<!-- rubric: case -->\nStage 1\n- SEALED element: the leading diagnosis\n- SEALED element: the "
+                "discriminating test\nStage 2\n- SEALED element: the treatment\n<!-- /rubric -->")
+    if slot == "focused":
+        return ("\n<!-- rubric: %s -->\n- SEALED element: the decision\n- SEALED element: the decisive reason\n"
+                "<!-- /rubric -->" % kid)
+    return ""
 
 
 def episode_link(kid, n):
@@ -270,7 +281,7 @@ def deeper(planned):
 def sealed_files(st, plan):
     """{file name: text} for `plan`. Everything the learner must not see before answering sits
     outside the present and bank blocks and carries the word SEALED; each key starts with its
-    key header, and the kits have the sections of the rulebook (references/standards.md, rule 8),
+    key header (with its rubric block for a focused question and the case), and the kits have the sections of the rulebook (references/standards.md, rule 8),
     the "Listening" section among them unless the plan has listening off, and "Deeper" notes for
     an item the plan gives an evidence depth."""
     listening = plan.get("listening") is not False

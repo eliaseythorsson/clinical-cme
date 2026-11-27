@@ -436,10 +436,11 @@ them. That substance is put into a kit when the items are written, by whoever wr
 sections hold the candidate episodes for §2 E2.
 
 At grading, correct the kit's figures and sources from the evidence check before using them,
-mark the rubric against what the learner wrote, scale each briefing to the answer (§4) and
-lead with the learner's own words (§3). The kit never replaces reading the answer: credit
-what is defensible though unforeseen, and write the parts only the answer can prompt
-(transfer gaps, calibration, the errors' coding) fresh.
+mark the rubric in the grading form (`answer` writes it into `round.json`) against what the
+learner wrote, scale each briefing to the answer (§4) and lead with the learner's own words
+(§3). The kit never replaces reading the answer: credit what is defensible though unforeseen,
+and write the parts only the answer can prompt (transfer gaps, calibration, the errors'
+coding) fresh.
 
 **The grader is not the author.** Where an author agent wrote the items, the key and the kit
 are one clinician's view, and you are the second. Before using a key, ask whether you would

@@ -30,6 +30,10 @@ aspect: testing
 stem_summary: Thunderclap headache, normal CT at 8 hours, what next
 <!-- /key -->
 Best answer: lumbar puncture.
+<!-- rubric: Q2 -->
+- RUBRIC-DECISION: lumbar puncture
+- RUBRIC-REASON: CT sensitivity falls after six hours
+<!-- /rubric -->
 
 <!-- present: questions -->
 Q1. stem ... A B C
@@ -47,6 +51,13 @@ presentation: malaise and weight loss in a 60-year-old
 diagnosis: SECRET-DIAGNOSIS
 twist: normal inflammatory markers
 <!-- /key -->
+<!-- rubric: case -->
+Stage 1
+- RUBRIC-DDX: secretitis in the differential
+- RUBRIC-TEST: CT abdomen ordered
+Stage 2
+- RUBRIC-MGMT: excision
+<!-- /rubric -->
 Decisive tests: CT abdomen.
 <!-- bank -->
 CT abdomen: RESULT-TEXT
@@ -232,7 +243,7 @@ def test_keys_checks_headers_without_printing_content(rnd):
     rnd.write("sealed_questions.md", Q_KEYS.replace("topic: HEME-01\n", "").replace("aspect: testing", "aspect: Zebra"))
     r = rnd.run("keys", rnd.path, ok=False)
     assert r.returncode == 1
-    for word in ("HEME", "NEURO", "GEN-11", "Iron", "Zebra", "SECRET", "Microcytic", "G0001"):
+    for word in ("HEME", "NEURO", "GEN-11", "Iron", "Zebra", "SECRET", "Microcytic", "G0001", "RUBRIC"):
         assert word not in r.stdout
     assert "key Q1: 'topic' is missing" in r.stdout
 
