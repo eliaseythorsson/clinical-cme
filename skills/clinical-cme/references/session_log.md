@@ -47,6 +47,13 @@ tags, topics, score, format, drill), the reading pointers as the document's `rea
 and, when the round had a Listening section, the picks as its `listening` list
 (`state_schema.md` §2; the page shows both under "Reading & listening"):
 
+When the feedback was written from a draft (`feedback_guide.md` §9), `save` also compares each
+draft with the message as sent and keeps, as the document's `prepared_feedback`, which prepared
+blocks were used as prepared, which were changed and which were left out: `{"offered": 14,
+"as_prepared": ["Q1 model", …], "changed": ["Q4.2 missed"], "discarded": []}`. It is the log's
+record of how far the feedback was adapted to the answer; it is never written into the feedback,
+and the ledger does not keep it.
+
 - **Title**: "presentation — diagnosis or main point", under about 90 characters.
 - **Summary**: one or two sentences on the main teaching, not the score.
 - **Tags** (lowercase, hyphenated): the blueprint ID of every item, the final diagnosis, two to

@@ -297,11 +297,18 @@ class Script:
         logged = dict(ANSWERS, **(answers or {}))
         if "retyped_feedback" in self.faults:
             feedback = feedback.replace("you ordered it", "you asked for it")
+        if "live_left_in_feedback" in self.faults:
+            feedback = feedback.replace("Gap summary:", "[live: the gap summary] Gap summary:")
         self.put("feedback.md", feedback)
         for part in parts:
             if part not in self.filed:
                 self.answer(part, logged[part])
         self.put("round.json", rnd)
+        if "no_draft" not in self.faults:       # marks before text, then the draft (feedback_guide.md §9)
+            keys = [it.get("key") for it in rnd.get("items") or []]
+            for part, there in (("questions", any(k and k != "case" for k in keys)), ("case", "case" in keys)):
+                if there:
+                    cme("draft", "--work", self.work, "--part", part)
         cme("--today", TODAY, "save", "--work", self.work)
         self.store_files()
         assert self.turn_end("examiner", 15)["round_closed"] is False
@@ -386,7 +393,7 @@ def test_clean_round_passes_every_check_and_the_report_is_written(script):
     out, rep = s.report("--examiner-model", "model-a", "--learner-model", "model-b", "--quality", "4",
                         "--quality-note", "sound")
     assert out["ok"] is True and rep["ok"] is True
-    assert out["checks"] == {"blinding": True, "saved": True, "log": True, "standards": True, "listening": True}
+    assert out["checks"] == {"blinding": True, "saved": True, "log": True, "standards": True, "listening": True, "prepared": True}
     assert rep["checks"]["blinding"]["leaks"] == 0
     assert rep["checks"]["blinding"]["seal_lifted_at"] == {"questions": 3, "case": 8}
     assert rep["checks"]["saved"]["publish_set"] == ["data/sessions/S0001.json", "data/page.json",
@@ -583,3 +590,20 @@ def test_with_listening_off_nothing_is_expected(tmp_path):
     out, rep = s.report()
     assert out["ok"] is True and rep["checks"]["listening"]["on"] is False
     assert "| pass | turned off |" in open(out["report"], encoding="utf-8").read()
+
+
+def test_feedback_not_written_from_a_draft_fails_the_prepared_check(tmp_path):
+    """ADR 0009: marks before text, then the draft; a round saved without one fails."""
+    s = Script(tmp_path, faults=("no_draft",)).play()
+    out = sim("check", "--run", s.run, ok=False)
+    assert json.loads(out.stdout)["prepared"] is False
+    prepared = json.load(open(os.path.join(s.run, "checks.json")))["checks"]["prepared"]
+    assert "not written from a draft" in prepared["problems"][0]
+
+
+def test_a_live_part_left_in_the_feedback_fails_the_prepared_check(tmp_path):
+    s = Script(tmp_path, faults=("live_left_in_feedback",)).play()
+    sim("check", "--run", s.run, ok=False)
+    prepared = json.load(open(os.path.join(s.run, "checks.json")))["checks"]["prepared"]
+    assert prepared["problems"] == [
+        "the final feedback as sent still holds the draft's comment lines or a [live: …] part"]

@@ -234,8 +234,10 @@ def test_turn_1_sends_the_questions_before_any_reference_reading():
     after = after[after.index("**Behind the scenes**"):]
     assert "no reference" in before and "One shell call" in before and "one parallel batch" in before
     # the guides for grading and publishing are read behind the scenes, after the message is out
-    for name in ("standards.md", "feedback_guide.md", "analysis_framework.md"):
-        assert name not in before and name in after
+    # the examiner's one brief (#77): neither the rulebook nor the analysis framework before grading
+    assert "feedback_guide.md" not in before and "feedback_guide.md" in after
+    for name in ("standards.md", "analysis_framework.md"):
+        assert name not in text
     assert "`store.md` §4 (publishing)" in after
     # before the message, a reference is named only for the cases that are not a prepared round
     assert "only if a step fails or the store is not the page" in before

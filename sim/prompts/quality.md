@@ -14,7 +14,8 @@ make a point.
 - The round as it went, in order: every file in `{messages}/` (`NNN-examiner.md`,
   `NNN-learner.md`). Message 001 is the request that started the round.
 - What the examiner worked from, in `{work}/`: `sealed_questions.md` and `sealed_case.md` (the
-  items with their keys), `kit_*.md` (feedback notes) and `evidence_*.md` (source checks), where
+  items with their keys), `kit_*.md` (the feedback's text as prepared, in blocks) and `draft*.md` (that text as chosen by the
+  grades, before it was adapted and sent) and `evidence_*.md` (source checks), where
   they exist, and `round.json` (the grades given).
 - Whose guidelines apply: `config.guideline_region` and `profile.specialty` in
   `{store}/data/state.json`. Judge accuracy against current guidance for that region and the
@@ -48,7 +49,7 @@ nothing else in it except as said below.
 - Is every clinical claim correct, current and attributed to the right source?
 - Is each grade fair to what the learner actually wrote: nothing right marked wrong, nothing
   wrong let through?
-- Results the learner never ordered (rule 10 of `{skill}/references/standards.md`): are they
+- Results the learner never ordered (`{skill}/references/feedback_guide.md` §10.2): are they
   quoted only marked as unseen, with the feedback saying they were not ordered and what they
   would have changed? A result quoted as if it had been shown goes under `concerns`, starting
   the line "Rule 10:".

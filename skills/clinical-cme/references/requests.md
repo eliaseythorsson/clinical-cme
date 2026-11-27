@@ -67,7 +67,7 @@ On while the skill is being tested (`config.testing`; `testing` true in the `sta
 
 - **Case first** (`item_order` `case_first` in the `start` output): present the case first, the
   short questions after its Stage 1, Stage 2 last, and all feedback in one final message
-  (`feedback.md` only; `feedback_guide.md` §2).
+  (`feedback.md` only, from `draft --part all`; `feedback_guide.md` §2).
 - **No short questions**: the case is the first part. Turn 1 sends it (`present --block
   case`), and turns 3–5 follow.
 - **A specific topic by name**: allowed, but not blind; say so in one line and proceed. Run

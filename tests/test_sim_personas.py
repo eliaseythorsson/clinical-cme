@@ -174,7 +174,7 @@ def test_persona_expecting_an_unknown_check_is_refused(tmp_path):
 
 def test_weak_overconfident_round_passes_the_checks_and_its_confident_misses_are_counted(play):
     out, rep = play(Weak).report()
-    assert out["ok"] is True and out["checks"] == {"blinding": True, "saved": True, "log": True, "standards": True, "listening": True}
+    assert out["ok"] is True and out["checks"] == {"blinding": True, "saved": True, "log": True, "standards": True, "listening": True, "prepared": True}
     assert rep["persona"] == "weak-overconfident" and rep["round"]["confident_misses"] == 2
 
 
@@ -182,7 +182,7 @@ def test_dispute_round_holds_a_settled_dispute_in_the_log_and_the_grade_changes(
     s = play(Disputes)
     out, rep = s.report()
     assert out["ok"] is True
-    assert out["checks"] == {"blinding": True, "saved": True, "log": True, "standards": True, "listening": True, "dispute": True}
+    assert out["checks"] == {"blinding": True, "saved": True, "log": True, "standards": True, "listening": True, "prepared": True, "dispute": True}
     d = rep["checks"]["dispute"]
     assert d["grade_changes"] == [GRADE_CHANGE] and d["logged_in"] == ["discussion"]
     # the ledger and the session document say the same
@@ -223,7 +223,7 @@ def test_stopped_round_is_saved_without_the_case_and_its_topic_is_still_due(play
     s = play(Stops)
     out, rep = s.report()
     assert out["ok"] is True
-    assert out["checks"] == {"blinding": True, "saved": True, "log": True, "standards": True, "listening": True, "stopped": True}
+    assert out["checks"] == {"blinding": True, "saved": True, "log": True, "standards": True, "listening": True, "prepared": True, "stopped": True}
     st = rep["checks"]["stopped"]
     assert st["case_topic"] == "GEN-11" and st["items_saved"] == 2
     assert st["case_topic_schedule"] == {"last": None, "attempts": 0, "step": 0, "due": None}   # never tested: still to come

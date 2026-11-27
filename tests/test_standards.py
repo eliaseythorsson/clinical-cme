@@ -67,7 +67,7 @@ def test_every_brief_cites_the_rulebook():
     "anion gap, corrected calcium",                                # rule 3
     "international non-proprietary name",                          # rule 3
     "organ system or blueprint ID",                                # rule 1
-    "the two-line version for a correct, sure answer",             # rule 8
+    "what a part-answer usually lacks",                             # rule 8
     "one `field: value` per line",                                 # rule 9
 ])
 def test_rule_text_is_written_once(sentence):
@@ -119,11 +119,15 @@ def test_the_pre_flight_has_a_line_for_each_of_rules_5_to_7():
 
 def test_the_glossary_line_opens_every_feedback_message():
     assert '"Abbreviations:"' in rule(5)
-    guide = flat(read(os.path.join(REFERENCES, "feedback_guide.md")).split("## 2. Structure")[1].split("### A.")[0])
-    assert "Every feedback message starts with the glossary line" in guide and "rule 5.3" in guide
+    assert "feedback_guide.md` §10.1" in rule(5)          # written once, in the examiner's brief (#77)
+    brief = read(os.path.join(REFERENCES, "feedback_guide.md"))
+    guide = flat(brief.split("## 2. Structure")[1].split("### A.")[0])
+    assert "each opening with the glossary line (§10.1)" in guide
     assert guide.count("glossary line, A") == 2
+    glossary = flat(brief.split("### 10.1 The glossary line (rule 5.3)")[1].split("### 10.2")[0])
+    assert 'starts with the word "Abbreviations:"' in glossary and "comes before the reveal" in glossary
     skill = flat(read(os.path.join(SKILL, "SKILL.md")))
-    assert "glossary line, rule 5.3 → reveal" in skill and "glossary line → case reveal" in skill
+    assert "glossary line → reveal" in skill and "glossary line → case reveal" in skill
 
 
 # ---------------------------------------------------------------- the key-header table

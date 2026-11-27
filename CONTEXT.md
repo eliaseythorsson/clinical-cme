@@ -37,6 +37,24 @@ The prepared results of tests the learner may order in Stage 1 of a case.
 **Prepared round**:
 A whole round written and source-checked in advance and stored packed in the learner's store.
 
+**Kit**:
+The sealed file beside an item file that holds its feedback's text: the prepared blocks, and notes for the reading pointers and listening candidates.
+_Avoid_: feedback notes (it now holds finished text)
+
+**Prepared block**:
+One piece of the feedback's finished text in a kit, written and source-checked when the round is prepared: an item's reveal, model answer, distractors, decisive point, differential, pearls or deeper evidence, or the teaching for one rubric element at one mark (missed, partial, hit). The examiner may use it as it stands, rewrite it or drop it.
+_Avoid_: template, canned feedback, snippet
+
+**Marks before text**:
+The examiner marks every rubric element (each tied to the learner's words) and every MCQ before any prepared block is used; the marks choose the blocks, never the other way round.
+
+**Draft**:
+The feedback message as the state engine puts it together from the marked grading form and the prepared blocks, in the feedback's order, with the rubric as marked and the parts only the answer can prompt left to write live.
+_Avoid_: template
+
+**Live part**:
+What the examiner writes once the answers are in: the opening in the learner's own words, verdicts, calibration, transfer, the gap summary and coding line, credit for a defensible answer outside the key and corrections to the key, the glossary line, the reading and listening picks.
+
 ## People and roles
 
 **Learner**:
@@ -44,10 +62,10 @@ The physician taking the rounds.
 _Avoid_: user, student
 
 **Author**:
-Whoever writes a round's items, keys and feedback notes.
+Whoever writes a round's items, keys and the prepared blocks of their feedback.
 
 **Examiner**:
-The assistant in the conversation: presents, grades against the evidence and writes feedback; never the author of the items it grades.
+The assistant in the conversation: presents, marks against the evidence, and writes the feedback from the marks, the draft and the live parts; never the author of the items it grades. Its one brief is `references/feedback_guide.md`.
 _Avoid_: judge, grader
 
 **Checker**:
@@ -117,8 +135,9 @@ An item written on an open gap's decision point, in a new clinical context; it n
 How far behind the recommendation the feedback on an item goes when it is answered well: guidance, then the studies it rests on, then their design, then where the evidence is disputed. Earned per topic (and per aspect of a focused question) by answering it well several times in a row; a miss or an open gap brings it back to guidance, taught in full.
 _Avoid_: level (that is the learner's stage), difficulty, feedback depth (the word-count setting `feedback_depth`)
 
-**Deeper notes**:
-The part of a kit, under the word "Deeper", that holds the checked studies and design features for an item the plan gave an evidence depth beyond guidance.
+**Deeper block**:
+The prepared block (`deeper`) that holds the checked studies and design features for an item the plan gave an evidence depth beyond guidance, as finished text; the draft uses it only for an item answered well.
+_Avoid_: Deeper notes (the outline it replaced)
 
 **Listening pick**:
 The one podcast episode a topic of the round gets in the final feedback: 15 to 90 minutes, chosen for the gap the learner showed, given as a Spotify link with a one-line reason.
@@ -199,7 +218,7 @@ The decisive test of an item when it is one clinicians often fail to order; its 
 _Avoid_: key test, special test
 
 **Glossary line**:
-The one line "Abbreviations: …" that opens a feedback message and explains the abbreviations it uses (rule 5.3). Presented items have none: there an abbreviation is spelled out at first use.
+The one line "Abbreviations: …" that opens a feedback message and explains the abbreviations it uses (rule 5.3, written in the examiner's brief). Presented items have none: there an abbreviation is spelled out at first use.
 
 **Time anchor**:
 The single point a case counts all its timings from: a named event (admission as day 0) or now, never both (rule 6).

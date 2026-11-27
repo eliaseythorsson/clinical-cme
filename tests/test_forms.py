@@ -34,7 +34,7 @@ def fill(f, **errors):
     """Grade every item of the form as an examiner would: every rubric element hit."""
     for it in f["items"]:
         for e in it.get("rubric") or []:
-            e["mark"], e["note"] = "hit", "said so"
+            e["mark"], e["quote"], e["note"] = "hit", "the learner's words", "said so"
         it["mastery"], it["confidence"] = 5, "sure"
         if it["type"] == "mcq":
             it["correct"] = True
@@ -60,7 +60,7 @@ def finish(rnd, f):
 
 def test_the_questions_answers_bring_the_form_for_the_questions_only(rnd):
     out = answered(rnd, "questions")
-    assert out["form"] == {"file": "round.json", "added": ["Q1", "Q2"]}
+    assert out["form"] == {"file": "round.json", "added": ["Q1", "Q2"], "draft": "questions"}
     f = form(rnd)
     assert [it["key"] for it in f["items"]] == ["Q1", "Q2"]
     q1, q2 = f["items"]

@@ -5159,9 +5159,21 @@ COMMANDS = (
      'topic, by key id (`standards.md` rule 12), for the grading. With such a part it also writes '
      'the **grading form** into `W/round.json` (§2), and with `reflection` the **reflection form** '
      'into `W/reflection.json` (§3), and prints `form` (the file, the key ids `added`, '
-     '`rubric_missing` for a focused question or case whose key has no rubric block); a form never '
+     '`draft`, the part to give `draft` once the form is marked, `rubric_missing` for a focused '
+     'question or case whose key has no rubric block); a form never '
      'overwrites what was filled in. It also notes when it ran, as '
      "the time the learner's message arrived (§6.2): run it first when a message arrives."),
+    ('`draft --work W --part questions\\|case\\|all`',
+     'Once the grading form is marked (every rubric element hit, partial or missed with the '
+     "learner's words, every MCQ's `correct`; refused while one is blank: marks before text), put "
+     'together the draft of a feedback message from the kits\' prepared blocks (`standards.md` '
+     'rule 8; ADR 0009): the reveals, then per item the rubric as marked and the blocks its marks '
+     'call for, with `[live: …]` where only the examiner can write and a `check` line above a '
+     'block whose claim the evidence file does not confirm; the final message also gets the '
+     "kit's reading and listening notes. Writes `W/draft_questions.md` (the questions' feedback, "
+     'with a case still to come) or `W/draft.md` (the final feedback; `all`: every item, as with '
+     '`case_first`). Prints counts only: `blocks`, `live`, `checks`, `no_prepared_text`, '
+     '`sent_as`.'),
     ('`sent --work W --part questions\\|questions_feedback\\|case\\|stage2\\|feedback\\|close [--at '
      'T]`',
      'Not part of a normal round. Notes when a message went out, where the engine cannot tell '
@@ -5177,7 +5189,10 @@ COMMANDS = (
      " `index.html` is older than the skill's template, the new one joins the publish set "
      '(`page_upgraded`). Run again in the same job, it undoes the round and records it again '
      '(§3.1), so it gives the same result (a settings change made earlier in the same job is '
-     'kept). Records the time measured so far (`minutes`, `timing`; §6.2).'),
+     'kept). Records the time measured so far (`minutes`, `timing`; §6.2) and, when a draft was '
+     'made, which of its prepared blocks reached the feedback as sent as prepared, changed or not '
+     'at all (`prepared_feedback`: in the session document only, `session_log.md` §2; counts in the '
+     'output).'),
     ('`close --work W [--reflection J] [--session ID]`',
      'Second save: the reflection is applied and part B goes into the session document, with the '
      'page file. It continues from the current ledger: the one `save` wrote in this job, or, for '
@@ -5331,6 +5346,9 @@ WORK_FILES = (
     ('`feedback_questions.md`, `stage2.md`, `feedback.md`',
      'the examiner: each message exactly as sent',
      '`save`'),
+    ('`draft_questions.md`, `draft.md`',
+     '`draft`: the feedback\'s prepared text chosen by the marks, with the live parts to write',
+     'the examiner; `save` (which blocks were used as prepared, changed or left out)'),
     ('`round.json` (§2)',
      '`answer`: the grading form, one entry per key id, once a part\'s answers are in; the examiner '
      'fills it in',
@@ -5441,11 +5459,20 @@ KIT_FOR = {"sealed_questions.md": "kit_questions.md", "sealed_case.md": "kit_cas
 KIT_CASE_SECTIONS = ("Reveal", "Model answer", "Differential", "Briefing", "Pearls", "Reading")   # the rubric: in the key
 KIT_READING = "Reading"
 KIT_LISTENING = "Listening"
-# An item the plan gives an evidence depth beyond the first has its notes for that depth under
-# "Deeper": a line or heading that starts with the word, in the question's section of
-# kit_questions.md, or anywhere in kit_case.md.
-KIT_DEEPER = "Deeper"
-KIT_DEEPER_RE = re.compile(r"^[ \t>#*_`+-]*deeper\b", re.I | re.M)
+# The feedback's finished text sits in the kits as prepared blocks (rule 8; ADR 0009), one per
+# part of an item's feedback and one per rubric element and mark:
+#   <!-- block: Q1 model -->           the item's own text (BLOCK_ITEM_KINDS)
+#   <!-- block: Q4.2 missed -->        the 2nd element of Q4's rubric block, marked missed
+#   <!-- /block -->
+# An item the plan gives an evidence depth beyond the first also has a `deeper` block.
+BLOCK_RE = re.compile(r"<!--[ \t]*block:[ \t]*([A-Za-z0-9_]+?)(?:\.(\d+))?[ \t]+([A-Za-z]+)[ \t]*-->[ \t]*\n"
+                      r"(.*?)\n?[ \t]*<!--[ \t]*/block[ \t]*-->", re.S)
+BLOCK_OPEN_RE = re.compile(r"<!--\s*block\b")
+BLOCK_ITEM_KINDS = {"mcq": ("reveal", "model", "distractors", "hit", "missed"),
+                    "focused": ("reveal", "model", "decisive"),
+                    "case": ("reveal", "model", "differential", "pearls")}
+BLOCK_DEEPER = "deeper"
+KIT_DEEPER = BLOCK_DEEPER
 KIT_QUESTION_HEADING_RE = re.compile(r"^[ \t]{0,3}#{1,6}[ \t]*[*_`]*(Q[1-9][0-9]?)\b", re.I | re.M)
 LISTEN_BULLET_RE = re.compile(r"^[ \t>]*(?:[-*+]|\d+[.)])?[ \t]*")
 LISTEN_TOPIC_RE = re.compile(r"^[*_`]*(Q[1-9][0-9]?|case)[*_`]*[ \t]*(?:\||$)", re.I)
@@ -5596,19 +5623,68 @@ def question_sections(text):
             for i, m in enumerate(heads)}
 
 
-def deeper_missing(sealed_text, kit, kit_text, plan):
-    """Key ids whose item the plan gives a depth beyond the first and whose kit has no 'Deeper'
-    notes. Items are matched by topic: a topic the author chose has the first depth."""
+def deep_topics(plan):
+    """The topics the plan gives an evidence depth beyond the first."""
     deep = {c.get("topic") for c in (plan or {}).get("items") or [] if (c.get("depth") or {}).get("level", 1) > 1}
     deep.discard(None)
-    if not deep:
-        return []
-    headers = parse_key_headers(sealed_text, kit)[0]
-    ids = [k for k, h in headers.items() if h.get("topic") in deep and (k == "case") == (kit == "kit_case.md")]
-    if kit == "kit_case.md":
-        return ids if ids and not KIT_DEEPER_RE.search(kit_text) else []
-    sections = question_sections(kit_text)
-    return [k for k in ids if k in sections and not KIT_DEEPER_RE.search(sections[k])]
+    return deep
+
+
+def block_id(kid, n, kind):
+    """A prepared block's id as the draft and the log write it: "Q1 model", "Q4.2 missed"."""
+    return "%s%s %s" % (kid, ".%d" % n if n else "", kind)
+
+
+def parse_blocks(text, where="kit"):
+    """The prepared blocks of a kit (or a draft): ({block id: text}, [problems]), in the order
+    written. The problems name the file and the block id, never its text."""
+    blocks, problems = {}, []
+    found = BLOCK_RE.findall(text or "")
+    if len(BLOCK_OPEN_RE.findall(text or "")) > len(found):
+        problems.append("%s: a prepared block is not closed, or its first line is not '<!-- block: Q1 model -->' "
+                        "(close each with '<!-- /block -->')" % where)
+    for raw_id, n, kind, body in found:
+        bid = block_id(key_id(raw_id), int(n) if n else None, kind.lower())
+        if bid in blocks:
+            problems.append("%s: two prepared blocks '%s'" % (where, bid))
+            continue
+        blocks[bid] = body.strip()
+    return blocks, problems
+
+
+def required_blocks(kid, typ, rubric, deep=False):
+    """The block ids rule 8 asks of the item `kid`: its own kinds, one per rubric element and mark
+    (a focused question and the case), and `deeper` when the plan gives it a depth."""
+    want = [block_id(kid, None, k) for k in BLOCK_ITEM_KINDS.get(typ, ())]
+    if typ in RUBRIC_TYPES:
+        want += [block_id(kid, n, m) for n in range(1, len(rubric or []) + 1) for m in RUBRIC_MARKS]
+    if deep:
+        want.append(block_id(kid, None, BLOCK_DEEPER))
+    return want
+
+
+def block_problems(sealed, kit, sealed_text, kit_text, plan):
+    """Rule 8, the prepared blocks: every block the items of `sealed` need is in `kit`, with text,
+    and no block names a key, an element or a kind that is not there. File, key and block ids only."""
+    headers = {k: h for k, h in parse_key_headers(sealed_text, sealed)[0].items()
+               if (k == "case") == (kit == "kit_case.md")}
+    rubrics = parse_rubrics(sealed_text, sealed)[0]
+    blocks, problems = parse_blocks(kit_text, kit)
+    deep = deep_topics(plan)
+    allowed = set()
+    for kid, h in headers.items():
+        want = required_blocks(kid, h.get("type"), rubrics.get(kid), h.get("topic") in deep)
+        allowed.update(want + [block_id(kid, None, BLOCK_DEEPER)])
+        missing = [b for b in want if not blocks.get(b)]
+        if missing:
+            problems.append("%s, key %s: no prepared block %s (finished text between '<!-- block: %s -->' and "
+                            "'<!-- /block -->'; references/standards.md rule 8)"
+                            % (kit, kid, ", ".join(missing), missing[0]))
+    stray = [b for b in blocks if b not in allowed]
+    if stray:
+        problems.append("%s: prepared blocks for no item, element or kind of this round: %s"
+                        % (kit, ", ".join(stray)))
+    return problems
 
 
 def kit_problems(files, plan=None, kits_required=True):
@@ -5641,11 +5717,7 @@ def kit_problems(files, plan=None, kits_required=True):
             problems.append("%s: section%s %s missing (a heading for each: %s)"
                             % (kit, "" if len(missing) == 1 else "s", ", ".join("'%s'" % m for m in missing),
                                ", ".join("'## %s'" % m for m in missing)))
-        missing = deeper_missing(files[sealed], kit, files[kit], plan)
-        if missing:
-            problems.append("%s: no '%s' notes for %s (the plan gives the item an evidence depth beyond the "
-                            "first: a line that starts 'Deeper:' with the studies behind the recommendation, "
-                            "references/standards.md rule 8)" % (kit, KIT_DEEPER, ", ".join(missing)))
+        problems.extend(block_problems(sealed, kit, files[sealed], files[kit], plan))
         topics = listening_topics(files[kit]) if listening else None
         if topics is not None:
             ids = ["case"] if kit == "kit_case.md" else [
@@ -6323,14 +6395,18 @@ def grading_guide(listening):
     how = [
         "Fill this file in place; `save` reads it. Values already filled come from the key headers "
         "and the ledger: change one only to correct the author (it is reported as overridden).",
-        "Each item: mark every rubric element hit, partial or missed with a short note; then `mastery` "
-        "(a focused question and the case by feedback_guide.md section 2; an MCQ 4-5 correct with sound "
-        "reasoning, 3 correct with flawed reasoning, 1-2 wrong), `correct` for an MCQ, and `confidence` "
-        "as the learner gave it (null when none).",
+        "Marks before text: before any prepared text is used, mark every rubric element hit, partial or "
+        "missed against the checked evidence, with the learner's own words that earned the mark in "
+        "`quote` (for a missed element: empty, or what they wrote instead) and a short `note`; for an MCQ "
+        "`correct` and `confidence` as the learner gave it (null when none). Then run `draft` for the "
+        "part: it puts the prepared text your marks call for into the feedback's order "
+        "(feedback_guide.md section 9).",
+        "Each item: `mastery` (a focused question and the case by feedback_guide.md section 2; an MCQ "
+        "4-5 correct with sound reasoning, 3 correct with flawed reasoning, 1-2 wrong).",
         "`given` is what grading uses and nobody edits: `depth`, how far behind the recommendation the "
         "feedback goes (feedback_guide.md section 4.1), and `positions`, the learner's position notes "
         "on the topic (standards.md rule 12).",
-        "Coding (analysis_framework.md section 1): `art` for the case and a focused question (a focused "
+        "Coding (feedback_guide.md section 11): `art` for the case and a focused question (a focused "
         "question scores only the domains it tested: leave the others null), `idea` for the case only, "
         "and one entry in `errors` for every rubric element marked missed or partial and for a wrong MCQ.",
         "`retests`: keep it only when the item asked about the gap's decision point; set it to null "
@@ -6377,7 +6453,8 @@ def form_item(kid, h, rubric, depth=None, positions=None):
     if given:
         it[FORM_GIVEN] = given
     if typ in RUBRIC_TYPES:
-        it["rubric"] = [dict(e, mark=None, note="") for e in rubric or []]
+        it["rubric"] = [dict({"id": "%s.%d" % (kid, n)}, **dict(e, mark=None, quote="", note=""))
+                        for n, e in enumerate(rubric or [], 1)]
     it["mastery"] = None
     if typ == "mcq":
         it["correct"] = None
@@ -6438,7 +6515,8 @@ def write_grading_form(work, part, today=None, keys=None):
                 and any(h.get("type") == target for h in headers.values()):
             form["drill"] = {"code": c["drill"].get("code"), "result": None}
     save_json(form, path)
-    out = {"file": ROUND_FILE, "added": added}
+    out = {"file": ROUND_FILE, "added": added,
+           "draft": "case" if part in ("case", "final") else "questions"}     # once marked: `draft --part`
     missing = [k for k in added if headers[k].get("type") in RUBRIC_TYPES and not rubrics.get(k)]
     if missing:
         out["rubric_missing"] = missing      # a round written before rubric blocks: mark the key's own list
@@ -6479,17 +6557,296 @@ def round_from_form(rnd):
             unmarked = sum(1 for m in marks if m not in RUBRIC_MARKS)
             if unmarked:
                 warnings.append("%s: %d rubric element(s) not marked %s" % (name, unmarked, " / ".join(RUBRIC_MARKS)))
+            unquoted = sum(1 for e in rubric if isinstance(e, dict) and e.get("mark") in ("hit", "partial")
+                           and not str(e.get("quote") or "").strip())
+            if unquoted:
+                warnings.append("%s: %d rubric element(s) marked hit or partial without the learner's words in "
+                                "`quote` (feedback_guide.md section 9.1)" % (name, unquoted))
             short = sum(1 for m in marks if m in ("partial", "missed"))
             errors = len(((coding or {}).get("errors") or []) if isinstance(coding, dict) else [])
             if short > errors:
                 warnings.append("%s: %d rubric element(s) missed or partial but %d error record(s): one error "
-                                "per element (analysis_framework.md section 1.3)" % (name, short, errors))
+                                "per element (feedback_guide.md section 11.3)" % (name, short, errors))
     if rnd.get("drill") and isinstance(rnd["drill"], dict) and rnd["drill"].get("result") is None:
         blank.append("drill result")
     if blank:
         die("the grading form in round.json is not filled in: %s. Fill it in and run save again. Nothing "
             "was recorded." % ", ".join(blank))
     return warnings
+
+
+# ---------------------------------------------------------------- the draft: prepared text by the marks
+#
+# ADR 0009: the feedback is assembled from text written and source-checked when the round was
+# prepared (the kits' blocks, rule 8) and adapted live to the answer. Once the examiner has marked
+# the grading form, `draft` puts the blocks the marks call for into the feedback's order, with the
+# rubric as marked and the parts only the answer can prompt left as [live: …]. The examiner
+# writes those, rewrites or drops any block, and sends the result. `save` then compares the
+# blocks offered with the feedback as sent and records, in the session document only, which were
+# used as prepared, changed or left out (prepared_feedback).
+
+DRAFT_FILES = {"questions": "draft_questions.md", "final": "draft.md"}
+DRAFT_SENT = {"draft_questions.md": FEEDBACK_QUESTIONS_FILE, "draft.md": FEEDBACK_FILE}
+DRAFT_PARTS = ("questions", "case", "all")
+MARK_SIGNS = {"hit": "\u2713", "partial": "\u25d0", "missed": "\u2717"}
+VERIFY_MARK_RE = re.compile(r"[ \t]*\(verify\)", re.I)
+BLOCKS_LINE_RE = re.compile(r"^[ \t>*_`-]*Blocks[ \t*_`]*:[ \t*_`]*(.*)$", re.M | re.I)
+BLOCK_REF_RE = re.compile(r"\b(Q[1-9][0-9]?|case)(?:\.(\d+))?[ \t]+([a-z]+)\b", re.I)
+LEFTOVER_RE = re.compile(r"<!--\s*/?\s*(?:block|draft|notes|check)\b|\[live:", re.I)
+
+
+def live(what):
+    return "[live: %s]" % what
+
+
+def evidence_flags(text):
+    """{block id: [(claim number, status)]} for the claims of an evidence file that are not
+    confirmed and name the prepared blocks that state them (`**Blocks:**`, evidence_check.md §4)."""
+    flags = {}
+    text = text or ""
+    starts = list(EVIDENCE_BLOCK_RE.finditer(text))
+    for i, m in enumerate(starts):
+        block = text[m.start():starts[i + 1].start() if i + 1 < len(starts) else len(text)]
+        status = STATUS_RE.search(block)
+        refs = BLOCKS_LINE_RE.search(block)
+        if not status or not refs:
+            continue
+        st = status.group(1).strip(" \t*_`").lower()
+        if st.startswith("confirmed"):
+            continue
+        n = re.match(r"#{2,4}[ \t]+(\d+)", m.group(0))
+        for kid, el, kind in BLOCK_REF_RE.findall(refs.group(1)):
+            flags.setdefault(block_id(key_id(kid), int(el) if el else None, kind.lower()), []).append(
+                (n.group(1) if n else "?", st.split(".")[0][:40]))
+    return flags
+
+
+def rubric_lines(rubric):
+    """The rubric as the learner sees it every time: element, mark, and the words that earned it."""
+    lines, stage = ["**Rubric**"], None
+    for e in rubric or []:
+        if not isinstance(e, dict):
+            continue
+        if e.get("stage") and e["stage"] != stage:
+            stage = e["stage"]
+            lines.append("Stage %d" % stage)
+        mark, quote = e.get("mark"), str(e.get("quote") or "").strip().strip('"\u201c\u201d')
+        words = ('"%s"' % quote if quote else "not in your answer" if mark == "missed"
+                 else live("the learner's words that earned the mark"))
+        lines.append("- %s %s \u2014 %s" % (MARK_SIGNS.get(mark, "?"), e.get("element"), words))
+    return lines
+
+
+def answered_well_today(it):
+    """Does the item get its `deeper` block: answered well by its marks (feedback_guide.md §4.1)?"""
+    if it.get("type") == "mcq":
+        return it.get("correct") is True and it.get("confidence") not in ("unsure", "guess")
+    marks = [e.get("mark") for e in it.get("rubric") or [] if isinstance(e, dict)]
+    mastery = it.get("mastery")
+    return "missed" not in marks and (mastery is None or mastery >= 4)
+
+
+def draft_item(it, blocks, flags, used):
+    """The draft of one item's feedback, in the order of feedback_guide.md §2."""
+    kid, typ = it.get("key"), it.get("type")
+    out = []
+
+    def put(kind, n=None):
+        bid = block_id(kid, n, kind)
+        text = blocks.get(bid)
+        if not text:
+            out.append(live("no prepared text for %s: write it from the checked evidence" % bid))
+            return
+        for claim, status in flags.get(bid, []):
+            out.append("<!-- check: claim %s of the evidence file is %s: correct or qualify it here -->"
+                       % (claim, status))
+        out.extend(["<!-- block: %s -->" % bid, VERIFY_MARK_RE.sub("", text), "<!-- /block -->"])
+        used.append(bid)
+
+    title = {"mcq": "**%s**" % kid, "focused": "**%s (focused)**" % kid, "case": "**Case**"}.get(typ, kid)
+    out.append(title)
+    given = it.get(FORM_GIVEN) or {}
+    for p in given.get("positions") or []:
+        out.append(live("the learner holds a position on \"%s\": an answer that follows it is no miss, and "
+                        "the feedback does not reopen it" % p.get("point")))
+    deep = (given.get("depth") or {}).get("level", 1) > 1 and answered_well_today(it)
+    if typ == "mcq":
+        out.append(live("the correct letter, the learner's answer and the verdict, opening with their own words"))
+        put("model")
+        put("distractors")
+        put("hit" if answered_well_today(it) else "missed")
+    else:
+        out.extend(rubric_lines(it.get("rubric")))
+        if not it.get("rubric"):
+            out.append(live("no rubric block in the key: mark the elements the key holds"))
+        out.append(live("the verdict and the mastery score, opening with the learner's own words"))
+        put("model")
+        if typ == "focused":
+            put("decisive")
+        for n, e in enumerate(it.get("rubric") or [], 1):
+            if isinstance(e, dict) and e.get("mark") in RUBRIC_MARKS:
+                put(e["mark"], n)
+        if typ == "case":
+            put("differential")
+    if deep:
+        put(BLOCK_DEEPER)
+    if typ == "case":
+        put("pearls")
+    if typ != "mcq":
+        out.append(live("credit for anything defensible outside the key; where the evidence differs from "
+                        "the key, say so and correct it"))
+    return out
+
+
+def write_draft(work, part):
+    """Write the draft of one feedback message (DRAFT_FILES) from the marked grading form and
+    the kits' blocks. Returns what `draft` prints: file, blocks used, live parts, flags."""
+    path = in_work(work, ROUND_FILE)
+    rnd = load_json(path) if path else None
+    if not isinstance(rnd, dict) or not isinstance(rnd.get("items"), list):
+        die("draft needs the grading form, %s, as `answer` wrote it: file the answers first" % ROUND_FILE)
+    sealed = [p for p in (in_work(work, n) for n in SEALED_FILES) if p]
+    headers = key_headers(sealed)[0] if sealed else {}
+    items = []
+    for it in rnd["items"]:
+        if not isinstance(it, dict) or not it.get("key"):
+            continue
+        it = dict(it, key=key_id(it["key"]))
+        it.setdefault("type", (headers.get(it["key"]) or {}).get("type") or ("case" if it["key"] == "case" else None))
+        if part == "all" or (it.get("type") == "case") == (part == "case"):
+            items.append(it)
+    if not items:
+        die("the grading form has no %s to draft: file that part's last answers first" %
+            ("case" if part == "case" else "items" if part == "all" else "short questions"))
+    unmarked = []
+    for it in items:
+        if it.get("type") == "mcq" and it.get("correct") is None:
+            unmarked.append("%s correct" % it["key"])
+        left = sum(1 for e in it.get("rubric") or [] if not isinstance(e, dict) or e.get("mark") not in RUBRIC_MARKS)
+        if left:
+            unmarked.append("%s: %d rubric element(s)" % (it["key"], left))
+    if unmarked:
+        die("marks before text: mark the grading form first (%s); then run draft again" % "; ".join(unmarked))
+    plan_path = in_work(work, PLAN_FILE)
+    plan = (load_json(plan_path) if plan_path else None) or {}
+    has_case = bool((plan.get("counts") or {}).get("case")) if plan.get("counts") else bool(in_work(work, SEALED_FILES[1]))
+    final = part != "questions" or not has_case
+    blocks, flags, contradicted = {}, {}, 0
+    for sealed, kit in KIT_FOR.items():
+        kp = in_work(work, kit)
+        if kp:
+            blocks.update(parse_blocks(read_text(kp), kit)[0])
+        ep = in_work(work, EVIDENCE_FOR[sealed])
+        if ep:
+            text = read_text(ep)
+            for k, v in evidence_flags(text).items():
+                flags.setdefault(k, []).extend(v)
+            contradicted += contradicted_keys(text) or 0
+    name = DRAFT_FILES["final" if final else "questions"]
+    used, lines = [], ["<!-- draft: prepared text chosen by your marks. Write each [live: ...] part, rewrite or "
+                       "drop any block the answer calls for, then send it without these comment lines "
+                       "(feedback_guide.md section 9). -->"]
+    if contradicted:
+        lines.append("<!-- check: the evidence check found %d key(s) contradicted: grade against the "
+                     "guidance, and correct the key and its blocks -->" % contradicted)
+    glossary = len(lines)
+    lines.append("")
+    for it in items:                                    # A. the reveal, for every item of the part
+        bid = block_id(it["key"], None, "reveal")
+        if blocks.get(bid):
+            lines += ["<!-- block: %s -->" % bid, VERIFY_MARK_RE.sub("", blocks[bid]), "<!-- /block -->"]
+            used.append(bid)
+        else:
+            lines.append(live("the reveal of %s: its topic and why it was chosen" % it["key"]))
+    order = {"mcq": 0, "focused": 1, "case": 2}
+    if part == "all" and (plan.get("item_order") or rnd.get("item_order")) == "case_first":
+        order["case"] = -1
+    for it in sorted(items, key=lambda x: order.get(x.get("type"), 3)):
+        lines += [""] + draft_item(it, blocks, flags, used)
+    lines.append("")
+    if not final:
+        lines.append(live("one line on the score so far") + " The case follows.")
+    else:
+        lines.append(live("the gap summary for the whole round: new gaps, prior gaps re-tested, transfer, "
+                          "calibration, mastery 0-5 per topic with a one-line reason, the coding line"))
+        reading_kit = "kit_case.md" if in_work(work, "kit_case.md") else "kit_questions.md"
+        kp = in_work(work, reading_kit)
+        body = kit_section(read_text(kp), KIT_READING) if kp else None
+        if body and body.strip():
+            lines += ["<!-- notes: Reading -->", VERIFY_MARK_RE.sub("", body.strip()), "<!-- /notes -->"]
+        lines.append(live("Further reading: at most two pointers, from the notes above where they fit"))
+        if "listening" in rnd:
+            for kit in KIT_FOR.values():
+                kp = in_work(work, kit)
+                body = kit_section(read_text(kp), KIT_LISTENING) if kp else None
+                if body and body.strip():
+                    lines += ["<!-- notes: Listening -->", body.strip(), "<!-- /notes -->"]
+            lines.append(live("Listening: one episode per topic, the candidate that matches the learner's gap"))
+        lines.append(live("the reflection prompt"))
+    common = common_abbreviations() or set()
+    seen = []
+    for b in used:
+        for m in ABBREVIATION_RE.finditer(blocks.get(b) or ""):
+            if m.group(1) not in common and not ROMAN_RE.match(m.group(1)) and m.group(1) not in seen:
+                seen.append(m.group(1))
+    lines.insert(glossary, live("the glossary line, \"Abbreviations: ...\", for the abbreviations this message "
+                                "uses%s" % ("; the prepared text uses %s" % ", ".join(seen) if seen else "")))
+    with open(os.path.join(work, name), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")
+    out = {"ok": True, "file": name, "part": part, "final": final, "blocks": len(used),
+           "sent_as": DRAFT_SENT[name], "live": sum(l.count("[live:") for l in lines)}
+    missing = [l for l in lines if l.startswith("[live: no prepared text")]
+    if missing:
+        out["no_prepared_text"] = len(missing)
+    if flags:
+        out["checks"] = sum(1 for b in used if b in flags)
+    return out
+
+
+def cmd_draft(args):
+    """Put together the draft of a feedback message from the marked grading form and the kits'
+    prepared blocks (ADR 0009). Prints file name and counts only."""
+    work, _ = job(args)
+    print(json.dumps(write_draft(work, args.part), ensure_ascii=False))
+
+
+def shingles(text, n=3):
+    words = re.findall(r"[a-z0-9\u00c0-\u024f]+(?:[.,/-][a-z0-9]+)*", (text or "").lower())
+    return {tuple(words[i:i + n]) for i in range(max(1, len(words) - n + 1))} if words else set()
+
+
+def block_use(block, sent):
+    """How a prepared block reached the feedback as sent: "as_prepared", "changed" or "discarded",
+    by the share of its three-word runs that are in the message."""
+    mine = shingles(VERIFY_MARK_RE.sub("", block))
+    if not mine:
+        return "as_prepared"
+    share = len(mine & sent) / float(len(mine))
+    return "as_prepared" if share >= 0.9 else "changed" if share >= 0.2 else "discarded"
+
+
+def prepared_feedback(work, warnings):
+    """What `save` records in the session document of the prepared text: the blocks each draft
+    offered, sorted by how they reached the feedback as sent. None when no draft was made."""
+    out, any_draft = {"offered": 0, "as_prepared": [], "changed": [], "discarded": []}, False
+    for name, sent_name in DRAFT_SENT.items():
+        dp = in_work(work, name)
+        if not dp:
+            continue
+        any_draft = True
+        sp = in_work(work, sent_name)
+        if name == DRAFT_FILES["questions"] and not sp:
+            sp = in_work(work, FEEDBACK_FILE)
+        sent = shingles(read_text(sp)) if sp else set()
+        for bid, text in parse_blocks(read_text(dp), name)[0].items():
+            out["offered"] += 1
+            out[block_use(text, sent)].append(bid)
+    if not any_draft:
+        if any(parse_blocks(read_text(p))[0] for p in (in_work(work, k) for k in KIT_FOR.values()) if p):
+            warnings.append("the kits hold prepared blocks but no draft was made: mark the grading form, run "
+                            "`draft`, and write the feedback from it (feedback_guide.md section 9)")
+        return None
+    return out
 
 
 def reflection_guide(items, ask_sources):
@@ -6714,9 +7071,13 @@ def cmd_save(args):
     for label, path in (("questions' feedback", feedback_questions), ("final feedback", feedback),
                         ("Stage 2", stage2)):
         found = internal_terms(read_text(path)) if path else []
-        if found:                   # rule 11: logged as sent; next time, write it for the learner
-            warnings.append("the %s as sent names the skill's own machinery (%s): references/standards.md "
-                            "rule 11" % (label, ", ".join(found)))
+        if found:                   # plain language: logged as sent; next time, write it for the learner
+            warnings.append("the %s as sent names the skill's own machinery (%s): feedback_guide.md "
+                            "section 10.3" % (label, ", ".join(found)))
+        if path and LEFTOVER_RE.search(read_text(path)):
+            warnings.append("the %s as sent still holds the draft's comment lines or a [live: …] part: "
+                            "logged as sent (feedback_guide.md section 9)" % label)
+    adapted = prepared_feedback(work, warnings)
     res = record_round(st, copy.deepcopy(rnd), today, again)
     if again is None:               # before any file is written: a save interrupted after the ledger can run again
         info["saved"] = {"session": sid, "gen": [gen_before, st["gen"]]}
@@ -6729,6 +7090,8 @@ def cmd_save(args):
         doc["reading"] = reading
     if listening is not None:
         doc["listening"] = listening
+    if adapted is not None:
+        doc["prepared_feedback"] = adapted      # the log only: never in the feedback, never in the ledger
     rec = {}
     path = publish_ledger(work, info, st, rec, session=doc, empty_prepared=True)
     rec = report(path, os.path.getsize(path), dict(res, **rec))
@@ -6742,6 +7105,8 @@ def cmd_save(args):
         rec["reading"] = len(reading)
     if listening is not None:
         rec["listening"] = len(listening)
+    if adapted is not None:
+        rec["prepared_feedback"] = {k: (v if isinstance(v, int) else len(v)) for k, v in adapted.items()}
     save_json(rnd, os.path.join(work, RECORD_FILE))     # the round record as recorded, beside round.json
     if times.get("session") == sid:
         save_json(times, os.path.join(work, TIMES_FILE))
@@ -7026,6 +7391,7 @@ def build_parser():
     s = command("sent", cmd_sent); s.add_argument("--part", required=True, choices=SENT_PARTS)
     s = command("present", cmd_present, work=False); s.add_argument("files", nargs="*"); s.add_argument("--work")
     s.add_argument("--block", required=True)
+    s = command("draft", cmd_draft); s.add_argument("--part", required=True, choices=DRAFT_PARTS)
     s = command("save", cmd_save)
     s = command("close", cmd_close); s.add_argument("--reflection"); s.add_argument("--session")
     s = command("addendum", cmd_addendum); s.add_argument("--md", required=True); s.add_argument("--session")

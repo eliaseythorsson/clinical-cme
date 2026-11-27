@@ -273,17 +273,26 @@ def listening_section(kids, candidates=3):
     return "\n".join(lines) + "\n"
 
 
-def deeper(planned):
-    """The kit's 'Deeper' notes for an item the plan gives an evidence depth (rule 8), else nothing."""
-    return "Deeper: SEALED study, its design and limits (verify)\n" if planned.get("depth") else ""
+RUBRIC_SIZE = {"focused": 2, "case": 3}         # the elements of the example rubric blocks above
+
+
+def prepared_blocks(kid, slot, planned):
+    """The prepared blocks of one item's kit section (rule 8): finished text per part of its
+    feedback, one per rubric element and mark, and `deeper` when the plan gives a depth."""
+    want = [(None, k) for k in cme.BLOCK_ITEM_KINDS[slot]]
+    want += [(n, m) for n in range(1, RUBRIC_SIZE.get(slot, 0) + 1) for m in cme.RUBRIC_MARKS]
+    if planned.get("depth"):
+        want.append((None, cme.BLOCK_DEEPER))
+    return "".join("<!-- block: %s -->\nSEALED prepared text for %s, as the learner will read it.\n<!-- /block -->\n"
+                   % (cme.block_id(kid, n, k), cme.block_id(kid, n, k)) for n, k in want)
 
 
 def sealed_files(st, plan):
     """{file name: text} for `plan`. Everything the learner must not see before answering sits
     outside the present and bank blocks and carries the word SEALED; each key starts with its
     key header (with its rubric block for a focused question and the case), and the kits have the sections of the rulebook (references/standards.md, rule 8),
-    the "Listening" section among them unless the plan has listening off, and "Deeper" notes for
-    an item the plan gives an evidence depth."""
+    the "Listening" section among them unless the plan has listening off, and the prepared blocks
+    of every item, with a `deeper` block for an item the plan gives an evidence depth."""
     listening = plan.get("listening") is not False
     labels = cme.bp_topics(st)
     shorts = [it for it in plan["items"] if it["slot"] != "case"]
@@ -297,7 +306,8 @@ def sealed_files(st, plan):
         stems = ["Q%d. Example stem %d. A) one B) two C) three" % (i + 1, i + 1) for i in range(len(shorts))]
         files["sealed_questions.md"] = ("%s\n<!-- present: questions -->\n%s\n<!-- /present -->\n"
                                         % ("\n".join(headed), "\n".join(stems)))
-        files["kit_questions.md"] = "".join("## Q%d\nSEALED feedback notes: %s\n%s\n" % (i + 1, key, deeper(it))
+        files["kit_questions.md"] = "".join("## Q%d\nSEALED feedback notes: %s\n%s\n"
+                                            % (i + 1, key, prepared_blocks("Q%d" % (i + 1), it["slot"], it))
                                             for i, (it, key) in enumerate(zip(shorts, keys)))
         if not case:
             files["kit_questions.md"] += "## Reading\nSEALED reading pointer (verify)\n"
@@ -312,8 +322,7 @@ def sealed_files(st, plan):
             % (key_header("case", st, case, taken), label, case.get("topic") or case["domain"]))
         files["kit_case.md"] = "".join("## %s\nSEALED feedback notes for the case: Example diagnosis: %s\n\n"
                                        % (name, label) for name in cme.KIT_CASE_SECTIONS)
-        if case.get("depth"):
-            files["kit_case.md"] += "## Deeper\n%s\n" % deeper(case)
+        files["kit_case.md"] += "## Blocks\n%s\n" % prepared_blocks("case", "case", case)
         if listening:
             files["kit_case.md"] += listening_section(["case"])
     return files

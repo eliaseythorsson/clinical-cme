@@ -1,7 +1,7 @@
 # Author: writing a round's items
 
-How the items of a round are written: the short questions, the case, and the notes their
-feedback will be built from. Two readers:
+How the items of a round are written: the short questions, the case, and the finished text
+their feedback is assembled from (the kits' prepared blocks). Two readers:
 
 - an **author agent**, started with only this file's path, a plan, an output folder and the
   parts to write. You have no other context and need none;
@@ -28,12 +28,13 @@ the conversation, and the keys must be good enough for another clinician to grad
 1. `standards.md` (same folder as this file), all of it: the numbered rules every item, key
    and kit must meet. This brief and `case_design.md` cite them as "rule N".
 2. `case_design.md`, all of it: how items are designed.
-3. `feedback_guide.md` §2–4: what the feedback will contain, and so what the kits (rule 8)
-   must hold.
+3. `feedback_guide.md` §1–5 and §9–10, the examiner's brief: the feedback the kits' prepared
+   blocks (rule 8) are written as, and the rules it keeps. The examiner marks the answer first
+   and then adapts your blocks: write each so that it can be sent as it stands.
 4. The plan (JSON). It gives, per item: slot (`mcq`, `focused`, `case`), topic and blueprint
    ID, the reason it was chosen, any open gap to re-test, the learner's `positions` on its topic
    (rule 12), `aspect_hint` for focused items, a
-   `depth` where the learner has answered the topic well before (rule 8, "Deeper notes"), a
+   `depth` where the learner has answered the topic well before (rule 8, "Deeper"), a
    `drill` if one applies, `separation` notes, and `already_used` stems and cases; and for the
    round: `case_format`, units, `guideline_region`, `specialty`, `feedback_depth`, the learner's profile (their own two paragraphs: rule 4),
    `recent_cases_any_topic`, `listening` and `podcast_sources`.
@@ -56,9 +57,9 @@ Planning notes:
 - An item with `positions` in the plan is on a topic where the learner holds a position on
   one decision point, in their own words: key nothing on that point, and put the line
   rule 12 asks for on the verification list (rule 12).
-- An item with `depth` in the plan gets `Deeper` notes in its kit section, for that level and
-  those below it, and a line on the verification list for each study they name (rule 8). The
-  item itself is written no differently: the depth is about its feedback, not its difficulty.
+- An item with `depth` in the plan gets a `deeper` block in its kit section, at that level,
+  and a line on the verification list for each study it names (rule 8). The item itself is
+  written no differently: the depth is about its feedback, not its difficulty.
 - A `drill` is built into its item (`case_design.md` §9, §11.5).
 - Unless the plan's `listening` is false, each kit ends with `## Listening` (rule 8): the
   `Sources` line from the plan's `podcast_sources`, and one line per topic with the point
@@ -77,7 +78,7 @@ Planning notes:
 - `Parts: headers`: the round is written and `cme.py finish-prepare` refused it for its key
   headers or its kits (the lint's blocking problems, `standards.md`, "The lint"). The
   problems are listed in your prompt by file, key, field and kit section. Correct those
-  headers (rule 9) and kit sections (rule 8) and run the check of §4 until it prints
+  headers (rule 9), kit sections and prepared blocks (rule 8) and run the check of §4 until it prints
   `"ok": true`. Change nothing else.
 - `Parts: revise`: the round is written and `cme.py finish-prepare` printed `"revise": true`:
   a key is contradicted, or the lint made a judgement call, or both; or the checker retried
@@ -88,7 +89,9 @@ Planning notes:
     exist. Wherever a **Note** says a key is contradicted by current guidance, correct the
     item so that it has one best answer under that guidance: the key, the kit, and the stem or
     options if they no longer work, keeping the `present` block complete. Replace every
-    `(verify)` in the kits that the check confirmed with the confirmed figure and source.
+    `(verify)` in the kits' notes that the check confirmed with the confirmed figure and
+    source, and correct every prepared block that a claim marked changed, regional difference
+    or not verified names under **Blocks:** (state a claim not verified qualitatively).
     The candidates under `## Listening` are the checker's: leave them as they are.
   - Read `lint.md` in the output folder, if there is one. For each line decide whether the
     rule it names is broken (rule 5: an abbreviation not spelled out at first use; rule 6:
@@ -116,7 +119,8 @@ In this order:
 2. **Pre-flight**: one line (`case_design.md` §8, lines 6 and 10–16; the last three are
    rules 5–7).
 3. **Verification list**: one precise search per claim the feedback will rest on (guideline
-   and year, threshold or dose, trial), three to six lines.
+   and year, threshold or dose, trial), three to six lines, each ending with the ids of the
+   prepared blocks that state the claim (`[Q1 missed, Q4.2 missed]`; rule 8).
 4. **The text to present**, exactly as the learner will see it, between
    `<!-- present: questions -->` and `<!-- /present -->`: MCQs first, then focused questions,
    numbered on ("Question 4 — focused"), ending with the answer prompt (`case_design.md`
@@ -135,7 +139,7 @@ In this order:
    holds no diagnosis, no key, no alternatives and no rubric.
 3. **Novelty and pre-flight**: one line each (`case_design.md` §8, lines 1–5, 7–9 and 14–16,
    the last three being rules 5–7; §10).
-4. **Verification list**: three to six precise searches.
+4. **Verification list**: three to six precise searches, each with its block ids, as above.
 5. **The text to present**: Stage 1 (or the whole one-step case), exactly as the learner will
    see it, between `<!-- present: case -->` and `<!-- /present -->`, headed "Case", ending with
    the answer-format prompt (`case_design.md` §5). Stage 2 is not written as a block: it is
@@ -143,8 +147,10 @@ In this order:
 
 ### `kit_questions.md` and `kit_case.md`
 
-The notes the feedback will be written from: what they hold, and the headings they are
-written under, is rule 8.
+The feedback's finished text, in prepared blocks: which blocks, how they are written and the
+headings they sit under is rule 8. A focused question or the case gets three blocks for every
+element of its rubric block (missed, partial, hit), so write the rubric first and number its
+elements as you go. This is most of the round's writing; it is done while nobody waits.
 
 ## 4. Before you finish
 
@@ -154,8 +160,8 @@ is closed (rule 1.1–1.2 for what they must not hold). Then run the lint: `pyth
 file's folder>/../scripts/cme.py keys <output folder> --plan <plan>` (description "Prepare the
 round"). It prints names and counts only:
 
-- `problems`: key headers and rubric blocks (rule 9) and kit sections (rule 8) that are
-  missing or malformed. Correct them until it prints `"ok": true`; a round prepared ahead is not kept while one is
+- `problems`: key headers and rubric blocks (rule 9), kit sections and prepared blocks (rule 8)
+  that are missing or malformed. Correct them until it prints `"ok": true`; a round prepared ahead is not kept while one is
   left (`cme.py finish-prepare` runs the same check).
 - `review`: the lint's judgement calls on rules 5 and 6, with the findings in `lint.md` in the
   output folder. Read it, correct what is a real breach, and run the check once more.

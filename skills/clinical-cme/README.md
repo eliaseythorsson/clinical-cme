@@ -142,7 +142,7 @@ waiting for something to be generated.
   (diagnosis, interpretation, the next test, management, disposition, prevention or prognosis),
   graded on the reasoning with a rubric written before the question is sent. They go with the
   MCQs, before the case; due topics and open gaps go to them before the MCQs, and the aspect
-  asked rotates (`case_design.md` §11, `feedback_guide.md` §2 B2, `analysis_framework.md` §1.6).
+  asked rotates (`case_design.md` §11, `feedback_guide.md` §2 B2, `feedback_guide.md` §11.6).
 - **Choose the round mix.** MCQs, focused questions and the full case can each be on or off, at
   setup, in a chat, or with switches in the page's Settings tab (stored by the page as `cme/prefs`
   and applied at the next round; the latest change wins).
@@ -178,10 +178,11 @@ references/store.md           the store: documents, tools, kinds of store, readi
 references/state_schema.md    ledger layout, round and reflection JSON, spacing rules, commands
 references/standards.md       the rulebook: numbered rules for items, keys and kits; what the lint checks
 references/case_design.md     how cases and MCQs are designed (realism, formats, pre-flight)
-references/feedback_guide.md  grading, evidence briefings, reflection prompt, disputes, feedback kits
-references/author.md          the author's brief: how a round's items and notes are written
+references/feedback_guide.md  the examiner's brief: marking, prepared and live feedback, coding,
+                              reflection prompt, disputes
+references/author.md          the author's brief: how a round's items and prepared feedback are written
 references/evidence_check.md  the checker's brief: how the evidence is verified
-references/analysis_framework.md  coding vocabulary and the deep review
+references/analysis_framework.md  the deep review (the coding is in the feedback guide)
 references/session_log.md     the per-session document, errata, search, teaching export
 references/progress_review.md the periodic review
 references/onboarding.md      first run, FAQ

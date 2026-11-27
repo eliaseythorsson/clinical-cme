@@ -29,12 +29,13 @@ next round, written and source-checked in advance). The skill holds no learner d
 4. **The learner never waits for something that could have been made ready.** Quality of items
    and feedback, and completeness of the log, are fixed; only waiting is cut.
 5. **Whoever grades did not write the items.** Where the session has helper agents, an author
-   writes the round and you examine: you grade against the evidence, not against a key you wrote.
+   writes the round and you examine: you grade against the evidence, not against a key you
+   wrote, and you mark the answer before you use any feedback the author prepared.
 6. **Final feedback → save → reflection → save.** The round is recorded right after the final
    feedback (reflection pending), then updated when the reflection arrives.
 7. **Respect the time budget** in `config.session_minutes`, including reading time.
 8. **The log is verbatim and append-only.** Corrections are errata, never edits.
-9. **Code every round** at grading time (`references/analysis_framework.md` §1).
+9. **Code every round** at grading time (`references/feedback_guide.md` §11).
 
 ## Tools and files
 
@@ -59,16 +60,15 @@ needs judgement; the rest is in the references:
 | Reference | Read when |
 |---|---|
 | `references/store.md` | After the first message (§4, before publishing); before it only when turn 1 says so; setup, a failed save, recovery, export |
-| `references/standards.md` | Before grading: the numbered rules for items and feedback (rules 1–5, 10–12 bind your feedback); all of it when you write items |
-| `references/feedback_guide.md` | Before grading; contains the reflection prompt |
-| `references/analysis_framework.md` | Before grading (§1 coding); for the deep review (§2) |
+| `references/feedback_guide.md` | Before grading, and nothing else: the examiner's brief (verifying, marking, the draft, feedback, coding, the reflection prompt, disputes) |
+| `references/analysis_framework.md` | For the deep review (§2) |
 | `references/state_schema.md` | Commands (§6); spacing and blocks (§4); the forms, only if one is unclear (§2–3) |
 | `references/session_log.md` | Writing `B.md` (§3); errata, addendum, search, teaching export |
 | `references/preparing.md` | After the close (§2); "prepare only" sessions (§3); overnight preparation (§4); a round that was not prepared (§6) |
 | `references/requests.md` | Any request that is not a round (§1); testing mode (§2); case first and other variants (§3) |
 | `references/onboarding.md` | First run, settings at setup, FAQ (§5) |
 | `references/progress_review.md` | When a review is due or requested |
-| `references/author.md`, `references/case_design.md` | Only when you write items yourself (the author's brief and how items are designed) |
+| `references/standards.md`, `references/author.md`, `references/case_design.md` | Only when you write items yourself (the rulebook, the author's brief, how items are designed) |
 | `references/evidence_check.md` | The checker's brief, with its retry routes (§3); how you check evidence yourself (§5); finding podcast episodes (§6) |
 
 ## Roles: who writes, who grades, who checks
@@ -77,14 +77,14 @@ With `helpers` true in the `start` output and a session that can start helper ag
 
 | Role | Who | Model | Does |
 |---|---|---|---|
-| **Author** | a helper agent | the most capable model the session offers, never below your own | writes the round: sealed questions, sealed case with its results bank, the notes (kits) for the feedback (`author.md`) |
-| **Examiner** | you, in this conversation | the model the learner runs the round with | presents, grades against the evidence, writes all feedback, codes, records |
+| **Author** | a helper agent | the most capable model the session offers, never below your own | writes the round: sealed questions, sealed case with its results bank, the kits with the feedback's prepared text (`author.md`) |
+| **Examiner** | you, in this conversation | the model the learner runs the round with | presents, marks against the evidence, writes and adapts all feedback, codes, records |
 | **Checker** | a helper agent | a mid-tier model: one step below the most capable, not the smallest | verifies the evidence on the verification lists and finds the podcast candidates (`evidence_check.md`) |
 
 - **You never mark your own items.** While an author exists you never read `case_design.md` or
   `author.md`, and you are the second opinion on the author's keys: grade what the learner
   wrote against the checked evidence; where a key is wrong, dated or too narrow, correct it in
-  the feedback and credit the learner (`feedback_guide.md` §9).
+  the feedback and credit the learner (`feedback_guide.md` §9.4).
 - **You open a sealed file, its kit or its evidence file only when that part's answers are
   in**: the questions' once the short questions are answered, the case's only after its final
   answers. Before Stage 2 you read only the case's results bank (`present --block bank`). Until
@@ -158,7 +158,7 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
    - `opening` → the opening line, word for word. Nothing more specific about the block: not
      which questions are on its theme, not the domain of any other item.
    - keep `helpers`, `prepared`, `testing`, `speed_settings_new`, `pending_errata_count`,
-     `listening`, `guideline_region`, `specialty` and `pitch` (rules 2–5 grade with them).
+     `listening`, `guideline_region`, `specialty` and `pitch` (the feedback uses them).
 3. **Send the first message**: `opening` (after a long gap at most add "Welcome back — N items
    are waiting; we'll start with the most overdue", without scolding or enlarging the round),
    then, with `prepared.used` true, `present` exactly as printed (it ends with its answer
@@ -166,9 +166,9 @@ steps 1–2 and no reference (`store.md` §3–4 only if a step fails or the sto
    `prepared.used` false → the round is written now, the first part first: `preparing.md` §6.
 4. **Behind the scenes**, in this order: start a background checker for each sealed file in
    `prepared.unchecked` (a round written now: each one in `<work>` without an evidence file);
-   read `standards.md`, `feedback_guide.md`, `analysis_framework.md` §1 and `store.md` §4
-   (publishing) in one batch; have what `prepared.ready` lacks written (`preparing.md` §6);
-   `labels_needed` not null → set the display labels (`requests.md` §1, last row).
+   read `feedback_guide.md` and `store.md` §4 (publishing) in one batch; have what
+   `prepared.ready` lacks written (`preparing.md` §6); `labels_needed` not null → set the
+   display labels (`requests.md` §1, last row).
 
 ### Turn 2. Question answers in → their feedback, then the case
 
@@ -176,18 +176,18 @@ An answer is final once given; a later change request is noted in the log and th
 graded. If answers are missing, ask once; proceed if the learner says so.
 
 1. **In one batch**: `python3 cme.py answer --work <work> --part questions` (the learner's
-   message on standard input, exactly as written); read `<work>/sealed_questions.md`,
-   `kit_questions.md` and `evidence_questions.md`; run `cme.py present --work <work> --block
-   case` (the case file stays unopened). No evidence file → run the questions' verification
-   list now (`evidence_check.md` §5); with one, search only for what the answers raise.
-2. **Grade and code** the short questions against the evidence, the key and kit being the author's
-   view, in the **grading form** `answer` wrote (`<work>/round.json`: each rubric element, `depth`,
-   `positions`, the codes; `feedback_guide.md` §2 part 1, §4.1; rule 12; `analysis_framework.md` §1).
-3. **Send the questions' feedback** (glossary line, rule 5.3 → reveal of these items → MCQs →
-   focused questions; no gap summary or reflection prompt yet; nothing that touches the case;
-   it ends "The case follows."), and **straight after it the case**, exactly as printed.
-4. **Behind the scenes, in one batch**: write `<work>/feedback_questions.md` (the feedback
-   exactly as sent) and fill in the form (its `_form` says how), to be completed after the case.
+   message on standard input, exactly as written); read `<work>/sealed_questions.md` and
+   `evidence_questions.md`; run `cme.py present --work <work> --block case` (the case file stays
+   unopened). No evidence file → run the questions' verification list now (`feedback_guide.md`
+   §1); with one, search only for what the answers raise.
+2. **Marks before text**: in the **grading form** (`<work>/round.json`) mark every rubric element
+   with the learner's words, and each MCQ (`feedback_guide.md` §9.1); then `cme.py draft --work
+   <work> --part questions`.
+3. **Send the questions' feedback** from the draft (§9.3: glossary line → reveal of these items →
+   MCQs → focused questions; nothing that touches the case; it ends "The case follows."), and
+   **straight after it the case**, exactly as printed.
+4. **Behind the scenes, in one batch**: write `<work>/feedback_questions.md` (exactly as sent)
+   and complete the form's scores and coding (§2, §11), to be finished after the case.
 
 - No case in the round → this is the final feedback: send it complete (gap summary and
   reflection prompt included, as `feedback.md`) and go to turn 4, step 4.
@@ -211,18 +211,16 @@ graded. If answers are missing, ask once; proceed if the learner says so.
 ### Turn 4. Final answers in → case feedback, first save
 
 1. **In one batch** file the last answers (`answer --part final`, or `--part case` for a one-step
-   case; it adds the case to the form) and read `sealed_case.md`, `kit_case.md` and `evidence_case.md`
-   now (with no evidence file, run the case's verification list); the round is no longer sealed.
-2. **Grade** against current guidance for the learner's region and specialty (rule 2);
-   watch for transfer gaps and calibration across the whole round; code the case (ART steps
-   and Revised-IDEA; an error record for every missed or partial element); `depth` as in turn 2.
-3. **Send the final feedback** (`feedback_guide.md` §2 part 2: glossary line → case reveal →
-   case → gap summary for the whole round with mastery 0–5 per topic and the coding line → up
-   to two reading pointers → with `listening.on`, an episode per topic → the reflection prompt).
-4. **Behind the scenes, in one batch**: write `<work>/feedback.md`, the final feedback exactly
-   as sent; file change requests and anything else to log with `answer --part notes`; complete
-   the form `<work>/round.json` with the grading, `reading` and `listening` only (no `reflection`
-   key, no times). `save` fills in the rest from the key headers and the plan.
+   case; it adds the case to the form) and read `sealed_case.md` and `evidence_case.md` now (with
+   no evidence file, run the case's verification list); the round is no longer sealed.
+2. **Mark the case's rubric** by stage, then `cme.py draft --work <work> --part case`; watch
+   for transfer gaps and calibration across the whole round; code the case.
+3. **Send the final feedback** from the draft (`feedback_guide.md` §2 part 2: glossary line → case
+   reveal → case → gap summary for the whole round with mastery 0–5 per topic and the coding line
+   → up to two reading pointers → with `listening.on`, an episode per topic → the reflection prompt).
+4. **Behind the scenes, in one batch**: write `<work>/feedback.md` (exactly as sent); file change
+   requests and anything else to log with `answer --part notes`; complete the form with the
+   grading, `reading` and `listening` only (`save` fills in the rest, times included).
 5. `python3 cme.py save --work <work>`, then publish every file in its `files` list in one
    write (`store.md` §4; `index.html` among them → `store.md` §4.5 once). Fix any `warnings`,
    or an `error` about a key header or a blank in the form, and run the same command again.
@@ -231,11 +229,10 @@ graded. If answers are missing, ask once; proceed if the learner says so.
 
 ### Turn 5. Reflection → final save, close
 
-1. **Read the reflection**: comfort per topic and self-rated performance (1–5), solid and shaky
-   areas, reading minutes, podcasts to trust or avoid (`podcast_sources`). Turn each shaky area
-   into a precise gap linked to a blueprint ID (`self_gaps`). A disputed grade is resolved first
-   (`feedback_guide.md` §7; never defend a grade by repeating it), outcome in `grade_changes`.
-   "skip" → `{"skipped": true}`. "Record it as 4", "close that gap": §7.1; "I know this, stop it": §7.2.
+1. **Read the reflection** (comfort and performance 1–5, solid and shaky areas, reading minutes,
+   `podcast_sources`); each shaky area becomes a precise gap on a blueprint ID. A disputed grade
+   is resolved first (`feedback_guide.md` §7; never defend a grade by repeating it). "Record it
+   as 4", "close that gap": §7.1; "I know this, stop it": §7.2.
 2. `cme.py answer --work <work> --part reflection` writes the **reflection form**; then, in one
    batch, fill in `<work>/reflection.json` and write `<work>/B.md` (discussion verbatim, grade
    changes, coded analysis, errata from `errata_to_log`; `session_log.md` §3). Then

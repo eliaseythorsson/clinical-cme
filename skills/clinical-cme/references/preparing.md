@@ -10,8 +10,9 @@ Contents: 1. What is made ready, and when · 2. After the close · 3. Prepare on
 ## 1. What is made ready, and when
 
 - **The whole round is prepared ahead.** After each close, the next round is planned and
-  written in full — short questions, case Stage 1 with its results bank, and the notes for both
-  feedbacks — its evidence is checked, and all of it is kept, packed, in the store
+  written in full — short questions, case Stage 1 with its results bank, and the finished text
+  of both feedbacks (the kits' prepared blocks, `standards.md` rule 8) — its evidence is
+  checked, and all of it is kept, packed, in the store
   (`state_schema.md` §8). The next session reads the store and presents; it writes and looks
   up nothing before the learner starts, before the case appears, or before either feedback.
 - **Evidence is never looked up while the learner waits.** Searches would show the topic, so
@@ -23,6 +24,9 @@ Contents: 1. What is made ready, and when · 2. After the close · 3. Prepare on
   answers raise (`feedback_guide.md` §1).
 - **The next round is sealed from the start.** With an author you never see it: do not read
   the plan, the sealed files, the kits or the evidence files in `<work>/next`.
+- **Preparation takes longer than writing the items alone** (about twice the author's time,
+  and more of the allowance): the feedback's text is most of it. That is accepted, because it
+  happens after the close or overnight, never while the learner waits (ADR 0009).
 - Quality of the items and completeness of the check are fixed; only the learner's waiting is
   cut. Nothing here is ever mentioned to the learner, apart from §5.
 
@@ -131,7 +135,9 @@ learner answers. If `prepared.ready` lists some files, only what is missing is w
 - **The rest, behind the scenes of turn 1**, after the checker for the first part is started:
   the case (`sealed_case.md`) and both kits. With an author: start it again (Parts `case`),
   wait, then start the case's checker in the background. Without: write them yourself
-  (`author.md` §3; `standards.md` rule 8), the case first.
+  (`author.md` §3; `standards.md` rule 8), the case first. A kit not finished when its part's
+  answers arrive is not waited for: the draft marks the blocks it lacks, and the examiner
+  writes them (`feedback_guide.md` §9.3).
 - **Evidence**: a checker is started in the background for every sealed file without an
   evidence file. Without helpers, the examiner runs each part's verification list only after
   that part's answers are in (`evidence_check.md` §5).

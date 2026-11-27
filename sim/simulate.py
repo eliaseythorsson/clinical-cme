@@ -674,6 +674,40 @@ def check_listening(rnd):
     return out
 
 
+# ---------------------------------------------------------------- check 5: prepared feedback
+
+LEFTOVER_RE = re.compile(r"<!--\s*/?\s*(?:block|draft|notes|check)\b|\[live:", re.I)
+
+
+def check_prepared(rnd):
+    """Marks before text, and the feedback from the draft (feedback_guide.md §9; ADR 0009): every
+    rubric element of the round record is marked, a draft was made (the session document has
+    `prepared_feedback`), and no feedback as sent still holds the draft's comment lines or a
+    [live: …] part. Elements marked hit or partial without the learner's words are counted, for
+    the record, and do not fail the run."""
+    out = {"ok": True, "unmarked": 0, "unquoted": 0, "prepared_feedback": None, "problems": []}
+    for it in rnd.items:
+        for e in it.get("rubric") or []:
+            if not isinstance(e, dict) or e.get("mark") not in ("hit", "partial", "missed"):
+                out["unmarked"] += 1
+            elif e["mark"] != "missed" and not str(e.get("quote") or "").strip():
+                out["unquoted"] += 1
+    if out["unmarked"]:
+        out["problems"].append("%d rubric element(s) in the round record are not marked" % out["unmarked"])
+    pf = (rnd.doc or {}).get("prepared_feedback")
+    if rnd.doc is not None and not isinstance(pf, dict):
+        out["problems"].append("the session document has no `prepared_feedback`: the feedback was not written "
+                               "from a draft (`cme.py draft`)")
+    elif isinstance(pf, dict):
+        out["prepared_feedback"] = {k: (v if isinstance(v, int) else len(v or [])) for k, v in pf.items()}
+    for key in ("fb_questions", "feedback"):
+        if LEFTOVER_RE.search(rnd.a.get(key) or ""):
+            out["problems"].append("the %s as sent still holds the draft's comment lines or a [live: …] part"
+                                   % ("questions' feedback" if key == "fb_questions" else "final feedback"))
+    out["ok"] = not out["problems"]
+    return out
+
+
 # ---------------------------------------------------------------- check 3: log complete and verbatim
 
 def check_log(rnd):
@@ -967,7 +1001,8 @@ def check_standards(rnd):
 def run_checks(run):
     rnd = Round(run)
     checks = {"blinding": check_blinding(rnd), "saved": check_saved(rnd), "log": check_log(rnd),
-              "standards": check_standards(rnd), "listening": check_listening(rnd)}
+              "standards": check_standards(rnd), "listening": check_listening(rnd),
+              "prepared": check_prepared(rnd)}
     for name in rnd.meta.get("expect") or []:
         checks[name] = EXPECTED_CHECKS[name](rnd)
     return rnd, {"ok": all(c["ok"] for c in checks.values()), "checks": checks}
@@ -1134,6 +1169,14 @@ def report_markdown(rep):
         lines.append("| Listening: a section in the final feedback, the picks in the session document | %s | %s |" % (
             mark(d["ok"]), "%d pick(s) for %d topic(s): %d from the kit, %d found after grading"
             % (d["picks"], d["topics"], d["from_kit"], d["from_search"]) if d["on"] else "turned off"))
+    if "prepared" in c:             # reports made before issue #78 have no such check
+        d = c["prepared"]
+        pf = d.get("prepared_feedback") or {}
+        lines.append("| Prepared feedback: marks before text, the feedback written from the draft | %s | %s |" % (
+            mark(d["ok"]), ("%d block(s) offered: %d as prepared, %d changed, %d left out; %d element(s) marked "
+                            "without the learner's words" % (pf.get("offered", 0), pf.get("as_prepared", 0),
+                                                              pf.get("changed", 0), pf.get("discarded", 0),
+                                                              d["unquoted"])) if pf else "no draft"))
     if "dispute" in c:
         d = c["dispute"]
         lines.append("| Persona: a settled dispute, in the log and in the grade changes | %s | %s; exchange logged under: %s |" % (
@@ -1147,7 +1190,7 @@ def report_markdown(rep):
     lines.append("")
     for name, title in (("blinding", "Blinding"), ("saved", "Saved files"), ("log", "Log"),
                         ("standards", "Writing standards"), ("listening", "Listening"),
-                        ("dispute", "Dispute"), ("stopped", "Stopped before the case")):
+                        ("prepared", "Prepared feedback"), ("dispute", "Dispute"), ("stopped", "Stopped before the case")):
         if name in c and c[name]["problems"]:
             lines += ["### %s: problems" % title, ""] + ["- %s" % p for p in c[name]["problems"]] + [""]
     if c["blinding"]["findings"]:

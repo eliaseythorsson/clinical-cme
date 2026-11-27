@@ -110,8 +110,50 @@ def test_evidence_depth_is_described_where_each_reader_looks_for_it():
         assert "| %d `%s` | %d" % (n, name, need) in guide, name      # the table's levels and thresholds
         assert "%d `%s` (%d" % (n, name, need) in schema, name
     rule8 = doc("standards.md").split("## Rule 8.")[1].split("## Rule 9.")[0]
-    assert "**Deeper notes**" in rule8 and "put on the verification list" in rule8
+    assert "**Deeper**" in rule8 and "put on the verification list" in rule8 and "`deeper`" in rule8
     assert "feedback_guide.md` §4.1" in doc("standards.md").split("## Rule 4.")[1].split("## Rule 5.")[0]
-    assert "`depth`" in doc("author.md") and "`Deeper` notes" in doc("evidence_check.md")
+    assert "`depth`" in doc("author.md") and "`deeper` block" in doc("evidence_check.md")
     assert '"evidence_ladder": false' in doc("requests.md") and "`evidence_ladder` false" in doc("onboarding.md")
-    assert "`depth`" in read(SKILL_MD) and "**Evidence depth**" in read(os.path.join(SKILL, "..", "..", "CONTEXT.md"))
+    assert "**Evidence depth**" in read(os.path.join(SKILL, "..", "..", "CONTEXT.md"))
+    assert "`depth`" in doc("state_schema.md") and "`given`" in doc("feedback_guide.md")
+
+
+def test_the_examiner_reads_one_brief_before_grading():
+    """Issue #77: what the examiner needs to grade and write feedback is in feedback_guide.md; the
+    rulebook keeps the item rules and points there for 5.3, 10 and 11; the coding moved too."""
+    skill = read(SKILL_MD)
+    row = next(line for line in skill.splitlines() if line.startswith("| `references/feedback_guide.md`"))
+    assert "Before grading, and nothing else" in row
+    for name in ("standards.md", "analysis_framework.md"):
+        row = next(line for line in skill.splitlines() if "`references/%s`" % name in line)
+        assert "Before grading" not in row, name
+    guide = read(os.path.join(REFERENCES, "feedback_guide.md"))
+    for heading in ("## 9. Prepared text and live text", "### 9.1 Marks before text", "### 9.2 The draft",
+                    "### 10.1 The glossary line (rule 5.3)", "### 10.2 Results the learner did not see (rule 10)",
+                    "### 10.3 Text for the learner speaks plainly (rule 11)", "## 11. Coding a round",
+                    "### 11.3 Errors", "**Tailoring always wins over speed.**"):
+        assert heading in guide, heading
+    standards = read(os.path.join(REFERENCES, "standards.md"))
+    for n, section in ((10, "§10.2"), (11, "§10.3")):
+        body = standards.split("## Rule %d." % n)[1].split("## Rule %d." % (n + 1))[0]
+        assert "`feedback_guide.md` %s" % section in body and len(body.split()) < 80, n
+    # the coding is written once, in the brief
+    analysis = read(os.path.join(REFERENCES, "analysis_framework.md"))
+    assert "`feedback_guide.md` §11" in analysis and "| `DG` |" not in analysis and "| `DG` |" in guide
+    assert os.path.isfile(os.path.join(SKILL, "..", "..", "docs", "adr", "0009-prepared-feedback-adapted-live.md"))
+
+
+def test_prepared_feedback_is_described_where_each_reader_looks_for_it():
+    """Issue #78: the blocks in the rulebook, the draft in the brief, the record in the log, the
+    checker's Blocks line, the simulation's examiner prompt."""
+    doc = lambda name: read(os.path.join(REFERENCES, name))
+    rule8 = doc("standards.md").split("## Rule 8.")[1].split("## Rule 9.")[0]
+    assert "<!-- block: Q4.2 missed -->" in rule8 and "`n missed`, `n partial` and `n hit`" in rule8
+    assert "cme.py draft" in flat(doc("feedback_guide.md")) and "`prepared_feedback`" in doc("session_log.md")
+    assert "**Blocks:**" in doc("evidence_check.md") and "prepared blocks" in doc("author.md")
+    assert "draft --work <work> --part questions" in flat(read(SKILL_MD))
+    examiner = read(os.path.join(SKILL, "..", "..", "sim", "prompts", "examiner.md"))
+    assert "cme.py draft" in examiner and "`quote`" in examiner
+    context = read(os.path.join(SKILL, "..", "..", "CONTEXT.md"))
+    for term in ("**Prepared block**", "**Marks before text**", "**Draft**", "**Live part**"):
+        assert term in context, term

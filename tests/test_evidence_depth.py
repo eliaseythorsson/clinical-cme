@@ -154,28 +154,29 @@ def test_a_kit_without_deeper_notes_for_a_deep_item_blocks_the_stash(tmp_path, k
     nxt = Next(tmp_path).setup()
     nxt.check()
     deepen(nxt, kid)
-    assert "%s: no 'Deeper' notes for %s" % (kit, kid) in refused(nxt)
+    assert "%s, key %s: no prepared block %s deeper" % (kit, kid, kid) in refused(nxt)
     path = nxt.p("next", kit)
     text = open(path, encoding="utf-8").read()
+    block = "<!-- block: %s deeper -->\nSEALED the trial behind it, its comparator and endpoint.\n<!-- /block -->\n" % kid
     if kid == "case":
-        text = text.replace("## Pearls", "## Deeper\nSEALED trial, its comparator and endpoint (verify)\n\n## Pearls")
+        text = text.replace("## Pearls", "## Deeper\n%s\n## Pearls" % block)
     else:
-        text = text.replace("## Q2", "- **Deeper:** SEALED trial, design and limits (verify)\n\n## Q2")
-    assert "eeper" in text
+        text = text.replace("## Q2", "%s\n## Q2" % block)
     nxt.write(os.path.join("next", kit), text)
     _, out = nxt.finish()
     assert out["stashed"] is True
 
 
-def test_deeper_notes_under_another_question_do_not_count(tmp_path):
+def test_deeper_notes_without_their_block_do_not_count(tmp_path):
+    """The outline of before (a line "Deeper: …") is not finished text: the block is required."""
     nxt = Next(tmp_path).setup()
     nxt.check()
     deepen(nxt, "Q1")
     path = nxt.p("next", "kit_questions.md")
     text = open(path, encoding="utf-8").read()
-    assert "## Q2" in text and "## Q3" in text
-    nxt.write(os.path.join("next", "kit_questions.md"), text.replace("## Q3", "Deeper: SEALED notes\n\n## Q3"))
-    assert "kit_questions.md: no 'Deeper' notes for Q1" in refused(nxt)
+    assert "## Q2" in text
+    nxt.write(os.path.join("next", "kit_questions.md"), text.replace("## Q2", "Deeper: SEALED notes (verify)\n\n## Q2"))
+    assert "kit_questions.md, key Q1: no prepared block Q1 deeper" in refused(nxt)
 
 
 # ---------------------------------------------------------------- the round: what the examiner is told

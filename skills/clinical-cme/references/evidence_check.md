@@ -34,10 +34,12 @@ search for one claim the feedback will rest on (a guideline recommendation and i
 threshold or dose, a trial result, a test's accuracy, an approval status). The keys and model
 answers in the same file tell you exactly what each claim is, and the line above the list
 gives the learner's guideline region and specialty: check against them as rule 2 of
-`standards.md` says. Check those claims, and any other specific number, dose or
-recommendation in the keys that could have changed or that you are not certain of, and that
+`standards.md` says. Each line ends with the ids of the kit's prepared blocks that state the
+claim (`[Q1 missed, Q4.2 missed]`; rule 8): the feedback's finished text, which the examiner
+will send. Check those claims, and any other specific number, dose or recommendation in the
+keys or in those blocks that could have changed or that you are not certain of, and that
 the section each reading pointer names exists (rule 8, when the kit is beside the list file).
-A list line that names a study for a kit's `Deeper` notes (rule 8) is checked like any other
+A list line that names a study for a kit's `deeper` block (rule 8) is checked like any other
 claim, from the paper's own abstract or full text: its population, comparison, primary result
 and the design feature the note relies on.
 A list line that asks whether guidance on a point has changed since a date (a learner's
@@ -95,8 +97,13 @@ link (DOI, PubMed or the society's page).
 **Tried:** the routes attempted, in order, each with its outcome — required when the status is
 "not verified", e.g. `PMC (browser check); PubMed abstract (no figure); Europe PMC (abstract
 only); publisher page (paywall)`.
+**Blocks:** the block ids at the end of the list line, copied as they are (`Q1 missed, Q4.2 missed`).
 **Note:** anything that changes the key or the grading (optional).
 ```
+
+Write **Blocks:** for every claim that names blocks: where the status is not "confirmed", the
+examiner sees the flag above each of those blocks and corrects it before sending. You do not
+edit the blocks.
 
 A "not verified" block without its **Tried:** line counts as not retried: the script sends
 the file back to you.
