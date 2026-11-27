@@ -138,7 +138,7 @@ ERAS = {
     "6_0": "89805ff",                     # the engine stamp: a current ledger
     "newer": "89805ff",                   # stamped by an engine newer than this one
 }
-SCRIPT = "skills/clinical-cme/scripts/cme.py"
+SCRIPT = "skills/clinical-cme/scripts/cme.py"     # its path in those commits (issue #56 moved it under plugins/)
 
 
 def engine_of(commit):

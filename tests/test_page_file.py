@@ -155,7 +155,7 @@ def test_page_file_has_the_documented_shape_and_empty_slots_for_what_is_to_come(
                              "time_hint": None}
     assert page["next_review"] == st["review"]["next_due"]
     s = page["settings"]
-    assert (s["session_length"], s["per_week"], s["region"], s["units"]) == (30, 3, "Iceland/Europe", {"labs": "SI", "gases": "mmHg"})
+    assert (s["session_length"], s["per_week"], s["region"], s["units"]) == (30, 3, "International", {"labs": "SI", "gases": "mmHg"})
     assert page["who"]["specialty"] == "Geriatrics"
     # empty until the learner has written them: level and aim (#55); reading and listening are `library` (#51)
     assert s["level"] is None and s["aim"] is None and "reading" not in s and "listening" not in s

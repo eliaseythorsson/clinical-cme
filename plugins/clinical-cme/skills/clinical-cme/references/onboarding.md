@@ -85,9 +85,12 @@ same batch: main setting (inpatient · outpatient · ED/ICU · mixed) → `profi
 And, always, these two questions, each with its default offered so the learner can simply
 accept it:
 
-- **Whose guidelines should the questions and the grading follow?** Iceland/Europe (default:
-  Icelandic national guidance where it exists, otherwise the European societies; SI units) ·
-  UK (NICE etc., SI) · North America (US guidelines, conventional units) · other (free text).
+- **Whose guidelines should the questions and the grading follow?** International (default:
+  the major European and US societies, with any difference between them flagged; SI units) ·
+  your country or region (its national guidance where it exists: "UK" for NICE etc., SI;
+  "North America" for US guidelines, conventional units) · other (free text, in their words).
+  The question may be asked open ("whose guidelines do you follow?"); no answer, or "don't
+  mind", is International.
   → `config.guideline_region`, with `lab_units` to match. Ask separately about blood gases in
   mmHg or kPa if the region varies.
 - **Which specialty?** Internal/hospital medicine (default) · other (free text), plus a
@@ -162,7 +165,7 @@ pick other numbers, here or on the page.
 | Answer | Setting |
 |---|---|
 | Where you are / where you're aiming | `profile.journey` / `profile.aim`, the learner's words; `profile.journey_label`, `profile.aim_tags` derived |
-| Guidelines: Iceland/Europe / UK / North America / other | `guideline_region` "Iceland/Europe" / "UK" / "North America" / the learner's words |
+| Guidelines: International / UK / North America / a country / other | `guideline_region` "International" (also when skipped) / "UK" / "North America" / the learner's words |
 | Specialty | `profile.specialty` (default "Internal/hospital medicine") |
 | Time per session | `session_minutes` 15 / 25 / 35 / 45, and the mix from the table above |
 | Feedback depth | `feedback_depth` detailed (default) / standard |
@@ -184,9 +187,11 @@ files as the page "Clinical CME" and pin it; otherwise a folder the learner name
 they keep. Ask which only if more than one is possible and the learner has a preference;
 default to the page. Blueprint: `templates/blueprint.json` for internal/hospital medicine (two
 levels: 16 areas, 144 topics, 347 sub-topics with their decision points); for another
-specialty draft one in the same shape (domains with weights, topics with stable IDs such as
-`PEDS-01`; sub-topics optional) from that specialty's core-competency or board outline and show the domain list for a
+specialty, first a checked one from `blueprints/` whose specialty matches, else draft one in the same shape (domains with weights, topics with stable IDs such as
+`PEDS-01`; sub-topics optional) from that specialty's core-competency or board outline; either way show the domain list for a
 quick check before saving. Lower weights for domains that do not fit the practice setting.
+After a drafted one is saved, offer once to share it (`blueprints/README.md`: `blueprint-export`;
+no is the default).
 
 Tell the learner (show this):
 
@@ -281,8 +286,9 @@ there saves it (no link can save it for you). Name shows you trust or want avoid
 time, or say "listening off".
 
 **Whose guidelines does it use, and for which specialty?** The ones you chose at setup
-(Iceland/Europe and internal/hospital medicine unless you said otherwise). Change either any
-time: "use UK guidelines", "my specialty is geriatrics".
+(International, meaning the major European and US societies, and internal/hospital medicine
+unless you said otherwise). Change either any time: "use UK guidelines", "my specialty is
+geriatrics".
 
 **Can I choose the area?** Yes: "a cardiology round". The domain is then known, the question is not.
 

@@ -62,8 +62,13 @@ Items are written, keyed, checked and graded against the guidelines of the plan'
 relevant to the plan's `specialty`.
 
 1. Keys, model answers, verification searches and feedback name that region's guideline first,
-   with body and year. For "Iceland/Europe": Icelandic national guidance where it exists,
-   otherwise the European society's.
+   with body and year. For a country: its national guidance where it exists, otherwise its
+   continent's societies (for a European country, the European society's). For "International"
+   (the default, and what a skipped answer means): the major European and US societies (e.g.
+   ESC and ACC/AHA, ESCMID and IDSA, KDIGO); where they differ materially on the point tested,
+   the key accepts what either recommends, the feedback names both with the difference, and an
+   item never turns on a point where they disagree. A region in the learner's own words (an
+   open answer: "Nordic", "what my hospital follows: NICE") is read as they wrote it.
 2. Where another region's guidance differs materially, or guidance changed recently, the
    item is still keyed to the learner's region; what the feedback then says is in
    `feedback_guide.md` §1.

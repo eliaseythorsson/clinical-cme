@@ -89,7 +89,9 @@ def test_the_default_blueprint_has_its_tags_and_its_seed_covers_the_checked_ones
     assert "NICE NG234 2023" in tags and "NICE NG234 2023" not in seeded
     assert {r["status"] for r in doc["records"]} <= {"current", "uncertain"}
     assert all(r["last_checked"] == "2026-11-27" for r in doc["records"])
-    # checked for Europe: another region starts with no records
+    # checked for the regions the seed names: International and the old default too, another none
+    st["config"]["guideline_region"] = "Iceland/Europe"
+    assert cme.seeded_guidelines(st)[1] == "seeded"
     st["config"]["guideline_region"] = "United States"
     assert cme.seeded_guidelines(st) == (cme.new_guidelines(st), "new")
 
@@ -343,7 +345,7 @@ def test_results_filed_by_finish_prepare_go_into_the_publish_set_with_the_ledger
     assert [f["as"] for f in out["files"]] == ["data/page.json", GUIDE, "data/prepared.json", "data/state.json"]
     doc = learner.read_json("publish", *GUIDE.split("/"))
     st = learner.read_json("publish", "data", "state.json")
-    assert st["guidelines_gen"] == doc["gen"] == 1 and doc["region"] == "Iceland/Europe"
+    assert st["guidelines_gen"] == doc["gen"] == 1 and doc["region"] == "International"
     assert {r["tag"] for r in doc["records"]} == set(listed)
     assert all(r["last_checked"] == DAY for r in doc["records"])
     # a content-neutral write: the prepared round is tied to the ledger it was planned on and stays usable

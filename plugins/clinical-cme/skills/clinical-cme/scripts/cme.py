@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Elias Eythorsson. The skill's content (SKILL.md, references, templates) is CC BY-NC 4.0: LICENSE.md.
 """clinical-cme v6.0.0 state engine (standard library only, Python 3.8+).
 
 The learner's scheduling memory is ONE JSON document, the ledger (state.json); each round also
@@ -63,7 +65,9 @@ DEFAULT_CONFIG = {
     "new_topics_per_round": 1,
     "lab_units": "SI",
     "blood_gas_units": "mmHg",
-    "guideline_region": "Iceland/Europe",   # free text; asked at setup: whose guidelines items are written and graded against
+    "guideline_region": "International",    # free text; asked at setup: whose guidelines items are written and graded
+                                            # against. International: the major European and US societies, differences
+                                            # flagged (standards.md rule 2); a skipped answer reads as it (issue #56)
     "item_order": "mcqs_first",          # mcqs_first: questions -> their feedback -> case -> its feedback
     "helpers": True,                     # helper agents where the app has them: an author drafts the items, a
                                          # checker verifies the evidence; the conversation grades
@@ -1536,6 +1540,28 @@ def upgrade_settings_of_4_2(st):
     return st
 
 
+# Until issue #56 a ledger without a guideline region (missing, null or blank) read as "Iceland/Europe";
+# since, it reads as "International". A ledger last written by an engine of that era keeps the region
+# it was read with: the upgrade step `old_default_region` writes the old value into it. Its era test is
+# the engine stamp: none, or not newer than REGION_OLD_DEFAULT_UNTIL (the last version whose default
+# it was). A ledger made since is never left without one (`init` writes the default into it).
+REGION_OLD_DEFAULT = "Iceland/Europe"
+REGION_OLD_DEFAULT_UNTIL = "6.0.0"
+
+
+def upgrade_old_default_region(st):
+    """A ledger from before issue #56 that holds no guideline region of its own read as Iceland/Europe:
+    it keeps that, now written into it, so that its rounds do not change without the learner asking.
+    A no-op on a ledger that names a region, and on one from a later engine."""
+    cfg = st.get("config")
+    if not isinstance(cfg, dict) or not blank(cfg.get("guideline_region")):
+        return st
+    stamp = version_key(st.get(STAMP_KEY))
+    if not stamp or stamp <= version_key(REGION_OLD_DEFAULT_UNTIL):
+        cfg["guideline_region"] = REGION_OLD_DEFAULT
+    return st
+
+
 def upgrade_blueprint_shape(st):
     """A two-level blueprint given with nested topics is flattened (issue #81); a one-level
     blueprint stays as it is."""
@@ -1551,6 +1577,7 @@ UPGRADES = (
     ("paragraphs", migrate_profile),                  # where you are / where you're aiming (issue #55)
     ("blueprint_shape", upgrade_blueprint_shape),     # two-level blueprint, flat in the ledger (issue #81)
     ("one_code_per_area", migrate_domains),           # TOX and EMRG one area (issue #80)
+    ("old_default_region", upgrade_old_default_region),  # no region of its own: Iceland/Europe kept (issue #56)
 )
 
 
@@ -4948,6 +4975,8 @@ def cmd_init(args):
     cfg_changes = load_json_arg(args.config) or {}
     check_setting_changes(cfg_changes)
     deep_merge(st["config"], cfg_changes)
+    if blank(st["config"].get("guideline_region")):     # a skipped answer: today's default, never an older one
+        st["config"]["guideline_region"] = DEFAULT_CONFIG["guideline_region"]
     make_current(st)            # a profile given in the old fields (role, goals, notes) is folded too; a null reads as always
     check_paragraphs(st["profile"])
     for key, _, _ in PARAGRAPHS:
@@ -4994,6 +5023,53 @@ def cmd_blueprint_md(args):
     bp = blueprint_from_md(open(args.file, encoding="utf-8").read())
     save_json(bp, args.out)
     print(json.dumps({"ok": True, "out": args.out, "domains": list(bp), "topics": sum(len(v["topics"]) for v in bp.values())}))
+
+
+BLUEPRINT_REPO = "https://github.com/eliaseythorsson/clinical-cme"
+
+
+def blueprint_slug(text):
+    """'Paediatrics / neonatology' -> 'paediatrics-neonatology': a file name for a shared blueprint."""
+    out = re.sub(r"[^a-z0-9]+", "-", (text or "").lower()).strip("-")
+    return out[:60].strip("-") or "specialty"
+
+
+def cmd_blueprint_export(args):
+    """A blueprint drafted at setup, as files the learner can send back to the repo (issue #56;
+    blueprints/README.md): the blueprint as the ledger holds it, and a note of what it is for. Nothing
+    of the learner goes into either (no paragraphs, history, scores or name); the ledger is not
+    written."""
+    today = today_from(args)
+    work, info = job(args)
+    st, _ = current_ledger(work, info)
+    prof, bp = st["profile"], st["blueprint"]
+    if not bp:
+        die("the ledger holds no blueprint to export")
+    specialty = " / ".join(x for x in (prof.get("specialty"), prof.get("subspecialty"))
+                           if isinstance(x, str) and x.strip())
+    slug = blueprint_slug(specialty)
+    os.makedirs(args.out, exist_ok=True)
+    jpath, mpath = os.path.join(args.out, slug + ".json"), os.path.join(args.out, slug + ".md")
+    save_json(bp, jpath)
+    topics = {d: [t for t in (info_ or {}).get("topics") or {}] for d, info_ in bp.items()}
+    subs = sum(len(g or {}) for info_ in bp.values() for g in ((info_ or {}).get("subtopics") or {}).values())
+    lines = ["# Blueprint: %s" % (specialty or "specialty"), "",
+             "Drafted at setup on %s with the clinical-cme skill %s, for the guideline region \"%s\"."
+             % (iso(today), SKILL_VERSION, st["config"]["guideline_region"]),
+             "Practice setting: %s." % (", ".join(prof.get("practice_setting") or []) or "not given"), "",
+             "To contribute it: open an issue or a pull request at %s that adds `%s` to `blueprints/` "
+             "(blueprints/README.md says how it is checked). Licence of contributed blueprints: CC BY-NC 4.0."
+             % (BLUEPRINT_REPO, slug + ".json"), "",
+             "| Area | Name | Weight | Topics |", "|---|---|---|---|"]
+    for d, info_ in bp.items():
+        lines.append("| %s | %s | %s | %d |" % (d, (info_ or {}).get("name") or d, (info_ or {}).get("weight", ""),
+                                               len(topics[d])))
+    lines += ["", "%d areas, %d topics, %d sub-topics." % (len(bp), sum(map(len, topics.values())), subs), ""]
+    with open(mpath, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines))
+    print(json.dumps({"ok": True, "specialty": specialty, "files": [jpath, mpath], "areas": len(bp),
+                      "topics": sum(map(len, topics.values())), "subtopics": subs,
+                      "send_to": BLUEPRINT_REPO + "/issues/new"}, ensure_ascii=False))
 
 
 def cmd_validate(args):
@@ -5543,14 +5619,18 @@ def new_guidelines(st):
 
 
 def seeded_guidelines(st):
-    """The records a learner starts with: for the default region, the default blueprint's tags already
-    checked before issue #90 (templates/guideline_checks.json, from the #82 and #89 passes), as far as
-    this learner's blueprint cites them; for any other region none (they were checked for Europe)."""
+    """The records a learner starts with: for a region the seed was checked for (its `regions`:
+    Iceland/Europe and International, both keyed to the European societies' guidelines the default
+    blueprint cites), the default blueprint's tags already checked before issue #90
+    (templates/guideline_checks.json, from the #82 and #89 passes), as far as this learner's
+    blueprint cites them; for any other region none."""
     doc = new_guidelines(st)
-    if doc["region"].strip().lower() != DEFAULT_CONFIG["guideline_region"].lower() or not os.path.isfile(GUIDELINE_SEED):
+    seed = load_json(GUIDELINE_SEED) if os.path.isfile(GUIDELINE_SEED) else {}
+    regions = [r.strip().lower() for r in seed.get("regions") or [] if isinstance(r, str)]
+    if doc["region"].strip().lower() not in regions:
         return doc, "new"
     tags = blueprint_tags(st)
-    doc["records"] = [dict(r) for r in load_json(GUIDELINE_SEED).get("records") or []
+    doc["records"] = [dict(r) for r in seed.get("records") or []
                       if isinstance(r, dict) and r.get("tag") in tags]
     return doc, "seeded" if doc["records"] else "new"
 
@@ -7238,6 +7318,11 @@ COMMANDS = (
      '(`frozen`), topic records left outside the blueprint or on a retired topic '
      '(`not_in_blueprint`) and, like `settings`, '
      'the `files` to publish. `--check`: the same, written nowhere.'),
+    ('`blueprint-export --work W --out DIR`',
+     "The ledger's blueprint as files to contribute to the repo's `blueprints/` (a specialty drafted at "
+     'setup): `DIR/<specialty>.json` and a note `DIR/<specialty>.md` (what it is for, its areas, how to '
+     'send it). Nothing of the learner goes into them; nothing is written to the store. Prints the '
+     '`files` and `send_to`.'),
     ('`init --work W --profile J --config J --blueprint FILE [--start-over]`',
      'Setup: the first ledger, its page file and the page, into the publish set. Prints `round` '
      '(the mix in words and its `estimated_minutes`) to confirm the mix with, and `labels_needed`'
@@ -10075,6 +10160,7 @@ def build_parser():
     s = command("position", cmd_position); s.add_argument("--drop"); s.add_argument("--reopened")
     s = command("snooze", cmd_snooze); s.add_argument("--days", type=int, default=7)
     s = command("settings", cmd_settings); s.add_argument("--config"); s.add_argument("--profile"); s.add_argument("--blueprint")
+    s = command("blueprint-export", cmd_blueprint_export); s.add_argument("--out", required=True)
     s = command("theme", cmd_theme); s.add_argument("--set"); s.add_argument("--another", action="store_true")
     s = command("apply-mapping", cmd_apply_mapping); s.add_argument("--mapping", required=True)
     s.add_argument("--check", action="store_true")

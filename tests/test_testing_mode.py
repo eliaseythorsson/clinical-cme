@@ -4,7 +4,7 @@ import os
 import re
 import shutil
 
-CME = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills", "clinical-cme", "scripts", "cme.py")
+CME = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "plugins", "clinical-cme", "skills", "clinical-cme", "scripts", "cme.py")
 
 
 def skill_version():

@@ -131,7 +131,8 @@ def test_a_null_setting_reads_as_the_engine_has_always_read_it():
     assert (cfg["mcqs"], cfg["focused"], cfg["case"], cfg["new_topics_per_round"]) == (0, 0, False, 0)
     assert cfg["listening"] is True and cfg["helpers"] is False and cfg["evidence_ladder"] is False
     assert cfg["session_minutes"] == 20 and cfg["review_interval_days"] == 42 and cfg["round_set_at"] is None
-    assert cfg["guideline_region"] == cme.DEFAULT_CONFIG["guideline_region"]
+    # a ledger of the era of the old default (stamped 6.0.0) without a region keeps it (issue #56)
+    assert cfg["guideline_region"] == cme.REGION_OLD_DEFAULT
     assert st["profile"]["specialty"] == cme.DEFAULT_PROFILE["specialty"]
 
 

@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: "22"
       - run: node --version
-      - run: python -m py_compile skills/clinical-cme/scripts/cme.py
+      - run: python -m py_compile plugins/clinical-cme/skills/clinical-cme/scripts/cme.py
       # pytest-xdist runs the tests on every core (issue #72); pip picks a release that supports
       # the job's Python (3.6.x on 3.8)
       - run: pip install pytest pytest-xdist && python -m pytest -q -n auto tests

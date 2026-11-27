@@ -42,7 +42,7 @@ starting a fresh examiner each turn.
    run folder of its own, so several personas can be started at once.
    Options: `--prepare-ahead` (the examiner also prepares the next round after the close; much
    longer), `--from-run <earlier run folder>` (a second round on the same store),
-   `--skill <folder>` (test an installed copy instead of `skills/clinical-cme/`),
+   `--skill <folder>` (test an installed copy instead of `plugins/clinical-cme/skills/clinical-cme/`),
    `--config '<json>'` (other ledger settings, e.g. `{"mcqs": 2, "focused": 1}`). `stops-halfway`
    needs a round with short questions and a case, which the default settings give.
 2. **Start the examiner agent**, in the foreground, with the prompt

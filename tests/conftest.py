@@ -18,7 +18,7 @@ import warnings
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SKILL = os.path.join(ROOT, "skills", "clinical-cme")
+SKILL = os.path.join(ROOT, "plugins", "clinical-cme", "skills", "clinical-cme")
 CME = os.path.join(SKILL, "scripts", "cme.py")
 SIM = os.path.join(ROOT, "sim", "simulate.py")
 # The default blueprint as it was before the two-level one (issue #82), frozen: most tests plan on a

@@ -4,7 +4,7 @@ import glob
 import os
 import re
 
-from conftest import SKILL
+from conftest import ROOT, SKILL
 
 SKILL_MD = os.path.join(SKILL, "SKILL.md")
 REFERENCES = os.path.join(SKILL, "references")
@@ -114,7 +114,7 @@ def test_evidence_depth_is_described_where_each_reader_looks_for_it():
     assert "feedback_guide.md` §4.1" in doc("standards.md").split("## Rule 4.")[1].split("## Rule 5.")[0]
     assert "`depth`" in doc("author.md") and "`deeper` block" in doc("evidence_check.md")
     assert '"evidence_ladder": false' in doc("requests.md") and "`evidence_ladder` false" in doc("onboarding.md")
-    assert "**Evidence depth**" in read(os.path.join(SKILL, "..", "..", "CONTEXT.md"))
+    assert "**Evidence depth**" in read(os.path.join(ROOT, "CONTEXT.md"))
     assert "`depth`" in doc("state_schema.md") and "`given`" in doc("feedback_guide.md")
 
 
@@ -140,7 +140,7 @@ def test_the_examiner_reads_one_brief_before_grading():
     # the coding is written once, in the brief
     analysis = read(os.path.join(REFERENCES, "analysis_framework.md"))
     assert "`feedback_guide.md` §11" in analysis and "| `DG` |" not in analysis and "| `DG` |" in guide
-    assert os.path.isfile(os.path.join(SKILL, "..", "..", "docs", "adr", "0009-prepared-feedback-adapted-live.md"))
+    assert os.path.isfile(os.path.join(ROOT, "docs", "adr", "0009-prepared-feedback-adapted-live.md"))
 
 
 def test_prepared_feedback_is_described_where_each_reader_looks_for_it():
@@ -152,8 +152,8 @@ def test_prepared_feedback_is_described_where_each_reader_looks_for_it():
     assert "cme.py draft" in flat(doc("feedback_guide.md")) and "`prepared_feedback`" in doc("session_log.md")
     assert "**Blocks:**" in doc("evidence_check.md") and "prepared blocks" in doc("author.md")
     assert "draft --work <work> --part questions" in flat(read(SKILL_MD))
-    examiner = read(os.path.join(SKILL, "..", "..", "sim", "prompts", "examiner.md"))
+    examiner = read(os.path.join(ROOT, "sim", "prompts", "examiner.md"))
     assert "cme.py draft" in examiner and "`quote`" in examiner
-    context = read(os.path.join(SKILL, "..", "..", "CONTEXT.md"))
+    context = read(os.path.join(ROOT, "CONTEXT.md"))
     for term in ("**Prepared block**", "**Marks before text**", "**Draft**", "**Live part**"):
         assert term in context, term

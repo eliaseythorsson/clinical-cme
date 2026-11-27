@@ -1,6 +1,6 @@
 # Blueprint v2 (proposal for #82)
 
-**Status: applied** (#82). This is now the default blueprint, `skills/clinical-cme/templates/blueprint.md`
+**Status: applied** (#82). This is now the default blueprint, `plugins/clinical-cme/skills/clinical-cme/templates/blueprint.md`
 and `blueprint.json`, with the decision points and aspect importance per sub-topic; weights
 there are the shares below scaled so that the largest, 14%, is 1.0. The retired ids stay listed,
 marked `(retired)`, so that old ledgers keep resolving them. An existing learner moves onto it

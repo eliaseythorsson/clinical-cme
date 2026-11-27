@@ -62,7 +62,7 @@ def test_every_brief_cites_the_rulebook():
 
 @pytest.mark.parametrize("sentence", [
     # one sentence of each rule that used to be restated in the briefs
-    "Icelandic national guidance where it exists",                 # rule 2
+    "the major European and US societies (e.g.",                   # rule 2
     "mmol/L, µmol/L, g/L",                                         # rule 3
     "anion gap, corrected calcium",                                # rule 3
     "international non-proprietary name",                          # rule 3
@@ -140,7 +140,7 @@ def table_in_the_rulebook():
 
 def test_the_table_in_the_rulebook_is_the_one_cme_py_generates():
     assert table_in_the_rulebook() == cme.key_header_table(), \
-        "run `python3 skills/clinical-cme/scripts/cme.py key-table` and paste its output into standards.md"
+        "run `python3 plugins/clinical-cme/skills/clinical-cme/scripts/cme.py key-table` and paste its output into standards.md"
 
 
 def test_the_key_table_command_prints_it():

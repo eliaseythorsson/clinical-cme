@@ -1,5 +1,7 @@
 # Curriculum Blueprint — Hospital / Internal Medicine
 
+<!-- Licence: CC BY-NC 4.0, Elias Eythorsson (LICENSE.md of the skill). -->
+
 The map of what can be tested. Each session samples topics from here; your performance
 against it is kept in your ledger (`data/state.json` in your store), which keeps its own copy
 of the blueprint: a later change to this file does not change yours (see
@@ -1350,7 +1352,7 @@ drafts an equivalent blueprint in the same format for you to check.
   - GEN-11b  Reading tests and studies; ethics  (aspects: interpretation very high)
     - Whether a test result moves the probability across the treatment threshold [GRADE diagnostic tests 2020]
     - Whether a trial's relative effect matters for this patient (absolute risk, NNT, surrogate outcome) [GRADE 2011]
-    - What may be shared with relatives without the patient's consent [Icelandic Patients' Rights Act 74/1997]
+    - What may be shared with relatives without the patient's consent [national patients' rights law]
 - GEN-12  Fluid therapy
   - GEN-12a  Maintenance and resuscitation fluids  (aspects: management very high)
     - Which maintenance fluid, and how much, in a patient at risk of hyponatraemia [NICE CG174 2017]
@@ -1455,9 +1457,9 @@ drafts an equivalent blueprint in the same format for you to check.
     - Whether bradycardia or QTc prolongation needs cardiac monitoring [RCPsych MEED 2022]
 - PSYCH-06  Capacity and sleep
   - PSYCH-06a  Capacity, consent and detention  (aspects: management very high, diagnosis high)
-    - Whether the patient has capacity for this particular decision [Icelandic Patients' Rights Act 74/1997]
-    - Whether an incapacitated patient may be treated or restrained under necessity [Icelandic Patients' Rights Act 74/1997]
-    - Whether a patient who wants to leave can be held involuntarily, and by whose decision [Icelandic Legal Competence Act 71/1997]
+    - Whether the patient has capacity for this particular decision [national patients' rights law]
+    - Whether an incapacitated patient may be treated or restrained under necessity [national patients' rights law]
+    - Whether a patient who wants to leave can be held involuntarily, and by whose decision [national mental capacity law]
   - PSYCH-06b  Insomnia in hospital  (aspects: management high)
     - Whether a hypnotic is indicated, and for how long [ESRS European Insomnia Guideline 2023]
     - Which hypnotic, if any, suits an older inpatient [ESRS European Insomnia Guideline 2023; STOPP/START v3 2023]

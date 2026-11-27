@@ -289,7 +289,7 @@ The review's queue for its guideline-change check: the teaching points of rounds
 _Avoid_: tag erratum
 
 **Guideline region**:
-The learner's choice of whose guidelines items are written and graded against; asked at setup, default Iceland/Europe.
+The learner's choice of whose guidelines items are written and graded against; asked at setup, default International (the major European and US societies, differences flagged), which a skipped answer also means. Ledgers from before issue #56 without a region of their own keep Iceland/Europe, the default of their time.
 _Avoid_: country, locale
 
 **Where you are**:

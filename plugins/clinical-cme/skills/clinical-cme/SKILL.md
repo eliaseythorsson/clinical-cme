@@ -1,6 +1,7 @@
 ---
 name: clinical-cme
 description: "Blinded clinical self-assessment rounds for physicians: MCQs, focused questions (a mini-case with one free-text decision) and a full case, in the mix the learner chooses, with evidence-based feedback, reflection-informed spaced repetition, a full session log and periodic deep analysis of reasoning. The learner's ledger lives in a store they own (their own private artifact page in the Claude app, otherwise a folder or files they keep), so rounds work across devices. Use for 'quiz me', a CME round, CME setup/review, or finding or exporting past CME cases."
+license: "CC BY-NC 4.0 for the content; MIT for scripts/cme.py. See LICENSE.md"
 ---
 
 # Clinical CME — continuous clinical self-evaluation (version 6.0.0)
@@ -181,8 +182,7 @@ graded. If answers are missing, ask once; proceed if the learner says so.
    unopened). No evidence file → run the questions' verification list now (`feedback_guide.md`
    §1); with one, search only for what the answers raise.
 2. **Marks before text**: in the **grading form** (`<work>/round.json`) mark every rubric element
-   with the learner's words, and each MCQ (`feedback_guide.md` §9.1); then `cme.py draft --work
-   <work> --part questions`.
+   with the learner's words, and each MCQ (§9.1); then `cme.py draft --work <work> --part questions`.
 3. **Send the questions' feedback** from the draft (§9.3: glossary line → reveal of these items →
    MCQs → focused questions; nothing that touches the case; it ends "The case follows."), and
    **straight after it the case**, exactly as printed.

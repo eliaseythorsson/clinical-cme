@@ -199,9 +199,12 @@ waiting for something to be generated.
 
 ## Install and share
 
-Copy the `clinical-cme` folder into your skills (or install it as a plugin). The folder holds no
-personal data, so it can be given to colleagues as it is; each person's first run creates their
-own private store. Requires Python 3.8+ in the session (standard library only).
+Install the plugin (`../../README.md`: two steps from the marketplace), or copy this
+`clinical-cme` folder into your skills. It runs in the **Claude app** (everything: the page
+store, helper agents, overnight preparation) and in **Claude Code** (a folder store, no page);
+nothing else is supported. It needs Python 3.8+ in the session (standard library only). The
+folder holds no personal data, so it can be given to colleagues as it is; each person's first
+run creates their own private store. Licences: `LICENSE.md` (content CC BY-NC 4.0, `cme.py` MIT).
 
 ## Layout
 
@@ -228,6 +231,8 @@ references/requests.md        requests other than a round, testing mode, round v
 templates/page.html           the learner's page, published at setup
 templates/blueprint.json      default internal/hospital-medicine curriculum, two levels (also blueprint.md)
 templates/resource_library.md dependable sources by domain
+blueprints/                   checked blueprints for other specialties, and how one is contributed
+LICENSE.md                    content CC BY-NC 4.0, cme.py MIT
 ```
 
 Self-directed learning, not accredited CME. Content can contain errors; feedback cites sources.

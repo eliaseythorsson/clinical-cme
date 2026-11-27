@@ -1,5 +1,7 @@
 # Resource Library — vetted continuing-education sources
 
+<!-- Licence: CC BY-NC 4.0, Elias Eythorsson (LICENSE.md of the skill). -->
+
 Recommendations are drawn from this list first, so they are real and current rather
 than improvised. When a gap is not well covered here, the session finds a specific,
 verified source and appends it under "Added during sessions", so the library grows with

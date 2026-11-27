@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Elias Eythorsson (LICENSE.md)
 """Simulation harness for the clinical-cme skill (ADR 0005). Standard library only.
 
 The LLM part of a simulation runs inside a Claude Code session (no API key): one helper agent is
@@ -34,7 +36,7 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-DEFAULT_SKILL = os.path.join(ROOT, "skills", "clinical-cme")
+DEFAULT_SKILL = os.path.join(ROOT, "plugins", "clinical-cme", "skills", "clinical-cme")
 ROLES = ("examiner", "learner")
 MAX_LEARNER_MESSAGES = 12          # a round has at most ~6 learner turns; beyond this the run is stuck
 KEY_LINE_MIN = 30                  # shortest key/kit line (normalised characters) searched for verbatim

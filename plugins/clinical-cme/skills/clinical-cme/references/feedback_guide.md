@@ -66,7 +66,9 @@ and `pitch`; the items were written to the same, by rules 2 and 3 and rule 4 (th
 - Grade against current guidance of the learner's region, in the edition for their specialty,
   and name that guideline first, with body and year. Where another region's guidance differs
   materially, or guidance changed recently, say so, and grade against the learner's own
-  region's (e.g. ESC vs ACC/AHA, NICE vs US). Units and drug names as the items have them.
+  region's (e.g. ESC vs ACC/AHA, NICE vs US); for "International", what either of the major
+  European and US societies recommends is right, and both are named (rule 2.1). Units and drug
+  names as the items have them.
 - **Pitch the feedback to the learner's two paragraphs.** Early stages get more background:
   the mechanism, the reasoning step by step, the terms explained. Senior learners get the
   evidence instead: the trials behind a recommendation, its strength, where the evidence is

@@ -6,8 +6,11 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
 
 ## Layout
 
-- `skills/clinical-cme/` — the shippable skill folder. Install by copying this folder into a
-  skills directory (or zipping it for upload). Keep it free of personal/learner data.
+- `plugins/clinical-cme/` — the plugin, the only part that ships (manifest in
+  `.claude-plugin/plugin.json`, `README.md`, `LICENSE.md`). Keep it free of personal/learner data
+  and of anything for developers (tests, sim, docs stay at the repo root).
+- `plugins/clinical-cme/skills/clinical-cme/` — the skill folder. Without plugins: copy this
+  folder into a skills directory (or zip it for upload); it carries its own `LICENSE.md`.
   - `SKILL.md` — the protocol the assistant follows in a round; about 250 lines, only what
     needs judgement (presenting, grading, feedback): procedure belongs in `cme.py`, the rest
     in `references/`
@@ -16,6 +19,8 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
     preparing ahead, other requests
   - `templates/` — learner page (`page.html`), default blueprint, resource library, the default
     blueprint's guideline-tag checks made before #90 (`guideline_checks.json`)
+  - `blueprints/` — checked blueprints for specialties other than the default, contributed from
+    learners' setups; setup looks here before drafting one (`blueprints/README.md`)
 - `tests/` — pytest suite for `cme.py` (`conftest.py` runs it the way the assistant does, its
   `main(argv)` in the test process, isolated as a process would be; `CME_TEST_SUBPROCESS=1` runs
   every call as a real process, as CI does on `main`)
@@ -28,16 +33,25 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
 
 ## Distribution
 
-The repo root is both the plugin and a single-plugin marketplace (`.claude-plugin/plugin.json`,
-`.claude-plugin/marketplace.json`, `source: "./"`). `plugin.json` deliberately has **no
+The repo root is a single-plugin marketplace (`.claude-plugin/marketplace.json`, `source:
+"./plugins/clinical-cme"`); the plugin's manifest is `plugins/clinical-cme/.claude-plugin/plugin.json`.
+Plugin and skill keep the name `clinical-cme`, so installs from before the move (issue #56) update
+in place. `plugin.json` deliberately has **no
 `version`**, so every commit on `main` is a new plugin version and reaches installs on update —
-do not add one. Run `claude plugin validate .` after touching either manifest.
+do not add one. Run `claude plugin validate .` and `claude plugin validate plugins/clinical-cme` after touching
+either manifest or the plugin folder's layout. No release action (tags, catalog submissions) from
+an agent session: releasing is the owner's.
 
 ## Working rules
 
-- Version bumps touch `SKILL.md` (heading), `README.md` (skill), and `PAGE_VERSION` in
-  `scripts/cme.py` when the page changes.
-- `python3 -m py_compile skills/clinical-cme/scripts/cme.py` and `python3 -m pytest -q tests` must
+- The version is `SKILL_VERSION` in `cme.py`; a bump also touches the `SKILL.md` heading, the
+  skill's `README.md` heading and the "Current version" lines of the root and plugin READMEs and
+  this file (`tests/test_version.py` compares them all), and `PAGE_VERSION` when the page changes
+  (its `<meta>` in `page.html` and a "Page update" note in the skill's README).
+- Licences: content (SKILL.md, references, templates, blueprints, docs) CC BY-NC 4.0; code
+  (`cme.py`, tests, `sim/*.py`) MIT. The licence files are `LICENSE.md` at the root, in the
+  plugin and in the skill folder (the last two identical; a test checks).
+- `python3 -m py_compile plugins/clinical-cme/skills/clinical-cme/scripts/cme.py` and `python3 -m pytest -q tests` must
   pass before committing (GitHub Actions runs both on every pull request). With `pytest-xdist`
   installed (test-only; the engine stays standard library), `-n auto` runs it on every core, as CI
   does; tests must stay independent under it: own `tmp_path`, nothing written into the repo tree.

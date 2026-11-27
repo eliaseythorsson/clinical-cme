@@ -1,9 +1,12 @@
 {
  "v": 1,
  "kind": "guideline_checks_seed",
- "region": "Iceland/Europe",
+ "regions": [
+  "Iceland/Europe",
+  "International"
+ ],
  "made": "2026-11-27",
- "about": "Guideline tags of the default blueprint already checked before issue #90: the #82 pass (confirmed current) and the #89 pass (searched). Tags the #89 pass did not search are left out, so the rolling sweep checks them first. Applies only to a learner whose guideline region is Iceland/Europe; source: docs/blueprint-citations-2026-11-27.md.",
+ "about": "Guideline tags of the default blueprint already checked before issue #90: the #82 pass (confirmed current) and the #89 pass (searched). Tags the #89 pass did not search are left out, so the rolling sweep checks them first. Applies only to a learner whose guideline region is one of `regions` (both keyed to the European societies' guidelines the default blueprint cites); source: docs/blueprint-citations-2026-11-27.md.",
  "records": [
   {
    "tag": "AABB 2023",

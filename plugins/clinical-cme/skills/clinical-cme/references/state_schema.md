@@ -22,7 +22,7 @@ memory: one JSON document, read to a file and written from a file (`store.md` §
              "round_set_at": "2026-10-08T09:12:00Z",
              "feedback_depth": "detailed", "evidence_ladder": true, "target_sessions_per_week": 3, "review_interval_days": 42,
              "intervals_days": [1, 3, 7, 16, 35, 90], "new_topics_per_round": 1,
-             "lab_units": "SI", "blood_gas_units": "mmHg", "guideline_region": "Iceland/Europe",
+             "lab_units": "SI", "blood_gas_units": "mmHg", "guideline_region": "International",
              "item_order": "mcqs_first", "helpers": true, "prepare_ahead": true,
              "show_coding": true, "reminders": false, "listening": true,
              "resource_preferences": {"free_only": false, "formats": ["guidelines"]}},
@@ -127,11 +127,16 @@ verifies the evidence while the learner answers, and the conversation grades; SK
 preparation whenever no round is ready). Both are on unless the learner turns them off; ledgers older than 4.3 get them
 at their next save, and `start` reports `speed_settings_new` until then.
 
-Region and specialty: `config.guideline_region` (default "Iceland/Europe") and
-`profile.specialty` (default "Internal/hospital medicine") are free text, asked at setup
-(`onboarding.md` §2) and changed with `settings`. `start`, the plan and `settings` print both
-as `guideline_region` and `specialty`, with the default standing in where a ledger has none;
-the author chooses guidelines by them and the examiner grades by them.
+Region and specialty: `config.guideline_region` (default "International": the major European
+and US societies, differences flagged; `standards.md` rule 2) and `profile.specialty` (default
+"Internal/hospital medicine") are free text, asked at setup (`onboarding.md` §2) and changed
+with `settings`. `start`, the plan and `settings` print both as `guideline_region` and
+`specialty`, with the default standing in where a ledger has none; the author chooses
+guidelines by them and the examiner grades by them. A skipped answer at setup is the default,
+written into the new ledger. Until issue #56 the default was "Iceland/Europe": a ledger last
+written by an engine of that era (no stamp, or one up to 6.0.0) that holds no region of its own
+keeps "Iceland/Europe", written into it by the load step (upgrade step `old_default_region`), so
+an existing learner's rounds never change region without their asking.
 
 Where you are, where you're aiming: `profile.journey` and `profile.aim` are the learner's own
 paragraphs, the answers to the two open questions of setup (`onboarding.md` §2), kept word for
@@ -779,6 +784,7 @@ order with the ledger last) and `publish`, the path of the manifest `W/publish.j
 | `settings --work W [--config J] [--profile J] [--blueprint FILE]` | Change settings: the changed ledger, the page file and the page if it is out of date go into the publish set, with an emptied `data/prepared.json` when the change can alter a round; `prepared` says whether the prepared round was kept and why (§8). A change to `mcqs`, `focused` or `case` is checked (at least one item) and supersedes any older page setting; a refused change writes nothing. Prints `round`: the mix in force in words, its `estimated_minutes`, and once rounds are timed `basis` ("based on your last N rounds") and `time_hint` (§6.2). `--profile '{"journey": "…"}'` or `'{"aim": "…"}'` stores a new paragraph in the learner's words, dates it and clears its label unless the same change gives one; `'{"journey_label": "…", "aim_tags": […]}'` sets the display labels (from their fixed lists, §1) and keeps the prepared round. With a paragraph or a label in the change it prints `profile` (the two paragraphs and their labels), and `labels_needed` while a label is still to derive. |
 | `theme --work W [--set DOMAIN \| --another]` | The learner changes the theme of the block (§4.1): `--set` a domain by id or name, `--another` the next proposal. Prints `block`, `was`, `say` and, like `settings`, the `files` to publish. Alone: the block, the proposal and the domains to choose from; writes nothing. |
 | `apply-mapping --work W --mapping FILE [--check]` | Move a ledger with history onto a two-level blueprint, once (§9): the mapping file (JSON, or a markdown table) says which sub-topic each past item tested, where each open gap goes and which retired topics fold into another. Items keep their scores and the topic they were recorded under (`recorded_under`); a topic keeps its due date; gaps landing on one topic are merged. Set the two-level blueprint with `settings --blueprint` first. Refused while a round awaits its reflection, and for a mapping already applied. Prints what moved (`items`, `gaps`, `merged`, `retired`, `new_records`), the rounds that can no longer be applied again (`frozen`), topic records left outside the blueprint or on a retired topic (`not_in_blueprint`) and, like `settings`, the `files` to publish. `--check`: the same, written nowhere. |
+| `blueprint-export --work W --out DIR` | The ledger's blueprint as files to contribute to the repo's `blueprints/` (a specialty drafted at setup): `DIR/<specialty>.json` and a note `DIR/<specialty>.md` (what it is for, its areas, how to send it). Nothing of the learner goes into them; nothing is written to the store. Prints the `files` and `send_to`. |
 | `init --work W --profile J --config J --blueprint FILE [--start-over]` | Setup: the first ledger, its page file and the page, into the publish set. Prints `round` (the mix in words and its `estimated_minutes`) to confirm the mix with, and `labels_needed` when a paragraph came without its label. A profile given in the old fields (`role`, `goals`, `notes`) is folded into the paragraphs (§1). `W` needs no store yet. In a work folder opened on a store that already holds a ledger it stops unless `--start-over` is given. |
 
 Maintenance tools, outside the protocol; they take their own files and folders:
@@ -905,7 +911,7 @@ and review documents the learner opens, and the ledger when the learner exports.
               "title": "…", "link": "https://open.spotify.com/episode/…", "minutes": 52, "show": "…"}],
  "positions": [{"id": "P0001", "topic": "GI-06", "label": "…", "point": "…", "text": "the learner's words",
                 "set": "2026-11-20", "confirmed": "2026-11-20"}],
- "settings": {"session_length": 35, "per_week": 3, "region": "Iceland/Europe", "units": {"labs": "SI", "gases": "mmHg"},
+ "settings": {"session_length": 35, "per_week": 3, "region": "International", "units": {"labs": "SI", "gases": "mmHg"},
               "case_style": "unfolding", "order": "mcqs_first", "feedback": "detailed", "coding_line": true,
               "review_every_days": 42, "reminders": false, "emphasis": {}, "self_ratings": {},
               "level": {"label": "attending", "text": "Hospitalist for eight years; …"},
@@ -1141,7 +1147,7 @@ The tags are a baseline (`standards.md` rule 2.4); their check records live in a
 their own, so that the ledger does not grow (ADR 0011):
 
 ```json
-{"v": 1, "kind": "guideline_checks", "gen": 4, "region": "Iceland/Europe", "sweep": 12, "updated": "2026-12-03",
+{"v": 1, "kind": "guideline_checks", "gen": 4, "region": "International", "sweep": 12, "updated": "2026-12-03",
  "records": [{"tag": "ESC ACS 2023", "last_checked": "2026-12-03", "status": "current", "superseded_by": null,
               "source": "https://…", "note": "…"},
              {"tag": "ESC HF 2021", "last_checked": "2026-12-03", "status": "superseded", "superseded_by": "ESC HF 2026",
@@ -1181,7 +1187,9 @@ their own, so that the ledger does not grow (ADR 0011):
   takes it first and raises an erratum only where the teaching actually differs.
 - **Seed.** A store without the file starts from the checks made before issue #90
   (`templates/guideline_checks.json`: the #82 pass, and the tags the #89 pass searched, both run
-  on 2026-11-27), for the tags its blueprint cites, and only for the default region; the tags the
+  on 2026-11-27), for the tags its blueprint cites, and only for the regions the seed names
+  (`regions`: Iceland/Europe and International, both keyed to the European societies' guidelines
+  the default blueprint cites); the tags the
   #89 pass did not search have no record, so the first sweeps check them.
 - **The store.** `open` finds the file by its place, bare name or content, like any store
   document. It is published before `data/prepared.json` and the ledger. A job that did not read

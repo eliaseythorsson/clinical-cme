@@ -18,12 +18,12 @@ def between(opening, closing):
 
 def test_the_command_table_in_the_schema_is_the_one_cme_py_generates():
     assert between(cme.COMMAND_TABLE_OPEN, cme.COMMAND_TABLE_CLOSE) == cme.command_table(), \
-        "run `python3 skills/clinical-cme/scripts/cme.py command-table` and paste its output into state_schema.md §6"
+        "run `python3 plugins/clinical-cme/skills/clinical-cme/scripts/cme.py command-table` and paste its output into state_schema.md §6"
 
 
 def test_the_file_table_in_the_schema_is_the_one_cme_py_generates():
     assert between(cme.FILE_TABLE_OPEN, cme.FILE_TABLE_CLOSE) == cme.file_table(), \
-        "run `python3 skills/clinical-cme/scripts/cme.py file-table` and paste its output into state_schema.md §6.1"
+        "run `python3 plugins/clinical-cme/skills/clinical-cme/scripts/cme.py file-table` and paste its output into state_schema.md §6.1"
 
 
 def test_the_commands_print_the_tables_between_their_markers():

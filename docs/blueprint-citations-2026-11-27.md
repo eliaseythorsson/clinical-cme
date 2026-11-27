@@ -1,7 +1,7 @@
 # Blueprint citations check, 2026-11-27 (issue #89)
 
 Follow-up to the three earlier passes on the default blueprint
-(`skills/clinical-cme/templates/blueprint.md`, with `blueprint.json` regenerated from it by
+(`plugins/clinical-cme/skills/clinical-cme/templates/blueprint.md`, with `blueprint.json` regenerated from it by
 `cme.py blueprint-md`). It covers the 138 citations those passes did not confirm.
 
 **Result:** 128 current, 5 corrected, 5 uncertain. 53 were searched in this pass (about one
