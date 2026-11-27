@@ -77,8 +77,9 @@ relevant to the plan's `specialty`.
 4. **The blueprint's guideline tag is a baseline**, not the only source. A decision point's tag
    (`[ESC ACS 2023]`) says where to start; where the plan gives a newer guideline in its place,
    or the sub-topic's `guidelines` say a tag changed or is uncertain, the key and the kit cite
-   the guideline in force for the region. Tags are re-checked while rounds are prepared (the
-   items' tags when not checked within 90 days, and a rolling sweep: `evidence_check.md` §7,
+   the guideline in force for the region. Tags are re-checked centrally for the default
+   blueprint and while rounds are prepared (the items' tags when not checked within 90 days,
+   and a rolling sweep of the tags not checked centrally: `evidence_check.md` §7,
    `state_schema.md` §10); a tag the check finds superseded is cited as its successor from then
    on. The tag check concerns only the edition and the appropriateness of the source: every
    claim is still verified one by one on the verification list.

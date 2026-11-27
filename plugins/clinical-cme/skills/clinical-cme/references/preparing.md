@@ -27,13 +27,18 @@ Contents: 1. What is made ready, and when · 2. After the close · 3. Prepare on
 - **Preparation takes longer than writing the items alone** (about twice the author's time,
   and more of the allowance): the feedback's text is most of it. That is accepted, because it
   happens after the close or overnight, never while the learner waits (ADR 0009).
-- **Guideline tags are re-checked here too** (ADR 0011): the guideline each decision point of
-  the blueprint cites is a baseline. Each preparation checks the tags the next round's items
-  rest on (unless checked within 90 days) and a rolling share of the whole set (about 1/12,
-  never-checked first, then the oldest); when a progress review falls due within the gap
-  between rounds (at least a week), the preparation also checks every other tag not checked
-  within 30 days, filed after the round is stashed, so that the review only reports the
-  result. Lists hold at most 40 tags, one checker each.
+- **Guideline tags are re-checked here too** (ADR 0011, ADR 0013): the guideline each decision
+  point of the blueprint cites is a baseline. The default blueprint's tags are checked
+  centrally, in the plugin's own repo, and arrive with plugin updates (the central records,
+  `state_schema.md` §10); `prepare` reads them with the learner's own records, the newer per
+  tag. Each preparation checks the tags the next round's items rest on when their newest record
+  is older than 90 days, and sweeps only the tags the central records do not cover (the
+  learner's own areas, another specialty's blueprint; every region reads a central set, one
+  matching none reads International; all of them with `guideline_sweeps` `all`, none with `off`): a rolling share (about 1/12,
+  never-checked first, then the oldest) and, when a progress review falls due within the gap
+  between rounds (at least a week), every swept tag not checked within 30 days, filed after
+  the round is stashed. On the default blueprint the lists are usually empty or a few tags.
+  Lists hold at most 40 tags, one checker each.
 - Quality of the items and completeness of the check are fixed; only the learner's waiting is
   cut. Nothing here is ever mentioned to the learner, apart from §5.
 

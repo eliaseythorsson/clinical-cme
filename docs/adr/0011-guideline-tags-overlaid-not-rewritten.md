@@ -1,5 +1,10 @@
 # Guideline tags are checked at preparation and overlaid, never rewritten into the blueprint
 
+_Amended by ADR 0013 (issue #91): the default blueprint's tags are checked centrally, in the repo, per
+region set, and shipped with the plugin; a learner's install sweeps only the tags those records do not
+cover (`config.guideline_sweeps`), reading per tag the newer of the shipped record and its own. The
+seed below is now the starting point of the central records._
+
 The default blueprint gives each decision point the guideline it rests on (`[ESC ACS 2023]`). Those
 tags were checked once during development (#82, #89); guidelines keep changing, so they are a
 baseline that has to be kept current. Decided with the learner on 2026-11-27 (issue #90, its

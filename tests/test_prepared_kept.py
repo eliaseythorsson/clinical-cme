@@ -22,6 +22,7 @@ NEUTRAL_CONFIG = {
     "testing": True, "reminders": True, "prepare_task": True, "prepare_ahead": False, "helpers": False,
     "show_coding": False, "target_sessions_per_week": 5, "review_interval_days": 30,
     "round_set_at": "2026-11-01T08:00:00Z",
+    "guideline_sweeps": "all",                          # which guideline tags are swept, not what is written (#91)
 }
 CONTENT_CONFIG = {
     "session_minutes": 30, "mcqs": 2, "focused": 2, "case": False, "case_format": "discriminate",

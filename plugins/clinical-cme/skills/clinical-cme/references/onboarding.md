@@ -90,7 +90,13 @@ accept it:
   your country or region (its national guidance where it exists: "UK" for NICE etc., SI;
   "North America" for US guidelines, conventional units) · other (free text, in their words).
   The question may be asked open ("whose guidelines do you follow?"); no answer, or "don't
-  mind", is International.
+  mind", is International. A European country is written `<country>/Europe` ("Norway/Europe"):
+  its national guidance first, then the European societies. These answers (International, UK,
+  North America, US, Canada, `<country>/Europe`) read the plugin's centrally checked guideline
+  editions, and so does any other answer (it reads the International set): no round pays for
+  edition sweeps of the default blueprint, while each round's evidence check still grades against
+  the learner's own national guidance. `guideline_sweeps` `all` is for a learner who wants their
+  national editions tracked too (about 30 extra searches a round).
   → `config.guideline_region`, with `lab_units` to match. Ask separately about blood gases in
   mmHg or kPa if the region varies.
 - **Which specialty?** Internal/hospital medicine (default) · other (free text), plus a
@@ -165,7 +171,7 @@ pick other numbers, here or on the page.
 | Answer | Setting |
 |---|---|
 | Where you are / where you're aiming | `profile.journey` / `profile.aim`, the learner's words; `profile.journey_label`, `profile.aim_tags` derived |
-| Guidelines: International / UK / North America / a country / other | `guideline_region` "International" (also when skipped) / "UK" / "North America" / the learner's words |
+| Guidelines: International / UK / North America / a country / other | `guideline_region` "International" (also when skipped) / "UK" / "North America" / "<country>/Europe" for a European country, else the country / the learner's words |
 | Specialty | `profile.specialty` (default "Internal/hospital medicine") |
 | Time per session | `session_minutes` 15 / 25 / 35 / 45, and the mix from the table above |
 | Feedback depth | `feedback_depth` detailed (default) / standard |

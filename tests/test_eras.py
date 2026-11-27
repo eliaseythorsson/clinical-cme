@@ -108,6 +108,7 @@ def test_a_4_2_ledger_gets_its_paragraphs_one_area_code_and_the_settings_of_late
 def test_a_6_0_ledger_is_left_as_it_is_but_for_what_came_after_it():
     old = raw("6_0")
     old["profile"]["utc_offset"] = None             # the learner's UTC offset (issue #84): unset, UTC
+    old["config"]["guideline_sweeps"] = "custom"     # which guideline tags are swept per learner (issue #91)
     assert cme.make_current(raw("6_0")) == dict(old, positions=[], mappings=[], skill_version=cme.SKILL_VERSION)
 
 
@@ -117,6 +118,7 @@ def test_a_newer_ledger_is_filled_for_reading_and_nothing_else():
     assert st["skill_version"] == "99.0.0" and cme.newer_engine(st) == "99.0.0"
     assert st["config"]["a_setting_from_the_future"] is True
     assert st["profile"].pop("utc_offset") is None            # filled for reading (issue #84)
+    assert st["config"].pop("guideline_sweeps") == "custom"   # filled for reading (issue #91)
     assert {k: v for k, v in st.items() if k not in ("positions", "mappings")} == old
 
 

@@ -271,18 +271,29 @@ One guideline a decision point cites, at its end in brackets (`[ESC ACS 2023]`; 
 _Avoid_: citation check per point, reference
 
 **Tag check record**:
-What is known of one guideline tag (`data/guidelines.json`): when it was last checked, its status (current, changed, superseded, uncertain), the guideline that superseded it, the source and a note. Kept per learner, for their guideline region.
+What is known of one guideline tag: when it was last checked, its status (current, changed, superseded, uncertain), the guideline that superseded it, the source and a note. Kept centrally for the default blueprint (the central records) and per learner for their own checks (`data/guidelines.json`, for their guideline region); a learner's install reads, per tag, whichever of the two was checked last.
 _Avoid_: guideline cache
+
+**Central records**:
+The tag check records of the default blueprint, kept once in the repo per supported region set (`templates/guideline_checks.json`: International, Europe) and shipped with every plugin update; kept current by the maintainer's monthly job (`cme.py central-checks`, `docs/maintaining-guidelines.md`). A learner's region reads a set by its name or alias, or `<country>/<family>` by its family; any other region reads International.
+_Avoid_: seed (it was one before #91), shared cache
+
+**Covered tag**:
+A tag of the learner's blueprint that the central records answer for: cited on a sub-topic that cites it in the default blueprint too (same id), or its successor down the central chain, for a region with a central set. Not swept per learner by default; the learner's own areas, another specialty's blueprint and a tag an edited sub-topic added are not covered.
+_Avoid_: default tag
+
+**Swept tags**:
+The tags a learner's install sweeps (rolling and review): `config.guideline_sweeps` `custom` (the default: the tags not covered), `all`, or `off` (none). The round's own items' tags are checked whatever the setting, when their newest record is older than 90 days.
 
 **Overlay** (of a superseded tag):
 The record putting the newer guideline in place of a superseded tag wherever the engine hands decision points to the author; the learner's blueprint itself is never rewritten.
 _Avoid_: blueprint update, migration
 
 **Rolling sweep**:
-The tags checked at each preparation besides the items' own: a fixed share of the whole set (1/12 by default, up to 1/16) of those not checked within 90 days, never-checked first, then the oldest.
+The tags checked at each preparation besides the items' own: a fixed share of the swept tags (1/12 by default, up to 1/16) of those not checked within 90 days, never-checked first, then the oldest.
 
 **Review sweep**:
-Every tag not checked within 30 days, checked in a preparation when a progress review falls due within the gap between rounds (at least a week), apart from the round and filed after it is stashed, so that the review only reports it.
+Every swept tag not checked within 30 days, checked in a preparation when a progress review falls due within the gap between rounds (at least a week), apart from the round and filed after it is stashed, so that the review only reports it.
 
 **Teaching to re-check**:
 The review's queue for its guideline-change check: the teaching points of rounds held before a tag was found changed or superseded, on a sub-topic citing it. Derived from the records and the ledger, never stored; an erratum follows only where the teaching actually differs.

@@ -69,6 +69,7 @@
    ]
   },
   "evidence_ladder": true,
+  "guideline_sweeps": "custom",
   "listening": true
  },
  "review": {

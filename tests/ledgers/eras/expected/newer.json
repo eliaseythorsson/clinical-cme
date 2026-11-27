@@ -67,7 +67,8 @@
     "review articles"
    ]
   },
-  "a_setting_from_the_future": true
+  "a_setting_from_the_future": true,
+  "guideline_sweeps": "custom"
  },
  "review": {
   "last": null,

@@ -196,10 +196,14 @@ retry pass above).
 
 Each decision point of the learner's blueprint ends with the guideline it rests on, in brackets
 (`[ESC ACS 2023]`). These **tags** are a baseline: `cme.py prepare` lists the ones due for a
-check (the tags the next round's items rest on, and a share of the whole set, oldest first;
-before a progress review, every tag not checked within 30 days), in lists of at most 40, one
-tag checker per list, all started together. Your list's first lines give the learner's
-guideline region and specialty. A tag check is not an evidence check:
+check (the tags the next round's items rest on, and a share of the tags the learner's install
+sweeps, oldest first; before a progress review, every swept tag not checked within 30 days), in
+lists of at most 40, one tag checker per list, all started together. The default blueprint's
+tags are checked centrally instead, by the same brief: the maintainer's job
+(`cme.py central-checks`, run monthly in the plugin's repo) writes lists per region set
+(`<set>_checks_<n>.md` → `<set>_results_<n>.md`) and ships the results with the plugin. Your
+list's first lines give the guideline region (for a central list, the set's names) and
+specialty. A tag check is not an evidence check:
 it asks only about the edition and the appropriateness of the source, never about a claim.
 
 For each tag on the list, one question: **is there a newer edition, or a more appropriate
@@ -229,7 +233,7 @@ Tag: <tag exactly as listed> | current|changed|superseded|uncertain | <the newer
 
 A `superseded` line without its newer tag is not read. Never invent an edition, a year or a
 link: a tag you could not settle is `uncertain`, with what you found. `cme.py finish-prepare` (or
-`tag-checks --results` at a review) files the lines: each tag counts as checked today, a
+`tag-checks --results` at a review; `central-checks --results` for a central list) files the lines: each tag counts as checked today, a
 superseded tag is cited as its successor from then on (the learner's blueprint itself is never
 rewritten), and the teaching earlier rounds based on a changed or superseded tag is queued for
 the review's guideline-change check (`analysis_framework.md` §2.3), which raises an erratum only

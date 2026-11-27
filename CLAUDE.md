@@ -18,7 +18,8 @@ evidence-based feedback, reflection-informed spaced repetition and periodic reas
   - `references/` — store, schema, the rulebook (`standards.md`), case design, feedback, analysis, logging, review, onboarding,
     preparing ahead, other requests
   - `templates/` — learner page (`page.html`), default blueprint, resource library, the default
-    blueprint's guideline-tag checks made before #90 (`guideline_checks.json`)
+    blueprint's central guideline-tag check records per region (`guideline_checks.json`, #91;
+    kept current by `cme.py central-checks`, procedure in `docs/maintaining-guidelines.md`)
   - `blueprints/` — checked blueprints for specialties other than the default, contributed from
     learners' setups; setup looks here before drafting one (`blueprints/README.md`)
 - `tests/` — pytest suite for `cme.py` (`conftest.py` runs it the way the assistant does, its

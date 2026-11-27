@@ -65,6 +65,7 @@
   "session_minutes": 20,
   "round_set_at": null,
   "evidence_ladder": true,
+  "guideline_sweeps": "custom",
   "helpers": true,
   "prepare_ahead": true,
   "prepare_task": false,

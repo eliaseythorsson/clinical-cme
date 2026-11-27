@@ -82,18 +82,18 @@ def test_the_default_blueprint_has_its_tags_and_its_seed_covers_the_checked_ones
     st["blueprint"] = bp
     tags = cme.blueprint_tags(st)
     assert len(tags) > 350
+    # the shipped central records (issue #91) answer for them: the learner's own file starts empty
     doc, how = cme.seeded_guidelines(st)
-    assert how == "seeded" and all(r["tag"] in tags for r in doc["records"])
-    seeded = {r["tag"] for r in doc["records"]}
-    # the #89 pass left tags it did not search unchecked: the first sweeps go to them
-    assert "NICE NG234 2023" in tags and "NICE NG234 2023" not in seeded
-    assert {r["status"] for r in doc["records"]} <= {"current", "uncertain"}
-    assert all(r["last_checked"] == "2026-11-27" for r in doc["records"])
-    # checked for the regions the seed names: International and the old default too, another none
-    st["config"]["guideline_region"] = "Iceland/Europe"
-    assert cme.seeded_guidelines(st)[1] == "seeded"
-    st["config"]["guideline_region"] = "United States"
-    assert cme.seeded_guidelines(st) == (cme.new_guidelines(st), "new")
+    assert how == "seeded" and doc["records"] == []
+    # (what they hold changes with every central run: tests/test_central_checks.py tests them on a copy)
+    assert cme.central_guidelines(st)["records"]
+    # every region reads a central set (one matching none reads International): never seeded per learner
+    for region in ("Iceland/Europe", "Japan"):
+        st["config"]["guideline_region"] = region
+        assert cme.seeded_guidelines(st) == (cme.new_guidelines(st), "seeded")
+    # a blueprint of the learner's own (no sub-topic the default cites alike): nothing applies
+    st["blueprint"] = custom_default_blueprint()
+    assert cme.seeded_guidelines(st)[1] == "new"
 
 
 def test_rolling_sweep_takes_a_fixed_share_never_checked_first_then_the_oldest():
@@ -425,9 +425,28 @@ def test_the_review_sweep_runs_ahead_apart_from_the_round_and_is_filed_after_the
     assert learner.start("2027-03-06")["prepared"]["used"] is True
 
 
+def custom_default_blueprint():
+    """The default blueprint with every tag made the learner's own (renamed): none is covered centrally."""
+    with open(DEFAULT_BLUEPRINT) as fh:
+        bp = cme.blueprint_shape(json.load(fh))
+    for area in bp.values():
+        for group in (area.get("subtopics") or {}).values():
+            for sub in group.values():
+                sub["points"] = [cme.TAG_BRACKET_RE.sub(lambda m: "[%s]" % "; ".join(
+                    t.strip() + " (own)" for t in m.group(1).split(";")), p) for p in sub.get("points") or []]
+    return bp
+
+
+def write_custom_default(tmp_path):
+    path = os.path.join(str(tmp_path), "own.json")
+    with open(path, "w") as fh:
+        json.dump(custom_default_blueprint(), fh)
+    return path
+
+
 def test_a_large_review_sweep_goes_to_one_checker_per_list_of_at_most_forty(tmp_path):
     w = Learner(tmp_path / "w")
-    w.run("--today", DAY, "init", "--work", w.path, "--blueprint", DEFAULT_BLUEPRINT, "--config",
+    w.run("--today", DAY, "init", "--work", w.path, "--blueprint", write_custom_default(tmp_path), "--config",
           json.dumps({"guideline_region": "Elsewhere"}))
     w.publish()
     w.forget_job()
@@ -440,28 +459,28 @@ def test_a_large_review_sweep_goes_to_one_checker_per_list_of_at_most_forty(tmp_
             sizes.append(sum(1 for line in fh if line.startswith("- ")))
     assert sum(sizes) == out["count"] and all(30 <= n <= 40 for n in sizes)
     # every results file is read by one command (once per file); a missing one is counted
-    w.write(os.path.join("sweep", "tag_results_1.md"), lines(["NICE NG234 2023"]))
+    w.write(os.path.join("sweep", "tag_results_1.md"), lines(["NICE NG234 2023 (own)"]))
     filed = w.run_json("tag-checks", "--work", w.path, "--results", out["checkers"][0]["results"],
                        "--results", out["checkers"][1]["results"])
     assert filed["filed"] == 1 and filed["files_missing"] == 1
 
 
-def test_seeding_is_skipped_for_another_region(tmp_path):
+def test_a_custom_blueprint_is_not_seeded_and_the_default_is_for_every_region(tmp_path):
     w = Learner(tmp_path / "w")
-    w.run("--today", DAY, "init", "--work", w.path, "--blueprint", DEFAULT_BLUEPRINT, "--config",
-          json.dumps({"guideline_region": "United States", "mcqs": 1, "focused": 0, "case": False}))
+    w.run("--today", DAY, "init", "--work", w.path, "--blueprint", write_custom_default(tmp_path), "--config",
+          json.dumps({"guideline_region": "Japan", "mcqs": 1, "focused": 0, "case": False}))
     w.publish()
     w.forget_job()
     assert w.prepare()["tag_checks"]["records"] == "new"
     w.forget_job()
     w.open(today=DAY)
     summary = w.run_json("tag-checks", "--work", w.path)
-    assert summary["never_checked"] == summary["tags"] > 350
-    st = w.read_ledger()
-    st["config"]["guideline_region"] = "Iceland/Europe"
-    w.write_ledger(st)
+    assert summary["never_checked"] == summary["tags"] > 350 and summary["swept"] == summary["tags"]
+    w.run_json("settings", "--work", w.path, "--blueprint", DEFAULT_BLUEPRINT)
+    w.publish()
     w.forget_job()
-    assert w.prepare()["tag_checks"]["records"] == "seeded"
+    out = w.prepare()["tag_checks"]
+    assert out["records"] == "seeded" and out["central"] == "International"
 
 
 def test_tag_checks_lists_files_and_sets_the_sweep(learner):

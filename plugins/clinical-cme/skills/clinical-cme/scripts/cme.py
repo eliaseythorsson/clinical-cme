@@ -68,6 +68,8 @@ DEFAULT_CONFIG = {
     "guideline_region": "International",    # free text; asked at setup: whose guidelines items are written and graded
                                             # against. International: the major European and US societies, differences
                                             # flagged (standards.md rule 2); a skipped answer reads as it (issue #56)
+    "guideline_sweeps": "custom",        # which guideline tags this install sweeps for newer editions (issue #91):
+                                         # custom: only those the shipped central records do not cover; all; off
     "item_order": "mcqs_first",          # mcqs_first: questions -> their feedback -> case -> its feedback
     "helpers": True,                     # helper agents where the app has them: an author drafts the items, a
                                          # checker verifies the evidence; the conversation grades
@@ -108,7 +110,7 @@ PARAGRAPH_MAX = 4000     # characters kept of a paragraph
 # this list has never heard of, sets it aside. `round_set_at` is here because it only dates the
 # mix: the mix itself (mcqs, focused, case) is not. See state_schema.md §8.
 CONTENT_NEUTRAL_CONFIG = ("testing", "reminders", "prepare_task", "prepare_ahead", "helpers", "show_coding",
-                          "target_sessions_per_week", "review_interval_days", "round_set_at")
+                          "target_sessions_per_week", "review_interval_days", "round_set_at", "guideline_sweeps")
 # The labels are display only (never used to write an item), and the `_set_at` stamps only date
 # the paragraphs: the paragraphs themselves are not here.
 CONTENT_NEUTRAL_PROFILE = ("display_name", "onboarded_at", "journey_label", "aim_tags",
@@ -1478,7 +1480,7 @@ CONFIG_NULL = {"mcqs": 0, "focused": 0, "new_topics_per_round": 0, "case": False
                "helpers": False, "prepare_ahead": False, "prepare_task": False, "testing": False,
                "show_coding": False, "reminders": False, "round_set_at": None}
 # Settings whose empty value (0, "", []) means "not set": they read as the default.
-CONFIG_EMPTY = ("review_interval_days", "intervals_days", "guideline_region")
+CONFIG_EMPTY = ("review_interval_days", "intervals_days", "guideline_region", "guideline_sweeps")
 PROFILE_EMPTY = ("specialty",)
 # A ledger written before the round mix and its length were settings of their own keeps what every
 # round had then, whatever a new learner's default becomes (upgrade step `settings_of_4_2`).
@@ -4495,6 +4497,8 @@ def check_setting_changes(changes):
     for k in ("listening", "evidence_ladder"):
         if k in changes and not isinstance(changes[k], bool):
             die("config.%s must be true or false" % k)
+    if "guideline_sweeps" in changes and changes["guideline_sweeps"] not in GUIDELINE_SWEEPS:
+        die("config.guideline_sweeps must be one of %s" % ", ".join(GUIDELINE_SWEEPS))
     v = changes.get("session_minutes")
     if v is not None and (isinstance(v, bool) or not isinstance(v, (int, float)) or v <= 0):
         die("config.session_minutes must be a positive number of minutes")
@@ -5574,11 +5578,22 @@ def plan_counts(st, args=None):
 # instead, filed after the round is stashed. A tag found changed or superseded writes no erratum: the
 # review's guideline-change check gets the teaching that rested on it (guideline_recheck). A superseded tag is never written back into the learner's blueprint: the
 # record overlays it wherever the engine hands decision points to the author (ADR 0011).
+#
+# Central checks (issue #91, ADR 0013): the default blueprint's tags are checked once, in the repo,
+# per supported region (templates/guideline_checks.json, `central-checks`), and ship with plugin
+# updates. A learner's tag reads the newer of the shipped record and their own; the tags their
+# blueprint shares with the default blueprint (same sub-topic id, same tag) are not swept per
+# learner unless `config.guideline_sweeps` is "all" (the round's own items' tags are still checked
+# when the newest record is older than TAG_FRESH_DAYS).
 
 GUIDELINES_PATH = "data/guidelines.json"
 GUIDELINES_KIND = "guideline_checks"
-GUIDELINE_SEED = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "templates",
-                              "guideline_checks.json")
+TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "templates")
+GUIDELINE_SEED = os.path.join(TEMPLATES_DIR, "guideline_checks.json")     # the central records (and the seed)
+DEFAULT_BLUEPRINT_PATH = os.path.join(TEMPLATES_DIR, "blueprint.json")
+CENTRAL_KIND = "guideline_checks_central"
+CENTRAL_FALLBACK = "International"            # the set a region matching no set or family reads
+GUIDELINE_SWEEPS = ("custom", "all", "off")   # config.guideline_sweeps: which tags a learner's install sweeps
 GUIDELINE_STATUSES = ("current", "changed", "superseded", "uncertain")
 TAG_FRESH_DAYS = 90             # a tag an item rests on, and the rolling sweep: not checked within this
 TAG_REVIEW_DAYS = 30            # before a progress review: every tag not checked within this
@@ -5619,20 +5634,155 @@ def new_guidelines(st):
 
 
 def seeded_guidelines(st):
-    """The records a learner starts with: for a region the seed was checked for (its `regions`:
-    Iceland/Europe and International, both keyed to the European societies' guidelines the default
-    blueprint cites), the default blueprint's tags already checked before issue #90
-    (templates/guideline_checks.json, from the #82 and #89 passes), as far as this learner's
-    blueprint cites them; for any other region none."""
+    """The records document a learner starts with: empty, since the shipped central records
+    (central_guidelines) are read at every plan and never copied into it. `how` is "seeded" when a
+    central set applies to the learner's region and holds a record of a tag their blueprint cites,
+    else "new"."""
     doc = new_guidelines(st)
-    seed = load_json(GUIDELINE_SEED) if os.path.isfile(GUIDELINE_SEED) else {}
-    regions = [r.strip().lower() for r in seed.get("regions") or [] if isinstance(r, str)]
-    if doc["region"].strip().lower() not in regions:
-        return doc, "new"
+    central = central_guidelines(st)
     tags = blueprint_tags(st)
-    doc["records"] = [dict(r) for r in seed.get("records") or []
-                      if isinstance(r, dict) and r.get("tag") in tags]
-    return doc, "seeded" if doc["records"] else "new"
+    return doc, "seeded" if any(t in tags for t in central["records"]) else "new"
+
+
+# ---- the central records (issue #91)
+
+_JSON_CACHE = {}
+
+
+def cached_json(path):
+    """A shipped template read once per process (keyed by path, size and mtime); {} when absent or unreadable."""
+    try:
+        s = os.stat(path)
+    except OSError:
+        return {}
+    key = (os.path.abspath(path), s.st_size, s.st_mtime)
+    if key not in _JSON_CACHE:
+        try:
+            with open(path, encoding="utf-8") as fh:
+                _JSON_CACHE[key] = json.load(fh)
+        except (OSError, ValueError):
+            _JSON_CACHE[key] = {}
+    return _JSON_CACHE[key]
+
+
+def central_sets(doc):
+    """{set name: set} of a central records document. A seed of the #90 shape (`regions` and
+    `records` at the top) reads as one set."""
+    if not isinstance(doc, dict):
+        return {}
+    if isinstance(doc.get("sets"), dict):
+        return {k: v for k, v in doc["sets"].items() if isinstance(v, dict)}
+    if doc.get("records") is not None:
+        return {"Seed": {"regions": doc.get("regions") or [], "records": doc.get("records") or []}}
+    return {}
+
+
+def region_key(text):
+    return re.sub(r"\s+", " ", str(text or "")).strip().lower()
+
+
+def central_set_for(region, doc):
+    """The name of the central set that answers for a learner's guideline region. A region matches a
+    set when it is one of the set's `regions` (case and spacing ignored); else a region written
+    "<country>/<family>" (e.g. "Norway/Europe") matches by its last part, the family: the set of
+    that name or with that alias. Any other region ("Japan") reads CENTRAL_FALLBACK, International:
+    a central record says only whether a cited edition is current, and the round's own evidence
+    check still grades against the learner's national guidance; their per-learner sweeps of the
+    default blueprint's tags come only with guideline_sweeps "all". None only for a file without
+    sets (or without the fallback set when nothing matched)."""
+    sets = central_sets(doc)
+    key = region_key(region)
+    for name, s in sets.items():
+        if key and key in {region_key(r) for r in s.get("regions") or []}:
+            return name
+    if "/" in key:
+        fam = region_key(key.rsplit("/", 1)[1])
+        for name, s in sets.items():
+            if fam == region_key(name) or fam in {region_key(r) for r in s.get("regions") or []}:
+                return name
+    return CENTRAL_FALLBACK if CENTRAL_FALLBACK in sets else None
+
+
+def default_pairs(path=None):
+    """{(sub-topic id, tag)} of the default blueprint's live decision points: what the central records answer for."""
+    bp = cached_json(path or DEFAULT_BLUEPRINT_PATH)
+    if not bp:
+        return set()
+    if id(bp) not in _PAIRS_CACHE:
+        try:
+            st = {"blueprint": blueprint_shape(copy.deepcopy(bp))}
+        except CmeError:
+            return set()
+        live = bp_live_topics(st)
+        _PAIRS_CACHE[id(bp)] = (bp, {(sid, t) for sid, info in bp_subtopics(st).items() if info["topic"] in live
+                                     for p in info.get("points") or [] for t in point_tags(p)})
+    return _PAIRS_CACHE[id(bp)][1]
+
+
+_PAIRS_CACHE = {}
+
+
+def central_guidelines(st, path=None):
+    """What the shipped central records hold for this learner: {"set": name or None, "records":
+    {tag: record}, "updated", "covered": the learner's tags they answer for}. A tag is covered when
+    the learner's blueprint cites it on a sub-topic that cites it in the default blueprint too (the
+    same id): the learner's own areas, another specialty's blueprint and a tag an edited sub-topic
+    added are not; a covered tag's successor down the central records' chain is covered too."""
+    doc = cached_json(path or GUIDELINE_SEED)
+    name = central_set_for(guideline_context(st)["guideline_region"], doc)
+    if name is None:
+        return {"set": None, "records": {}, "updated": None, "covered": set()}
+    s = central_sets(doc)[name]
+    idx = guideline_records(s)
+    pairs = default_pairs()
+    covered = set()
+    for sid, info in bp_subtopics(st).items():
+        for p in info.get("points") or []:
+            for t in point_tags(p):
+                if (sid, t) in pairs:
+                    covered.add(t)
+    covered |= {current_tag(t, idx) for t in covered}
+    return {"set": name, "records": idx, "updated": s.get("updated") or doc.get("updated"), "covered": covered}
+
+
+def newer_records(*indexes):
+    """Per tag the record checked last ({tag: record}); on a tie the later index wins (the learner's)."""
+    out = {}
+    for idx in indexes:
+        for tag, r in idx.items():
+            if tag not in out or (r.get("last_checked") or "") >= (out[tag].get("last_checked") or ""):
+                out[tag] = r
+    return out
+
+
+def effective_guidelines(st, doc, central=None):
+    """The records a learner's install reads: per tag the newer of the shipped central record and
+    their own (a plugin update bringing newer checks is never hidden by an older learner file, and a
+    learner's newer check is never hidden by an older template). A copy: `doc` is left as it is."""
+    central = central_guidelines(st) if central is None else central
+    out = dict(doc or {}, records=None)
+    idx = newer_records(central["records"], guideline_records(doc))
+    out["records"] = [idx[t] for t in sorted(idx)]
+    return out
+
+
+def guideline_sweeps(st):
+    v = str(st["config"].get("guideline_sweeps") or GUIDELINE_SWEEPS[0]).strip().lower()
+    return v if v in GUIDELINE_SWEEPS else GUIDELINE_SWEEPS[0]
+
+
+def swept_pool(st, idx, central):
+    """The tags this install sweeps (rolling and review), as tags cited now: every tag with
+    guideline_sweeps "all", none with "off", and with "custom" (the default) those the central
+    records do not cover."""
+    mode = guideline_sweeps(st)
+    if mode == "off":
+        return set()
+    tags = {current_tag(t, idx) for t in blueprint_tags(st)}
+    if mode == "all":
+        return tags
+    covered = {current_tag(t, idx) for t in central["covered"]}
+    return tags - covered
 
 
 def merge_guidelines(docs):
@@ -5735,12 +5885,15 @@ def tag_age(idx, tag):
     return (d is not None, d or "", tag)
 
 
-def due_tags(st, idx, today, items=(), kind="rolling", sweep=SWEEP_DIVISORS[0]):
+def due_tags(st, idx, today, items=(), kind="rolling", sweep=SWEEP_DIVISORS[0], pool=None):
     """The tags to check now, as (the items' tags, the sweep's), each sorted. The items' tags: those
     not checked within TAG_FRESH_DAYS. The rolling sweep: ceil(N / sweep) of the other tags not checked
-    within TAG_FRESH_DAYS (N: the whole set, so the quota does not shrink as tags become fresh),
-    oldest first; the review sweep: every other tag not checked within TAG_REVIEW_DAYS."""
+    within TAG_FRESH_DAYS (N: the tags swept, so the quota does not shrink as tags become fresh),
+    oldest first; the review sweep: every other tag not checked within TAG_REVIEW_DAYS. `pool`: the
+    tags this install sweeps (swept_pool; None: every tag)."""
     tags = sorted({current_tag(t, idx) for t in blueprint_tags(st)})
+    if pool is not None:
+        tags = [t for t in tags if t in pool]
     mine = sorted({t for t in items if tag_stale(idx.get(t), today, TAG_FRESH_DAYS)})
     days = TAG_REVIEW_DAYS if kind == "review" else TAG_FRESH_DAYS
     rest = sorted((t for t in tags if t not in mine and tag_stale(idx.get(t), today, days)),
@@ -5858,17 +6011,19 @@ def parse_tag_results(text):
     return out, bad
 
 
-def file_tag_results(st, doc, results, today):
+def file_tag_results(st, doc, results, today, base=None):
     """The checker's results into the records, each checked today. A tag found changed or superseded
     keeps `since`, the day that finding was first made (the review's queue of teaching to re-check
     counts the rounds held before it: guideline_recheck). A superseded tag's successor gets a record
     of its own (current, checked today) unless the results say otherwise. Nothing is written into the
-    ledger: whether earlier teaching is wrong is decided at the review, point by point. Returns the
-    counts by status."""
+    ledger: whether earlier teaching is wrong is decided at the review, point by point. `base`: the
+    records read before (the effective ones, with the central records), for the day of a finding
+    already made; only `doc` is written. Returns the counts by status."""
     idx = guideline_records(doc)
+    before = guideline_records(base) if base is not None else idx
     counts = {s: 0 for s in GUIDELINE_STATUSES}
     for tag in sorted(results):
-        r, old = results[tag], idx.get(tag) or {}
+        r, old = results[tag], before.get(tag) or idx.get(tag) or {}
         rec = {"tag": tag, "last_checked": iso(today), "status": r["status"], "superseded_by": r["superseded_by"],
                "source": r["source"], "note": r["note"]}
         if r["status"] in ("changed", "superseded"):
@@ -5938,10 +6093,17 @@ def guideline_recheck(st, doc):
 
 def guideline_summary(st, doc, how, today):
     """What the records say of the blueprint's tags now (counts; the tags changed, superseded or
-    uncertain by name; the teaching to re-check): for the progress review and `tag-checks`."""
+    uncertain by name; the teaching to re-check): for the progress review and `tag-checks`. Read
+    with the shipped central records (effective_guidelines); `central` says which set answers for
+    the learner's region, how many tags it covers and when it was updated, and `sweeps` which tags
+    this install sweeps (the review sweep's count is of those only)."""
+    central = central_guidelines(st)
+    doc = effective_guidelines(st, doc, central)
     idx = guideline_records(doc)
     raw = blueprint_tags(st)
     tags = sorted({current_tag(t, idx) for t in raw})
+    pool = swept_pool(st, idx, central)
+    covered = {current_tag(t, idx) for t in central["covered"]}
     recs = [idx[t] for t in tags if t in idx]
     named = lambda s: [{k: idx[t].get(k) for k in ("tag", "superseded_by", "last_checked", "note", "source")}
                        for t in sorted(set(raw) | set(tags)) if (idx.get(t) or {}).get("status") == s
@@ -5950,9 +6112,11 @@ def guideline_summary(st, doc, how, today):
     return {"records": how, "tags": len(tags), "never_checked": sum(1 for t in tags if not (idx.get(t) or {}).get("last_checked")),
             "checked_within_30_days": sum(1 for t in tags if not tag_stale(idx.get(t), today, TAG_REVIEW_DAYS)),
             "not_checked_90_days": sum(1 for t in tags if tag_stale(idx.get(t), today, TAG_FRESH_DAYS)),
-            "review_sweep_due": sum(1 for t in tags if tag_stale(idx.get(t), today, TAG_REVIEW_DAYS)),
+            "review_sweep_due": sum(1 for t in tags if t in pool and tag_stale(idx.get(t), today, TAG_REVIEW_DAYS)),
+            "sweeps": guideline_sweeps(st), "swept": len(pool & set(tags)),
+            "central": {"set": central["set"], "covered": len(covered & set(tags)), "updated": central["updated"]},
             "by_status": {s: sum(1 for r in recs if r.get("status") == s and r.get("last_checked")) for s in GUIDELINE_STATUSES},
-            "sweep": "1/%d" % div, "rolling_quota": int(math.ceil(len(tags) / float(div))) if tags else 0,
+            "sweep": "1/%d" % div, "rolling_quota": int(math.ceil(len(pool) / float(div))) if pool else 0,
             "superseded": named("superseded"), "changed": named("changed"), "uncertain": named("uncertain"),
             "teaching_to_recheck": guideline_recheck(st, doc), "updated": doc.get("updated")}
 
@@ -5979,15 +6143,18 @@ def prepare_tag_checks(work, info, st, plan, today, folder):
     clear_tag_lists(folder)
     if not blueprint_tags(st):
         return None
+    central = central_guidelines(st)
     doc, how = load_guidelines(work, info, st)
-    if doc is None:
+    if doc is None:         # the shipped records still overlay the plan; nothing is checked or filed
+        overlay_plan(plan, central["records"])
         plan["tag_checks"] = {"count": 0, "skipped": "not read"}
         return {"count": 0, "skipped": NOT_READ}
-    idx = guideline_records(doc)
+    idx = guideline_records(effective_guidelines(st, doc, central))
     overlaid = overlay_plan(plan, idx)
     ahead = review_lookahead(st)
     kind = "review" if review_status(st, today + dt.timedelta(days=ahead))[0] else "rolling"
-    mine, sweep = due_tags(st, idx, today, plan_tags(plan), kind, sweep_divisor(doc))
+    mine, sweep = due_tags(st, idx, today, plan_tags(plan), kind, sweep_divisor(doc),
+                           swept_pool(st, idx, central))
     with_round = sorted(set(mine) | set(sweep)) if kind == "rolling" else mine
     review = sweep if kind == "review" else []
     checkers = write_tag_lists(folder, "tag", st, idx, with_round, today) if with_round else []
@@ -5996,7 +6163,8 @@ def prepare_tag_checks(work, info, st, plan, today, folder):
                           "lists": [os.path.basename(c["list"]) for c in checkers],
                           "review_count": len(review), "review_lists": [os.path.basename(c["list"]) for c in later]}
     return {"count": len(with_round), "kind": kind, "records": how, "checkers": checkers,
-            "review_count": len(review), "review_checkers": later}
+            "review_count": len(review), "review_checkers": later,
+            "sweeps": guideline_sweeps(st), "central": central["set"]}
 
 
 def round_tag_results(folder, asked):
@@ -6024,11 +6192,13 @@ def cmd_tag_checks(args):
     doc, how = load_guidelines(work, info, st)
     if doc is None:
         die(NOT_READ)
-    idx = guideline_records(doc)
+    central = central_guidelines(st)
+    base = effective_guidelines(st, doc, central)
+    idx = guideline_records(base)
     if args.list:
         os.makedirs(args.list, exist_ok=True)
         clear_tag_lists(args.list)
-        mine, sweep = due_tags(st, idx, today, (), args.due, sweep_divisor(doc))
+        mine, sweep = due_tags(st, idx, today, (), args.due, sweep_divisor(doc), swept_pool(st, idx, central))
         checkers = write_tag_lists(args.list, "tag", st, idx, sweep, today) if sweep else []
         print(json.dumps({"ok": True, "due": args.due, "count": len(sweep), "checkers": checkers}))
         return
@@ -6046,9 +6216,207 @@ def cmd_tag_checks(args):
         results, bad, missing = read_tag_results(args.results)
         if missing == len(args.results):
             die("no results file among %s" % ", ".join(args.results))
-        counts = file_tag_results(st, doc, results, today)
+        counts = file_tag_results(st, doc, results, today, base)
         out.update({"filed": len(results), "unreadable": bad, "files_missing": missing, "by_status": counts})
     commit(work, info, out, st, today, NEUTRAL, guidelines=doc, then=lambda out, _: dict(out, gen=st["gen"]))
+
+
+# ---- the maintainer's job on the central records (issue #91; docs/maintaining-guidelines.md)
+
+CENTRAL_FILE_RE = re.compile(r"^([a-z0-9-]+)_(checks|results)_(\d+)\.md$")
+
+
+def central_slug(name):
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "set"
+
+
+def central_problems(doc, today, bp_path=None):
+    """What is wrong with a central records document ([] when it can ship)."""
+    out = []
+    if not isinstance(doc, dict) or doc.get("kind") != CENTRAL_KIND:
+        return ["kind is not %s" % CENTRAL_KIND]
+    sets = doc.get("sets")
+    if not isinstance(sets, dict) or not sets:
+        return ["no sets"]
+    seen_alias, slugs = {}, {}
+    for name, s in sets.items():
+        if not isinstance(s, dict):
+            out.append("%s: not an object" % name)
+            continue
+        if central_slug(name) in slugs:
+            out.append("%s: its file prefix %s is %s's too" % (name, central_slug(name), slugs[central_slug(name)]))
+        slugs[central_slug(name)] = name
+        regions = s.get("regions")
+        if not isinstance(regions, list) or not regions or not all(isinstance(r, str) and r.strip() for r in regions):
+            out.append("%s: regions must be a non-empty list of names" % name)
+            regions = []
+        for r in regions:
+            if region_key(r) in seen_alias:
+                out.append("%s: region %r is %s's too" % (name, r, seen_alias[region_key(r)]))
+            seen_alias[region_key(r)] = name
+        recs = s.get("records")
+        if not isinstance(recs, list):
+            out.append("%s: records must be a list" % name)
+            continue
+        tags = set()
+        for i, r in enumerate(recs):
+            where = "%s: record %d" % (name, i + 1)
+            if not isinstance(r, dict) or not isinstance(r.get("tag"), str) or not r["tag"].strip():
+                out.append("%s has no tag" % where)
+                continue
+            where = "%s: %s" % (name, r["tag"])
+            if r["tag"] in tags:
+                out.append("%s is recorded twice" % where)
+            tags.add(r["tag"])
+            if r.get("status") not in GUIDELINE_STATUSES:
+                out.append("%s: status %r" % (where, r.get("status")))
+            d = r.get("last_checked")
+            if d is not None and (parse_date(d) is None or parse_date(d) > today):
+                out.append("%s: last_checked %r is not a date up to today" % (where, d))
+            if r.get("status") == "superseded" and (not r.get("superseded_by") or r["superseded_by"] == r["tag"]):
+                out.append("%s: superseded without its successor" % where)
+            if r.get("status") != "superseded" and r.get("superseded_by"):
+                out.append("%s: superseded_by on a record that is %s" % (where, r.get("status")))
+            if r.get("since") is not None and parse_date(r["since"]) is None:
+                out.append("%s: since %r is not a date" % (where, r["since"]))
+        idx = guideline_records(s)
+        for tag in sorted(idx):
+            t, seen = tag, set()
+            while (idx.get(t) or {}).get("status") == "superseded" and idx[t].get("superseded_by"):
+                if t in seen:
+                    out.append("%s: %s supersedes itself down its chain" % (name, tag))
+                    break
+                seen.add(t)
+                t = idx[t]["superseded_by"]
+    if not default_pairs(bp_path):
+        out.append("the default blueprint (%s) has no tagged decision points" % (bp_path or DEFAULT_BLUEPRINT_PATH))
+    return out
+
+
+def central_due(s, tags, today, days, share=None):
+    """The tags of one set to check: the default blueprint's tags as cited now (down the set's chain),
+    not checked within `days`, never-checked first, then the oldest; at most ceil(len(tags) / share)
+    when `share` is given."""
+    idx = guideline_records(s)
+    now = sorted({current_tag(t, idx) for t in tags})
+    due = sorted((t for t in now if tag_stale(idx.get(t), today, days)), key=lambda t: tag_age(idx, t))
+    if share:
+        due = due[:int(math.ceil(len(now) / float(share)))]
+    return now, sorted(due)
+
+
+def central_summary(doc, tags, today, days):
+    out = {}
+    for name, s in central_sets(doc).items():
+        idx = guideline_records(s)
+        now, due = central_due(s, tags, today, days)
+        out[name] = {"regions": s.get("regions"), "updated": s.get("updated"), "tags": len(now),
+                     "records": len(idx), "never_checked": sum(1 for t in now if not (idx.get(t) or {}).get("last_checked")),
+                     "due": len(due), "by_status": {k: sum(1 for t in now if (idx.get(t) or {}).get("status") == k
+                                                          and idx[t].get("last_checked")) for k in GUIDELINE_STATUSES},
+                     "superseded": sorted(t for t, r in idx.items() if r.get("status") == "superseded")}
+    return out
+
+
+def write_central_list(path, name, s, tags, today):
+    idx = guideline_records(s)
+    lines = ["# Guideline tags to check (central records, set %s)" % name, "",
+             "Region: %s · Specialty: %s (the default blueprint) · Date: %s"
+             % (" / ".join(s.get("regions") or [name]), DEFAULT_PROFILE["specialty"], iso(today)),
+             "Brief: references/evidence_check.md section 7. Write one line per tag into the output file:",
+             "`Tag: <tag> | current|changed|superseded|uncertain | <the newer guideline, or -> | <source link> | <note>`",
+             ""]
+    for t in sorted(tags):
+        r = idx.get(t) or {}
+        lines.append("- %s — %s" % (t, "last checked %s: %s" % (r["last_checked"], r.get("status"))
+                                    if r.get("last_checked") else "never checked"))
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")
+
+
+def cmd_central_checks(args):
+    """The maintainer's job on the default blueprint's central tag records
+    (templates/guideline_checks.json; --file for another copy). Alone: per set, what they say.
+    --list DIR: per set (or --region), the tags due (not checked within --days, 90; never-checked
+    first, then the oldest; at most ceil(N / --share) per set when given, else all due) written into
+    DIR as <set>_checks_<n>.md lists of at most 40, each beside its <set>_results_<n>.md.
+    --results F (repeatable): the checkers' `Tag:` lines filed into the set the file's name (or
+    --region) names, each checked today; the file is then validated and written. --validate: the
+    file's problems (refused when any)."""
+    today = given_today(args) or dt.date.today()
+    path = args.file or GUIDELINE_SEED
+    doc = load_json(path)
+    st = {"blueprint": read_blueprint(args.blueprint or DEFAULT_BLUEPRINT_PATH)}
+    tags = sorted(blueprint_tags(st))
+    sets = central_sets(doc)
+    if args.region and args.region not in sets:
+        die("no set %r in %s (sets: %s)" % (args.region, path, ", ".join(sorted(sets))))
+    if args.validate or not (args.list or args.results):
+        problems = central_problems(doc, today, args.blueprint)
+        if args.validate and problems:
+            die("%s cannot ship: %s" % (path, "; ".join(problems)))
+        print(json.dumps({"ok": True, "file": os.path.abspath(path), "valid": not problems, "problems": problems,
+                          "blueprint_tags": len(tags), "sets": central_summary(doc, tags, today, args.days)},
+                         ensure_ascii=False))
+        return
+    if args.list:
+        if args.share is not None and args.share < 1:
+            die("--share is N in ceil(tags / N), N at least 1")
+        os.makedirs(args.list, exist_ok=True)
+        for name in os.listdir(args.list):
+            if CENTRAL_FILE_RE.match(name):
+                os.remove(os.path.join(args.list, name))
+        checkers, counts = [], {}
+        for name, s in sets.items():
+            if args.region and name != args.region:
+                continue
+            _, due = central_due(s, tags, today, args.days, args.share)
+            counts[name] = len(due)
+            for n, chunk in enumerate(tag_chunks(due), 1):
+                stem = os.path.join(args.list, "%s_%%s_%d.md" % (central_slug(name), n))
+                write_central_list(stem % "checks", name, s, chunk, today)
+                checkers.append({"set": name, "list": os.path.abspath(stem % "checks"),
+                                 "results": os.path.abspath(stem % "results")})
+        print(json.dumps({"ok": True, "count": sum(counts.values()), "due": counts, "checkers": checkers},
+                         ensure_ascii=False))
+        return
+    by_slug = {central_slug(n): n for n in sets}
+    filed, missing, bad_total, not_listed = {}, [], 0, []
+    for f in args.results:
+        m = CENTRAL_FILE_RE.match(os.path.basename(f))
+        name = args.region or (by_slug.get(m.group(1)) if m else None)
+        if name is None:
+            die("%s: name the set with --region, or keep the results file's name (<set>_results_<n>.md)" % f)
+        if not os.path.isfile(f):
+            missing.append(f)
+            continue
+        results, bad = parse_tag_results(read_text(f))
+        bad_total += bad
+        s = sets[name]
+        # only the tags asked: those on the paired list when it is there, else the set's tags as cited now
+        lst = os.path.join(os.path.dirname(f), os.path.basename(f).replace("_results_", "_checks_"))
+        if m and os.path.isfile(lst):
+            asked = {line[2:].split(" — ")[0].strip() for line in read_text(lst).splitlines() if line.startswith("- ")}
+        else:
+            asked = set(central_due(s, tags, today, -1)[0])
+        for t in sorted(set(results) - asked):
+            not_listed.append(t)
+            del results[t]
+        counts = file_tag_results(None, s, results, today)
+        s["updated"] = iso(today)
+        acc = filed.setdefault(name, {s_: 0 for s_ in GUIDELINE_STATUSES})
+        for k, v in counts.items():
+            acc[k] += v
+    if not filed:
+        die("no results file among %s" % ", ".join(args.results))
+    doc["updated"] = iso(today)
+    problems = central_problems(doc, today, args.blueprint)
+    if problems:
+        die("the results would leave %s unable to ship (nothing written): %s" % (path, "; ".join(problems)))
+    save_json(doc, path)
+    print(json.dumps({"ok": True, "file": os.path.abspath(path), "filed": filed, "unreadable": bad_total,
+                      "not_listed": not_listed, "files_missing": missing, "sets": central_summary(doc, tags, today, args.days)},
+                     ensure_ascii=False))
 
 
 def cmd_prepare(args):
@@ -6344,7 +6712,7 @@ def cmd_finish_prepare(args):
         if doc is None:
             tagged["filed"], tagged["not_filed"] = 0, NOT_READ
         else:
-            file_tag_results(st, doc, results, today_from(args))
+            file_tag_results(st, doc, results, today_from(args), effective_guidelines(st, doc))
             tagged["filed"] = len(results)
 
     def stashed(out, _):
@@ -7178,19 +7546,22 @@ COMMANDS = (
      ' it). A paragraph the learner wrote on the page (in the `--prefs` given to `open`) is '
      'written to the ledger first, into the publish set, and reported as `page_settings_applied` '
      'with the `files` (§7.1); a round prepared for the old words does not count as usable. With '
-     'guideline tags in the blueprint (issue #90, ADR 0011) it reads the check records '
-     '(`data/guidelines.json`; none yet: the default blueprint\'s earlier checks for the default '
-     'region), puts the guideline that superseded a tag in its place in the plan\'s decision points '
-     '(`subtopic.guidelines` says what the record holds) and lists the tags to check now, in lists '
-     'of at most 40, one checker each: with the round (`W/next/tag_checks_<n>.md` → '
-     '`tag_results_<n>.md`), the tags of the items\' decision points not checked within 90 days and '
-     'the rolling sweep (ceil(N/12) of the rest not checked within 90 days, never-checked first, then '
-     'the oldest); when a progress review falls due within the gap between rounds (at least 7 days), '
-     'the items\' tags with the round and every other tag not checked within 30 days apart '
-     '(`W/next/review_checks_<n>.md` → `review_results_<n>.md`), filed with `tag-checks --results` '
-     'after the round is stashed. Prints `tag_checks` (`count`, `kind`: rolling or review, '
-     '`checkers` and `review_checkers`: `list` and `results` paths, `review_count`; `skipped` when '
-     'the store holds records this job did not read).'),
+     'guideline tags in the blueprint (issue #90, ADR 0011) it reads the check records, per tag the '
+     'newer of the learner\'s (`data/guidelines.json`) and the shipped central record for their '
+     'region (`templates/guideline_checks.json`, issue #91, ADR 0013), puts the guideline that '
+     'superseded a tag in its place in the plan\'s decision points (`subtopic.guidelines` says what '
+     'the record holds) and lists the tags to check now, in lists of at most 40, one checker each: '
+     'with the round (`W/next/tag_checks_<n>.md` → `tag_results_<n>.md`), the tags of the items\' '
+     'decision points not checked within 90 days and the rolling sweep (ceil(N/12) of the swept tags '
+     'not checked within 90 days, never-checked first, then the oldest); when a progress review falls '
+     'due within the gap between rounds (at least 7 days), the items\' tags with the round and every '
+     'other swept tag not checked within 30 days apart (`W/next/review_checks_<n>.md` → '
+     '`review_results_<n>.md`), filed with `tag-checks --results` after the round is stashed. The '
+     'swept tags (`config.guideline_sweeps`): `custom`, the default, those the central records do '
+     'not cover; `all`; `off`, none. Prints `tag_checks` (`count`, `kind`: rolling or review, '
+     '`checkers` and `review_checkers`: `list` and `results` paths, `review_count`, `sweeps`, '
+     '`central`: the set read; `skipped` when the store holds records this job did not read: the '
+     'central records then still overlay the plan).'),
     ('`finish-prepare --work W [--revised] [--no-evidence]`',
      'After the checkers: finish preparing the round planned in `W/next/plan.json` and drafted in'
      ' `W/next`. First lints it against the rulebook (`standards.md`, "The lint"). **Blocking**: '
@@ -7227,14 +7598,16 @@ COMMANDS = (
      'back once, `revise`); when the round is stashed it files them as `tag-checks --results` does. '
      'Missing results hold nothing up: those tags come due again. The review sweep is not read here.'),
     ('`tag-checks --work W [--list DIR [--due review\\|rolling]] [--results F …] [--sweep N]`',
-     "The guideline tags' check records (`data/guidelines.json`, issue #90). Alone: what they say "
-     'of the blueprint\'s tags (`tags`, `never_checked`, `checked_within_30_days`, '
-     '`not_checked_90_days`, `review_sweep_due`, `by_status`, the `superseded`, `changed` and '
-     '`uncertain` tags by name, `sweep`, `rolling_quota`, and `teaching_to_recheck`: per tag found '
+     "The guideline tags' check records (`data/guidelines.json`, issue #90, read with the shipped "
+     'central records, issue #91). Alone: what they say of the blueprint\'s tags (`tags`, '
+     '`never_checked`, `checked_within_30_days`, `not_checked_90_days`, `review_sweep_due` (of the '
+     'swept tags), `sweeps`, `swept`, `central` (`set`, `covered`, `updated`), `by_status`, the '
+     '`superseded`, `changed` and `uncertain` tags by name, `sweep`, `rolling_quota`, and '
+     '`teaching_to_recheck`: per tag found '
      'changed or superseded, the rounds held before that finding on a sub-topic citing it, with their '
      'teaching points not checked since, for the review\'s guideline-change check); writes nothing. '
      '`--list DIR`: the tags due written into `DIR` in lists of at most 40 (`tag_checks_<n>.md`, one '
-     'checker each, results to `tag_results_<n>.md`; `--due review`, the default: every tag not '
+     'checker each, results to `tag_results_<n>.md`; `--due review`, the default: every swept tag not '
      'checked within 30 days; `rolling`: the rolling sweep); prints `count` and `checkers`. `--results '
      'F` (once per file): the checkers\' `Tag: <tag> | <status> | <superseded_by> | <source> | <note>` '
      'lines filed, each checked on the job\'s date; a superseded tag\'s successor gets a record of its '
@@ -7242,6 +7615,23 @@ COMMANDS = (
      'written. `--sweep N`: the rolling sweep\'s share, 1/N, N from 12 to 16. Either writes the records '
      'and the ledger (`guidelines_gen`; the prepared round stays) into the publish set. Refused when '
      'the store holds records this job did not read.'),
+    ('`central-checks [--file F] [--blueprint B] [--region SET] [--list DIR [--share N] [--days D]] [--results F …] [--validate]`',
+     "The maintainer's job on the default blueprint's central tag records (issue #91, ADR 0013; "
+     '`docs/maintaining-guidelines.md` in the repo); no work folder, no ledger. `F`: the records file, '
+     'by default the skill\'s `templates/guideline_checks.json` (one set per supported region, '
+     '`sets.<name>`: `regions`, `updated`, `records`); `B`: the blueprint whose tags they answer for, '
+     'by default `templates/blueprint.json`. Alone: per set `tags`, `records`, `never_checked`, '
+     '`due`, `by_status`, `superseded`, and `valid` with the `problems`; writes nothing. `--list '
+     'DIR`: per set (or only `--region`), the tags as cited now not checked within `D` days (90), '
+     'never-checked first, then the oldest, all of them or at most ceil(tags/N) per set with '
+     '`--share N`, in lists of at most 40 (`DIR/<set>_checks_<n>.md` → `<set>_results_<n>.md`, one '
+     'checker each, `evidence_check.md` §7); prints `count`, `due` per set and `checkers`. '
+     '`--results F` (once per file): the `Tag:` lines filed into the set the file\'s name names (or '
+     '`--region`), only for the tags its list asked (others skipped, `not_listed`), each checked today, as `tag-checks --results` files them; the file is validated, '
+     'then written (refused, nothing written, when it would not validate). `--validate`: refused '
+     '(exit 2) when the file has a problem (a record without a tag or twice, an unknown status, a '
+     'date not up to today, superseded without its successor, a chain that loops, a region named '
+     'by two sets).'),
     ('`keys DIR\\|SEALED… [--plan PLAN]`',
      "The author's check before finishing: the key headers and rubric blocks of sealed files "
      "(`standards.md` rule 9) and, for a folder, the kits' sections (rule 8; a kit not written yet is not a problem "
@@ -10144,6 +10534,10 @@ def build_parser():
     s.add_argument("--allow-unreflected", action="store_true")
     s = command("finish-prepare", cmd_finish_prepare); s.add_argument("--revised", action="store_true")
     s.add_argument("--no-evidence", action="store_true")
+    s = command("central-checks", cmd_central_checks, work=False); s.add_argument("--file")
+    s.add_argument("--blueprint"); s.add_argument("--region"); s.add_argument("--list")
+    s.add_argument("--results", action="append"); s.add_argument("--share", type=int)
+    s.add_argument("--days", type=int, default=TAG_FRESH_DAYS); s.add_argument("--validate", action="store_true")
     s = command("tag-checks", cmd_tag_checks); s.add_argument("--list"); s.add_argument("--results", action="append")
     s.add_argument("--due", choices=("review", "rolling"), default="review"); s.add_argument("--sweep", type=int)
     s = command("keys", cmd_keys, work=False); s.add_argument("paths", nargs="+"); s.add_argument("--plan")
