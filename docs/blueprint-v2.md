@@ -54,7 +54,7 @@ sub-topic as today's topic.
 
 - **CARD-01 Acute coronary syndrome**: a) Recognition and triage · b) Reperfusion and timing of the invasive strategy · c) Antithrombotic therapy · d) Complications and care after infarction
 - **CARD-09 Chronic coronary disease and chest pain** *(new)*: a) Work-up of stable chest pain · b) Antianginal and preventive therapy · c) Troponin rise without plaque rupture (type 2 infarction, MINOCA, spasm)
-- **CARD-02 Heart failure**: a) Acute decompensation: relieving congestion · b) HFrEF: starting and sequencing therapy · c) HFpEF and mildly reduced EF · d) Precipitants, deterioration and shock
+- **CARD-02 Heart failure**: a) Acute decompensation: relieving congestion · b) HFrEF: starting and sequencing therapy · c) HFpEF and the reclassified 41 to 49% range · d) Precipitants, deterioration and shock
 - **CARD-10 Cardiomyopathies** *(new)*: a) Hypertrophic · b) Dilated, including tachycardia- and alcohol-related · c) Restrictive and infiltrative; cor pulmonale
 - **CARD-03 Atrial fibrillation**: a) Stroke prevention decision · b) Rate versus rhythm control and cardioversion · c) Antithrombotic combinations after PCI or ACS · d) New AF in acute illness or after surgery
 - **CARD-04 Arrhythmias and conduction disease**: a) Bradycardia, AV block and pacing · b) Narrow-complex tachycardia · c) Wide-complex tachycardia and QT prolongation · d) Cardiac arrest and care after resuscitation

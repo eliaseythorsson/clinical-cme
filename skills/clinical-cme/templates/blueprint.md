@@ -82,9 +82,9 @@ drafts an equivalent blueprint in the same format for you to check.
     - Sacubitril-valsartan or ACE inhibitor as the renin-angiotensin agent [ESC HF 2026]
     - Whether iron deficiency calls for intravenous iron [ESC HF 2026]
     - When to refer for ICD or resynchronisation after drug optimisation [ESC HF 2026]
-  - CARD-02c  HFpEF and mildly reduced EF  (aspects: diagnosis high, management high)
+  - CARD-02c  HFpEF and the reclassified 41 to 49% range  (aspects: diagnosis high, management high)
     - Whether breathlessness with preserved ejection fraction is heart failure (natriuretic peptides, echocardiographic criteria) [ESC HF 2026]
-    - Which disease-modifying drugs apply with preserved or mildly reduced ejection fraction [ESC HF 2026]
+    - Which disease-modifying drugs apply with preserved ejection fraction [ESC HF 2026]
     - Whether obesity with preserved ejection fraction calls for an incretin-based drug [ESC HF 2026]
     - How to treat an ejection fraction of 41 to 49% now that it falls under reduced EF [ESC HF 2026]
   - CARD-02d  Precipitants, deterioration and shock  (aspects: diagnosis high, management high, disposition high)
@@ -818,7 +818,7 @@ drafts an equivalent blueprint in the same format for you to check.
     - How perianal fistula is investigated and treated [ECCO Crohn's 2024]
     - When to look for recurrence after resection [ECCO Crohn's 2024]
   - GI-05c  Maintenance therapy and its risks  (aspects: management high, prevention high)
-    - Screening and vaccination before immunosuppression [ECCO infections 2021]
+    - Screening and vaccination before immunosuppression [ECCO infections 2026]
     - Which maintenance drug follows steroid induction [ECCO UC 2026; ECCO Crohn's 2024]
     - Whom JAK inhibitors put at risk [ECCO UC 2026]
 - GI-06  Bowel obstruction and ischaemia
@@ -854,7 +854,7 @@ drafts an equivalent blueprint in the same format for you to check.
     - Which patients need stool tests [IDSA infectious diarrhoea 2017]
     - When an antibiotic helps and when it harms [IDSA infectious diarrhoea 2017]
   - GI-11b  Chronic diarrhoea: coeliac disease, microscopic colitis, irritable bowel  (aspects: diagnosis high, testing high)
-    - How to test for coeliac disease, and on what diet [ESsCD coeliac 2019]
+    - How to test for coeliac disease, and on what diet [ESsCD coeliac 2025]
     - Whether calprotectin separates inflammatory disease from irritable bowel syndrome [BSG chronic diarrhoea 2018]
     - Whether to biopsy a normal colon in watery diarrhoea [UEG/EMCG microscopic colitis 2021]
     - When to test for bile acid diarrhoea [BSG chronic diarrhoea 2018]
@@ -1321,11 +1321,11 @@ drafts an equivalent blueprint in the same format for you to check.
     - Enteral or parenteral route when oral intake fails [ESPEN polymorbid inpatients 2023]
 - GEN-07  Thromboprophylaxis
   - GEN-07a  Medical inpatients: who and how  (aspects: prevention very high, management high)
-    - Whether a medical inpatient needs pharmacological prophylaxis, weighing VTE and bleeding risk [NICE NG89 2019]
-    - Whether to extend prophylaxis after discharge [NICE NG89 2019]
-    - Mechanical prophylaxis when pharmacological is contraindicated [NICE NG89 2019]
+    - Whether a medical inpatient needs pharmacological prophylaxis, weighing VTE and bleeding risk [NICE NG89 2018, updated 2025]
+    - Whether to extend prophylaxis after discharge [NICE NG89 2018, updated 2025]
+    - Mechanical prophylaxis when pharmacological is contraindicated [NICE NG89 2018, updated 2025]
   - GEN-07b  Special populations  (aspects: prevention high, management high)
-    - Prophylaxis dose in obesity and renal failure [NICE NG89 2019]
+    - Prophylaxis dose in obesity and renal failure [NICE NG89 2018, updated 2025]
     - Prophylaxis in the inpatient and ambulatory patient with cancer [ESMO cancer-associated thrombosis 2023]
 - GEN-08  Palliative and end-of-life care
   - GEN-08a  Goals of care and capacity  (aspects: management high, prognosis high)
@@ -1359,7 +1359,7 @@ drafts an equivalent blueprint in the same format for you to check.
     - When to stop fluids and start removing them [ESICM fluid therapy part 3 2025]
 - GEN-13  Eye and ENT for the internist
   - GEN-13a  Red eye and acute visual loss  (aspects: diagnosis high, disposition high)
-    - Whether a painful red eye with a mid-dilated pupil is acute angle closure, and what to give before ophthalmology [EGS 2020]
+    - Whether a painful red eye with a mid-dilated pupil is acute angle closure, and what to give before ophthalmology [EGS 2025]
     - Whether sudden painless monocular loss is treated as a stroke [AHA CRAO scientific statement 2021]
   - GEN-13b  Vertigo, epistaxis, hearing loss  (aspects: diagnosis high, management high)
     - Which positional test and repositioning manoeuvre for suspected BPPV [AAO-HNS BPPV 2017]
@@ -1534,7 +1534,7 @@ drafts an equivalent blueprint in the same format for you to check.
   - DERM-04a  The suspicious lesion  (aspects: diagnosis very high, disposition high)
     - Which features of a pigmented lesion warrant urgent referral [EADO melanoma diagnostics 2024]
     - Excision or partial biopsy of a suspected melanoma [EADO melanoma diagnostics 2024]
-    - Which skin cancer surveillance a transplant recipient or immunosuppressed patient needs [EADO cSCC 2023]
+    - Which skin cancer surveillance a transplant recipient or immunosuppressed patient needs [EADO cSCC 2026]
 - DERM-05  Wounds and ulcers
   - DERM-05a  Leg ulcers  (aspects: diagnosis high, management high)
     - Whether ankle-brachial index is measured before compression [ESVS chronic venous disease 2022]

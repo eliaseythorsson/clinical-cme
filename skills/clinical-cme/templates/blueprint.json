@@ -141,10 +141,10 @@
      }
     },
     "CARD-02c": {
-     "label": "HFpEF and mildly reduced EF",
+     "label": "HFpEF and the reclassified 41 to 49% range",
      "points": [
       "Whether breathlessness with preserved ejection fraction is heart failure (natriuretic peptides, echocardiographic criteria) [ESC HF 2026]",
-      "Which disease-modifying drugs apply with preserved or mildly reduced ejection fraction [ESC HF 2026]",
+      "Which disease-modifying drugs apply with preserved ejection fraction [ESC HF 2026]",
       "Whether obesity with preserved ejection fraction calls for an incretin-based drug [ESC HF 2026]",
       "How to treat an ejection fraction of 41 to 49% now that it falls under reduced EF [ESC HF 2026]"
      ],
@@ -2359,7 +2359,7 @@
     "GI-05c": {
      "label": "Maintenance therapy and its risks",
      "points": [
-      "Screening and vaccination before immunosuppression [ECCO infections 2021]",
+      "Screening and vaccination before immunosuppression [ECCO infections 2026]",
       "Which maintenance drug follows steroid induction [ECCO UC 2026; ECCO Crohn's 2024]",
       "Whom JAK inhibitors put at risk [ECCO UC 2026]"
      ],
@@ -2464,7 +2464,7 @@
     "GI-11b": {
      "label": "Chronic diarrhoea: coeliac disease, microscopic colitis, irritable bowel",
      "points": [
-      "How to test for coeliac disease, and on what diet [ESsCD coeliac 2019]",
+      "How to test for coeliac disease, and on what diet [ESsCD coeliac 2025]",
       "Whether calprotectin separates inflammatory disease from irritable bowel syndrome [BSG chronic diarrhoea 2018]",
       "Whether to biopsy a normal colon in watery diarrhoea [UEG/EMCG microscopic colitis 2021]",
       "When to test for bile acid diarrhoea [BSG chronic diarrhoea 2018]"
@@ -3889,9 +3889,9 @@
     "GEN-07a": {
      "label": "Medical inpatients: who and how",
      "points": [
-      "Whether a medical inpatient needs pharmacological prophylaxis, weighing VTE and bleeding risk [NICE NG89 2019]",
-      "Whether to extend prophylaxis after discharge [NICE NG89 2019]",
-      "Mechanical prophylaxis when pharmacological is contraindicated [NICE NG89 2019]"
+      "Whether a medical inpatient needs pharmacological prophylaxis, weighing VTE and bleeding risk [NICE NG89 2018, updated 2025]",
+      "Whether to extend prophylaxis after discharge [NICE NG89 2018, updated 2025]",
+      "Mechanical prophylaxis when pharmacological is contraindicated [NICE NG89 2018, updated 2025]"
      ],
      "aspects": {
       "prevention": 1.3,
@@ -3901,7 +3901,7 @@
     "GEN-07b": {
      "label": "Special populations",
      "points": [
-      "Prophylaxis dose in obesity and renal failure [NICE NG89 2019]",
+      "Prophylaxis dose in obesity and renal failure [NICE NG89 2018, updated 2025]",
       "Prophylaxis in the inpatient and ambulatory patient with cancer [ESMO cancer-associated thrombosis 2023]"
      ],
      "aspects": {
@@ -3993,7 +3993,7 @@
     "GEN-13a": {
      "label": "Red eye and acute visual loss",
      "points": [
-      "Whether a painful red eye with a mid-dilated pupil is acute angle closure, and what to give before ophthalmology [EGS 2020]",
+      "Whether a painful red eye with a mid-dilated pupil is acute angle closure, and what to give before ophthalmology [EGS 2025]",
       "Whether sudden painless monocular loss is treated as a stroke [AHA CRAO scientific statement 2021]"
      ],
      "aspects": {
@@ -4530,7 +4530,7 @@
      "points": [
       "Which features of a pigmented lesion warrant urgent referral [EADO melanoma diagnostics 2024]",
       "Excision or partial biopsy of a suspected melanoma [EADO melanoma diagnostics 2024]",
-      "Which skin cancer surveillance a transplant recipient or immunosuppressed patient needs [EADO cSCC 2023]"
+      "Which skin cancer surveillance a transplant recipient or immunosuppressed patient needs [EADO cSCC 2026]"
      ],
      "aspects": {
       "diagnosis": 1.3,
