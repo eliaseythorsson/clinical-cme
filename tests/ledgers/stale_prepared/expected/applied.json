@@ -54,7 +54,7 @@
     ]
    },
    "brier": [
-    3.9499999999999993,
+    3.95,
     20
    ],
    "calibration": {
@@ -272,12 +272,6 @@
    "self_comfort": {},
    "self_performance": null,
    "started_at": null,
-   "steps_before": {
-    "PULM-04": 0,
-    "PULM-06": 0,
-    "PULM-07": 1,
-    "RENAL-06": 1
-   },
    "summary": "Synthetic round 5 of an example ledger.",
    "tags": [
     "example"
@@ -289,6 +283,45 @@
     "PULM-06",
     "PULM-04"
    ],
+   "undo": {
+    "topics": {
+     "PULM-04": {
+      "new": true
+     },
+     "PULM-06": {
+      "gap": null,
+      "in": [
+       {
+        "gap": "Example gap 5.2: missed the decision point",
+        "source": "graded"
+       }
+      ],
+      "new": true
+     },
+     "PULM-07": {
+      "row": true,
+      "was": {
+       "attempts": 3,
+       "calibration": "underconfident",
+       "comfort": 2,
+       "due": "2026-09-09",
+       "last": "2026-09-07",
+       "step": 1
+      }
+     },
+     "RENAL-06": {
+      "row": true,
+      "was": {
+       "attempts": 1,
+       "calibration": "aligned",
+       "comfort": 5,
+       "due": "2026-09-04",
+       "last": "2026-09-01",
+       "step": 1
+      }
+     }
+    }
+   },
    "why": {
     "PULM-04": "new",
     "PULM-06": "new",
@@ -361,7 +394,7 @@
     ]
    },
    "brier": [
-    3.9499999999999993,
+    3.95,
     20
    ],
    "calibration": {
@@ -588,12 +621,6 @@
    },
    "self_performance": 3,
    "started_at": null,
-   "steps_before": {
-    "PULM-04": 0,
-    "PULM-06": 0,
-    "PULM-07": 1,
-    "RENAL-06": 1
-   },
    "summary": "Synthetic round 5 of an example ledger.",
    "tags": [
     "example"
@@ -605,6 +632,44 @@
     "PULM-06",
     "PULM-04"
    ],
+   "undo": {
+    "ratings": {
+     "PULM": 2.0
+    },
+    "topics": {
+     "PULM-04": {
+      "new": true
+     },
+     "PULM-06": {
+      "gap": null,
+      "in": [
+       {
+        "gap": "Example gap 5.2: missed the decision point",
+        "source": "graded"
+       }
+      ],
+      "new": true
+     },
+     "PULM-07": {
+      "row": true,
+      "was": {
+       "attempts": 3,
+       "due": "2026-09-09",
+       "last": "2026-09-07",
+       "step": 1
+      }
+     },
+     "RENAL-06": {
+      "row": true,
+      "was": {
+       "attempts": 1,
+       "due": "2026-09-04",
+       "last": "2026-09-01",
+       "step": 1
+      }
+     }
+    }
+   },
    "why": {
     "PULM-04": "new",
     "PULM-06": "new",

@@ -331,7 +331,7 @@ def test_a_settings_change_before_the_round_is_kept_by_save_and_by_a_second_save
     st = rnd.read_json("publish", "data", "state.json")
     assert st["config"]["session_minutes"] == 35 and st["profile"]["specialty"] == "Geriatrics"
     assert first["gen"] == changed["gen"] + 1 and [s["id"] for s in st["sessions"]] == ["S0001"]
-    assert rnd.read_json("before_save.json")["gen"] == changed["gen"]
+    assert rnd.read_json("work.json")["saved"] == {"session": "S0001", "gen": [changed["gen"], first["gen"]]}
     # run again (a warning was fixed): the same ledger, the settings change still in it
     again = rnd.save()
     assert again == first and rnd.read_json("publish", "data", "state.json") == st

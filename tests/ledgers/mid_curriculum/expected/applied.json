@@ -54,13 +54,13 @@
     ]
    },
    "brier": [
-    11.949999999999998,
+    11.95,
     55
    ],
    "calibration": {
     "guess": [
      8,
-     7.199999999999999
+     7.2
     ],
     "sure": [
      23,
@@ -108,7 +108,7 @@
    "reading_minutes": 0,
    "reflection_skipped": 0,
    "score_n": 11,
-   "score_sum": 40.599999999999994,
+   "score_sum": 40.6,
    "sessions": 11
   },
   "block": {
@@ -342,13 +342,6 @@
    "self_comfort": {},
    "self_performance": null,
    "started_at": null,
-   "steps_before": {
-    "GEN-02": 0,
-    "PULM-05": 0,
-    "PULM-06": 0,
-    "PULM-08": 0,
-    "TOX-03": 0
-   },
    "summary": "Synthetic round 11 of an example ledger.",
    "tags": [
     "example"
@@ -361,6 +354,34 @@
     "PULM-05",
     "GEN-02"
    ],
+   "undo": {
+    "topics": {
+     "GEN-02": {
+      "new": true
+     },
+     "PULM-05": {
+      "new": true
+     },
+     "PULM-06": {
+      "new": true
+     },
+     "PULM-08": {
+      "new": true
+     },
+     "TOX-03": {
+      "gap": null,
+      "row": true,
+      "was": {
+       "attempts": 1,
+       "calibration": "overconfident",
+       "comfort": 5,
+       "due": "2026-10-24",
+       "last": "2026-10-23",
+       "mastery": 3.0
+      }
+     }
+    }
+   },
    "why": {
     "GEN-02": "new",
     "PULM-05": "new",
@@ -440,13 +461,13 @@
     ]
    },
    "brier": [
-    11.949999999999998,
+    11.95,
     55
    ],
    "calibration": {
     "guess": [
      8,
-     7.199999999999999
+     7.2
     ],
     "sure": [
      23,
@@ -494,7 +515,7 @@
    "reading_minutes": 0,
    "reflection_skipped": 0,
    "score_n": 11,
-   "score_sum": 40.599999999999994,
+   "score_sum": 40.6,
    "sessions": 11
   },
   "block": {
@@ -738,13 +759,6 @@
    },
    "self_performance": 3,
    "started_at": null,
-   "steps_before": {
-    "GEN-02": 0,
-    "PULM-05": 0,
-    "PULM-06": 0,
-    "PULM-08": 0,
-    "TOX-03": 0
-   },
    "summary": "Synthetic round 11 of an example ledger.",
    "tags": [
     "example"
@@ -757,6 +771,39 @@
     "PULM-05",
     "GEN-02"
    ],
+   "undo": {
+    "ratings": {
+     "GEN": 3.3,
+     "PULM": 3.3,
+     "TOX": 4.3
+    },
+    "topics": {
+     "GEN-02": {
+      "new": true
+     },
+     "PULM-05": {
+      "new": true
+     },
+     "PULM-06": {
+      "new": true
+     },
+     "PULM-08": {
+      "new": true
+     },
+     "TOX-03": {
+      "gap": null,
+      "row": true,
+      "was": {
+       "attempts": 1,
+       "calibration": "overconfident",
+       "comfort": 5,
+       "due": "2026-10-24",
+       "last": "2026-10-23",
+       "mastery": 3.0
+      }
+     }
+    }
+   },
    "why": {
     "GEN-02": "new",
     "PULM-05": "new",

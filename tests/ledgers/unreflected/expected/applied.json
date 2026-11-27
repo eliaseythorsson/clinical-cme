@@ -54,7 +54,7 @@
     ]
    },
    "brier": [
-    7.000000000000002,
+    7.0,
     28
    ],
    "calibration": {
@@ -301,12 +301,6 @@
    "self_comfort": {},
    "self_performance": null,
    "started_at": null,
-   "steps_before": {
-    "HEME-02": 1,
-    "PULM-02": 1,
-    "PULM-05": 0,
-    "PULM-08": 0
-   },
    "summary": "Synthetic round 7 of an example ledger.",
    "tags": [
     "example"
@@ -318,6 +312,47 @@
     "PULM-08",
     "PULM-05"
    ],
+   "undo": {
+    "topics": {
+     "HEME-02": {
+      "gap": null,
+      "in": [
+       {
+        "gap": "Example gap 7.1: missed the decision point",
+        "source": "graded"
+       }
+      ],
+      "row": true,
+      "was": {
+       "attempts": 2,
+       "calibration": "underconfident",
+       "comfort": 2,
+       "due": "2026-10-11",
+       "last": "2026-10-09",
+       "mastery": 5.0,
+       "step": 1
+      }
+     },
+     "PULM-02": {
+      "row": true,
+      "was": {
+       "attempts": 3,
+       "calibration": "underconfident",
+       "comfort": 2,
+       "due": "2026-10-16",
+       "last": "2026-10-14",
+       "step": 1
+      }
+     },
+     "PULM-05": {
+      "gap": null,
+      "new": true
+     },
+     "PULM-08": {
+      "new": true
+     }
+    }
+   },
    "why": {
     "HEME-02": "due",
     "PULM-02": "due",
@@ -392,7 +427,7 @@
     ]
    },
    "brier": [
-    7.000000000000002,
+    7.0,
     28
    ],
    "calibration": {
@@ -648,12 +683,6 @@
    },
    "self_performance": 3,
    "started_at": null,
-   "steps_before": {
-    "HEME-02": 1,
-    "PULM-02": 1,
-    "PULM-05": 0,
-    "PULM-08": 0
-   },
    "summary": "Synthetic round 7 of an example ledger.",
    "tags": [
     "example"
@@ -665,6 +694,50 @@
     "PULM-08",
     "PULM-05"
    ],
+   "undo": {
+    "ratings": {
+     "HEME": 4.0,
+     "PULM": 2.5
+    },
+    "topics": {
+     "HEME-02": {
+      "gap": null,
+      "in": [
+       {
+        "gap": "Example gap 7.1: missed the decision point",
+        "source": "graded"
+       }
+      ],
+      "row": true,
+      "was": {
+       "attempts": 2,
+       "calibration": "underconfident",
+       "due": "2026-10-11",
+       "last": "2026-10-09",
+       "mastery": 5.0,
+       "step": 1
+      }
+     },
+     "PULM-02": {
+      "row": true,
+      "was": {
+       "attempts": 3,
+       "calibration": "underconfident",
+       "comfort": 2,
+       "due": "2026-10-16",
+       "last": "2026-10-14",
+       "step": 1
+      }
+     },
+     "PULM-05": {
+      "gap": null,
+      "new": true
+     },
+     "PULM-08": {
+      "new": true
+     }
+    }
+   },
    "why": {
     "HEME-02": "due",
     "PULM-02": "due",
@@ -945,7 +1018,7 @@
      ]
     },
     "brier": [
-     5.330000000000001,
+     5.33,
      24
     ],
     "calibration": {
@@ -1164,12 +1237,6 @@
     },
     "self_performance": 3,
     "started_at": null,
-    "steps_before": {
-     "GEN-04": 0,
-     "GI-03": 1,
-     "HEME-06": 0,
-     "NEURO-03": 0
-    },
     "summary": "Synthetic round 6 of an example ledger.",
     "tags": [
      "example"
@@ -1181,6 +1248,57 @@
      "GI-03",
      "HEME-06"
     ],
+    "undo": {
+     "ratings": {
+      "GEN": 3.7,
+      "HEME": 4.0,
+      "NEURO": 3.3
+     },
+     "topics": {
+      "GEN-04": {
+       "gap": null,
+       "in": [
+        {
+         "gap": "Example self-reported gap 6",
+         "source": "self"
+        }
+       ],
+       "row": true,
+       "was": {
+        "attempts": 1,
+        "calibration": "overconfident",
+        "comfort": 5,
+        "due": "2026-10-15",
+        "last": "2026-10-14",
+        "mastery": 3.0
+       }
+      },
+      "GI-03": {
+       "row": true,
+       "was": {
+        "attempts": 1,
+        "due": "2026-10-10",
+        "last": "2026-10-07",
+        "mastery": 4.0,
+        "step": 1
+       }
+      },
+      "HEME-06": {
+       "new": true
+      },
+      "NEURO-03": {
+       "row": true,
+       "was": {
+        "attempts": 2,
+        "comfort": 2,
+        "due": "2026-10-15",
+        "last": "2026-10-14",
+        "mastery": 2.0,
+        "step": 0
+       }
+      }
+     }
+    },
     "why": {
      "GEN-04": "due",
      "GI-03": "due",

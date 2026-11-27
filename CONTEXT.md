@@ -65,6 +65,17 @@ The verbatim, append-only record of every round, one session document each.
 What the ledger keeps of one round: its items with topic, score, confidence and coding, the gaps and the compact case. The state engine builds it from the key headers and the examiner's grading.
 _Avoid_: round JSON (for the assembled record)
 
+**Undo record**:
+What a round's session entry keeps of only what the round changed in the ledger (topics, gaps, resolved gaps, comfort ratings) and its own gaps as written, so it can be taken out and applied again. It holds a topic only while the round is the latest on it.
+_Avoid_: snapshot (the whole tables 5.0 kept instead)
+
+**Apply again**:
+Undo a round and apply it once more with amended input, through the same step that recorded it. `save` run again, the reflection, a dispute, a learner-set score and a gap the learner closes are all this one step, so each gives the same result whenever it is said.
+_Avoid_: reschedule, re-record, replay
+
+**Latest round on a topic**:
+The last round that changed the topic (tested it, wrote or closed its gap). Only it is applied again on that topic; after a later round, the earlier round's record still changes but the topic keeps the later round's schedule.
+
 **Page file**:
 The file the engine writes for the page (`data/page.json`): exactly what the page may show, already blinded. It is all the page renders, apart from the prefs it writes itself and the session or review document the learner opens; only Export reads the ledger.
 _Avoid_: index (it replaces `data/index.json`)

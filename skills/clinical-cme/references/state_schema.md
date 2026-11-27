@@ -120,7 +120,11 @@ A session entry:
  "reflection": {"solid": "…", "gaps": "…", "skipped": false}, "key_learning": ["…"],
  "case": {"topic": "RENAL-02", "patient": "34M", "setting": "ED", "presentation": "…", "diagnosis": "…", "twist": "…"},
  "grade_changes": [{"item": "Case stage 2", "topic": "RENAL-02", "from": 3, "to": 3.5, "outcome": "both_defensible"}],
- "drill": null, "errata": ["E0003"], "steps_before": {"RENAL-02": 2, "CARD-03": 1}}
+ "drill": null, "errata": ["E0003"],
+ "undo": {"topics": {"RENAL-02": {"was": {"step": 2, "due": "2026-10-20", "mastery": 3, "last": "2026-10-05", "attempts": 1},
+                                  "row": true, "gap": [0, {"id": "G0003", "topic": "RENAL-02", "gap": "…"}], "in": [{"gap": "…", "source": "graded"}]},
+                     "HEME-04": {"new": true}},
+          "ratings": {"RENAL": 3.0}}}
 ```
 
 `minutes` is the round's **active time** and `timing` its parts, in minutes, measured by the
@@ -130,7 +134,16 @@ session without `timing` is from an older version, whose `minutes` were the time
 end capped at 180 (sessions left open show exactly 180): it counts in no median and no estimate.
 `reading_minutes` is something else: the further reading the learner reports in the reflection.
 
-`steps_before` is each topic's step before the round (`override` reschedules from it). An item
+`undo` is the round's **undo record**: only what the round changed, so that it can be taken
+out and applied again (§3.1). Per topic on which the round is still the latest: the values it
+changed (`was`), `new` when it created the topic, `row` when it added a history row (`cut`: the
+rows the cap dropped), `gap` when it changed the topic's open gap (the gap before it with its
+place in the list, or `null` for none), `resolved` (how many resolved entries it added), and its
+own input on the topic (`in`: the gaps written on it; `notes`: partly resolved notes).
+`ratings`: the comfort ratings before it, per domain it changed. Recording a later round on a
+topic takes the topic out of the earlier round's record (the record changes, the log does not).
+A session recorded by 5.0 or earlier has none (it may have `steps_before`, each topic's step before
+the round); `partial: true` marks a record built for such a round. An item
 whose score the learner set carries `"mastery": 4, "graded": 2, "set_by": "learner"`: `mastery`
 is the learner's score, `graded` the examiner's; its `grade_changes` entry is
 `{"item": "Q2", "topic": "CARD-03", "from": 2, "to": 4, "outcome": "learner_set", "examiner": 2,
@@ -138,9 +151,10 @@ is the learner's score, `graded` the examiner's; its `grade_changes` entry is
 in `learner_closed_gaps` (`[{"id": "G0006", "topic": "HEME-04"}]`). A `resolved` entry without
 `closed_by` was closed by a retest.
 
-While a session's reflection is pending, its entry also carries `_snapshot` and `_round`, which
-`close` uses to re-apply the round with the reflection. `save` of the next session drops
-them and marks the reflection skipped.
+A session saved by 5.0 whose reflection is pending also carries `_snapshot` and `_round` (the
+whole tables before it, and the round as recorded): `close` puts the tables back and applies
+the round with the reflection, once, writing the entry in the current shape; `save` of the next
+session drops them and marks the reflection skipped.
 
 Teaching points are the `key_learning` lines, identified as `<id>.<n>` (`S0021.2`).
 
@@ -285,7 +299,7 @@ The round record, as `save` writes it to `record.json`. A
   listening off. `save` moves the list into the session document as its `listening` list (the
   ledger and `record.json` never hold it), drops anything after the id in a link, and leaves
   out a pick that is not complete, with a warning naming what to correct.
-- Omit `reflection`: the first save is provisional. `save` can be run again: it starts from the ledger before the round.
+- Omit `reflection`: the first save is provisional. `save` can be run again in the same job: it undoes the round and records it again (§3.1).
 
 ## 3. Reflection JSON (input to `close`)
 
@@ -318,6 +332,31 @@ The round record, as `save` writes it to `record.json`. A
   the profile. Leave the key out otherwise: `close` then notes that the question was asked.
   A later change is a settings change (`requests.md` §1).
 - `{"skipped": true}` records the round without a reflection.
+
+### 3.1 Applying a round again
+
+A round is recorded once, by `save`. Every later change to it is one step: the round is undone
+(its session entry, its count in `agg`, and what its undo record says it changed) and applied
+again with the amended input, by the same code that recorded it. That step is `save` run again
+(from the new `round.json`), `close` (the round with its reflection, disputes, learner-set
+scores and closed gaps), `close` run again after a correction (from the round as it stood
+before the reflection, `close_from.json`), and `override` after the close (the round as its
+session entry holds it, with the learner's score or closed gap). So:
+
+- **The same result whenever it is said.** A score the learner sets, or a gap the learner
+  closes, gives exactly the same schedule in the reflection and after the close.
+- **Only the latest round on a topic is applied again.** If the topic has been tested since
+  (it is in a later round's undo record), the round's record changes and the topic keeps the
+  schedule the later round gave it; so do comfort ratings a later round changed.
+- Applied again with the same input, a round gives the same ledger: `save` twice and `close`
+  twice are the same as once (the second run counts as the same write, `gen` included, when
+  nothing was written in between). An erratum is logged once: the same erratum given again is
+  found already logged. The round keeps its block and the ids of the gaps it opened.
+- `close` cannot run again once `override` has changed the round: the further change goes in
+  with `override`.
+- A round recorded by 5.0 or earlier has no undo record: applied again (`override`), its topics start
+  from `steps_before` and the history row before it, and its gaps, resolved gaps and comfort
+  ratings stay as they are.
 
 ## 4. Spacing rules (applied by `save` and `close`)
 
@@ -377,11 +416,12 @@ confidence with what the examiner graded. A gap the learner closes is removed wi
 retest**, not even a light one: it is the learner's call, and a retest they did not want
 would undo it. The topic itself keeps the due date its score gave it, so the subject still
 returns as an ordinary repeat. `override` after the close schedules the topic again from the
-round's date, as `close` would have with that score (from `steps_before`; a round recorded
-before 5.0 has none and is scheduled from the step the round left). It leaves the schedule
-alone when the topic has been tested again since, does not re-apply the drill-down limit, and
-always sets the prepared round aside (it is never content-neutral: a score moves the topic's
-step and due date, a closed gap takes its retest out of the plan).
+round's date exactly as `close` does with that score (§3.1): drill-down limit, gaps and all. It
+leaves the schedule alone when the topic has been tested again since, and always sets the
+prepared round aside (it is never content-neutral: a score moves the topic's step and due date,
+a closed gap takes its retest out of the plan). A gap closed after the close is an amendment
+of the round that is the latest on its topic; a gap no round of the period owns is closed
+outright and listed in the session named.
 
 A self-reported gap caps the interval at 7 days. Comfort ratings feed `domain_self_ratings`
 (rolling, weighted 2:1 toward history), which weight how often new topics from each domain are
@@ -542,8 +582,8 @@ order with the ledger last) and `publish`, the path of the manifest `W/publish.j
 | `present --work W --block questions\|case\|bank` | Print only the text the learner is to see from the sealed files in `W` (one `present` block, or the case's results bank), so it can be sent without opening the keys. For the first part of a round written now it also notes that the part went out (§6.2). |
 | `answer --work W --part questions\|case\|final\|notes\|reflection [--file F \| --text T]` | Append what the learner answered for one part to `W/answers.md`, exactly as given (default: standard input). Earlier parts are never rewritten; the same text for the same part is added once; a second message for a part is added after the first. Prints the part names filed so far, never the text. With a part that completes its answers (`questions`; `final`; `case` for a one-step case) it also prints `depth`: the evidence depth of each of that part's items by key id (`level` 1–4, `name`, `in_a_row`; §4.2), read from the key headers and the ledger, for the feedback about to be written. No `depth` with `evidence_ladder` false. It also notes when it ran, as the time the learner's message arrived (§6.2): run it first when a message arrives. |
 | `sent --work W --part questions\|questions_feedback\|case\|stage2\|feedback\|close [--at T]` | Not part of a normal round. Notes when a message went out, where the engine cannot tell (§6.2): no file was written as sent, or it was written late. |
-| `save --work W` | First save after the final feedback: the round is recorded in the ledger, the session document is written (part A assembled in the order of the round from the sealed `present` blocks, Stage 2 as sent, the answers, the questions' feedback and the final feedback), with the page file (§7) and an emptied `data/prepared.json`. Everything is found by its fixed name (§6.1); the page settings given at the start are applied so the mix is kept in the ledger. Prints per-topic next due, warnings, `errata_to_log`, and `files`. If the learner's `index.html` is older than the skill's template, the new one joins the publish set (`page_upgraded`). It starts from the ledger as it was before this round (a settings change made earlier in the same job is kept), so it can be run again with the same result. Records the time measured so far (`minutes`, `timing`; §6.2). |
-| `close --work W [--reflection J] [--session ID]` | Second save: the reflection is applied and part B goes into the session document, with the page file. It continues from the current ledger: the one `save` wrote in this job, or, for a reflection given at a later session, the ledger as read; the session document then comes from the store copy (`data/sessions/<id>.json`), and the command stops if it was not read. The reflection JSON is `W/reflection.json` unless given inline. Can be run again after a correction to `B.md`. Completes the round's measured time (the reading of the final feedback, up to the reflection) and prints `time_hint` once five rounds are timed (§6.2): one line of the closing message. |
+| `save --work W` | First save after the final feedback: the round is recorded in the ledger, the session document is written (part A assembled in the order of the round from the sealed `present` blocks, Stage 2 as sent, the answers, the questions' feedback and the final feedback), with the page file (§7) and an emptied `data/prepared.json`. Everything is found by its fixed name (§6.1); the page settings given at the start are applied so the mix is kept in the ledger. Prints per-topic next due, warnings, `errata_to_log`, and `files`. If the learner's `index.html` is older than the skill's template, the new one joins the publish set (`page_upgraded`). Run again in the same job, it undoes the round and records it again (§3.1), so it gives the same result (a settings change made earlier in the same job is kept). Records the time measured so far (`minutes`, `timing`; §6.2). |
+| `close --work W [--reflection J] [--session ID]` | Second save: the reflection is applied and part B goes into the session document, with the page file. It continues from the current ledger: the one `save` wrote in this job, or, for a reflection given at a later session, the ledger as read; the session document then comes from the store copy (`data/sessions/<id>.json`), and the command stops if it was not read. The reflection JSON is `W/reflection.json` unless given inline. Can be run again after a correction to `B.md` or to the reflection (§3.1), until `override` changes the round. Completes the round's measured time (the reading of the final feedback, up to the reflection) and prints `time_hint` once five rounds are timed (§6.2): one line of the closing message. |
 | `override --work W [--scores J] [--close-gaps J] [--session ID]` | After the close: a score the learner sets themselves and a gap closed at the learner's request (the entries of `learner_scores` and `learner_closed_gaps`, §3). Writes the ledger, the session document (`learner_changes`, a "Set by the learner" addendum) and the page file into the publish set. Refused while the round is unreflected (use the reflection JSON) and, for scores, for a round from before the last review |
 | `addendum --work W --md ADD.md [--session ID]` | Append later discussion to a session document (default: the last session; the document comes from the publish set or the store copy). |
 | `prepare --work W [--if-needed] [--allow-unreflected]` | Plan the next round (as of tomorrow) from the current ledger, into `W/next/plan.json`. Prints counts only, or `"prepare": false` with the reason (setting off, reflection pending, or — with `--if-needed` — a usable round is already prepared in the store). `--allow-unreflected` plans although the last session has no reflection yet (the scheduled task uses it). A paragraph the learner wrote on the page (in the `--prefs` given to `open`) is written to the ledger first, into the publish set, and reported as `page_settings_applied` with the `files` (§7.1); a round prepared for the old words does not count as usable. |
@@ -578,7 +618,7 @@ One job is worked on in one scratch folder, and every file has a fixed name ther
 
 | File | Written by | Read by |
 |---|---|---|
-| `work.json` | `open`, `start`: the store copy, the ledger as read, the store version, the session ID, the page settings | every command |
+| `work.json` | `open`, `start`: the store copy, the ledger as read, the store version, the session ID, the page settings; `save`, `close`: the round each recorded (`saved`, `closed`), so that either can be run again in this job | every command |
 | `plan.json` | `start` | whoever writes the items |
 | `sealed_questions.md`, `sealed_case.md`, `kit_*.md`, `evidence_*.md` | the author and the checker, or `start` from a prepared round | `present`, the examiner once a part is answered, `save` (the `present` blocks) |
 | `answers.md` | `answer`, one block per part (`<!-- answers: questions -->` … `<!-- /answers -->`) | `save` (questions, case, final, notes), `close` (reflection) |
@@ -591,7 +631,7 @@ One job is worked on in one scratch folder, and every file has a fixed name ther
 | `publish.json` | every command that writes: `{"version": <store version read>, "files": [{"as", "path"}, …]}`, in write order | whoever publishes |
 | `verify.json` | `verify` | `testing-note` |
 | `times.json` | `start`, `present`, `answer`, `sent`, `save`, `close`: when each step of the round happened (§6.2) | `save`, `close` |
-| `before_save.json`, `before_close.json` | `save`, `close`: the ledger each started from, so that either can be run again | `save`, `close` |
+| `close_from.json` | `close`: the round as it stood before its reflection, and its entry as `close` left it, so that `close` can be run again (§3.1) | `close` |
 | `earlier/<n>/` | `open`, `start`: the files of an earlier job in the same folder, set aside | nobody |
 
 The **current ledger** of a job is the one in the publish set, or the ledger as read while

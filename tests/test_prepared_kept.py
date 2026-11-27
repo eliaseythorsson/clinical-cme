@@ -225,7 +225,9 @@ def test_no_command_counts_a_write_of_the_ledger_on_its_own():
     """Every write goes through bump_gen, so none can leave a stale content_gen behind."""
     with open(cme.__file__, encoding="utf-8") as fh:
         src = fh.read()
-    assert src.count('st["gen"] = ') == 2          # bump_gen itself, and init's first generation
+    # bump_gen itself, init's first generation, and repeat_write (a step run again counts as the
+    # write it repeats, and bump_gen follows it)
+    assert src.count('st["gen"] = ') == 3
 
 
 # ---------------------------------------------------------------- page mix and prepared round (#42)

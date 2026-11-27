@@ -595,6 +595,15 @@ def bump_gen(st, content=True):
     return st["gen"]
 
 
+def repeat_write(st, gens):
+    """A step run again in the same job (`save`, `close`) counts as the write it repeats: when
+    nothing was written since its first run (`gens`: the generation before and after that run),
+    the generation goes back to where the first run found it, and the bump_gen that follows gives
+    the same generation again."""
+    if gens and st.get("gen") == gens[1]:
+        st["gen"] = gens[0]
+
+
 def deep_merge(target, changes):
     for k, v in (changes or {}).items():
         if isinstance(v, dict) and isinstance(target.get(k), dict):
@@ -1972,60 +1981,76 @@ def compact_item(it):
     return out
 
 
-def agg_add_session(agg, s):
-    agg["sessions"] += 1
-    agg["items"] += len(s.get("items") or [])
-    agg["minutes"] += int(s.get("minutes") or 0)
-    agg["reading_minutes"] += int(s.get("reading_minutes") or 0)
-    agg["mcqs"] += int(s.get("mcqs") or 0)
-    agg["mcq_correct"] += int(s.get("mcq_correct") or 0)
+def agg_add_session(agg, s, sign=1):
+    """Count session entry `s` in the all-time aggregates; `sign=-1` takes it out again (a round
+    undone, undo_round). Sums of fractions are kept to six decimals, so that taking a session out
+    and counting it again gives the same numbers."""
+    def add(d, k, v):
+        d[k] = round(d.get(k, 0) + sign * v, 6) if isinstance(v, float) or isinstance(d.get(k), float) \
+            else d.get(k, 0) + sign * v
+
+    def pair(p, i, v):
+        p[i] = round(p[i] + sign * v, 6) if isinstance(v, float) or isinstance(p[i], float) else p[i] + sign * v
+    add(agg, "sessions", 1)
+    add(agg, "items", len(s.get("items") or []))
+    add(agg, "minutes", int(s.get("minutes") or 0))
+    add(agg, "reading_minutes", int(s.get("reading_minutes") or 0))
+    add(agg, "mcqs", int(s.get("mcqs") or 0))
+    add(agg, "mcq_correct", int(s.get("mcq_correct") or 0))
     agg.setdefault("focused", 0); agg.setdefault("focused_mastery_sum", 0.0)
     agg.setdefault("art_focused", {k: [0.0, 0] for k in ART_MAX})
     if isinstance(s.get("score"), (int, float)):
-        agg["score_sum"] += float(s["score"]); agg["score_n"] += 1
+        add(agg, "score_sum", float(s["score"])); add(agg, "score_n", 1)
     for it in s.get("items") or []:
         c = it.get("coding") or {}
         if it.get("type") == "focused":
-            agg["focused"] += 1
+            add(agg, "focused", 1)
             if isinstance(it.get("mastery"), (int, float)):
-                agg["focused_mastery_sum"] += float(it["mastery"])
+                add(agg, "focused_mastery_sum", float(it["mastery"]))
         # ART from the full case only, so the profile stays comparable across periods;
         # focused questions (which score only the domains they test) are counted apart.
         art_bucket = agg["art_focused"] if it.get("type") == "focused" else agg["art"]
         for k, v in (c.get("art") or {}).items():
             if k in art_bucket and isinstance(v, (int, float)):
-                art_bucket[k][0] += float(v) / ART_MAX[k]; art_bucket[k][1] += 1
+                pair(art_bucket[k], 0, float(v) / ART_MAX[k]); pair(art_bucket[k], 1, 1)
         idea = c.get("idea") or {}
         if idea and all(isinstance(idea.get(k), (int, float)) for k in IDEA_MAX):
             tot = sum(idea[k] for k in IDEA_MAX)
-            agg["idea"][0] += tot; agg["idea"][1] += 1; agg["idea"][2] += 1 if tot >= 6 else 0
+            pair(agg["idea"], 0, tot); pair(agg["idea"], 1, 1); pair(agg["idea"], 2, 1 if tot >= 6 else 0)
         for e in c.get("errors") or []:
-            for key in ("category", "knowledge_type", "art_domain", "severity"):
-                v = e.get(key)
+            for key, v in [(k, e.get(k)) for k in ("category", "knowledge_type", "art_domain", "severity")] \
+                    + [("bias", b) for b in e.get("bias") or []]:
                 if v:
-                    agg["errors"][key][v] = agg["errors"][key].get(v, 0) + 1
-            for b in e.get("bias") or []:
-                agg["errors"]["bias"][b] = agg["errors"]["bias"].get(b, 0) + 1
+                    add(agg["errors"][key], v, 1)
+                    if agg["errors"][key][v] == 0:
+                        del agg["errors"][key][v]       # taken out again: no trace of it
         conf = (it.get("confidence") or "").lower()
         out = item_outcome(it)
         if conf in CONF_PROB and out is not None:
-            agg["calibration"][conf][0] += 1; agg["calibration"][conf][1] += out
-            agg["brier"][0] += (CONF_PROB[conf] - out) ** 2; agg["brier"][1] += 1
+            pair(agg["calibration"][conf], 0, 1); pair(agg["calibration"][conf], 1, out)
+            pair(agg["brier"], 0, (CONF_PROB[conf] - out) ** 2); pair(agg["brier"], 1, 1)
     d = s.get("drill")
     if isinstance(d, dict) and d.get("result") in DRILL_RESULTS:
-        agg["drills"][d["result"]] += 1
+        add(agg["drills"], d["result"], 1)
     for g in s.get("grade_changes") or []:
         if g.get("outcome") in agg["disputes"]:
-            agg["disputes"][g["outcome"]] += 1
+            add(agg["disputes"], g["outcome"], 1)
         elif g.get("outcome") in LEARNER_SET_OUTCOMES:
-            agg_overrides(agg)["scores"] += 1
+            add(agg_overrides(agg), "scores", 1)
+    if s.get("learner_closed_gaps"):
+        add(agg_overrides(agg), "gaps", len(s["learner_closed_gaps"]))
     if (s.get("reflection") or {}).get("skipped"):
-        agg["reflection_skipped"] += 1
+        add(agg, "reflection_skipped", 1)
 
 
-def apply_round(state, rnd, today, theme=None):
-    """Pure application of a graded round to the state; `theme` is the theme of the block the
-    round was recorded in. Returns (entry, summary, warnings, errata_ids)."""
+def apply_round(state, rnd, today, theme=None, gap_ids=None):
+    """Apply the graded round `rnd` to the ledger `state`, appending its session entry; `theme`
+    is the theme of the block the round was recorded in. The entry keeps an undo record (`undo`)
+    of only what the round changed, so that undo_round can take it out again. `gap_ids`: the ids
+    a round applied again gives the gaps it opens ({topic: id}), so that they keep the ids they
+    had. The aggregates are the caller's (agg_add_session, once the entry is final).
+    Returns (entry, summary, warnings, errata_ids, changes): `changes` are the gaps the learner
+    closed (`learner_closed_gaps` in the round, after its grading), for the log."""
     if not rnd.get("items"):
         die("round JSON must contain a non-empty 'items' list")
     warnings = validate_round(rnd)
@@ -2052,11 +2077,23 @@ def apply_round(state, rnd, today, theme=None):
             die("each gap needs 'topic' and 'gap'")
         new_gaps_by_topic.setdefault(g["topic"], []).append(g)
     self_gap_topics = {g["topic"] for g in gaps_in if g.get("source") == "self"}
+    self_gap_topics |= set(rnd.get("self_gap_topics") or [])     # a round recorded by 5.0 or earlier applied again
+
+    resolved_by_topic = {}
+    for r in rnd.get("resolved") or []:
+        if isinstance(r, str):
+            r = {"topic": r, "note": None}
+        resolved_by_topic.setdefault(r.get("topic"), []).append(r.get("note"))
 
     summary = {}
-    steps_before = {}       # each topic's step before this round: `override` reschedules from it
     number_gaps(state)
     gap_index = {g.get("topic"): g for g in state["gaps"]}
+    closures = closure_topics(state, rnd.get("learner_closed_gaps") or [], set(by_topic) | set(new_gaps_by_topic), gap_ids)
+    touched = list(dict.fromkeys(list(by_topic) + list(new_gaps_by_topic) + [t for t in resolved_by_topic if t]
+                                 + [t for _, t in closures if t]))
+    before = touched_before(state, touched)
+    inputs = {tid: [{k: (clip(g[k], CLIP_GAP) if k == "gap" else g[k]) for k in ("gap", "source", "auto", "domain", "label")
+                     if g.get(k) is not None} for g in gs] for tid, gs in new_gaps_by_topic.items()}
     for it in rnd["items"]:
         g = gap_index.get(it["topic"])
         if it.get("retests") and (not g or it["retests"] not in (g["id"], it["topic"])):
@@ -2067,7 +2104,6 @@ def apply_round(state, rnd, today, theme=None):
         adj = [adjusted_item_mastery(i) for i in items]
         mastery = round_half(sum(m for m, _ in adj) / len(adj))
         misconception = any(mc for _, mc in adj)
-        steps_before[tid] = int(t.get("step") or 0)
         comfort = comfort_map.get(tid)
         try:
             comfort = None if comfort is None else max(1, min(5, int(round(float(comfort)))))
@@ -2104,12 +2140,6 @@ def apply_round(state, rnd, today, theme=None):
             t["due"] = iso(target)
         summary[tid] = {"self_reported_only": True, "due": t["due"]}
 
-    resolved_by_topic = {}
-    for r in rnd.get("resolved") or []:
-        if isinstance(r, str):
-            r = {"topic": r, "note": None}
-        resolved_by_topic.setdefault(r.get("topic"), []).append(r.get("note"))
-
     gaps = state["gaps"]
     for tid in list(by_topic) + [t for t in new_gaps_by_topic if t not in by_topic]:
         existing = gap_index.get(tid)
@@ -2143,7 +2173,7 @@ def apply_round(state, rnd, today, theme=None):
                     entry["last_retested"] = iso(rdate)
                 gaps.remove(existing)
             else:
-                entry["id"] = "G%04d" % (number_gaps(state) + 1)
+                entry["id"] = gap_id_for(state, tid, gap_ids)
             gaps.append(entry); gap_index[tid] = entry
             for n in notes:
                 state["resolved"].append({"topic": tid, "note": clip(n, 200), "resolved": iso(rdate), "partial": True})
@@ -2170,7 +2200,22 @@ def apply_round(state, rnd, today, theme=None):
             for n in notes:
                 state["resolved"].append({"topic": tid, "note": clip(n, 200), "resolved": iso(rdate), "partial": True})
 
+    # the gaps the learner closes, after the round: a gap it opened can be closed too
+    changes, closed = [], []
+    for req, tid in closures:
+        if tid is None:         # closed elsewhere since this round first closed it: kept as it was
+            closed.append({"id": req["gap"], "topic": req.get("topic")})
+            continue
+        if req.get("again") and not any(req["gap"] in (g.get("id"), g.get("topic")) for g in state["gaps"]):
+            continue            # its retest, answered well this time, closed it
+        ch = learner_close_gap(state, req, req.get("date") or iso(rdate), sid=rnd.get("log_id") or rnd.get("id") or state["next_id"])
+        closed.append({"id": ch["gap"], "topic": ch["topic"]})
+        if not req.get("again"):
+            summary.setdefault(ch["topic"], {})["gap_closed_by_learner"] = True
+            changes.append(ch)
+
     ratings = state["profile"].setdefault("domain_self_ratings", {})
+    ratings_before = copy.deepcopy(ratings)
     for tid, s in summary.items():
         c = s.get("comfort")
         if c is None:
@@ -2223,7 +2268,6 @@ def apply_round(state, rnd, today, theme=None):
                  if rnd["case"].get(k)} if rnd.get("case") and has_case else None,
         "grade_changes": rnd.get("grade_changes") or [],
         "drill": rnd.get("drill"),
-        "steps_before": steps_before,
     }
     if timing is not None:
         entry["timing"] = {k: timing.get(k) for k in ("answering", "waiting", "reading", "idle_cut")}
@@ -2236,6 +2280,12 @@ def apply_round(state, rnd, today, theme=None):
     for e in rnd.get("errata") or []:
         if not e.get("corrects") or not e.get("correction"):
             die("each erratum needs 'corrects' (session id) and 'correction'")
+        # an erratum is logged once: the same round applied again finds it logged already
+        same = next((x for x in state["errata"] if x.get("logged_in") == sid and x.get("corrects") == e["corrects"]
+                     and x.get("correction") == e["correction"]), None)
+        if same:
+            errata_ids.append(same["id"])
+            continue
         e = dict(e, id="E%04d" % n, found=e.get("found") or iso(rdate), logged_in=sid)
         n += 1
         state["errata"].append(e); errata_ids.append(e["id"])
@@ -2244,35 +2294,371 @@ def apply_round(state, rnd, today, theme=None):
         wanted = [e.get("id") for e in state["pending_errata"]]
     for eid in wanted:
         hit = next((e for e in state["pending_errata"] if e.get("id") == eid), None)
+        if not hit and any(e.get("id") == eid and e.get("logged_in") == sid for e in state["errata"]):
+            errata_ids.append(eid)
+            continue
         if not hit:
             warnings.append("pending erratum %s not found" % eid)
             continue
         state["pending_errata"].remove(hit)
         state["errata"].append(dict(hit, logged_in=sid)); errata_ids.append(eid)
+    errata_ids = list(dict.fromkeys(errata_ids))
     if errata_ids:
         entry["errata"] = errata_ids
+    if closed:
+        entry["learner_closed_gaps"] = closed
+    entry["undo"] = undo_record(state, before, by_topic, inputs, resolved_by_topic, ratings_before)
 
     state["sessions"].append(entry)
-    agg_add_session(state["agg"], entry)
     state["next_id"] = "S%04d" % (max(id_num(sid), id_num(state["next_id"]) - 1) + 1)
     state["updated"] = iso(today)
-    return entry, summary, warnings, errata_ids
+    return entry, summary, warnings, errata_ids, changes
 
 
-def snapshot(state):
-    """What apply_round changes, kept so `reflect` can re-apply the round with the reflection."""
-    return {"topics": json.loads(json.dumps(state["topics"])), "gaps": json.loads(json.dumps(state["gaps"])),
-            "resolved": json.loads(json.dumps(state["resolved"])), "agg": json.loads(json.dumps(state["agg"])),
-            "ratings": json.loads(json.dumps(state["profile"].get("domain_self_ratings") or {})),
-            "errata": json.loads(json.dumps(state["errata"])),
-            "pending_errata": json.loads(json.dumps(state["pending_errata"])),
-            "next_id": state["next_id"]}
+# ---------------------------------------------------------------- a round in the ledger: record, amend, undo
+#
+# A round is recorded once (record_round). Every later change to it, whether `save` run again, the
+# reflection (`close`), a dispute, a learner-set score or a gap the learner closes, is the same
+# step: undo the round (undo_round) and apply it again with the amended input (apply_round_again),
+# through the one apply_round. To undo it, each session entry keeps an undo record (`undo`) of only
+# what the round changed, and only for the topics on which it is still the latest round: recording
+# a later round on a topic takes the topic out of the earlier round's record (claim_topics). So a
+# round applied again changes the schedule of the topics it was the last to touch; a topic tested
+# since keeps the schedule the later round gave it, and only the record of the round changes.
+
+def touched_before(state, tids):
+    """What a round is about to change on topics `tids`: the topic without its history, its
+    history, its open gap with the gap's place in the list, the number of its resolved gaps."""
+    out = {}
+    for tid in tids:
+        t = state["topics"].get(tid)
+        at = None
+        for i, g in enumerate(state["gaps"]):
+            if g.get("topic") == tid:
+                at = [i, copy.deepcopy(g)]
+        out[tid] = {"topic": None if t is None else copy.deepcopy({k: v for k, v in t.items() if k != "history"}),
+                    "history": list((t or {}).get("history") or []), "gap": at,
+                    "resolved": sum(1 for r in state["resolved"] if r.get("topic") == tid)}
+    return out
+
+
+def undo_record(state, before, tested, inputs, notes, ratings_before):
+    """The undo record of a round just applied: per topic it touched, the values it changed
+    (`was`; `new`: it created the topic), whether it added a history row (`row`, with the rows the
+    cap cut, `cut`), the gap before it (`gap`: [place, gap], or null for none) when the round
+    changed it, how many resolved entries it added (`resolved`), and the round's own input on the
+    topic, so the round can be applied again from its session entry (`in`: its gaps; `notes`:
+    its partly resolved notes). `ratings`: the comfort ratings before it, per domain it changed."""
+    topics = {}
+    for tid, b in before.items():
+        t = state["topics"].get(tid)
+        rec = {}
+        if b["topic"] is None:
+            if t is not None:
+                rec["new"] = True
+        elif t is not None:
+            was = {k: v for k, v in b["topic"].items() if t.get(k) != v}
+            if was:
+                rec["was"] = was
+            if tid in tested:
+                rec["row"] = True
+                cut = b["history"][:max(0, len(b["history"]) + 1 - len(t.get("history") or []))]
+                if cut:
+                    rec["cut"] = cut
+        now = None
+        for g in state["gaps"]:
+            if g.get("topic") == tid:
+                now = g
+        if (b["gap"] or [None, None])[1] != now:
+            rec["gap"] = b["gap"]
+        n = sum(1 for r in state["resolved"] if r.get("topic") == tid) - b["resolved"]
+        if n > 0:
+            rec["resolved"] = n
+        if inputs.get(tid):
+            rec["in"] = inputs[tid]
+        kept = [clip(x, 200) for x in notes.get(tid) or [] if x]
+        if kept:
+            rec["notes"] = kept
+        topics[tid] = rec
+    out = {"topics": topics}
+    ratings = state["profile"].get("domain_self_ratings") or {}
+    changed = {d: ratings_before.get(d) for d in ratings if ratings.get(d) != ratings_before.get(d)}
+    if changed:
+        out["ratings"] = changed
+    return out
+
+
+def gap_id_for(state, tid, gap_ids=None):
+    """The id of a gap a round opens on `tid`: the one it had when the round was applied before,
+    if it is free, else the next number."""
+    want = (gap_ids or {}).get(tid)
+    if want and all(g.get("id") != want for g in state["gaps"] + state["resolved"]):
+        return want
+    return "G%04d" % (number_gaps(state) + 1)
+
+
+def closure_topics(state, reqs, tested, gap_ids=None):
+    """The gaps a round's `learner_closed_gaps` name, each with its topic: [(req, topic)], `req`
+    as {"gap": ref, "note", "date", "again"}. A gap counts if it is open or the round may open it
+    (on a topic it tests or writes a gap on; by the id it had when the round was applied before).
+    `again` marks a closure the round already had: if its gap is no longer there to close (it
+    was closed elsewhere), the topic is None and the closure is kept as it was."""
+    out = []
+    for req in reqs:
+        req = {"gap": req} if isinstance(req, str) else dict(req or {})
+        ref = req.get("gap") or req.get("id") or req.get("topic")
+        req["gap"] = ref
+        g = next((x for x in state["gaps"] if ref and ref in (x.get("id"), x.get("topic"))), None)
+        tid = g["topic"] if g else ref if ref in tested else \
+            next((t for t, i in (gap_ids or {}).items() if i == ref and t in tested), None)
+        if tid is None and not req.get("again"):
+            die("no open gap %s to close (open: %s)"
+                % (ref, ", ".join("%s %s" % (x.get("id"), x.get("topic")) for x in state["gaps"]) or "none"))
+        out.append((req, tid))
+    return out
 
 
 def restore(state, snap):
+    """Put back the whole tables 5.0 kept for a round still unreflected (`_snapshot`): read once,
+    to close such a round."""
     state["topics"], state["gaps"], state["resolved"], state["agg"] = snap["topics"], snap["gaps"], snap["resolved"], snap["agg"]
     state["profile"]["domain_self_ratings"] = snap["ratings"]
     state["errata"], state["pending_errata"], state["next_id"] = snap["errata"], snap["pending_errata"], snap["next_id"]
+
+
+def legacy_undo(st, sess, later):
+    """An undo record for a round recorded by 5.0 or earlier, which keeps none: the topics on which it is
+    still the latest round, put back to the step it started from (`steps_before`) and the history
+    row before it. Its gaps, resolved gaps and comfort ratings are not known: they stay as they
+    are (`partial`)."""
+    date, topics = sess.get("date"), {}
+    for tid in sess.get("topics") or []:
+        t = st["topics"].get(tid)
+        hist = (t or {}).get("history") or []
+        if tid in later or not t or t.get("last") != date or not hist or hist[-1][0] != date:
+            continue
+        prev = hist[-2] if len(hist) > 1 else [None, None, None, None]
+        topics[tid] = {"row": True, "was": {
+            "step": (sess.get("steps_before") or {}).get(tid, t.get("step")),
+            "attempts": max(0, int(t.get("attempts") or 1) - 1),
+            "last": prev[0], "mastery": prev[1], "comfort": prev[2], "calibration": prev[3]}}
+    return {"topics": topics, "partial": True}
+
+
+def later_owned(st, pos):
+    """The topics and comfort-rating domains a round after position `pos` owns (it changed them
+    last): a round applied again leaves them as they are."""
+    tids, doms = set(), set()
+    for s in st["sessions"][pos + 1:]:
+        u = s.get("undo")
+        if u is not None:
+            tids |= set(u.get("topics") or {}); doms |= set(u.get("ratings") or {})
+            continue
+        tids |= set(s.get("topics") or [])         # a round recorded by 5.0 or earlier: what it is known to touch
+        tids |= {g.get("topic") for g in st["gaps"] if g.get("date") == s.get("date")}
+        tids |= {r.get("topic") for r in st["resolved"] if r.get("resolved") == s.get("date")}
+        doms |= {(st["topics"].get(t) or {}).get("domain") or domain_of(t) for t in s.get("self_comfort") or {}}
+    return tids, doms
+
+
+def claim_topics(st, pos):
+    """The round at `pos` is now the latest on the topics and ratings its undo record holds:
+    earlier rounds give them up."""
+    u = st["sessions"][pos].get("undo") or {}
+    tids, doms = set(u.get("topics") or {}), set(u.get("ratings") or {})
+    for s in st["sessions"][:pos]:
+        v = s.get("undo")
+        if not v:
+            continue
+        for tid in tids & set(v.get("topics") or {}):
+            del v["topics"][tid]
+        for d in doms & set(v.get("ratings") or {}):
+            del v["ratings"][d]
+        if "ratings" in v and not v["ratings"]:
+            del v["ratings"]
+
+
+def owner_of(st, tid):
+    """The round that is the latest on topic `tid` and can apply again on it, or None."""
+    return next((s for s in reversed(st["sessions"]) if tid in ((s.get("undo") or {}).get("topics") or {})), None)
+
+
+def undo_round(st, pos, u=None):
+    """Take the round at position `pos` out of the ledger: its session entry, what it counts in
+    the aggregates, and what its undo record `u` (default: the entry's) says it changed. A round
+    saved by 5.0 and still unreflected keeps the whole tables it started from (`_snapshot`)
+    instead: they are put back."""
+    sess = st["sessions"].pop(pos)
+    if st.get("unreflected") == sess.get("id"):
+        st["unreflected"] = None
+    if sess.get("_snapshot"):
+        restore(st, copy.deepcopy(sess["_snapshot"]))
+        return sess
+    agg_add_session(st["agg"], sess, -1)
+    u = u if u is not None else sess.get("undo") or {}
+    recs = u.get("topics") or {}
+    for tid, rec in recs.items():
+        n = int(rec.get("resolved") or 0)
+        for i in range(len(st["resolved"]) - 1, -1, -1):
+            if n <= 0:
+                break
+            if st["resolved"][i].get("topic") == tid:
+                del st["resolved"][i]
+                n -= 1
+    moved = {tid: rec["gap"] for tid, rec in recs.items() if "gap" in rec}
+    if moved:
+        st["gaps"] = [g for g in st["gaps"] if g.get("topic") not in moved]
+        for at, g in sorted((x for x in moved.values() if x), key=lambda x: x[0]):
+            st["gaps"].insert(min(int(at), len(st["gaps"])), copy.deepcopy(g))
+    for tid, rec in recs.items():
+        t = st["topics"].get(tid)
+        if t is None:
+            continue
+        if rec.get("new"):
+            del st["topics"][tid]
+            continue
+        t.update(copy.deepcopy(rec.get("was") or {}))
+        if rec.get("row"):
+            t["history"] = list(rec.get("cut") or []) + (t.get("history") or [])[:-1]
+    ratings = st["profile"].setdefault("domain_self_ratings", {})
+    for d, v in (u.get("ratings") or {}).items():
+        if v is None:
+            ratings.pop(d, None)
+        else:
+            ratings[d] = v
+    return sess
+
+
+def round_from_entry(st, sess):
+    """The round input that applied again gives session entry `sess` back: the entry itself (its
+    items, scores, comfort, reflection, ...) with the gaps and notes its undo record keeps, and
+    the gaps the learner closed in it. For a 5.0 round still unreflected: the round it kept."""
+    if sess.get("_round") is not None:
+        return copy.deepcopy(sess["_round"])
+    recs = (sess.get("undo") or {}).get("topics") or {}
+    gaps, self_gaps, notes = [], [], []
+    for tid, rec in recs.items():
+        for g in rec.get("in") or []:
+            (self_gaps if g.get("source") == "self" else gaps).append(dict(g, topic=tid))
+        notes += [{"topic": tid, "note": n} for n in rec.get("notes") or []]
+    items = []
+    for it in sess.get("items") or []:
+        it = copy.deepcopy(it)
+        if it.get("stem") and not it.get("stem_summary"):
+            it["stem_summary"] = it.pop("stem")
+        items.append(it)
+    rnd = {"log_id": sess["id"], "date": sess.get("date"), "items": items, "gaps": gaps, "resolved": notes,
+           "case_format": sess.get("format"), "selection_reasons": copy.deepcopy(sess.get("why") or {}),
+           "grade_changes": copy.deepcopy(sess.get("grade_changes") or []), "drill": copy.deepcopy(sess.get("drill"))}
+    for k in ("started_at", "ended_at", "minutes", "reading_minutes", "title", "summary", "tags", "key_learning",
+              "case", "timing"):
+        if sess.get(k) is not None:
+            rnd[k] = copy.deepcopy(sess[k])
+    if sess.get("reflection") is not None:
+        refl = dict(copy.deepcopy(sess["reflection"]), performance=sess.get("self_performance"),
+                    topic_comfort=copy.deepcopy(sess.get("self_comfort") or {}), self_gaps=self_gaps)
+        if sess.get("reading_minutes") is not None:
+            refl["reading_minutes"] = sess["reading_minutes"]
+        rnd["reflection"] = refl
+    if sess.get("undo") is None:        # recorded by 5.0 or earlier: its self-reported gaps are known only from the gaps
+        rnd["self_gap_topics"] = sorted(g["topic"] for g in st["gaps"] if g.get("topic") in (sess.get("topics") or [])
+                                        and "self" in (g.get("source") or []) and g.get("date") == sess.get("date"))
+    closed = []
+    for c in sess.get("learner_closed_gaps") or []:
+        r = next((x for x in reversed(st["resolved"]) if x.get("closed_by") == "learner" and x.get("id") == c.get("id")), {})
+        closed.append({"gap": c.get("id"), "topic": c.get("topic"), "note": r.get("learner_note"),
+                       "date": r.get("resolved"), "again": True})
+    if closed:
+        rnd["learner_closed_gaps"] = closed
+    return rnd
+
+
+def apply_round_again(st, sess, rnd, today):
+    """Undo round `sess` and apply `rnd`, the same round with amended input, in its place. On the
+    topics and comfort ratings a later round owns, the later round's values stay (decision 2 of
+    issue #74: only the latest round on a topic is applied again). Returns what apply_round does."""
+    pos = st["sessions"].index(sess)
+    later_t, later_d = later_owned(st, pos)
+    u = sess.get("undo")
+    legacy = u is None and not sess.get("_snapshot")
+    if legacy:
+        u = legacy_undo(st, sess, later_t)
+    partial = bool((u or {}).get("partial"))
+    owned = set((u or {}).get("topics") or {})
+    # the topics the amended round may touch that it must leave as they are
+    refl = rnd.get("reflection") or {}
+    cand = {it.get("topic") for it in rnd.get("items") or []} | {g.get("topic") for g in rnd.get("gaps") or []} \
+        | {g.get("topic") for g in refl.get("self_gaps") or []} \
+        | {(r if isinstance(r, str) else r.get("topic")) for r in rnd.get("resolved") or []}
+    blocked = {t for t in cand if t and (t in later_t or (partial and t not in owned))}
+    gaps_kept = {t for t in cand if t} if partial else set()    # a round recorded by 5.0 or earlier: its gaps are not known
+    number_gaps(st)
+    frozen = {}
+    for tid in blocked | gaps_kept:
+        gap = None
+        for i, g in enumerate(st["gaps"]):
+            if g.get("topic") == tid:
+                gap = [i, copy.deepcopy(g)]
+        frozen[tid] = (copy.deepcopy(st["topics"].get(tid)), gap)
+    ratings_now = copy.deepcopy(st["profile"].get("domain_self_ratings") or {})
+    # the gaps it opened keep their ids when it opens them again
+    gap_ids = {g["topic"]: g["id"] for g in st["gaps"] if g.get("topic") in owned and g.get("id")}
+    for r in st["resolved"]:
+        if r.get("topic") in owned and r.get("id"):
+            gap_ids.setdefault(r["topic"], r["id"])
+    old = undo_round(st, pos, u)
+    tail, st["sessions"] = st["sessions"][pos:], st["sessions"][:pos]
+    try:
+        entry, summary, warnings, errata_ids, changes = apply_round(st, rnd, today, (old.get("block") or {}).get("theme"),
+                                                                    gap_ids)
+    finally:
+        st["sessions"] += tail
+    for k in ("block", "url"):
+        if old.get(k):
+            entry[k] = old[k]
+    errata = list(dict.fromkeys(list(old.get("errata") or []) + list(entry.get("errata") or [])))
+    if errata:
+        entry["errata"] = errata
+    recs = entry["undo"]["topics"]
+    for tid in [t for t in recs if t in blocked or t in gaps_kept]:
+        n = int(recs[tid].get("resolved") or 0)
+        for i in range(len(st["resolved"]) - 1, -1, -1):
+            if n <= 0:
+                break
+            if st["resolved"][i].get("topic") == tid:
+                del st["resolved"][i]
+                n -= 1
+        t0, g0 = frozen[tid]
+        st["gaps"] = [g for g in st["gaps"] if g.get("topic") != tid]
+        if g0:
+            st["gaps"].insert(min(g0[0], len(st["gaps"])), g0[1])
+        if tid not in blocked:
+            for k in ("gap", "resolved", "in", "notes"):
+                recs[tid].pop(k, None)
+            continue
+        if t0 is None:
+            st["topics"].pop(tid, None)
+        else:
+            st["topics"][tid] = t0
+        del recs[tid]
+        summary.setdefault(tid, {})["tested_since"] = True
+    ratings = st["profile"].setdefault("domain_self_ratings", {})
+    for d in set(ratings) | set(ratings_now):
+        if partial or d in later_d:
+            if d in ratings_now:
+                ratings[d] = ratings_now[d]
+            else:
+                ratings.pop(d, None)
+            (entry["undo"].get("ratings") or {}).pop(d, None)
+    if not entry["undo"].get("ratings"):
+        entry["undo"].pop("ratings", None)
+    if partial:
+        entry["undo"]["partial"] = True
+    if rnd.get("reflection") is None:       # still waiting for its reflection
+        st["unreflected"] = entry["id"]
+    agg_add_session(st["agg"], entry)
+    claim_topics(st, pos)
+    return entry, summary, warnings, errata_ids, changes
 
 
 def compact(state):
@@ -2332,40 +2718,48 @@ def to_previous(sess):
     return out
 
 
-def record_round(st, rnd, today):
+def record_round(st, rnd, today, again=None):
     """Apply the graded round `rnd` to ledger `st` (changed in place; `rnd` may be changed too).
-    Returns what record and save report about it."""
+    `again`: the session entry of this same round, recorded before (`save` run again): it is
+    undone and `rnd` applied in its place, in the block it was counted in. Returns what record
+    and save report about it."""
     if not rnd.get("date"):     # the round is dated when it is recorded; reflecting later keeps that date
         rnd["date"] = iso(today)
     # finalize a still-unreflected earlier session: it stays recorded with the reflection skipped
-    if st.get("unreflected"):
+    if st.get("unreflected") and not again:
         for s in st["sessions"]:
             if s.get("id") == st["unreflected"]:
                 s.pop("_snapshot", None); s.pop("_round", None)
                 if s.get("reflection") is None:
+                    agg_add_session(st["agg"], s, -1)
                     s["reflection"] = {"skipped": True}
-                    st["agg"]["reflection_skipped"] += 1
+                    agg_add_session(st["agg"], s)
         st["unreflected"] = None
     for k in ("helpers", "prepare_ahead"):       # speed settings (4.3): on unless the learner turns them off
         st["config"].setdefault(k, DEFAULT_CONFIG[k])
-    # The round counts in its block here, once: reflecting later re-applies the round, not this.
-    in_block = advance_block(st, parse_date(rnd.get("date")) or today)
-    snap = snapshot(st)
-    entry, summary, warnings, errata_ids = apply_round(st, rnd, today, (in_block or {}).get("theme"))
-    if in_block:
-        entry["block"] = in_block
+    if again:
+        entry, summary, warnings, errata_ids, changes = apply_round_again(st, again, rnd, today)
+    else:
+        # The round counts in its block here, once: applying it again keeps the block it was counted in.
+        in_block = advance_block(st, parse_date(rnd.get("date")) or today)
+        entry, summary, warnings, errata_ids, changes = apply_round(st, rnd, today, (in_block or {}).get("theme"))
+        if in_block:
+            entry["block"] = in_block
+        agg_add_session(st["agg"], entry)
+        claim_topics(st, len(st["sessions"]) - 1)
     if rnd.get("reflection") is None:
-        entry["_snapshot"] = snap
-        entry["_round"] = rnd
         st["unreflected"] = entry["id"]
     compact(st)
     bump_gen(st)
-    return {"gen": st["gen"], "session_id": entry["id"],
-            "next_id": st["next_id"], "score": entry["score"], "topics": summary,
-            "errata_ids": errata_ids,
-            "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
-            "open_gaps": len(st["gaps"]), "reflection_pending": rnd.get("reflection") is None,
-            "warnings": warnings}
+    out = {"gen": st["gen"], "session_id": entry["id"],
+           "next_id": st["next_id"], "score": entry["score"], "topics": summary,
+           "errata_ids": errata_ids,
+           "errata_to_log": [e for e in st["errata"] if e.get("id") in errata_ids],
+           "open_gaps": len(st["gaps"]), "reflection_pending": rnd.get("reflection") is None,
+           "warnings": warnings}
+    if changes:
+        out["learner_changes"] = changes
+    return out
 
 
 def report(out, size, result):
@@ -2373,19 +2767,18 @@ def report(out, size, result):
     return dict({"ok": True, "out": out, "bytes": size}, **result)
 
 
-def reflect_round(st, refl, today, session=None, measured=None):
-    """Apply the reflection `refl` to the unreflected session of ledger `st` (or to `session`),
-    changing `st` in place. Returns what reflect and close report about it. `measured`: the
-    round's time now that the reflection has arrived (round_timing), replacing what `save` had."""
+def reflect_round(st, refl, today, session=None, measured=None, base=None):
+    """Apply the reflection `refl` to the unreflected session of ledger `st` (or to `session`):
+    the round is undone and applied again with the reflection (apply_round_again), changing `st`
+    in place. `base`: the round as it stood before its reflection (round_from_entry), when `close`
+    runs again on a round it closed. Returns what reflect and close report about it. `measured`:
+    the round's time now that the reflection has arrived (round_timing), replacing what `save` had."""
     sid = session or st.get("unreflected")
     sess = next((s for s in st["sessions"] if s.get("id") == sid), None)
-    if not sess or not sess.get("_snapshot"):
+    if not sess or (base is None and sid != st.get("unreflected")):
         die("no unreflected session to update (last: %s)" % (st["sessions"][-1].get("id") if st["sessions"] else None))
-    snap, rnd = sess["_snapshot"], sess["_round"]
-    st["sessions"].remove(sess)
-    restore(st, snap)
-    st["agg"]["sessions"] -= 0  # agg was restored from the snapshot
-    rnd = dict(rnd, reflection=refl)
+    rnd = copy.deepcopy(base) if base is not None else round_from_entry(st, sess)
+    rnd["reflection"] = refl
     if measured:
         rnd.update(measured)
     for k in ("grade_changes", "errata", "key_learning", "resolved"):
@@ -2404,13 +2797,10 @@ def reflect_round(st, refl, today, session=None, measured=None):
         ch = learner_score(find_item(rnd["items"], req, sid), req, rdate)
         rnd["grade_changes"] = list(rnd.get("grade_changes") or []) + [ch.pop("grade_change")]
         changes.append(ch)
-    entry, summary, warnings, errata_ids = apply_round(st, rnd, today, (sess.get("block") or {}).get("theme"))
-    if sess.get("block"):
-        entry["block"] = sess["block"]
-    for req in refl.get("learner_closed_gaps") or []:      # after the round: a gap it opened can be closed too
-        ch = learner_close_gap(st, req, rdate, entry)
-        summary.setdefault(ch["topic"], {})["gap_closed_by_learner"] = True
-        changes.append(ch)
+    rnd["learner_closed_gaps"] = list(rnd.get("learner_closed_gaps") or []) + [
+        dict({"gap": req} if isinstance(req, str) else req, date=rdate) for req in refl.get("learner_closed_gaps") or []]
+    entry, summary, warnings, errata_ids, closed = apply_round_again(st, sess, rnd, today)
+    changes += closed
     st["unreflected"] = None
     compact(st)
     bump_gen(st)
@@ -2467,7 +2857,8 @@ def learner_score(it, req, date):
 def learner_close_gap(st, req, date, sess=None, sid=None):
     """Close an open gap because the learner asked: it moves to `resolved` marked
     `closed_by: learner`, and no retest follows (the topic keeps the due date its score gave
-    it). `req` names the gap by id or by topic. Returns the change for the log."""
+    it). `req` names the gap by id or by topic. With `sess`, the closure is listed in that
+    session entry (the caller counts it in the aggregates). Returns the change for the log."""
     if isinstance(req, str):
         req = {"gap": req}
     ref = (req or {}).get("gap") or (req or {}).get("id") or (req or {}).get("topic")
@@ -2481,34 +2872,10 @@ def learner_close_gap(st, req, date, sess=None, sid=None):
     st["resolved"].append({"id": g.get("id"), "topic": g.get("topic"), "note": clip(g.get("gap"), 200),
                            "opened": g.get("opened") or g.get("date"), "resolved": date, "partial": False,
                            "closed_by": "learner", "learner_note": note, "session": sid})
-    agg_overrides(st["agg"])["gaps"] += 1
     if sess is not None:
         sess.setdefault("learner_closed_gaps", []).append({"id": g.get("id"), "topic": g.get("topic")})
     return {"kind": "gap", "gap": g.get("id"), "topic": g.get("topic"), "text": clip(g.get("gap"), 200),
             "closed_by": "learner", "date": date, "note": note}
-
-
-def reschedule_topic(st, sess, tid):
-    """After a score of the closed round `sess` changed: schedule topic `tid` again from that
-    round, as `close` would have with the new score. Returns the topic's new line for the
-    report, or None when the topic has been tested again since (its schedule is then left as
-    that later round set it)."""
-    t = st["topics"].get(tid)
-    hist = (t or {}).get("history") or []
-    if not t or t.get("last") != sess.get("date") or not hist or hist[-1][0] != sess.get("date"):
-        return None
-    adj = [adjusted_item_mastery(i) for i in sess.get("items") or [] if i.get("topic") == tid]
-    mastery = round_half(sum(m for m, _ in adj) / len(adj))
-    misconception = any(mc for _, mc in adj)
-    intervals = [int(x) for x in st["config"].get("intervals_days") or DEFAULT_CONFIG["intervals_days"]]
-    comfort = hist[-1][2]
-    before = (sess.get("steps_before") or {}).get(tid)
-    self_gap = any(g.get("topic") == tid and "self" in (g.get("source") or []) for g in st["gaps"])
-    step, due, calibration, interval = schedule_topic(t.get("step") if before is None else before, mastery, comfort,
-                                                      misconception, self_gap, intervals, parse_date(sess["date"]))
-    t.update({"mastery": mastery, "step": step, "due": iso(due), "calibration": calibration})
-    hist[-1] = [sess["date"], mastery, comfort, calibration]
-    return {"mastery": mastery, "step": step, "due": iso(due), "interval_days": interval, "calibration": calibration}
 
 
 def learner_changes_md(changes, heading):
@@ -2524,6 +2891,68 @@ def learner_changes_md(changes, heading):
                     % (c["gap"], c["topic"], c.get("text") or ""))
         lines.append(line + (" Learner's note: %s" % c["note"] if c.get("note") else ""))
     return "%s\n\n%s\n" % (heading, "\n".join(lines))
+
+
+def amend_round(st, sid, scores, closes, date, today):
+    """After the close: the learner sets scores of round `sid` themselves (`scores`, entries of
+    `learner_scores`) and closes gaps (`closes`, entries of `learner_closed_gaps`), dated `date`.
+    Each is an amended input of a round, applied again (apply_round_again), so a score set now is
+    scheduled exactly as the same score set in the reflection. A gap closed is an amendment of
+    the round that is the latest on its topic; a gap no round of this period owns is closed
+    outright and listed in round `sid`. Returns (changes, topics, warnings)."""
+    sess = next((x for x in st["sessions"] if x.get("id") == sid), None)
+    if not sess and scores:
+        die("round %s is %s: its scores can no longer be changed (a note can still be added with addendum)"
+            % (sid, "from before the last progress review" if has_session(st, sid) else "not in the ledger"))
+    changes, topics, warnings, again = [], {}, [], {}
+    if scores:
+        rnd = again[sid] = round_from_entry(st, sess)
+        for req in scores:
+            ch = learner_score(find_item(rnd["items"], req, sid), req, date)
+            rnd["grade_changes"] = list(rnd.get("grade_changes") or []) + [ch.pop("grade_change")]
+            changes.append(ch)
+    outright = []
+    for req in closes:
+        req = {"gap": req} if isinstance(req, str) else dict(req or {})
+        ref = req.get("gap") or req.get("id") or req.get("topic")
+        g = next((x for x in st["gaps"] if ref and ref in (x.get("id"), x.get("topic"))), None)
+        if not g:
+            die("no open gap %s to close (open: %s)"
+                % (ref, ", ".join("%s %s" % (x.get("id"), x.get("topic")) for x in st["gaps"]) or "none"))
+        owner = owner_of(st, g["topic"])
+        if owner is None:
+            outright.append(req)
+            continue
+        rnd = again.get(owner["id"]) or again.setdefault(owner["id"], round_from_entry(st, owner))
+        rnd["learner_closed_gaps"] = list(rnd.get("learner_closed_gaps") or []) + [dict(req, gap=g["id"], date=date)]
+    for oid in [s["id"] for s in st["sessions"] if s["id"] in again]:
+        entry, summary, _, _, closed = apply_round_again(st, next(s for s in st["sessions"] if s["id"] == oid),
+                                                         again[oid], today)
+        changes += closed
+        for ch in closed:
+            topics.setdefault(ch["topic"], {})["gap_closed_by_learner"] = True
+        if oid != sid:
+            continue
+        for req in scores:
+            tid = req["topic"]
+            if tid in entry["undo"]["topics"]:
+                topics.setdefault(tid, {}).update({k: summary[tid][k] for k in
+                                                   ("mastery", "step", "due", "interval_days", "calibration")})
+            else:
+                warnings.append("%s has been tested again since %s: the score is recorded, its schedule is "
+                                "left as the later round set it" % (tid, sid))
+    sess = next((x for x in st["sessions"] if x.get("id") == sid), None)
+    for req in outright:
+        if sess is not None:
+            agg_add_session(st["agg"], sess, -1)
+        ch = learner_close_gap(st, req, date, sess, sid)
+        if sess is not None:
+            agg_add_session(st["agg"], sess)
+        else:
+            agg_overrides(st["agg"])["gaps"] += 1      # a round of an earlier period: counted all the same
+        topics.setdefault(ch["topic"], {})["gap_closed_by_learner"] = True
+        changes.append(ch)
+    return changes, topics, warnings
 
 
 def cmd_override(args):
@@ -2544,8 +2973,7 @@ def cmd_override(args):
         die("round %s is not closed yet: put `learner_scores` and `learner_closed_gaps` in its reflection "
             "JSON and run close (`{\"skipped\": true}` with them when there is no reflection)" % st["unreflected"])
     sid = job_session(work, info, st, args.session)
-    sess = next((x for x in st["sessions"] if x.get("id") == sid), None)
-    if not sess and scores:
+    if scores and not any(x.get("id") == sid for x in st["sessions"]):
         die("round %s is %s: its scores can no longer be changed (a note can still be added with addendum)"
             % (sid, "from before the last progress review" if has_session(st, sid) else "not in the ledger"))
     doc_path = store_file(work, info, session_path(sid))
@@ -2553,32 +2981,10 @@ def cmd_override(args):
         die("the session file of %s was not found: read %s from the store into the store copy "
             "(%s) first" % (sid, session_path(sid), info.get("store")))
     doc = load_json(doc_path)
-    changes, topics, warnings = [], {}, []
-    for req in scores:
-        it = find_item(sess["items"], req, sid)
-        old = adjusted_item_mastery(it)[0]
-        ch = learner_score(it, req, iso(today))
-        sess["grade_changes"] = list(sess.get("grade_changes") or []) + [ch.pop("grade_change")]
-        agg_overrides(st["agg"])["scores"] += 1
-        if it.get("type") == "focused":
-            st["agg"]["focused_mastery_sum"] = st["agg"].get("focused_mastery_sum", 0.0) + float(it["mastery"]) - float(old)
-        changes.append(ch)
-        line = reschedule_topic(st, sess, it["topic"])
-        if line:
-            topics[it["topic"]] = line
-        else:
-            warnings.append("%s has been tested again since %s: the score is recorded, its schedule is "
-                            "left as the later round set it" % (it["topic"], sid))
+    changes, topics, warnings = amend_round(st, sid, scores, closes, iso(today), today)
+    sess = next((x for x in st["sessions"] if x.get("id") == sid), None)
     if scores:
-        all_m = [adjusted_item_mastery(i)[0] for i in sess["items"]]
-        new = round(sum(all_m) / len(all_m), 2)
-        if isinstance(sess.get("score"), (int, float)):
-            st["agg"]["score_sum"] += new - float(sess["score"])
-        sess["score"] = doc["score"] = new
-    for req in closes:
-        ch = learner_close_gap(st, req, iso(today), sess, sid)
-        topics.setdefault(ch["topic"], {})["gap_closed_by_learner"] = True
-        changes.append(ch)
+        doc["score"] = sess["score"]
     doc["learner_changes"] = list(doc.get("learner_changes") or []) + changes
     doc["addendum"] = ((doc.get("addendum") or "").rstrip() + "\n\n"
                        + learner_changes_md(changes, "## Set by the learner · %s" % iso(today))).strip() + "\n"
@@ -2593,9 +2999,6 @@ def cmd_override(args):
         out["score"] = sess["score"]
     # the prepared round was planned with the gap open and the old due date
     publish_ledger(work, info, st, out, session=doc, empty_prepared=True)
-    # close cannot be run again from the ledger it started from: that would drop this change
-    if os.path.isfile(os.path.join(work, BEFORE_CLOSE_FILE)):
-        os.remove(os.path.join(work, BEFORE_CLOSE_FILE))
     print(json.dumps(published(work, info, out), indent=1, ensure_ascii=False))
 
 
@@ -4854,8 +5257,8 @@ ROUND_FILE = "round.json"
 REFLECTION_FILE = "reflection.json"
 PART_A_FILE = "A.md"                    # written by save: part A as it went into the session document
 PART_B_FILE = "B.md"
-BEFORE_SAVE_FILE = "before_save.json"   # the ledger as it was before this round was recorded (save can run again)
-BEFORE_CLOSE_FILE = "before_close.json"  # the ledger as save left it (close can run again)
+CLOSE_FROM_FILE = "close_from.json"     # written by close: the round as it stood before its reflection (close can run again)
+OLD_WORK_FILES = ("before_save.json", "before_close.json")      # what 5.0 kept to run save and close again
 VERIFY_FILE = "verify.json"
 TIMES_FILE = "times.json"               # written by every step of a round: when it happened (issue #47)
 PUBLISH_DIR = "publish"
@@ -4863,8 +5266,8 @@ PUBLISH_FILE = "publish.json"
 EARLIER_DIR = "earlier"
 # what one round leaves in the work folder, and what a whole job leaves
 ROUND_FILES = PREPARED_FILES + (ANSWERS_FILE, STAGE2_FILE, FEEDBACK_QUESTIONS_FILE, FEEDBACK_FILE, ROUND_FILE,
-                                RECORD_FILE, REFLECTION_FILE, PART_A_FILE, PART_B_FILE, BEFORE_SAVE_FILE,
-                                BEFORE_CLOSE_FILE, VERIFY_FILE, PLAN_FILE, TIMES_FILE, NEXT_DIR)
+                                RECORD_FILE, REFLECTION_FILE, PART_A_FILE, PART_B_FILE, CLOSE_FROM_FILE,
+                                VERIFY_FILE, PLAN_FILE, TIMES_FILE, NEXT_DIR) + OLD_WORK_FILES
 JOB_FILES = ROUND_FILES + (WORK_FILE, PUBLISH_FILE, PUBLISH_DIR)
 REFLECTION_HEADING_RE = re.compile(r"^###\s+Reflection\b", re.M)
 ANSWER_MARK_RE = re.compile(r"<!--\s*/?\s*answers\b")
@@ -5089,7 +5492,7 @@ def open_work(work, store, version, prefs, today, reread=False):
     if reread:
         if not work_info(work):
             die("--reread continues a job after a refused publish, and no job is open in %s" % work)
-        for name in (PUBLISH_DIR, BEFORE_SAVE_FILE, BEFORE_CLOSE_FILE, VERIFY_FILE):
+        for name in (PUBLISH_DIR, CLOSE_FROM_FILE, VERIFY_FILE) + OLD_WORK_FILES:
             path = os.path.join(work, name)
             if os.path.isdir(path):
                 shutil.rmtree(path)
@@ -5303,9 +5706,9 @@ def cmd_answer(args):
 def cmd_save(args):
     """First save after the feedback: record the round, the session document (part A) and the
     page file, in one go, into the publish set. Everything is found in the work folder by its fixed
-    name. It starts from the ledger as it was before this round: the current ledger (so a
-    settings change made earlier in the same job is kept), or, when that already holds this
-    round, the ledger the first run started from; so it can be run again with the same result."""
+    name. It starts from the current ledger (so a settings change made earlier in the same job is
+    kept). Run again in the same job, it undoes the round it recorded and records it again
+    (record_round with `again`), so it gives the same result."""
     work, info = job(args)
     today = today_from(args)
     round_src = in_work(work, ROUND_FILE)
@@ -5316,14 +5719,10 @@ def cmd_save(args):
     sid = rnd.get("log_id") or info.get("session_id") or cur.get("next_id")
     if info.get("closed") == sid:
         die("round %s is already closed in this work folder: saving it again would undo its reflection" % sid)
-    before = os.path.join(work, BEFORE_SAVE_FILE)
-    if not has_session(cur, sid):
-        st_in, first_run = cur, True
-    else:
-        st_in, first_run = load_json(in_work(work, BEFORE_SAVE_FILE) or info.get("state") or before), False
-        check_schema(st_in)
-        migrate_profile(st_in)
-        if has_session(st_in, sid):
+    again = None
+    if has_session(cur, sid):
+        again = next((s for s in cur["sessions"] if s.get("id") == sid), None)
+        if (info.get("saved") or {}).get("session") != sid or again is not cur["sessions"][-1]:
             die("the ledger read from the store already holds round %s: start the round again on a fresh "
                 "read of the store (`start --work %s --store DIR`)" % (sid, work))
     sealed = [p for p in (in_work(work, n) for n in SEALED_FILES) if p]
@@ -5349,7 +5748,10 @@ def cmd_save(args):
     listening = listening_picks(rnd, warnings)
     if not feedback and not feedback_questions:
         die("save needs the feedback as sent: %s in the work folder" % FEEDBACK_FILE)
-    st = copy.deepcopy(st_in)       # st_in stays the ledger as it was before this round
+    st = cur
+    gen_before = st.get("gen")
+    if again is not None:
+        repeat_write(st, info["saved"]["gen"])
     # the round mix set on the page is kept in the ledger from now on
     prefs_changes = apply_prefs(st, info.get("prefs"), warnings)
     md = assemble_part_a(sealed, answers, feedback,
@@ -5361,9 +5763,10 @@ def cmd_save(args):
         if found:                   # rule 11: logged as sent; next time, write it for the learner
             warnings.append("the %s as sent names the skill's own machinery (%s): references/standards.md "
                             "rule 11" % (label, ", ".join(found)))
-    res = record_round(st, copy.deepcopy(rnd), today)
-    if first_run:                   # nothing failed: keep the ledger this round started from
-        save_json(st_in, before)
+    res = record_round(st, copy.deepcopy(rnd), today, again)
+    if again is None:               # before any file is written: a save interrupted after the ledger can run again
+        info["saved"] = {"session": sid, "gen": [gen_before, st["gen"]]}
+        save_json(info, os.path.join(work, WORK_FILE))
     doc = session_doc_a(rnd, sid, md)
     if measured:
         doc["minutes"], doc["timing"] = measured["minutes"], measured["timing"]
@@ -5377,8 +5780,6 @@ def cmd_save(args):
     rec = report(path, os.path.getsize(path), dict(res, **rec))
     with open(os.path.join(work, PART_A_FILE), "w", encoding="utf-8") as fh:
         fh.write(md)
-    if os.path.isfile(os.path.join(work, BEFORE_CLOSE_FILE)):
-        os.remove(os.path.join(work, BEFORE_CLOSE_FILE))
     if prefs_changes:
         rec["page_settings_applied"] = prefs_changes
     if keys:
@@ -5409,17 +5810,26 @@ def cmd_close(args):
     if not reflection:
         die("close needs the reflection: %s in the work folder, or --reflection '<json>'" % REFLECTION_FILE)
     st, _ = current_ledger(work, info)
-    before = os.path.join(work, BEFORE_CLOSE_FILE)
-    again = not st.get("unreflected") and info.get("closed") and os.path.isfile(before)
-    if again:                       # run again after a correction: from the ledger the first run started from
-        st = load_json(before)
-        check_schema(st)
-        migrate_profile(st)
-    st_before = copy.deepcopy(st)
+    frm = in_work(work, CLOSE_FROM_FILE)
+    again = load_json(frm) if not st.get("unreflected") and info.get("closed") and frm else None
+    if again:                       # run again after a correction: the round as it stood before its reflection
+        sid = again["session"]
+        sess = next((s for s in st["sessions"] if s.get("id") == sid), None)
+        if sess != again["entry"]:
+            die("round %s was changed after its close (override): close cannot run again; a further change "
+                "goes in with override" % sid)
+        base = again["round"]
+        repeat_write(st, again["gen"])
+    else:
+        sid = args.session or st.get("unreflected")
+        sess = next((s for s in st["sessions"] if s.get("id") == sid), None)
+        if not sess or sid != st.get("unreflected"):
+            die("no unreflected session to update (last: %s)" % (st["sessions"][-1].get("id") if st["sessions"] else None))
+        base = round_from_entry(st, sess)
+    gen_before = st.get("gen")
     times = stamped(work, "close", args.at, once=True)      # the reflection arrived: the round's clock stops
-    measured = measured_time(times, args.session or st.get("unreflected"))
-    res = reflect_round(st, load_json_arg(reflection) or {}, today, args.session, measured)
-    sid = res["session_id"]
+    measured = measured_time(times, sid)
+    res = reflect_round(st, load_json_arg(reflection) or {}, today, sid, measured, base)
     md_path = in_work(work, PART_B_FILE)
     md_b = read_text(md_path) if md_path else ""
     said = "\n\n".join(body for name, body in answer_blocks(in_work(work, ANSWERS_FILE)) if name == "reflection")
@@ -5463,8 +5873,8 @@ def cmd_close(args):
     page_warn = ref.pop("warnings", [])
     ref = report(path, os.path.getsize(path), dict(res, **ref))
     ref["warnings"] = list(ref.get("warnings") or []) + page_warn
-    if not again:
-        save_json(st_before, before)
+    save_json({"session": sid, "round": base, "gen": [gen_before, st["gen"]],
+               "entry": next(s for s in st["sessions"] if s.get("id") == sid)}, os.path.join(work, CLOSE_FROM_FILE))
     info["closed"] = sid
     save_json(info, os.path.join(work, WORK_FILE))
     if times.get("session") == sid:

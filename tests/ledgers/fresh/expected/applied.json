@@ -54,7 +54,7 @@
     ]
    },
    "brier": [
-    0.22000000000000003,
+    0.22,
     4
    ],
    "calibration": {
@@ -208,12 +208,6 @@
    "self_comfort": {},
    "self_performance": null,
    "started_at": null,
-   "steps_before": {
-    "CARD-01": 0,
-    "CARD-02": 0,
-    "CARD-06": 0,
-    "CARD-08": 0
-   },
    "summary": "Synthetic round 1 of an example ledger.",
    "tags": [
     "example"
@@ -225,6 +219,22 @@
     "CARD-02",
     "CARD-06"
    ],
+   "undo": {
+    "topics": {
+     "CARD-01": {
+      "new": true
+     },
+     "CARD-02": {
+      "new": true
+     },
+     "CARD-06": {
+      "new": true
+     },
+     "CARD-08": {
+      "new": true
+     }
+    }
+   },
    "why": {
     "CARD-01": "new",
     "CARD-02": "new",
@@ -293,7 +303,7 @@
     ]
    },
    "brier": [
-    0.22000000000000003,
+    0.22,
     4
    ],
    "calibration": {
@@ -458,12 +468,6 @@
    },
    "self_performance": 3,
    "started_at": null,
-   "steps_before": {
-    "CARD-01": 0,
-    "CARD-02": 0,
-    "CARD-06": 0,
-    "CARD-08": 0
-   },
    "summary": "Synthetic round 1 of an example ledger.",
    "tags": [
     "example"
@@ -475,6 +479,25 @@
     "CARD-02",
     "CARD-06"
    ],
+   "undo": {
+    "ratings": {
+     "CARD": null
+    },
+    "topics": {
+     "CARD-01": {
+      "new": true
+     },
+     "CARD-02": {
+      "new": true
+     },
+     "CARD-06": {
+      "new": true
+     },
+     "CARD-08": {
+      "new": true
+     }
+    }
+   },
    "why": {
     "CARD-01": "new",
     "CARD-02": "new",

@@ -108,7 +108,7 @@
    "reading_minutes": 0,
    "reflection_skipped": 0,
    "score_n": 8,
-   "score_sum": 22.599999999999998,
+   "score_sum": 22.6,
    "sessions": 8
   },
   "block": {
@@ -298,13 +298,6 @@
    "self_comfort": {},
    "self_performance": null,
    "started_at": null,
-   "steps_before": {
-    "CARD-06": 1,
-    "CARD-07": 1,
-    "CARD-08": 1,
-    "GI-05": 0,
-    "NEURO-04": 0
-   },
    "summary": "Synthetic round 8 of an example ledger.",
    "tags": [
     "example"
@@ -317,6 +310,73 @@
     "CARD-06",
     "NEURO-04"
    ],
+   "undo": {
+    "topics": {
+     "CARD-06": {
+      "row": true,
+      "was": {
+       "attempts": 1,
+       "due": "2026-10-13",
+       "last": "2026-10-10",
+       "step": 1
+      }
+     },
+     "CARD-07": {
+      "row": true,
+      "was": {
+       "attempts": 1,
+       "due": "2026-10-07",
+       "last": "2026-10-04",
+       "step": 1
+      }
+     },
+     "CARD-08": {
+      "row": true,
+      "was": {
+       "attempts": 1,
+       "due": "2026-10-04",
+       "last": "2026-10-01",
+       "mastery": 5.0,
+       "step": 1
+      }
+     },
+     "GI-05": {
+      "gap": [
+       0,
+       {
+        "date": "2026-10-16",
+        "gap": "Example gap: missed the decision point again in S0006",
+        "id": "G0005",
+        "opened": "2026-10-13",
+        "self": null,
+        "source": [
+         "graded"
+        ],
+        "topic": "GI-05"
+       }
+      ],
+      "resolved": 1,
+      "row": true,
+      "was": {
+       "attempts": 2,
+       "due": "2026-10-19",
+       "last": "2026-10-16",
+       "mastery": 2.0,
+       "step": 0
+      }
+     },
+     "NEURO-04": {
+      "gap": null,
+      "in": [
+       {
+        "gap": "Example gap 8.4: missed the decision point",
+        "source": "graded"
+       }
+      ],
+      "new": true
+     }
+    }
+   },
    "why": {
     "CARD-06": "due",
     "CARD-07": "due",
@@ -447,7 +507,7 @@
    "reading_minutes": 0,
    "reflection_skipped": 0,
    "score_n": 8,
-   "score_sum": 22.599999999999998,
+   "score_sum": 22.6,
    "sessions": 8
   },
   "block": {
@@ -651,13 +711,6 @@
    },
    "self_performance": 3,
    "started_at": null,
-   "steps_before": {
-    "CARD-06": 1,
-    "CARD-07": 1,
-    "CARD-08": 1,
-    "GI-05": 0,
-    "NEURO-04": 0
-   },
    "summary": "Synthetic round 8 of an example ledger.",
    "tags": [
     "example"
@@ -670,6 +723,86 @@
     "CARD-06",
     "NEURO-04"
    ],
+   "undo": {
+    "ratings": {
+     "CARD": null,
+     "GI": null,
+     "NEURO": null
+    },
+    "topics": {
+     "CARD-06": {
+      "row": true,
+      "was": {
+       "attempts": 1,
+       "calibration": "not_rated",
+       "comfort": null,
+       "due": "2026-10-13",
+       "last": "2026-10-10",
+       "step": 1
+      }
+     },
+     "CARD-07": {
+      "row": true,
+      "was": {
+       "attempts": 1,
+       "calibration": "not_rated",
+       "comfort": null,
+       "due": "2026-10-07",
+       "last": "2026-10-04",
+       "step": 1
+      }
+     },
+     "CARD-08": {
+      "row": true,
+      "was": {
+       "attempts": 1,
+       "calibration": "not_rated",
+       "comfort": null,
+       "due": "2026-10-04",
+       "last": "2026-10-01",
+       "mastery": 5.0,
+       "step": 1
+      }
+     },
+     "GI-05": {
+      "gap": [
+       0,
+       {
+        "date": "2026-10-16",
+        "gap": "Example gap: missed the decision point again in S0006",
+        "id": "G0005",
+        "opened": "2026-10-13",
+        "self": null,
+        "source": [
+         "graded"
+        ],
+        "topic": "GI-05"
+       }
+      ],
+      "resolved": 1,
+      "row": true,
+      "was": {
+       "attempts": 2,
+       "calibration": "not_rated",
+       "comfort": null,
+       "due": "2026-10-19",
+       "last": "2026-10-16",
+       "mastery": 2.0,
+       "step": 0
+      }
+     },
+     "NEURO-04": {
+      "gap": null,
+      "in": [
+       {
+        "gap": "Example gap 8.4: missed the decision point",
+        "source": "graded"
+       }
+      ],
+      "new": true
+     }
+    }
+   },
    "why": {
     "CARD-06": "due",
     "CARD-07": "due",

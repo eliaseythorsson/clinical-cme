@@ -102,7 +102,9 @@ def test_close_run_again_does_not_double_the_learners_changes(work):
     work.save_round("2026-11-02")
     refl = dict(REFLECTION, learner_scores=[SCORE], learner_closed_gaps=[CLOSE_GAP])
     work.close_round("2026-11-02", refl)
+    once = work.read_json("publish", "data", "state.json")
     work.close_round("2026-11-02", refl)
+    assert work.read_json("publish", "data", "state.json") == once         # the same ledger, gen included
     work.publish()
     st = work.read_ledger()
     doc = work.read_json("store", "data", "sessions", "S0001.json")
@@ -242,3 +244,31 @@ def test_the_count_survives_the_end_of_the_review_period(work):
     assert s["analysis"]["previous_period"]["learner_overrides"] == {"scores": 1, "mean_change": 2.0, "gaps_closed": 1}
     out = override(work, "--scores", json.dumps(SCORE), "--session", "S0001", today="2026-12-21", ok=False)
     assert "before the last progress review" in out["error"]
+
+
+def test_close_cannot_run_again_once_override_changed_the_round(work):
+    work.init()
+    work.save_round("2026-11-02")
+    work.close_round("2026-11-02")
+    override(work, "--scores", json.dumps([SCORE]))
+    changed = work.read_json("publish", "data", "state.json")
+    r = work.run("--today", "2026-11-02", "close", "--work", work.path, ok=False)
+    assert "changed after its close" in json.loads(r.stdout)["error"]
+    assert work.read_json("publish", "data", "state.json") == changed
+
+
+def test_a_correction_to_the_reflection_closes_the_round_again_from_where_it_stood(work, tmp_path_factory):
+    """close run again with another reflection gives what that reflection gives the first time."""
+    from conftest import Work
+    ref = Work(tmp_path_factory.mktemp("ref"))
+    corrected = dict(REFLECTION, topic_comfort={"GEN-11": 1, "HEME-01": 2}, learner_scores=[SCORE])
+    ref.init()
+    ref.save_round("2026-11-02")
+    ref.close_round("2026-11-02", corrected)
+    work.init()
+    work.save_round("2026-11-02")
+    work.close_round("2026-11-02", dict(REFLECTION, learner_closed_gaps=[CLOSE_GAP]))
+    work.close_round("2026-11-02", corrected)
+    st, want = work.read_json("publish", "data", "state.json"), ref.read_json("publish", "data", "state.json")
+    for k in ("topics", "gaps", "resolved", "agg", "sessions", "profile", "gen"):
+        assert st[k] == want[k], k

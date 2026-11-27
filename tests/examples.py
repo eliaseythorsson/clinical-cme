@@ -184,14 +184,15 @@ def schedule_of(st, tids):
 
 
 def ledger_summary(st):
-    """The parts of the ledger that applying a round changes, apart from the topics."""
+    """The parts of the ledger that applying a round changes, apart from the topics (a copy:
+    applying the round again later changes the ledger in place)."""
     last = {k: v for k, v in st["sessions"][-1].items() if k not in ("_snapshot", "_round")}
-    return {"gen": st["gen"], "next_id": st["next_id"], "updated": st["updated"],
+    return copy.deepcopy({"gen": st["gen"], "next_id": st["next_id"], "updated": st["updated"],
             "unreflected": st["unreflected"], "session": last,
             "session_ids": [s["id"] for s in st["previous"] + st["sessions"]],
             "block": st.get("block"), "blocks": st.get("blocks"),
             "gaps": st["gaps"], "resolved": st["resolved"], "agg": st["agg"],
-            "domain_self_ratings": st["profile"].get("domain_self_ratings")}
+            "domain_self_ratings": st["profile"].get("domain_self_ratings")})
 
 
 def play(name, st=None):

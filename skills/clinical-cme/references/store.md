@@ -167,8 +167,8 @@ one your last write left; if it moved, re-read and re-run as for the page.
 - **One store per learner.** The store kind lives in the learner's head and the page, not in the
   ledger; never start a second one.
 - **Publish once per step.** After `save` (the final feedback), after `close` (the
-  reflection), after `finish-prepare` (the next round). `save` always starts from the ledger
-  as it was before the round, so it can be run again after fixing a warning.
+  reflection), after `finish-prepare` (the next round). `save` run again undoes the round it
+  recorded and records it again, so it can be run again after fixing a warning.
 - **The prepared round is sealed.** Read `data/prepared.json` into the store copy; `start`
   finds it there. Never open it in the conversation.
 

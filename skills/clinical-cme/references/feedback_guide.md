@@ -368,8 +368,8 @@ grading did not change), and never edit the ledger by hand.
   last), then publish its `files`.
 
 What the engine does with it: the item keeps both scores, `graded` (yours) and `mastery`
-(the learner's, marked `set_by: learner`); the topic is scheduled with the learner's score
-and the round's score follows it; the change is a `grade_changes` entry with outcome
+(the learner's, marked `set_by: learner`); the topic is scheduled with the learner's score,
+exactly as it would be either side of the close (`state_schema.md` §3.1), and the round's score follows it; the change is a `grade_changes` entry with outcome
 `learner_set`. A gap closed this way moves to `resolved` marked `closed_by: learner` and
 gets **no retest**; the topic still comes back when its score says so. The session document
 gets a "Set by the learner" section naming both scores and who closed the gap, so the log
