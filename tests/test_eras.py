@@ -108,7 +108,7 @@ def test_a_4_2_ledger_gets_its_paragraphs_one_area_code_and_the_settings_of_late
 def test_a_6_0_ledger_is_left_as_it_is_but_for_what_came_after_it():
     old = raw("6_0")
     old["profile"]["utc_offset"] = None             # the learner's UTC offset (issue #84): unset, UTC
-    assert cme.make_current(raw("6_0")) == dict(old, positions=[], mappings=[])
+    assert cme.make_current(raw("6_0")) == dict(old, positions=[], mappings=[], skill_version=cme.SKILL_VERSION)
 
 
 def test_a_newer_ledger_is_filled_for_reading_and_nothing_else():
@@ -121,7 +121,7 @@ def test_a_newer_ledger_is_filled_for_reading_and_nothing_else():
 
 
 def test_a_null_setting_reads_as_the_engine_has_always_read_it():
-    st = cme.make_current(raw("6_0"))
+    st = raw("6_0")             # stamped 6.0.0; a load would stamp it with this engine's version
     for k in cme.DEFAULT_CONFIG:
         st["config"][k] = None
     st["profile"]["specialty"] = "  "

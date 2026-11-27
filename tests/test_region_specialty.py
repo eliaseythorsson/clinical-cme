@@ -102,6 +102,18 @@ def test_the_old_default_goes_only_to_a_ledger_of_its_era(monkeypatch):
     assert cme.make_current(st)["config"]["guideline_region"] == "International"
 
 
+def test_a_ledger_of_this_version_without_a_region_gets_the_new_default():
+    # the bump past REGION_OLD_DEFAULT_UNTIL: a ledger stamped by this engine (7.0.0 on) reads a
+    # missing region as International, not as the old Iceland/Europe default (issue #56)
+    assert cme.version_key(cme.SKILL_VERSION) > cme.version_key(cme.REGION_OLD_DEFAULT_UNTIL)
+    for stamp in (cme.SKILL_VERSION, "7.0.0"):
+        for region in (None, "", "  "):
+            st = cme.new_state(cme.parse_date("2026-01-05"))
+            st["skill_version"], st["config"]["guideline_region"] = stamp, region
+            assert "old_default_region" not in cme.upgrades_needed(st)
+            assert cme.make_current(st)["config"]["guideline_region"] == "International"
+
+
 def test_no_iceland_default_in_the_shipped_plugin():
     # issue #56: Iceland/Europe is named only where the old default is kept for older ledgers (the
     # engine's upgrade step and the schema that documents it) and as a region the tag-check seed is for

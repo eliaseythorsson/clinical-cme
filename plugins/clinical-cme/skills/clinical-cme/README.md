@@ -1,10 +1,46 @@
-# clinical-cme (version 6.0.0)
+# clinical-cme (version 7.0.0)
 
 Blinded clinical self-assessment rounds for physicians: single-best-answer questions and
 focused questions on unrelated topics, with their feedback, then one clinical case and its
 feedback — in the mix each learner chooses — graded against current evidence, with a one-minute
 reflection that feeds spaced repetition. Every round is coded (reasoning steps, error types,
 biases, calibration) and periodically analysed in a candid progress review.
+
+## What is new in version 7.0
+
+Built on 2026-11-27 from the queue after 6.0 (#83 step 2, #84, #85, #89, #90, #56, #57, #72;
+ADRs 0010–0012).
+
+- **Installable anywhere (#56).** The skill ships as a plugin of its own. A new learner who skips
+  the region question gets **International** guidance (European and US societies; an item never
+  turns on a point where they disagree, and the feedback names both). Existing learners keep
+  their region; a ledger from 6.0 or earlier without one keeps Iceland/Europe.
+- **Guidelines kept current (#90, #89).** Each guideline the blueprint cites is re-checked while
+  the next round is prepared (the round's own tags, plus a rolling sweep, plus a full sweep
+  before a progress review); a superseded one is flagged, never silently rewritten. The
+  remaining blueprint citations were checked; heart failure follows ESC 2026.
+- **Your date, not the server's (#84).** A round is dated in the learner's own day; unattended
+  jobs remember the learner's UTC offset.
+- **Saving across devices (#57).** The engine finds the store's files by their content, writes a
+  folder store itself after checking no other device wrote in between, and replays the job's
+  steps on top of a newer ledger instead of failing.
+
+Technical:
+
+- New store file `data/guidelines.json` (one check record per tag; the ledger keeps only
+  `guidelines_gen`), written before the ledger in the publish set (ADR 0011).
+- New in the assistant's procedure: `--today` (the learner's date, fixed per job) and
+  `--utc-offset` on `start`/`open`; `cme.py publish` (folder adapter); `open --reread` and step
+  tokens in the ledger for rebase (ADR 0010).
+- One load step for the ledger: declared shape, defaults applied once, named upgrades
+  (`old_default_region`), tests per era (#83 step 2). One commit step for writing commands;
+  `plan_round` split into eligible, slotted, briefed (#85).
+- Tests run in parallel (`pytest -n auto`, #72); one version source checked by
+  `tests/test_version.py`; MIT engine, CC BY-NC 4.0 content.
+
+## Page update 5.6.0
+
+- The page carries its content licence (CC BY-NC 4.0) in a comment; nothing visible changes.
 
 ## What is new in version 6.0
 

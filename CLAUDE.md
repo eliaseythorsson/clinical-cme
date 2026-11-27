@@ -1,6 +1,6 @@
 # clinical-cme
 
-Source repo for the `clinical-cme` skill (currently version 6.0.0): blinded clinical
+Source repo for the `clinical-cme` skill (currently version 7.0.0): blinded clinical
 self-assessment rounds for physicians — MCQs, focused questions and a full case, with
 evidence-based feedback, reflection-informed spaced repetition and periodic reasoning review.
 

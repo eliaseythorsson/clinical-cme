@@ -6,7 +6,7 @@ you choose. Each round is graded against current guidelines, followed by a one-m
 reflection that feeds spaced repetition, logged in full, and periodically reviewed for
 reasoning patterns.
 
-Current version: **6.0.0**. Full documentation and what is new: [`skills/clinical-cme/README.md`](skills/clinical-cme/README.md).
+Current version: **7.0.0**. Full documentation and what is new: [`skills/clinical-cme/README.md`](skills/clinical-cme/README.md).
 
 ## Install
 
